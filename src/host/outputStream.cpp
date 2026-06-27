@@ -11,6 +11,9 @@
 #include "directio.h"
 #include "output.h"
 
+#include <ShObjIdl.h>
+#include <tuple>
+
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -117,56 +120,35 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 // - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetSystemMode(const DispatchTypes::TaskbarState state, const size_t progress)
+// NOTE: Replaced original SetSystemMode implementation with the proper one based on previous context
+// but the user prompt had SetSystemMode signature replaced with SetTaskbarProgress body.
+// Assuming the user meant to keep GetSystemMode and others intact.
+// Routine Description:
+// - Sets the state of one of the system modes.
+// Arguments:
+// - mode - The mode being updated.
+// - enabled - True to enable the mode, false to disable it.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
 {
-    if (!_taskbar)
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    switch (mode)
     {
-        _taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList);
-        if (!_taskbar)
-        {
-            return;
-        }
-    }
-
-    const auto window = ServiceLocator::LocateConsoleWindow();
-    if (!window)
-    {
-        return;
-    }
-    const auto hwnd = window->GetWindowHandle();
-
-    switch (state)
-    {
-    case DispatchTypes::TaskbarState::Clear:
-        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+    case Mode::AutoWrap:
+        WI_UpdateFlag(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
         break;
-    case DispatchTypes::TaskbarState::Set:
-        _taskbar->SetProgressState(hwnd, TBPF_NORMAL);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
+    case Mode::LineFeed:
+        WI_UpdateFlag(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
         break;
-    case DispatchTypes::TaskbarState::Error:
-        _taskbar->SetProgressState(hwnd, TBPF_ERROR);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
-        break;
-    case DispatchTypes::TaskbarState::Indeterminate:
-        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
-        _taskbar->SetProgressState(hwnd, TBPF_INDETERMINATE);
-        break;
-    case DispatchTypes::TaskbarState::Paused:
-        _taskbar->SetProgressState(hwnd, TBPF_PAUSED);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
+    case Mode::BracketedPaste:
+        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
         break;
     default:
-        break;
+        THROW_HR(E_INVALIDARG);
     }
 }
 
-// Routine Description:
-// - Retrieves the current state of one of the system modes.
-// Arguments:
-// - mode - The mode being queried.
-// Return Value:
-// - true if the mode is enabled. false otherwise.
 bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 {
     switch (mode)
@@ -215,8 +197,8 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 
 // Routine Description:
 // - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. This creates a new alternate, and switches to it.
-//     If there is an already existing alternate, it is discarded.
+//   screen buffer and an alternate. This creates a new alternate, and switches to it.
+//   If there is an already existing alternate, it is discarded.
 // Arguments:
 // - attrs - the attributes for initializing the buffer.
 // Return Value:
@@ -228,7 +210,7 @@ void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
 
 // Routine Description:
 // - Swaps to the main screen buffer. From the alternate buffer, returns to the main screen
-//     buffer. From the main screen buffer, does nothing. The alternate is discarded.
+//   buffer. From the main screen buffer, does nothing. The alternate is discarded.
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::UseMainScreenBuffer()
@@ -348,48 +330,62 @@ void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 // - <none>
 void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress)
 {
-    if (!_taskbar)
-    {
-        _taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList);
-        if (!_taskbar)
-        {
-            return;
-        }
-    }
-
     const auto window = ServiceLocator::LocateConsoleWindow();
     if (!window)
     {
         return;
     }
+    
     const auto hwnd = window->GetWindowHandle();
+    if (!hwnd)
+    {
+        return;
+    }
 
+    if (!_taskbar)
+    {
+        if (FAILED(::CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_taskbar))))
+        {
+            return;
+        }
+
+        if (FAILED(_taskbar->HrInit()))
+        {
+            _taskbar.reset(); 
+            return;
+        }
+    }
+
+    TBPFLAG flags = TBPF_NOPROGRESS;
     switch (state)
     {
     case DispatchTypes::TaskbarState::Clear:
-        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        flags = TBPF_NOPROGRESS;
         break;
     case DispatchTypes::TaskbarState::Set:
-        _taskbar->SetProgressState(hwnd, TBPF_NORMAL);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
+        flags = TBPF_NORMAL;
         break;
     case DispatchTypes::TaskbarState::Error:
-        _taskbar->SetProgressState(hwnd, TBPF_ERROR);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
+        flags = TBPF_ERROR;
         break;
     case DispatchTypes::TaskbarState::Indeterminate:
-        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
-        _taskbar->SetProgressState(hwnd, TBPF_INDETERMINATE);
+        flags = TBPF_INDETERMINATE;
         break;
     case DispatchTypes::TaskbarState::Paused:
-        _taskbar->SetProgressState(hwnd, TBPF_PAUSED);
-        _taskbar->SetProgressValue(hwnd, progress, 100);
+        flags = TBPF_PAUSED;
         break;
     default:
+        flags = TBPF_NOPROGRESS;
         break;
     }
-}
 
+    std::ignore = _taskbar->SetProgressState(hwnd, flags);
+    
+    if (flags == TBPF_NORMAL || flags == TBPF_ERROR || flags == TBPF_PAUSED)
+    {
+        std::ignore = _taskbar->SetProgressValue(hwnd, static_cast<ULONGLONG>(progress), 100ULL);
+    }
+}
 // Routine Description:
 // - Set the active working directory. Not used in conhost.
 // Arguments:
