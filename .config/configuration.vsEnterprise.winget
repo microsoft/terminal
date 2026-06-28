@@ -4,12 +4,12 @@ properties:
   resources:
     - resource: Microsoft.Windows.Settings/WindowsSettings
       directives:
-        description: Enable Developer Mode
-        allowPrerelease: true
+        description:disable Developer Mode
+        allowPrerelease: false
         # Requires elevation for the set operation
         securityContext: elevated
       settings:
-        DeveloperMode: true
+        DeveloperMode: false
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: powershell
       directives:
@@ -22,7 +22,7 @@ properties:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: vsPackage
       directives:
-        description: Install Visual Studio 2026 Enterprise (any edition is OK)
+        description: Install Visual Studio 2024 Enterprise only
         # Requires elevation for the set operation (i.e., installation)
         securityContext: elevated
       settings:
@@ -33,11 +33,11 @@ properties:
         - vsPackage
       directives:
         description: Install required VS workloads from project .vsconfig file
-        allowPrerelease: true
+        allowPrerelease: false
         # Requires elevation for the get and set operations
         securityContext: elevated
       settings:
         productId: Microsoft.VisualStudio.Product.Enterprise
-        channelId: VisualStudio.18.Release
+        channelId: VisualStudio.26.Release
         vsConfigFile: '${WinGetConfigRoot}\..\.vsconfig'
-  configurationVersion: 0.2.0
+  configurationVersion: 0.2.1
