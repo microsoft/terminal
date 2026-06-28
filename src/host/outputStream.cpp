@@ -320,9 +320,71 @@ void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 // - progress: indicates the progress value
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress)
 {
-    // TODO
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+
+    const auto hwnd = window->GetWindowHandle();
+    if (!hwnd)
+    {
+        return;
+    }
+
+    if (!_taskbar)
+    {
+        if (FAILED(::CoCreateInstance(CLSID_TaskbarList, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_taskbar))))
+        {
+            return;
+        }
+
+        if (FAILED(_taskbar->HrInit()))
+        {
+            _taskbar.reset();
+            return;
+        }
+    }
+
+    // cspell:disable-next-line
+    TBPFLAG flags = TBPF_NOPROGRESS;
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        // cspell:disable-next-line
+        flags = TBPF_NOPROGRESS;
+        break;
+    case DispatchTypes::TaskbarState::Set:
+        // cspell:disable-next-line
+        flags = TBPF_NORMAL;
+        break;
+    case DispatchTypes::TaskbarState::Error:
+        // cspell:disable-next-line
+        flags = TBPF_ERROR;
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        // cspell:disable-next-line
+        flags = TBPF_INDETERMINATE;
+        break;
+    case DispatchTypes::TaskbarState::Paused:
+        // cspell:disable-next-line
+        flags = TBPF_PAUSED;
+        break;
+    default:
+        // cspell:disable-next-line
+        flags = TBPF_NOPROGRESS;
+        break;
+    }
+
+    std::ignore = _taskbar->SetProgressState(hwnd, flags);
+
+    // cspell:disable-next-line
+    if (flags == TBPF_NORMAL || flags == TBPF_ERROR || flags == TBPF_PAUSED)
+    {
+        std::ignore = _taskbar->SetProgressValue(hwnd, static_cast<ULONGLONG>(progress), 100ULL);
+    }
 }
 
 // Routine Description:

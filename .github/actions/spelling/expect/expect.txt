@@ -1638,6 +1638,8 @@ targetver
 tbc
 tbi
 TBM
+TBPF
+TBPFLAG
 TCHAR
 TCHFORMAT
 TCI

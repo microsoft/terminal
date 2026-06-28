@@ -19,6 +19,8 @@ Author:
 #include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
 
+#include <ShObjIdl.h>
+
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
 // the kernelbase/32 exposed public APIs and routed by the console driver (condrv) to this console host.
@@ -78,4 +80,5 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
+    wil::com_ptr<ITaskbarList3> _taskbar;
 };
