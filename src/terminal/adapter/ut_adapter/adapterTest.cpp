@@ -4093,6 +4093,16 @@ public:
         return count;
     }
 
+    // Returns the pixel at (px, py) within an image slice's own pixel buffer (px is
+    // relative to the slice's left edge). Used for exact positional color checks
+    // rather than the "is this color anywhere in the slice" SliceContainsColor scan.
+    static RGBQUAD SlicePixelAt(const ImageSlice* slice, til::CoordType px, til::CoordType py)
+    {
+        const auto pixels = slice->Pixels();
+        const auto idx = static_cast<size_t>(py) * slice->PixelWidth() + px;
+        return idx < pixels.size() ? pixels[idx] : RGBQUAD{};
+    }
+
     TEST_METHOD(SixelBasicRedImageTest)
     {
         _testGetSet->PrepData();
@@ -4310,6 +4320,139 @@ public:
         const auto tallRows = CountImageRows(*_testGetSet->_textBuffer);
 
         VERIFY_IS_TRUE(tallRows > shortRows, L"A taller image should occupy more rows than a shorter one.");
+    }
+
+    // Regression: a row may already hold an ImageSlice with a DIFFERENT cell size
+    // (e.g. placed by another image protocol such as Kitty graphics). Sixel must
+    // replace it rather than write past its (smaller) buffer with Sixel's cell stride.
+    TEST_METHOD(SixelReplacesMismatchedCellSizeSlice)
+    {
+        // Learn the row and cell size a normal Sixel uses.
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~\x1b\\");
+        til::CoordType row = -1;
+        const auto baseline = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
+        VERIFY_IS_NOT_NULL(baseline);
+        const auto sixelCell = baseline->CellSize();
+
+        // Inject a foreign, smaller-cell slice on that row, then render Sixel over it.
+        _testGetSet->PrepData();
+        const til::size foreignCell{ std::max(1, sixelCell.width - 3), std::max(1, sixelCell.height - 4) };
+        _testGetSet->_textBuffer->GetMutableRowByOffset(row).SetImageSlice(std::make_unique<ImageSlice>(foreignCell));
+        _stateMachine->ProcessString(L"\x1bPq#0;2;0;0;100~~~~\x1b\\"); // blue, several columns
+
+        const auto replaced = _testGetSet->_textBuffer->GetRowByOffset(row).GetImageSlice();
+        VERIFY_IS_NOT_NULL(replaced);
+        VERIFY_ARE_EQUAL(sixelCell.height, replaced->CellSize().height, L"Sixel must replace a mismatched-cell slice with its own cell size.");
+        VERIFY_IS_TRUE(SliceContainsColor(replaced, 0, 0, 255), L"The Sixel image must render after replacing the slice (no overflow).");
+    }
+
+    // Raster attributes (") are parsed; a zero x-aspect (the division-by-zero guard)
+    // and an oversized raster size must not crash and must stay screen-bounded.
+    TEST_METHOD(SixelRasterAttributesAreBounded)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq\"5;0;100;100#0;2;100;0;0~\x1b\\"); // xAspect=0 div-guard
+        VERIFY_IS_TRUE(BufferContainsColor(*_testGetSet->_textBuffer, 255, 0, 0), L"A zero x-aspect raster must be ignored, not crash.");
+
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq\"1;1;99999;99999#0;2;100;0;0~\x1b\\"); // oversized raster
+        til::CoordType row = -1;
+        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
+        VERIFY_IS_NOT_NULL(slice);
+        VERIFY_IS_TRUE(slice->PixelWidth() <= _testGetSet->_textBuffer->GetSize().Width() * slice->CellSize().width, L"Oversized raster width must stay bounded by the row.");
+    }
+
+    // '$' (graphics carriage return) returns to the band start so a second color
+    // overlays the SAME band, unlike '-' which advances to a new band. Uses a
+    // transparent background (P2=1) so only the drawn band occupies a row.
+    TEST_METHOD(SixelDollarOverlaysSameBand)
+    {
+        _testGetSet->PrepData();
+        // Red across three columns, then '$' back to start, then blue on the first column.
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~~~$#1;2;0;0;100~\x1b\\");
+        const auto& buffer = *_testGetSet->_textBuffer;
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 0, 0, 255), L"Blue overlaid via '$' should render.");
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 255, 0, 0), L"Red should remain where it was not overlaid.");
+        VERIFY_ARE_EQUAL(1, CountImageRows(buffer), L"'$' overlays the same band; it must not advance to a new row.");
+    }
+
+    // P1=9 selects pixel aspect ratio 1:1 - a separately optimized render path that
+    // none of the other tests (all aspect 2) exercise.
+    TEST_METHOD(SixelAspectRatioOneRenders)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bP9q#0;2;0;100;0~\x1b\\"); // green, 1:1 aspect
+        til::CoordType row = -1;
+        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
+        VERIFY_IS_NOT_NULL(slice);
+        VERIFY_IS_TRUE(SliceContainsColor(slice, 0, 255, 0), L"The 1:1 aspect render path should render the image.");
+    }
+
+    // A repeat count of one matches a single sixel.
+    TEST_METHOD(SixelRepeatCountOne)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~\x1b\\");
+        til::CoordType r1 = -1;
+        const auto single = FindFirstImageSlice(*_testGetSet->_textBuffer, r1);
+        VERIFY_IS_NOT_NULL(single);
+        const auto singleWidth = single->PixelWidth();
+
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0!1~\x1b\\");
+        til::CoordType r2 = -1;
+        const auto repeated = FindFirstImageSlice(*_testGetSet->_textBuffer, r2);
+        VERIFY_IS_NOT_NULL(repeated);
+        VERIFY_ARE_EQUAL(singleWidth, repeated->PixelWidth(), L"!1~ must match a single ~.");
+    }
+
+    // HLS and RGB define the same color, and the HLS hue wraps modulo 360.
+    TEST_METHOD(SixelHlsEquivalentToRgb)
+    {
+        _testGetSet->PrepData();
+        // col 0 = RGB red; col 1 = HLS red (hue 120); col 2 = HLS red, hue wrapped (480 % 360 = 120).
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~#1;1;120;50;100~#2;1;480;50;100~\x1b\\");
+        til::CoordType row = -1;
+        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
+        VERIFY_IS_NOT_NULL(slice);
+        const auto rgb = SlicePixelAt(slice, 0, 0);
+        const auto hls = SlicePixelAt(slice, 1, 0);
+        const auto wrapped = SlicePixelAt(slice, 2, 0);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(255), rgb.rgbRed);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(0), rgb.rgbGreen);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(0), rgb.rgbBlue);
+        VERIFY_ARE_EQUAL(rgb.rgbRed, hls.rgbRed, L"HLS red must equal RGB red.");
+        VERIFY_ARE_EQUAL(rgb.rgbGreen, hls.rgbGreen);
+        VERIFY_ARE_EQUAL(rgb.rgbBlue, hls.rgbBlue);
+        VERIFY_ARE_EQUAL(rgb.rgbRed, wrapped.rgbRed, L"A wrapped HLS hue (480) must equal hue 120.");
+        VERIFY_ARE_EQUAL(rgb.rgbGreen, wrapped.rgbGreen);
+        VERIFY_ARE_EQUAL(rgb.rgbBlue, wrapped.rgbBlue);
+    }
+
+    // An RGB component of 50/100 rounds to 128 ((50*255 + 50) / 100).
+    TEST_METHOD(SixelRgb100MidpointRounding)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq#0;2;50;50;50~\x1b\\");
+        til::CoordType row = -1;
+        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
+        VERIFY_IS_NOT_NULL(slice);
+        const auto p = SlicePixelAt(slice, 0, 0);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(128), p.rgbRed);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(128), p.rgbGreen);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(128), p.rgbBlue);
+    }
+
+    // A bare '#Pc' selects a previously defined color register.
+    TEST_METHOD(SixelBareColorRegisterSelect)
+    {
+        _testGetSet->PrepData();
+        // Define 0=red and 1=blue up front, then bare-select each and draw a column.
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0#1;2;0;0;100#0~#1~\x1b\\");
+        const auto& buffer = *_testGetSet->_textBuffer;
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 255, 0, 0), L"Bare #0 must select the red register.");
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 0, 0, 255), L"Bare #1 must select the blue register.");
     }
 
 private:
