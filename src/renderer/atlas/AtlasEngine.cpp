@@ -31,6 +31,31 @@
 
 using namespace Microsoft::Console::Render::Atlas;
 
+namespace
+{
+    void _debugLogBidiRuns(const std::vector<TextAnalysisBidiRun>& bidiRuns) noexcept
+    {
+        if (std::none_of(bidiRuns.begin(), bidiRuns.end(), [](const auto& run) noexcept { return (run.resolvedLevel & 1) != 0; }))
+        {
+            return;
+        }
+
+        std::wstring message{ L"[AtlasEngine] Bidi runs:" };
+        for (const auto& run : bidiRuns)
+        {
+            message += L" [pos=";
+            message += std::to_wstring(run.textPosition);
+            message += L", len=";
+            message += std::to_wstring(run.textLength);
+            message += L", level=";
+            message += std::to_wstring(run.resolvedLevel);
+            message += L"]";
+        }
+        message += L"\n";
+        OutputDebugStringW(message.c_str());
+    }
+}
+
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
 {
@@ -819,10 +844,23 @@ void AtlasEngine::_flushBufferLine()
     const auto cleanup = wil::scope_exit([this]() noexcept {
         _api.bufferLine.clear();
         _api.bufferLineColumn.clear();
+        _api.bidiLevels.clear();
+        _api.bidiRuns.clear();
     });
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
+
+    _api.analysisResults.clear();
+    _api.bidiLevels.assign(_api.bufferLine.size(), 0);
+    _api.bidiRuns.clear();
+
+    {
+        TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+        TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiLevels, &_api.bidiRuns };
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, 0, gsl::narrow<UINT32>(_api.bufferLine.size()), &analysisSink));
+        _debugLogBidiRuns(_api.bidiRuns);
+    }
 
     const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
@@ -1033,12 +1071,16 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
+    _api.bidiLevels.assign(_api.bufferLine.size(), 0);
+
     TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
-    TextAnalysisSink analysisSink{ _api.analysisResults };
+    TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiLevels };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
+    THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, idx, length, &analysisSink));
 
     for (const auto& a : _api.analysisResults)
     {
+        const BOOL isRightToLeft = a.textPosition < _api.bidiLevels.size() && (_api.bidiLevels[a.textPosition] & 1) != 0;
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -1076,7 +1118,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
+                /* isRightToLeft       */ isRightToLeft,
                 /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
@@ -1128,7 +1170,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
+            /* isRightToLeft       */ isRightToLeft,
             /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
