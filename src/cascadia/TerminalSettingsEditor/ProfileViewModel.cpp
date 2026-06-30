@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
-        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
+        _defaultAppearanceViewModel{ nullptr },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
         _unfocusedAppearanceViewModel{ nullptr },
@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
 
+        _RefreshDefaultAppearanceViewModel();
         _InitializeCurrentBellSounds();
 
         // Add a property changed handler to our own property changed event.
@@ -51,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsVisible");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -129,14 +130,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
-        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
-            {
-                _NotifyChanges(L"TabThemeColorPreview");
-            }
-        });
-
         // Do the same for the starting directory
         if (!StartingDirectory().empty())
         {
@@ -155,7 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
-        _defaultAppearanceViewModel.IsDefault(true);
     }
 
     void ProfileViewModel::LeftPadding(double value) noexcept
@@ -787,6 +779,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _profile.BellSound().RemoveAt(index);
             _NotifyChanges(L"CurrentBellSounds");
         }
+    }
+
+    void ProfileViewModel::_RefreshDefaultAppearanceViewModel()
+    {
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList{ nullptr };
+        if (_defaultAppearanceViewModel)
+        {
+            schemesList = _defaultAppearanceViewModel.SchemesList();
+        }
+
+        _defaultAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+        _defaultAppearanceViewModel.IsDefault(true);
+        if (schemesList)
+        {
+            _defaultAppearanceViewModel.SchemesList(schemesList);
+        }
+
+        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"TabThemeColorPreview");
+            }
+        });
     }
 
     void ProfileViewModel::DeleteProfile()

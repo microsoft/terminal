@@ -36,6 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
+        void ClearAllSettings();
+
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
