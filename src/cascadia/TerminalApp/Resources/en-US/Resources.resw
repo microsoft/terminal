@@ -702,6 +702,9 @@
   <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
     <value>Open anyway</value>
   </data>
+  <data name="RememberUriSchemeCheckBox.Content" xml:space="preserve">
+    <value>Always allow links with this scheme</value>
+  </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Settings</value>
   </data>
