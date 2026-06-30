@@ -1189,13 +1189,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_GotFocus(const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&)
     {
+        const auto box = sender.as<AutoSuggestBox>();
         _updateFontNameFilter({});
-        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+        box.IsSuggestionListOpen(true);
+        _fontFaceBoxHasUserInput = false;
     }
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        _updateFontName(sender.as<AutoSuggestBox>().Text());
+        const auto box = sender.as<AutoSuggestBox>();
+        if (_fontFaceBoxHasUserInput)
+        {
+            _updateFontName(box.Text());
+        }
+        else
+        {
+            // AutoSuggestBox restores its cached user query when Tab closes the suggestion list.
+            // Programmatic Text updates don't synchronize that cache, so restore the committed value.
+            box.Text(Appearance().FontFace());
+        }
     }
 
     void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
@@ -1237,6 +1249,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, weakSender{ winrt::make_weak(sender) }, fontSpec{ std::move(fontSpec) }]() {
             if (const auto self{ weakThis.get() })
             {
+                self->_fontFaceBoxHasUserInput = false;
+
                 if (const auto box{ weakSender.get() })
                 {
                     box.Text(fontSpec);
@@ -1254,6 +1268,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return;
         }
+
+        _fontFaceBoxHasUserInput = true;
 
         const auto fontSpec = sender.Text();
         std::wstring_view filter{ fontSpec };
