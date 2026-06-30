@@ -1299,6 +1299,8 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
+        std::vector<GlyphClusterRange> clusterRanges;
+        clusterRanges.reserve(a.textLength);
 
         for (size_t i = 1; i <= a.textLength; ++i)
         {
@@ -1320,15 +1322,37 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             }
             _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
 
-            row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
+            clusterRanges.push_back({ prevCluster, nextCluster, fg });
 
             prevCluster = nextCluster;
             beg = i;
         }
 
-        row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
-        row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
-        row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
+        const auto appendCluster = [&](const GlyphClusterRange& cluster) {
+            row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin() + cluster.glyphsFrom, _api.glyphIndices.begin() + cluster.glyphsTo);
+            row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin() + cluster.glyphsFrom, _api.glyphAdvances.begin() + cluster.glyphsTo);
+            row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin() + cluster.glyphsFrom, _api.glyphOffsets.begin() + cluster.glyphsTo);
+            row.colors.insert(row.colors.end(), cluster.glyphsTo - cluster.glyphsFrom, cluster.color);
+        };
+
+        if (isRightToLeft)
+        {
+            // _flushBufferLine() handles line/span visual order with resolved bidi levels.
+            // DirectWrite shaping preserves glyph relationships within each cluster. Atlas stores
+            // glyphs in a left-to-right stream, so RTL runs emit clusters in reverse order while
+            // preserving glyph order inside each cluster.
+            for (auto it = clusterRanges.rbegin(); it != clusterRanges.rend(); ++it)
+            {
+                appendCluster(*it);
+            }
+        }
+        else
+        {
+            for (const auto& cluster : clusterRanges)
+            {
+                appendCluster(cluster);
+            }
+        }
     }
 }
 
