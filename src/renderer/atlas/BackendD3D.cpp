@@ -2328,7 +2328,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     {
         // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
         const auto now = queryPerfCount();
-        const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
+        const auto time = (now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
 
         const CustomConstBuffer data{
             .time = time,
