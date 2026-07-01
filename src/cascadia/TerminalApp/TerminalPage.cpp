@@ -1862,6 +1862,17 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        // If the overview pane is open, most actions mutate tab state whose
+        // Content() is currently reparented under the overview. Tear down the
+        // overview's visuals first so the content is back under its original
+        // parent before the action runs. ToggleOverview is the exception — it
+        // handles its own exit.
+        if (_isInOverviewMode &&
+            cmd.ActionAndArgs().Action() != ShortcutAction::ToggleOverview)
+        {
+            _DismissOverviewVisuals();
+        }
+
         if (!_actionDispatch->DoAction(cmd.ActionAndArgs()))
         {
             return;
@@ -4339,6 +4350,127 @@ namespace winrt::TerminalApp::implementation
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
         AlwaysOnTopChanged.raise(*this, nullptr);
+    }
+
+    void TerminalPage::ToggleOverview()
+    {
+        if (_isInOverviewMode)
+        {
+            _ExitOverview(std::nullopt);
+        }
+        else
+        {
+            _EnterOverview();
+        }
+    }
+
+    void TerminalPage::_EnterOverview()
+    {
+        _isInOverviewMode = true;
+
+        // Use FindName to lazily load the OverviewPane (same pattern as CommandPalette)
+        auto overview = FindName(L"OverviewPaneElement").try_as<OverviewPane>();
+        if (!overview)
+        {
+            return;
+        }
+
+        const auto focusedIdx = _GetFocusedTabIndex();
+        const auto idx = focusedIdx.has_value() ? static_cast<int32_t>(focusedIdx.value()) : 0;
+
+        // Wire up events to handle tab selection and dismissal
+        _overviewTabSelectedToken = overview.TabSelected([weakThis = get_weak()](auto&&, const auto& args) {
+            if (auto self = weakThis.get())
+            {
+                if (args)
+                {
+                    self->_ExitOverview(static_cast<uint32_t>(args.Value()));
+                }
+            }
+        });
+        _overviewDismissedToken = overview.Dismissed([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self = weakThis.get())
+            {
+                // Escape semantics: cancel without committing any
+                // in-overview navigation. _ExitOverview(nullopt) would
+                // fall back to overview.SelectedIndex() (the hovered or
+                // arrow-keyed cell) and switch to that tab. Instead,
+                // dismiss the visuals and re-mount the tab that was
+                // focused when the overview opened.
+                self->_DismissOverviewVisuals();
+                self->_UpdatedSelectedTab(self->_GetFocusedTab());
+            }
+        });
+
+        // _tabs is already IObservableVector<Tab>, which inherits from IVector<Tab>
+        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto windowTheme = theme ? theme.Window() : nullptr;
+        overview.UseMica(windowTheme ? windowTheme.UseMica() : false);
+        overview.UpdateTabContent(_tabs, idx);
+        overview.Visibility(WUX::Visibility::Visible);
+        overview.Focus(WUX::FocusState::Programmatic);
+    }
+
+    void TerminalPage::_ExitOverview(const std::optional<uint32_t>& selectedIndex)
+    {
+        auto overview = FindName(L"OverviewPaneElement").try_as<OverviewPane>();
+
+        // Determine which tab to switch to. Prefer the explicitly passed index
+        // (from TabSelected event), but fall back to the overview pane's
+        // current selection — this covers ToggleOverview and Dismiss paths so
+        // the user always lands on whichever tab they navigated to.
+        std::optional<uint32_t> tabToSelect = selectedIndex;
+        if (!tabToSelect.has_value() && overview)
+        {
+            const auto overviewIdx = overview.SelectedIndex();
+            if (overviewIdx >= 0 && overviewIdx < static_cast<int32_t>(_tabs.Size()))
+            {
+                tabToSelect = static_cast<uint32_t>(overviewIdx);
+            }
+        }
+
+        _DismissOverviewVisuals();
+
+        if (tabToSelect.has_value())
+        {
+            _SelectTab(tabToSelect.value());
+        }
+
+        _UpdatedSelectedTab(_GetFocusedTab());
+    }
+
+    // Method Description:
+    // - Tears down the overview's reparented content and hides the overlay,
+    //   without changing tab selection. Safe to call when not in overview mode.
+    // - Used by both _ExitOverview (which then selects a tab) and by
+    //   _OnTabSelectionChanged (where the TabView has already updated the
+    //   selection and we just need to release the reparented content before
+    //   _UpdatedSelectedTab tries to mount it back into the content area).
+    void TerminalPage::_DismissOverviewVisuals()
+    {
+        if (!_isInOverviewMode)
+        {
+            return;
+        }
+
+        if (auto overview = FindName(L"OverviewPaneElement").try_as<OverviewPane>())
+        {
+            // Revoke event handlers to avoid stale callbacks
+            overview.TabSelected(_overviewTabSelectedToken);
+            overview.Dismissed(_overviewDismissedToken);
+            _overviewTabSelectedToken = {};
+            _overviewDismissedToken = {};
+
+            overview.ClearTabContent();
+            overview.Visibility(WUX::Visibility::Collapsed);
+        }
+
+        _isInOverviewMode = false;
+    }
+
+    bool TerminalPage::OverviewMode() const
+    {
+        return _isInOverviewMode;
     }
 
     // Method Description:

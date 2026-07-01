@@ -1147,6 +1147,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (!_rearranging && !_removing)
         {
+            // If the user clicked a tab in the tab row while the overview is
+            // open, the overview is still holding that tab's Content reparented
+            // into one of its preview cells. Tear down the overview visuals
+            // first so _UpdatedSelectedTab can mount the content into the
+            // active content area without hitting the XAML single-parent rule.
+            _DismissOverviewVisuals();
+
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
             if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int32_t>(_tabs.Size()))
