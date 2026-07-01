@@ -6,6 +6,8 @@
 #include "winrt/Windows.UI.ViewManagement.h"
 #include "../../types/inc/colorTable.hpp"
 
+#include <random>
+
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Console::Utils;
@@ -211,16 +213,61 @@ namespace winrt::Microsoft::Terminal::Settings
                                  winrt::Windows::UI::Xaml::ElementTheme::Light;
         }
 
+        // GH#9422: The special "_random" token causes us to randomly select
+        // a color scheme from the set of available schemes each time a new
+        // tab or pane is created.
+        static constexpr std::wstring_view RandomSchemeToken{ L"_random" };
+
+        // Helper to pick a random scheme from the available schemes map.
+        const auto pickRandomScheme = [&]() -> Model::ColorScheme {
+            const auto size = schemes.Size();
+            if (size == 0)
+            {
+                return nullptr;
+            }
+            // Use a random_device for non-deterministic seeding so each
+            // tab gets a truly random color scheme.
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<uint32_t> dist(0, size - 1);
+            const auto index = dist(gen);
+
+            uint32_t i = 0;
+            for (const auto& [name, scheme] : schemes)
+            {
+                if (i == index)
+                {
+                    return scheme;
+                }
+                ++i;
+            }
+            return nullptr;
+        };
+
         switch (requestedTheme)
         {
         case winrt::Windows::UI::Xaml::ElementTheme::Light:
-            if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
+            if (appearance.LightColorSchemeName() == RandomSchemeToken)
+            {
+                if (const auto scheme = pickRandomScheme())
+                {
+                    ApplyColorScheme(scheme);
+                }
+            }
+            else if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
             break;
         case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-            if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
+            if (appearance.DarkColorSchemeName() == RandomSchemeToken)
+            {
+                if (const auto scheme = pickRandomScheme())
+                {
+                    ApplyColorScheme(scheme);
+                }
+            }
+            else if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
