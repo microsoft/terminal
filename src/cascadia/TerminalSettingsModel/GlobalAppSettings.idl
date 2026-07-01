@@ -66,6 +66,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Int32, InitialCols);
         INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
         INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
+        INHERITABLE_SETTING(Boolean, ShowPaneHeaders);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
