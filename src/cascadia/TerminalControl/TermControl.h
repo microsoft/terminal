@@ -327,6 +327,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Collections::IObservableVector<Windows::UI::Xaml::Controls::ICommandBarElement> _originalSelectedSecondaryElements{ nullptr };
 
         Control::CursorDisplayState _cursorVisibility{ Control::CursorDisplayState::Default };
+        winrt::Windows::UI::Core::CoreCursor _previousPointerCursor{ nullptr };
+        winrt::Windows::UI::Core::CoreCursor _hyperlinkPointerCursor{ winrt::Windows::UI::Core::CoreCursorType::Hand, 0 };
+        bool _ownsHyperlinkPointerCursor{ false };
 
         inline bool _IsClosing() const noexcept
         {
@@ -406,6 +409,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
+        bool _shouldUseHyperlinkPointerCursor(const Windows::Devices::Input::PointerDeviceType pointerDeviceType,
+                                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
+        void _updateHyperlinkPointerCursor(const Windows::Devices::Input::PointerDeviceType pointerDeviceType,
+                                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
+        void _restoreHyperlinkPointerCursor();
 
         winrt::Windows::Foundation::Point _toControlOrigin(const til::point terminalPosition);
         Core::Point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
