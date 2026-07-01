@@ -31,16 +31,21 @@
                    Margin="0,20,0,4"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-        <!--  Copy On Select  -->
-        <local:SettingsExpander x:Name="CopyOnSelect"
-                                x:Uid="Globals_CopyOnSelect"
+        <!--  Copy Behavior  -->
+        <local:SettingsExpander x:Name="CopyBehavior"
+                                x:Uid="Interaction_CopyBehavior"
                                 IsExpanded="True">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             <local:SettingsExpander.HeaderIcon>
                 <FontIcon Glyph="&#xE8C8;" />
             </local:SettingsExpander.HeaderIcon>
             <local:SettingsExpander.Items>
+
+                <!--  Copy On Select  -->
+                <local:SettingsCard x:Name="CopyOnSelect"
+                                    ContentAlignment="Left">
+                    <CheckBox x:Uid="Globals_CopyOnSelect"
+                              IsChecked="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}" />
+                </local:SettingsCard>
 
                 <!--  Trim Block Selection  -->
                 <local:SettingsCard x:Name="TrimBlockSelection"
@@ -205,23 +210,25 @@
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
 
         <!--  Detect URLs  -->
-        <local:SettingsExpander x:Name="DetectURLs"
-                                x:Uid="Globals_DetectURLs"
-                                IsExpanded="True">
+        <local:SettingsCard x:Name="DetectURLs"
+                            x:Uid="Globals_DetectURLs">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE71B;" />
+            </local:SettingsCard.HeaderIcon>
             <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            <local:SettingsExpander.HeaderIcon>
-                <FontIcon Glyph="&#xE71B;" />
-            </local:SettingsExpander.HeaderIcon>
-            <local:SettingsExpander.Items>
-                <local:SettingsCard x:Name="SearchWebDefaultQueryUrl"
-                                    x:Uid="Globals_SearchWebDefaultQueryUrl">
-                    <TextBox IsSpellCheckEnabled="False"
-                             Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
-                </local:SettingsCard>
-            </local:SettingsExpander.Items>
-        </local:SettingsExpander>
+        </local:SettingsCard>
+
+        <!--  Search web default query URL  -->
+        <local:SettingsCard x:Name="SearchWebDefaultQueryUrl"
+                            x:Uid="Globals_SearchWebDefaultQueryUrl">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xF6FA;" />
+            </local:SettingsCard.HeaderIcon>
+            <TextBox IsSpellCheckEnabled="False"
+                     Style="{StaticResource TextBoxSettingStyle}"
+                     Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
+        </local:SettingsCard>
 
     </StackPanel>
 </Page>

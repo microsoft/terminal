@@ -63,32 +63,40 @@
                     <CheckBox x:Uid="Globals_EnableUnfocusedAcrylic"
                               IsChecked="{x:Bind ViewModel.EnableUnfocusedAcrylic, Mode=TwoWay}" />
                 </local:SettingsCard>
-
-                <!--  Disable Animations  -->
-                <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
-                <local:SettingsCard x:Name="DisableAnimations"
-                                    ContentAlignment="Left">
-                    <CheckBox x:Uid="Globals_DisableAnimationsReversed"
-                              IsChecked="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}" />
-                </local:SettingsCard>
             </local:SettingsExpander.Items>
         </local:SettingsExpander>
+
+        <!--  Disable Animations  -->
+        <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
+        <local:SettingsCard x:Name="DisableAnimations"
+                            x:Uid="Globals_DisableAnimationsReversed">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE89F;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
 
         <!--  Section: Tabs and layout  -->
         <TextBlock x:Uid="Globals_Section_TabsLayout"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-        <!--  Show Titlebar  -->
-        <local:SettingsExpander x:Name="ShowTitlebar"
-                                x:Uid="Globals_ShowTitlebar"
+        <!--  Title bar properties  -->
+        <local:SettingsExpander x:Name="TitlebarProperties"
+                                x:Uid="Globals_TitlebarProperties"
                                 IsExpanded="True">
             <local:SettingsExpander.HeaderIcon>
                 <FontIcon Glyph="&#xE737;" />
             </local:SettingsExpander.HeaderIcon>
-            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                          Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
             <local:SettingsExpander.Items>
+
+                <!--  Hide the title bar  -->
+                <local:SettingsCard x:Name="ShowTitlebar"
+                                    ContentAlignment="Left">
+                    <CheckBox x:Uid="Globals_ShowTitlebar"
+                              Click="{x:Bind ViewModel.ShowTitlebarToggled}"
+                              IsChecked="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}" />
+                </local:SettingsCard>
 
                 <!--  Always show tabs  -->
                 <local:SettingsCard x:Name="AlwaysShowTabs"
