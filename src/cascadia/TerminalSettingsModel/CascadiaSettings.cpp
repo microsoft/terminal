@@ -323,6 +323,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Icon);
+    DUPLICATE_SETTING_MACRO(BellSound);
 
     {
         const auto font = source.FontInfo();
@@ -353,6 +354,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
     }
 
     // UnfocusedAppearance is treated as a single setting,
@@ -681,7 +683,7 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
 }
 
 // Returns true if all regexes in the new tab menu are valid, false otherwise
-static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
+static bool _validateNTMEntries(const IVectorView<Model::NewTabMenuEntry>& entries)
 {
     if (!entries)
     {
@@ -691,7 +693,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
     {
         if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
         {
-            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            if (const auto raw = folderEntry.RawEntries(); raw && !_validateNTMEntries(raw.GetView()))
             {
                 return false;
             }
@@ -709,7 +711,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 
 void CascadiaSettings::_validateRegexes()
 {
-    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    if (!_validateNTMEntries(_globals->NewTabMenu().Entries()))
     {
         _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }

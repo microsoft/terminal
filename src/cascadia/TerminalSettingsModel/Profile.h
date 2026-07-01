@@ -49,6 +49,7 @@ Author(s):
 #include "MTSMSettings.h"
 
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 #include <DefaultSettings.h>
 #include "MediaResourceSupport.h"
 #include "AppearanceConfig.h"
@@ -80,7 +81,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         Profile() noexcept = default;
-        Profile(guid guid) noexcept;
+        // Not noexcept: Guid(guid) writes to _json, which allocates.
+        // The old backing-field constructor was noexcept (POD copy into std::optional),
+        // but JSON-backed storage requires heap allocation.
+        Profile(guid guid);
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -98,6 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
 
+        // Generic setting access via SettingKey
+        bool HasSetting(ProfileSettingKey key) const;
+        void ClearSetting(ProfileSettingKey key);
+        std::vector<ProfileSettingKey> CurrentSettings() const;
+
         hstring EvaluatedStartingDirectory() const;
 
         Model::IAppearanceConfig DefaultAppearance();
@@ -106,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
 
         void _FinalizeInheritance() override;
+        void _ValidateThisLayer() const override;
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
@@ -122,28 +132,73 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
 
-        // Nullable/optional settings
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+        // Nullable/optional settings (JSON-backed)
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, "tabColor", nullptr)
 
-        // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
-        INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
-        INHERITABLE_SETTING(Model::Profile, hstring, Source);
-        INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
-        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+        // UnfocusedAppearance holds a live AppearanceConfig sub-object whose
+        // presence is the marker; it needs a backing field (not _json).
+        _BASE_INHERITABLE_MUTABLE_SETTING(Model::Profile, std::optional<Model::IAppearanceConfig>, UnfocusedAppearance, nullptr)
+    public:
+        Model::IAppearanceConfig UnfocusedAppearance() const
+        {
+            const auto val{ _getUnfocusedAppearanceImpl() };
+            return val ? *val : Model::IAppearanceConfig{ nullptr };
+        }
+        void UnfocusedAppearance(const Model::IAppearanceConfig& value)
+        {
+            _UnfocusedAppearance = value;
+        }
+        void ClearUnfocusedAppearance()
+        {
+            _UnfocusedAppearance = std::nullopt;
+        }
+
+        // Settings that are JSON-backed but need custom handling in ToJson/LayerJson
+        INHERITABLE_SETTING(Model::Profile, hstring, Name, "name", L"Default")
+        INHERITABLE_SETTING(Model::Profile, hstring, Source, "source")
+        INHERITABLE_SETTING(Model::Profile, bool, Hidden, "hidden", false)
+        INHERITABLE_SETTING(Model::Profile, hstring, Padding, "padding", DEFAULT_PADDING)
+
+        // Guid: hand-written JSON-backed (dynamic default)
+        _BASE_INHERITABLE_SETTING(Model::Profile, guid, Guid, "guid")
+    public:
+        guid Guid() const
+        {
+            const auto val{ _getGuidImpl() };
+            return val ? *val : _GenerateGuidForProfile(Name(), Source());
+        }
+        void Guid(const guid& value)
+        {
+            ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(
+                _json, "guid", value);
+        }
 
         winrt::hstring SourceBasePath;
 
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+        MTSM_PROFILE_SETTINGS_SCALARS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
+
+#define PROFILE_COLLECTION_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_JSON_BACKED_MAP_SETTING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
+        MTSM_PROFILE_SETTINGS_COLLECTIONS(PROFILE_COLLECTION_INITIALIZE)
+#undef PROFILE_COLLECTION_INITIALIZE
+
+        // IMediaResource settings with backing fields for resolution lifecycle.
+        // _json is the source of truth for serialization. Setters dual-write to both
+        // the backing field (for runtime resolution) and _json (for auto-save).
+        INHERITABLE_MEDIA_RESOURCE_SETTING(Model::Profile, Icon, "icon", implementation::MediaResource::FromString(L"\uE756"))
+        INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING(Model::Profile, BellSound, "bellSound", nullptr)
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
+
+        // Raw JSON for this layer. Populated by LayerJson(), will become the
+        // source of truth for settings once the JSON-backed refactor is complete.
+        Json::Value _json{ Json::ValueType::objectValue };
 
         std::set<std::string> _changeLog;
 

@@ -250,6 +250,28 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         SetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
 
+    // CopyKeyIfPresent: copies a key's raw Json::Value from source to target
+    // if it exists in source. No type conversion — just raw JSON copy.
+    // Used in ToJson() to copy JSON-backed settings from _json to output.
+    inline void CopyKeyIfPresent(const Json::Value& source, Json::Value& target, const std::string_view key)
+    {
+        if (source.isMember(JsonKey(key)))
+        {
+            target[JsonKey(key)] = source[JsonKey(key)];
+        }
+    }
+
+    // MergeJsonKeys: copies all keys from source into target (key-wise merge).
+    // Existing keys in target are overwritten by source values.
+    // Used in LayerJson() to merge incoming JSON into stored _json.
+    inline void MergeJsonKeys(const Json::Value& source, Json::Value& target)
+    {
+        for (const auto& key : source.getMemberNames())
+        {
+            target[key] = source[key];
+        }
+    }
+
     template<>
     struct ConversionTrait<std::string>
     {
