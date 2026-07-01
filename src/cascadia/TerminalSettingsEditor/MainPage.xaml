@@ -77,7 +77,8 @@
             </ResourceDictionary>
         </muxc:NavigationView.Resources>
         <muxc:NavigationView.Header>
-            <Grid Padding="16,0">
+            <Grid Margin="0,0,0,-12"
+                  Padding="16,0">
                 <!--  Wrapping the BreadcrumbBar in a Grid to avoid the title to drift (and no longer being aligned with the content of the page) when resizing the window. It's weird, I know. I believe it has to do with https://github.com/microsoft/microsoft-ui-xaml/issues/3842 doing funky things when setting a MaxWidth  -->
                 <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
                                     MaxWidth="1000"
@@ -167,11 +168,6 @@
             <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
                                      x:Uid="Nav_ColorSchemes"
                                      Tag="ColorSchemes_Nav" />
-
-
-            <muxc:NavigationViewItem x:Name="RenderingNavItem"
-                                     x:Uid="Nav_Rendering"
-                                     Tag="Rendering_Nav" />
 
             <muxc:NavigationViewItem x:Name="CompatibilityNavItem"
                                      x:Uid="Nav_Compatibility"

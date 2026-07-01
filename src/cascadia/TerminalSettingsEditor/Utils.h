@@ -79,6 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
     void ExpandAncestorsAndBringIntoView(const winrt::Windows::UI::Xaml::FrameworkElement& root, const winrt::Windows::UI::Xaml::Controls::Control& control);
+    winrt::Windows::UI::Xaml::Controls::Control ResolveFocusTarget(const winrt::Windows::UI::Xaml::Controls::Control& element);
 }
 
 // BODGY!
@@ -132,10 +133,14 @@ struct HasScrollViewer
             {
                 if (const auto& controlToFocus{ page->FindName(elementName).try_as<winrt::Windows::UI::Xaml::Controls::Control>() })
                 {
+                    // If the named element is a SettingsExpander/SettingsCard with an
+                    // interactive control in its Content, focus that inner control instead.
+                    const auto& target{ winrt::Microsoft::Terminal::Settings::ResolveFocusTarget(controlToFocus) };
+
                     // We need to wait for the page to be loaded
                     // or else the call to StartBringIntoView()
                     // will end up doing nothing.
-                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(page.template as<winrt::Windows::UI::Xaml::FrameworkElement>(), controlToFocus);
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(page.template as<winrt::Windows::UI::Xaml::FrameworkElement>(), target);
                 }
                 page->_loadedRevoker.revoke();
             }
