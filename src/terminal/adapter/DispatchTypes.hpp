@@ -510,6 +510,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         MemoryChecksum = DECPrivateStatus(63),
         DataIntegrity = DECPrivateStatus(75),
         MultipleSessionStatus = DECPrivateStatus(85),
+        ColorSchemeReport = DECPrivateStatus(996),
     };
 
     using ANSIStandardMode = FlaggedEnumValue<0x00000000>;
@@ -546,6 +547,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
         SO_SynchronizedOutput = DECPrivateMode(2026),
         GCM_GraphemeClusterMode = DECPrivateMode(2027),
+        ColorThemeUpdates = DECPrivateMode(2031),
         W32IM_Win32InputMode = DECPrivateMode(9001),
     };
 

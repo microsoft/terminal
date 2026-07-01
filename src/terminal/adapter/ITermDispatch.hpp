@@ -197,6 +197,8 @@ public:
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
 
     virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
+
+    virtual void ColorSchemeUpdated(const bool isDark, const bool paletteChanged) = 0; // Notify that the terminal's appearance was updated (records dark/light for CSI ? 996 n; may emit an unsolicited DECSET 2031 report)
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

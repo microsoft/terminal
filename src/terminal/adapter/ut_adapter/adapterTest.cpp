@@ -1743,6 +1743,59 @@ public:
         _testGetSet->ValidateInputEvent(L"\x1b[?83n");
     }
 
+    TEST_METHOD(DeviceStatus_ColorSchemeReportTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify a dark appearance reports a dark scheme (1).");
+        _testGetSet->PrepData();
+        _pDispatch->ColorSchemeUpdated(true, false);
+        _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ColorSchemeReport, {});
+        _testGetSet->ValidateInputEvent(L"\x1b[?997;1n");
+
+        Log::Comment(L"Test 2: Verify a light appearance reports a light scheme (2).");
+        _testGetSet->PrepData();
+        _pDispatch->ColorSchemeUpdated(false, false);
+        _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::ColorSchemeReport, {});
+        _testGetSet->ValidateInputEvent(L"\x1b[?997;2n");
+    }
+
+    TEST_METHOD(ColorSchemeUpdateNotificationTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: No notification is sent while the mode is disabled.");
+        _testGetSet->PrepData();
+        _pDispatch->ColorSchemeUpdated(true, false);
+        _pDispatch->ResetMode(DispatchTypes::ColorThemeUpdates);
+        _testGetSet->_response.clear();
+        _pDispatch->ColorSchemeUpdated(false, true);
+        VERIFY_IS_TRUE(_testGetSet->_response.empty());
+
+        Log::Comment(L"Test 2: A dark/light mode change alone sends a report (e.g. OS theme change with a single color scheme).");
+        _testGetSet->PrepData();
+        _pDispatch->ColorSchemeUpdated(true, false);
+        _pDispatch->SetMode(DispatchTypes::ColorThemeUpdates);
+        _testGetSet->_response.clear();
+        _pDispatch->ColorSchemeUpdated(false, false);
+        _testGetSet->ValidateInputEvent(L"\x1b[?997;2n");
+
+        Log::Comment(L"Test 3: A palette change alone (same mode) sends a report (e.g. user changed color scheme).");
+        _testGetSet->_response.clear();
+        _pDispatch->ColorSchemeUpdated(false, true);
+        _testGetSet->ValidateInputEvent(L"\x1b[?997;2n");
+
+        Log::Comment(L"Test 4: An update with neither a mode change nor a palette change sends nothing.");
+        _testGetSet->_response.clear();
+        _pDispatch->ColorSchemeUpdated(false, false);
+        VERIFY_IS_TRUE(_testGetSet->_response.empty());
+
+        Log::Comment(L"Test 5: A mode change back to dark sends a dark report (1).");
+        _testGetSet->_response.clear();
+        _pDispatch->ColorSchemeUpdated(true, false);
+        _testGetSet->ValidateInputEvent(L"\x1b[?997;1n");
+    }
+
     TEST_METHOD(DeviceAttributesTests)
     {
         Log::Comment(L"Starting test...");
@@ -2123,7 +2176,7 @@ public:
         // and DECRQM would not then be applicable.
 
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 9001}")
+            TEST_METHOD_PROPERTY(L"Data:modeNumber", L"{1, 3, 5, 6, 7, 8, 12, 25, 40, 66, 67, 69, 117, 1000, 1002, 1003, 1004, 1005, 1006, 1007, 1049, 2004, 2031, 9001}")
         END_TEST_METHOD_PROPERTIES()
 
         VTInt modeNumber;
