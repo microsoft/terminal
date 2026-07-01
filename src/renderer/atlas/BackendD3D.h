@@ -287,7 +287,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID3D11Texture2D> _customShaderTexture;
         wil::com_ptr<ID3D11ShaderResourceView> _customShaderTextureView;
         u64 _customShaderPerfTickMod = 0;
-        double _customShaderSecsPerPerfTick = 0.0;
+        f32 _customShaderSecsPerPerfTick = 0;
 
         wil::com_ptr<ID3D11Texture2D> _backgroundBitmap;
         wil::com_ptr<ID3D11ShaderResourceView> _backgroundBitmapView;

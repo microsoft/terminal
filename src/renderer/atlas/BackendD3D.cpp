@@ -531,7 +531,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         // digits not break the periodicity. For instance, with a wraparound of 1000 seconds sin(1.234*x) is still perfectly periodic.
         const auto freq = queryPerfFreq();
         _customShaderPerfTickMod = freq * 1000;
-        _customShaderSecsPerPerfTick = 1.0 / static_cast<double>(freq);
+        _customShaderSecsPerPerfTick = 1.0f / freq;
     }
 #endif
 }
@@ -2328,7 +2328,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     {
         // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
         const auto now = queryPerfCount();
-        const float time = static_cast<float>(static_cast<double>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick);
+        const auto time = (now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
 
         const CustomConstBuffer data{
             .time = time,
