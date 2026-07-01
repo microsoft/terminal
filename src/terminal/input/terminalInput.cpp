@@ -530,6 +530,8 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         // KKP> Additionally, all non text keypad keys will be reported [...] with CSI u encoding, [...].
 
         constexpr uint32_t ESCAPE = 27;
+        constexpr uint32_t F13 = 57376;
+        constexpr uint32_t F24 = 57387;
         constexpr uint32_t KP_0 = 57399; // The lowest keypad key
         constexpr uint32_t KP_BEGIN = 57427; // and the highest one
 
@@ -537,6 +539,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         {
             if (functionalKeyCode == ESCAPE ||
                 (functionalKeyCode <= 127 && enc.csiModifier != 0) ||
+                (functionalKeyCode >= F13 && functionalKeyCode <= F24) ||
                 (functionalKeyCode >= KP_0 && functionalKeyCode <= KP_BEGIN))
             {
                 enc.csiUnicodeKeyCode = functionalKeyCode;

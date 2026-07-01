@@ -292,6 +292,28 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;2:2u"), process(input, true, 'A', 0x1E, L'A', SHIFT_PRESSED));
     }
 
+    TEST_METHOD(PushDisambiguateReportsExtendedFunctionKeys)
+    {
+        auto input = TerminalInput{};
+        input.PushKittyFlags(D);
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57376u"), process(input, true, VK_F13, 0x64, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57377u"), process(input, true, VK_F14, 0x65, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57378u"), process(input, true, VK_F15, 0x66, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57379u"), process(input, true, VK_F16, 0x67, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57380u"), process(input, true, VK_F17, 0x68, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57381u"), process(input, true, VK_F18, 0x69, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57382u"), process(input, true, VK_F19, 0x6A, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57383u"), process(input, true, VK_F20, 0x6B, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57384u"), process(input, true, VK_F21, 0x6C, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57385u"), process(input, true, VK_F22, 0x6D, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57386u"), process(input, true, VK_F23, 0x6E, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[57387u"), process(input, true, VK_F24, 0x76, 0, 0));
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[15~"), process(input, true, VK_F5, 0x3F, 0, 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[24~"), process(input, true, VK_F12, 0x58, 0, 0));
+    }
+
     TEST_METHOD(KeyRepeatResetOnDifferentKey)
     {
         auto input = createInput(E | K);
