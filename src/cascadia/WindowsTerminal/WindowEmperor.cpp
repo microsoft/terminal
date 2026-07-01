@@ -1336,7 +1336,9 @@ void WindowEmperor::_persistState(const ApplicationState& state) const
         state.PersistedWindowLayouts(nullptr);
     }
 
-    if (_app.Logic().Settings().GlobalSettings().FirstWindowPreference() != FirstWindowPreference::DefaultProfile)
+    const auto& globalSettings = _app.Logic().Settings().GlobalSettings();
+    if (globalSettings.FirstWindowPreference() != FirstWindowPreference::DefaultProfile ||
+        globalSettings.RestoreWindowPosition())
     {
         for (const auto& w : _windows)
         {

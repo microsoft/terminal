@@ -166,11 +166,11 @@ namespace winrt::TerminalApp::implementation
         {
             _root->SetStartupActions(std::move(_initialContentArgs));
         }
-        else if (const auto& layout = LoadPersistedLayout())
+        else if (_settings.GlobalSettings().ShouldUsePersistedLayout() && LoadPersistedLayout())
         {
             // layout will only ever be non-null if there were >0 tabs persisted in
             // .TabLayout(). We can re-evaluate that as a part of TODO: GH#12633
-            _root->SetStartupActions(wil::to_vector(layout.TabLayout()));
+            _root->SetStartupActions(wil::to_vector(LoadPersistedLayout().TabLayout()));
         }
         else if (_appArgs)
         {
@@ -1180,7 +1180,21 @@ namespace winrt::TerminalApp::implementation
     // - non-null if there is a particular saved layout to use
     std::optional<uint32_t> TerminalWindow::LoadPersistedLayoutIdx() const
     {
-        return _settings.GlobalSettings().ShouldUsePersistedLayout() ? _loadFromPersistedLayoutIdx : std::nullopt;
+        if (_settings.GlobalSettings().ShouldUsePersistedLayout())
+        {
+            return _loadFromPersistedLayoutIdx;
+        }
+
+        if (_settings.GlobalSettings().RestoreWindowPosition())
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > 0)
+            {
+                return static_cast<uint32_t>(layouts.Size() - 1);
+            }
+        }
+
+        return std::nullopt;
     }
 
     WindowLayout TerminalWindow::LoadPersistedLayout()
@@ -1198,11 +1212,12 @@ namespace winrt::TerminalApp::implementation
             {
                 auto layout = layouts.GetAt(i);
 
-                // TODO: GH#12633: Right now, we're manually making sure that we
-                // have at least one tab to restore. If we ever want to come
-                // back and make it so that you can persist position and size,
-                // but not the tabs themselves, we can revisit this assumption.
-                _cachedLayout = (layout.TabLayout() && layout.TabLayout().Size() > 0) ? layout : nullptr;
+                // If we have tabs to restore, or if RestoreWindowPosition is enabled
+                // (which allows us to restore position/size even without tabs),
+                // then use this layout.
+                const auto hasTabLayout = layout.TabLayout() && layout.TabLayout().Size() > 0;
+                const auto shouldRestorePosition = _settings.GlobalSettings().RestoreWindowPosition();
+                _cachedLayout = (hasTabLayout || shouldRestorePosition) ? layout : nullptr;
                 return *_cachedLayout;
             }
         }

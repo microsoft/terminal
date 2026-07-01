@@ -2311,13 +2311,21 @@ namespace winrt::TerminalApp::implementation
 
     WindowLayout TerminalPage::GetWindowLayout()
     {
-        // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
-        // We shouldn't persist such windows.
-        const auto tabCount = _tabs.Size();
-        if (_startupState != StartupState::Initialized || tabCount == 0)
+        if (_startupState != StartupState::Initialized)
         {
             return nullptr;
         }
+
+        const auto& globalSettings = _settings.GlobalSettings();
+        const auto restoreWindowPosition = globalSettings.RestoreWindowPosition();
+        const auto shouldPersistLayout = globalSettings.ShouldUsePersistedLayout();
+
+        if (!restoreWindowPosition && !shouldPersistLayout)
+        {
+            return;
+        }
+
+        const auto tabCount = _tabs.Size();
 
         std::vector<ActionAndArgs> actions;
 
@@ -2329,7 +2337,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Avoid persisting a window with zero tabs, because `BuildStartupActions` happened to return an empty vector.
-        if (actions.empty())
+        if (actions.empty() && !restoreWindowPosition)
         {
             return nullptr;
         }
@@ -2358,7 +2366,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         WindowLayout layout;
-        layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+        if (!actions.empty())
+        {
+            layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+        }
 
         auto mode = LaunchMode::DefaultMode;
         WI_SetFlagIf(mode, LaunchMode::FullscreenMode, _isFullscreen);
