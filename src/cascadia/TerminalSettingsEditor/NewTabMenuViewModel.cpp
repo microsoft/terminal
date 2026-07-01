@@ -325,7 +325,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         SelectedProfile(AvailableProfiles().GetAt(0));
 
-        _rootEntries = _ConvertToViewModelEntries(_Settings.GlobalSettings().NewTabMenu(), _Settings);
+        _rootEntries = _ConvertToViewModelEntries(_Settings.WindowSettingsDefaults().NewTabMenu(), _Settings);
         _rootEntriesChangedRevoker = _rootEntries.VectorChanged(winrt::auto_revoke, [this](auto&&, const IVectorChangedEventArgs& args) {
             switch (args.CollectionChange())
             {
@@ -337,25 +337,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     modelEntries.push_back(NewTabMenuEntryViewModel::GetModel(entry));
                 }
-                _Settings.GlobalSettings().NewTabMenu(single_threaded_vector<Model::NewTabMenuEntry>(std::move(modelEntries)));
+                _Settings.WindowSettingsDefaults().NewTabMenu(single_threaded_vector<Model::NewTabMenuEntry>(std::move(modelEntries)));
                 return;
             }
             case CollectionChange::ItemInserted:
             {
                 const auto& insertedEntryVM = _rootEntries.GetAt(args.Index());
                 const auto& insertedEntry = NewTabMenuEntryViewModel::GetModel(insertedEntryVM);
-                _Settings.GlobalSettings().NewTabMenu().InsertAt(args.Index(), insertedEntry);
+                _Settings.WindowSettingsDefaults().NewTabMenu().InsertAt(args.Index(), insertedEntry);
                 return;
             }
             case CollectionChange::ItemRemoved:
             {
-                _Settings.GlobalSettings().NewTabMenu().RemoveAt(args.Index());
+                _Settings.WindowSettingsDefaults().NewTabMenu().RemoveAt(args.Index());
                 return;
             }
             case CollectionChange::ItemChanged:
             {
                 const auto& modifiedEntry = _rootEntries.GetAt(args.Index());
-                _Settings.GlobalSettings().NewTabMenu().SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
+                _Settings.WindowSettingsDefaults().NewTabMenu().SetAt(args.Index(), NewTabMenuEntryViewModel::GetModel(modifiedEntry));
                 return;
             }
             }

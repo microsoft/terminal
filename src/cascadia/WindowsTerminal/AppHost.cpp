@@ -130,7 +130,10 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
 {
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
-    _windowLogic = _appLogic.CreateNewWindow();
+    //
+    // Pass the WindowName along to CreateNewWindow, so that the AppLogic can
+    // pick up per-window startupActions (rather than just the defaults).
+    _windowLogic = _appLogic.CreateNewWindow(windowArgs.WindowName());
 
     if (const auto layout = windowArgs.PersistedLayout())
     {
@@ -991,7 +994,7 @@ void _frameColorHelper(const HWND h, const COLORREF color)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _appLogic.Settings().GlobalSettings().CurrentTheme();
+    auto theme = _windowLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
