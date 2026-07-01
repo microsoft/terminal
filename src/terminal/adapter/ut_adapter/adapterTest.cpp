@@ -4103,6 +4103,25 @@ public:
         return idx < pixels.size() ? pixels[idx] : RGBQUAD{};
     }
 
+    // Counts device-pixel columns whose pixel in the given row exactly matches a color.
+    // A sixel column is one device pixel wide, so with a transparent background this
+    // yields the precise drawn width -- unlike the slice's cell-rounded PixelWidth(),
+    // which an opaque (row-filling) background inflates to the full row.
+    static int CountColorColumnsInRow(const ImageSlice* slice, til::CoordType py, BYTE r, BYTE g, BYTE b)
+    {
+        auto count = 0;
+        const auto width = slice->PixelWidth();
+        for (til::CoordType px = 0; px < width; px++)
+        {
+            const auto p = SlicePixelAt(slice, px, py);
+            if (p.rgbRed == r && p.rgbGreen == g && p.rgbBlue == b)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // Baseline smoke test: the simplest valid sixel (one color, one full column) must produce a
     // rendered image slice whose pixels contain the declared color. The other tests assume this
     // fundamental path works, so this is the canary if the Sixel pipeline breaks entirely.
@@ -4152,29 +4171,34 @@ public:
     }
 
     // '!N' run-length compression must be exactly equivalent to N explicit sixels; this guards the
-    // repeat decoder against off-by-one or leftover-count bugs by comparing the repeated form's
-    // slice width to the twelve-explicit form.
+    // repeat decoder against off-by-one or leftover-count bugs. A transparent background (P2=1) is
+    // used so the drawn width reflects the run-length expansion itself -- with an opaque background
+    // both forms fill the whole row, so the count of drawn columns (not PixelWidth()) is asserted.
     TEST_METHOD(SixelRepeatMatchesExplicit)
     {
         _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0!12~\x1b\\");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0!12~\x1b\\");
         til::CoordType repeatRow = -1;
         const auto repeatSlice = FindFirstImageSlice(*_testGetSet->_textBuffer, repeatRow);
         VERIFY_IS_NOT_NULL(repeatSlice);
-        const auto repeatWidth = repeatSlice->PixelWidth();
+        const auto repeatColumns = CountColorColumnsInRow(repeatSlice, 0, 255, 0, 0);
 
         _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~~~~~~~~~~~~\x1b\\");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~~~~~~~~~~~~\x1b\\");
         til::CoordType explicitRow = -1;
         const auto explicitSlice = FindFirstImageSlice(*_testGetSet->_textBuffer, explicitRow);
         VERIFY_IS_NOT_NULL(explicitSlice);
+        const auto explicitColumns = CountColorColumnsInRow(explicitSlice, 0, 255, 0, 0);
 
-        VERIFY_ARE_EQUAL(explicitSlice->PixelWidth(), repeatWidth, L"!12~ should match twelve explicit sixels.");
+        VERIFY_ARE_EQUAL(12, explicitColumns, L"Twelve explicit sixels must draw twelve columns.");
+        VERIFY_ARE_EQUAL(explicitColumns, repeatColumns, L"!12~ must draw the same twelve columns as twelve explicit sixels.");
     }
 
     // Exercises the HLS -> RGB conversion (sixel color format 1), a separate decode path from the
-    // RGB format (2) used by the other tests. HLS 120;50;100 is pure red, so it must resolve to
-    // the same pixel as an RGB red -- isolating the HLS math.
+    // RGB format (2) used by the other tests. In DEC's HLS convention (hue 0 deg = blue, 120 deg =
+    // red) HLS 120;50;100 is pure red, so it must resolve to the same pixel as an RGB red --
+    // isolating the HLS math. (Color introducer: VT330/VT340 Programmer Reference, Ch.14 Sixel
+    // Graphics -- https://vt100.net/docs/vt3xx-gp/chapter14.html)
     TEST_METHOD(SixelHlsColorMatchesRgb)
     {
         _testGetSet->PrepData();
@@ -4352,12 +4376,18 @@ public:
 
         const auto replaced = _testGetSet->_textBuffer->GetRowByOffset(row).GetImageSlice();
         VERIFY_IS_NOT_NULL(replaced);
-        VERIFY_ARE_EQUAL(sixelCell.height, replaced->CellSize().height, L"Sixel must replace a mismatched-cell slice with its own cell size.");
+        // The guard compares the FULL cell size (`CellSize() != _cellSize`), so assert BOTH
+        // dimensions were replaced -- a width-only mismatch must trigger it too. Without the
+        // guard the foreign slice would survive and these would report its shrunken size.
+        VERIFY_ARE_EQUAL(sixelCell.width, replaced->CellSize().width, L"Sixel must replace a mismatched-cell slice with its own cell width.");
+        VERIFY_ARE_EQUAL(sixelCell.height, replaced->CellSize().height, L"Sixel must replace a mismatched-cell slice with its own cell height.");
         VERIFY_IS_TRUE(SliceContainsColor(replaced, 0, 0, 255), L"The Sixel image must render after replacing the slice (no overflow).");
     }
 
     // Raster attributes (") are parsed; a zero x-aspect (the division-by-zero guard)
     // and an oversized raster size must not crash and must stay screen-bounded.
+    // (Raster attributes " Pan;Pad;Ph;Pv: VT330/VT340 Programmer Reference, Ch.14 Sixel
+    //  Graphics -- https://vt100.net/docs/vt3xx-gp/chapter14.html)
     TEST_METHOD(SixelRasterAttributesAreBounded)
     {
         _testGetSet->PrepData();
@@ -4381,43 +4411,74 @@ public:
         // Red across three columns, then '$' back to start, then blue on the first column.
         _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~~~$#1;2;0;0;100~\x1b\\");
         const auto& buffer = *_testGetSet->_textBuffer;
-        VERIFY_IS_TRUE(BufferContainsColor(buffer, 0, 0, 255), L"Blue overlaid via '$' should render.");
-        VERIFY_IS_TRUE(BufferContainsColor(buffer, 255, 0, 0), L"Red should remain where it was not overlaid.");
+        til::CoordType overlayRow = -1;
+        const auto slice = FindFirstImageSlice(buffer, overlayRow);
+        VERIFY_IS_NOT_NULL(slice);
+        // '$' returned to the band start, so column 0 must now be the BLUE overlay while the
+        // columns the overlay didn't cover keep the original red. Asserting exact columns (not
+        // just "blue exists somewhere") is what actually proves the graphics carriage return:
+        // had '$' failed, the blue '~' would have drawn at column 3, leaving column 0 red.
+        const auto col0 = SlicePixelAt(slice, 0, 0);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(0), col0.rgbRed, L"Column 0 was overlaid, so it is no longer red.");
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(255), col0.rgbBlue, L"Column 0 shows the blue overlaid at the band start via '$'.");
+        const auto col2 = SlicePixelAt(slice, 2, 0);
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(255), col2.rgbRed, L"Column 2 keeps the original red the overlay did not cover.");
+        VERIFY_ARE_EQUAL(static_cast<BYTE>(0), col2.rgbBlue, L"Column 2 was not overlaid, so it has no blue.");
         VERIFY_ARE_EQUAL(1, CountImageRows(buffer), L"'$' overlays the same band; it must not advance to a new row.");
     }
 
-    // P1=9 selects pixel aspect ratio 1:1 - a separately optimized render path that
-    // none of the other tests (all aspect 2) exercise.
+    // P1=9 selects pixel aspect ratio 1:1, a separately optimized render path that none of the
+    // other tests (all default 2:1) exercise. Beyond "it renders", assert the geometry actually
+    // differs: 1:1 pixels are half as tall as the default 2:1, so the SAME six-band image must
+    // occupy no more buffer rows at 1:1 than at 2:1 (fewer once it crosses a cell boundary).
+    // Transparent background (P2=1) so row occupancy reflects the drawn content's height.
     TEST_METHOD(SixelAspectRatioOneRenders)
     {
+        // Six green bands at the default 2:1 aspect (pixels twice as tall).
         _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bP9q#0;2;0;100;0~\x1b\\"); // green, 1:1 aspect
-        til::CoordType row = -1;
-        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
-        VERIFY_IS_NOT_NULL(slice);
-        VERIFY_IS_TRUE(SliceContainsColor(slice, 0, 255, 0), L"The 1:1 aspect render path should render the image.");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;0;100;0~-~-~-~-~-~\x1b\\");
+        const auto tallRows = CountImageRows(*_testGetSet->_textBuffer);
+
+        // The same six bands at 1:1 (square pixels) -- half the device height.
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bP9;1q#0;2;0;100;0~-~-~-~-~-~\x1b\\");
+        til::CoordType squareRow = -1;
+        const auto squareSlice = FindFirstImageSlice(*_testGetSet->_textBuffer, squareRow);
+        VERIFY_IS_NOT_NULL(squareSlice);
+        const auto squareRows = CountImageRows(*_testGetSet->_textBuffer);
+
+        VERIFY_IS_TRUE(SliceContainsColor(squareSlice, 0, 255, 0), L"The 1:1 aspect render path should render the image.");
+        VERIFY_IS_TRUE(squareRows <= tallRows, L"1:1 (square) pixels are half as tall, so must occupy no more rows than 2:1.");
     }
 
-    // '!1' is the lower boundary of the run-length parser; it must be identical to a single bare
-    // sixel. Guards an off-by-one where a count of 1 could draw zero or two columns.
+    // '!1' is the lower boundary of the run-length parser; it must draw exactly one column,
+    // identical to a bare '~'. Guards an off-by-one where a count of 1 could draw zero or two
+    // columns. Transparent background (P2=1) + an exact drawn-column count is required: an
+    // opaque background would hide the miscount behind a full-row-width slice.
     TEST_METHOD(SixelRepeatCountOne)
     {
         _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~\x1b\\");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~\x1b\\");
         til::CoordType r1 = -1;
         const auto single = FindFirstImageSlice(*_testGetSet->_textBuffer, r1);
         VERIFY_IS_NOT_NULL(single);
-        const auto singleWidth = single->PixelWidth();
+        const auto singleColumns = CountColorColumnsInRow(single, 0, 255, 0, 0);
 
         _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0!1~\x1b\\");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0!1~\x1b\\");
         til::CoordType r2 = -1;
         const auto repeated = FindFirstImageSlice(*_testGetSet->_textBuffer, r2);
         VERIFY_IS_NOT_NULL(repeated);
-        VERIFY_ARE_EQUAL(singleWidth, repeated->PixelWidth(), L"!1~ must match a single ~.");
+        const auto repeatedColumns = CountColorColumnsInRow(repeated, 0, 255, 0, 0);
+
+        VERIFY_ARE_EQUAL(1, singleColumns, L"A bare '~' draws exactly one column.");
+        VERIFY_ARE_EQUAL(singleColumns, repeatedColumns, L"!1~ must draw the same single column as a bare '~'.");
     }
 
-    // HLS and RGB define the same color, and the HLS hue wraps modulo 360.
+    // HLS and RGB can define the same color. WT also wraps the HLS hue modulo 360
+    // (Utils::ColorFromHLS does `hue = h % 360`), so hue 480 resolves to 120. NOTE this is
+    // WT's own leniency, not cross-emulator parity -- xterm instead rejects hue > 360. This
+    // test pins WT's documented behavior; it is not a claim about the DEC spec or xterm.
     TEST_METHOD(SixelHlsEquivalentToRgb)
     {
         _testGetSet->PrepData();
@@ -4440,7 +4501,9 @@ public:
         VERIFY_ARE_EQUAL(rgb.rgbBlue, wrapped.rgbBlue);
     }
 
-    // An RGB component of 50/100 rounds to 128 ((50*255 + 50) / 100).
+    // Percent color channels (0..100) are converted to WT's internal 8-bit values; 50% -> 128
+    // via ((50*255 + 50) / 100). This pins WT's own conversion/rounding -- the DEC spec defines
+    // only the 0..100 percent input, not the resulting 8-bit value.
     TEST_METHOD(SixelRgb100MidpointRounding)
     {
         _testGetSet->PrepData();
