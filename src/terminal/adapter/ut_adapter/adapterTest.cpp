@@ -4103,6 +4103,9 @@ public:
         return idx < pixels.size() ? pixels[idx] : RGBQUAD{};
     }
 
+    // Baseline smoke test: the simplest valid sixel (one color, one full column) must produce a
+    // rendered image slice whose pixels contain the declared color. The other tests assume this
+    // fundamental path works, so this is the canary if the Sixel pipeline breaks entirely.
     TEST_METHOD(SixelBasicRedImageTest)
     {
         _testGetSet->PrepData();
@@ -4130,13 +4133,13 @@ public:
         VERIFY_IS_TRUE(foundRed, L"The image should contain the red pixel defined by the sixel data.");
     }
 
+    // The default (P2=0) opaque background is painted across the full available row width, so even
+    // a one-column sixel yields a slice spanning the whole buffer. Pins that width contract; the
+    // transparent-background counterpart below asserts the opposite, so a background-handling
+    // regression flips exactly one of the pair.
     TEST_METHOD(SixelOpaqueBackgroundFillsRow)
     {
         _testGetSet->PrepData();
-
-        // With the default (opaque) background select, the sixel fills its
-        // background across the full available row width, so the slice spans the
-        // whole buffer width.
         _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~\x1b\\");
 
         const auto& buffer = *_testGetSet->_textBuffer;
@@ -4148,9 +4151,11 @@ public:
         VERIFY_ARE_EQUAL(buffer.GetSize().Width() * slice->CellSize().width, slice->PixelWidth());
     }
 
+    // '!N' run-length compression must be exactly equivalent to N explicit sixels; this guards the
+    // repeat decoder against off-by-one or leftover-count bugs by comparing the repeated form's
+    // slice width to the twelve-explicit form.
     TEST_METHOD(SixelRepeatMatchesExplicit)
     {
-        // '!12~' (repeat) must produce the same slice as twelve explicit '~'.
         _testGetSet->PrepData();
         _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0!12~\x1b\\");
         til::CoordType repeatRow = -1;
@@ -4167,12 +4172,12 @@ public:
         VERIFY_ARE_EQUAL(explicitSlice->PixelWidth(), repeatWidth, L"!12~ should match twelve explicit sixels.");
     }
 
+    // Exercises the HLS -> RGB conversion (sixel color format 1), a separate decode path from the
+    // RGB format (2) used by the other tests. HLS 120;50;100 is pure red, so it must resolve to
+    // the same pixel as an RGB red -- isolating the HLS math.
     TEST_METHOD(SixelHlsColorMatchesRgb)
     {
         _testGetSet->PrepData();
-
-        // HLS hue=120, lum=50, sat=100 decodes to pure red in the sixel color
-        // space (matches the existing color-parsing coverage in ScreenBufferTests).
         _stateMachine->ProcessString(L"\x1bPq#0;1;120;50;100~\x1b\\");
 
         const auto& buffer = *_testGetSet->_textBuffer;
@@ -4261,7 +4266,9 @@ public:
         VERIFY_IS_FALSE(BufferContainsColor(*_testGetSet->_textBuffer, 255, 0, 0), L"An empty sixel must not produce colored content.");
     }
 
-    // Multiple color registers within one image are each rendered.
+    // Switching the color register mid-image (#0 draws, then #1 draws) must apply per column so
+    // both colors appear -- guards that a '#Pc' select updates the active color mid-stream instead
+    // of latching the first register.
     TEST_METHOD(SixelMultipleColorsRendered)
     {
         _testGetSet->PrepData();
@@ -4290,7 +4297,9 @@ public:
         VERIFY_IS_TRUE(slice->PixelWidth() <= buffer.GetSize().Width() * slice->CellSize().width, L"An oversized image should be bounded by the row width.");
     }
 
-    // The image is placed at the cursor's column.
+    // Sixel images anchor at the CURRENT cursor column, not column 0. After advancing the cursor
+    // with text, a (transparent, non-row-filling) image must start its slice at that column --
+    // guards cursor-relative horizontal placement.
     TEST_METHOD(SixelImageRendersAtCursorColumn)
     {
         _testGetSet->PrepData();
@@ -4389,7 +4398,8 @@ public:
         VERIFY_IS_TRUE(SliceContainsColor(slice, 0, 255, 0), L"The 1:1 aspect render path should render the image.");
     }
 
-    // A repeat count of one matches a single sixel.
+    // '!1' is the lower boundary of the run-length parser; it must be identical to a single bare
+    // sixel. Guards an off-by-one where a count of 1 could draw zero or two columns.
     TEST_METHOD(SixelRepeatCountOne)
     {
         _testGetSet->PrepData();
@@ -4444,7 +4454,9 @@ public:
         VERIFY_ARE_EQUAL(static_cast<BYTE>(128), p.rgbBlue);
     }
 
-    // A bare '#Pc' selects a previously defined color register.
+    // Sixel has two '#' forms: '#Pc;...' DEFINES a register while a bare '#Pc' SELECTS a
+    // previously defined one. This pins the bare-select form (define 0 and 1 up front, then switch
+    // by bare id) so the parser doesn't conflate select with define or drop earlier definitions.
     TEST_METHOD(SixelBareColorRegisterSelect)
     {
         _testGetSet->PrepData();
