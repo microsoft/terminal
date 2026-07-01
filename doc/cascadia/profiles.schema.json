@@ -2906,6 +2906,85 @@
           "description": "Sets the sound played when the application emits a BEL. When set to an array, the terminal will pick one of those sounds at random.",
           "$ref": "#/$defs/BellSound"
         },
+        "notifyOnActivity": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "taskbar",
+                  "audible",
+                  "tab",
+                  "notification"
+                ]
+              }
+            },
+            {
+              "type": "string",
+              "enum": [
+                "taskbar",
+                "audible",
+                "tab",
+                "notification",
+                "all",
+                "none"
+              ]
+            }
+          ],
+          "description": "Controls how you are notified when an inactive tab produces new output."
+        },
+        "notifyOnNextPrompt": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "taskbar",
+                  "audible",
+                  "tab",
+                  "notification"
+                ]
+              }
+            },
+            {
+              "type": "string",
+              "enum": [
+                "taskbar",
+                "audible",
+                "tab",
+                "notification",
+                "all",
+                "none"
+              ]
+            }
+          ],
+          "description": "Controls how you are notified when a new shell prompt is detected. Requires shell integration."
+        },
+        "notifyOnActivityThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5,
+          "description": "Minimum number of seconds between consecutive activity notifications for this profile. Use this to suppress repeated notifications from chatty processes. The first notification after the pane has been silent always fires; subsequent notifications within this window are suppressed. Use 0 to always notify."
+        },
+        "notifyOnNextPromptThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5,
+          "description": "Suppress the next-prompt notification unless the just-finished command ran for at least this many seconds. Requires shell integration. Use 0 to always notify."
+        },
+        "autoDetectRunningCommand": {
+          "default": false,
+          "description": "Automatically detect when a command is running and show a progress indicator in the tab and taskbar.",
+          "type": "boolean"
+        },
         "closeOnExit": {
           "default": "automatic",
           "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",

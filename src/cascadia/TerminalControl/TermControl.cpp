@@ -394,6 +394,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
+        _revokers.PromptStarted = _core.PromptStarted(winrt::auto_revoke, { get_weak(), &TermControl::_corePromptStarted });
+        _revokers.OutputStarted = _core.OutputStarted(winrt::auto_revoke, { get_weak(), &TermControl::_coreOutputStarted });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -3357,7 +3359,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const uint64_t TermControl::TaskbarState() const noexcept
+    const Control::TaskbarState TermControl::TaskbarState() const noexcept
     {
         return _core.TaskbarState();
     }
@@ -3727,6 +3729,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _playWarningBell->Run();
     }
 
+    void TermControl::_corePromptStarted(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        PromptStarted.raise(*this, nullptr);
+    }
+
+    void TermControl::_coreOutputStarted(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        OutputStarted.raise(*this, nullptr);
+    }
+
     hstring TermControl::ReadEntireBuffer() const
     {
         return _core.ReadEntireBuffer();
@@ -3844,6 +3856,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_coreOutputIdle(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _refreshSearch();
+        OutputIdle.raise(*this, nullptr);
     }
 
     void TermControl::OwningHwnd(uint64_t owner)
