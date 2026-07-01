@@ -30,6 +30,7 @@ Abstract:
 #define SCREEN_BUFFER_POINTER(X, Y, XSIZE, CELLSIZE) (((XSIZE * (Y)) + (X)) * (ULONG)CELLSIZE)
 #include <shellapi.h>
 
+#include <ShObjIdl.h>
 #include <securityappcontainer.h>
 
 #include <condrv.h>
