@@ -276,7 +276,7 @@
     <value>Después de la pestaña actual</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
+  <data name="Globals_CopyOnSelect.Content" xml:space="preserve">
     <value>Copiar la selección automáticamente en el portapapeles</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
@@ -490,13 +490,9 @@
     <value>Adjuntar a la ventana de uso más reciente en este escritorio</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
     <value>Ocultar la barra de título (requiere reiniciar)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
-  </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>Cuando está deshabilitada, la barra de título aparecerá encima de las pestañas.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Usar material acrílico en la fila de tabulación</value>
@@ -636,7 +632,7 @@
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Apariencia</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+    <comment>Header for the "personalization" menu item. This navigates to a page that lets you see and modify settings related to personalizing the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Combinaciones de colores</value>
@@ -1702,7 +1698,7 @@
     <value>Ajuste la opacidad del terminal desplazándose mientras mantiene presionadas las teclas CTRL y Mayús</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Animaciones de panel</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>

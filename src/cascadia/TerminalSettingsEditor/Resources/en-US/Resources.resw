@@ -276,7 +276,7 @@
     <value>After the current tab</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
+  <data name="Globals_CopyOnSelect.Content" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
@@ -490,13 +490,17 @@
     <value>Attach to the most recently used window on this desktop</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>When disabled, the title bar will appear above the tabs.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
+  <data name="Globals_TitlebarProperties.Header" xml:space="preserve">
+    <value>Title bar properties</value>
+    <comment>Header for a group of settings that control the appearance and behavior of the title bar.</comment>
+  </data>
+  <data name="Globals_TitlebarProperties.Description" xml:space="preserve">
+    <value>When the title bar is hidden, tabs move into the title bar and are always shown.</value>
+    <comment>A description explaining what happens to the tabs when the title bar is hidden. "Title bar" refers to the bar at the top of the window.</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Use acrylic material in the tab row</value>
@@ -636,7 +640,7 @@
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Personalization</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+    <comment>Header for the "personalization" menu item. This navigates to a page that lets you see and modify settings related to personalizing the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
@@ -1714,7 +1718,7 @@
     <value>Adjust terminal opacity by scrolling while holding the Ctrl and Shift keys</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
@@ -2802,6 +2806,10 @@
     <value>Mouse and scrolling</value>
     <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
   </data>
+  <data name="Interaction_CopyBehavior.Header" xml:space="preserve">
+    <value>Copy behavior</value>
+    <comment>Header for a group of settings related to copying text to the clipboard.</comment>
+  </data>
   <data name="Interaction_PasteBehavior.Header" xml:space="preserve">
     <value>Paste behavior</value>
     <comment>Header for a group of settings related to cleanup and confirmation behavior for incoming pastes.</comment>
@@ -2823,7 +2831,7 @@
     <comment>Title of a section that groups settings related to the terminal's visual appearance.</comment>
   </data>
   <data name="Globals_Section_TabsLayout.Text" xml:space="preserve">
-    <value>Tabs and titlebar</value>
+    <value>Tabs and title bar</value>
     <comment>Title of a section that groups settings related to tabs and pane layout.</comment>
   </data>
   <data name="Globals_Section_WindowBehavior.Text" xml:space="preserve">

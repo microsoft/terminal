@@ -276,7 +276,7 @@
     <value>현재 탭 이후</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
+  <data name="Globals_CopyOnSelect.Content" xml:space="preserve">
     <value>선택 영역을 클립보드에 자동으로 복사</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
@@ -490,13 +490,9 @@
     <value>이 데스크톱에서 가장 최근에 사용한 창에 첨부</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
     <value>제목 표시줄 숨기기(다시 시작해야 함)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
-  </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>사용하지 않도록 설정하면 제목 표시줄이 탭 위에 표시됩니다.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
   <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>탭 행에서 아크릴 재질 사용</value>
@@ -636,7 +632,7 @@
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>모양</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+    <comment>Header for the "personalization" menu item. This navigates to a page that lets you see and modify settings related to personalizing the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>색 구성표</value>
@@ -1702,7 +1698,7 @@
     <value>Ctrl 키와 Shift 키를 누른 상태에서 스크롤하여 터미널 불투명도 조정</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>창 애니메이션</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
