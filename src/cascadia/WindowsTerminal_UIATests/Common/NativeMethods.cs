@@ -398,6 +398,8 @@ namespace WindowsTerminal.UIA.Tests.Common.NativeMethods
     public static class User32
     {
         // http://msdn.microsoft.com/en-us/library/windows/desktop/dd162897(v=vs.85).aspx
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
         {
@@ -417,13 +419,38 @@ namespace WindowsTerminal.UIA.Tests.Common.NativeMethods
         public const int WHEEL_DELTA = 120;
 
         [DllImport("user32.dll")]
+        public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
         public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport("user32.dll")]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
+        [DllImport("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        public static extern int GetSystemMetrics(int nIndex);
+
         public const int GWL_STYLE = (-16);
         public const int GWL_EXSTYLE = (-20);
+        public const int SM_CXSCREEN = 0;
+        public const int SM_CYSCREEN = 1;
+        public const uint SWP_NOZORDER = 0x0004;
+        public const uint SWP_SHOWWINDOW = 0x0040;
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
@@ -442,6 +469,7 @@ namespace WindowsTerminal.UIA.Tests.Common.NativeMethods
             WM_MOUSEWHEEL = 0x020A,
             WM_MOUSEHWHEEL = 0x020E,
             WM_USER = 0x0400,
+            CM_UIA_SELECT_TAB_RANGE = WM_USER + 1,
             CM_SET_KEY_STATE = WM_USER + 18
         }
 
