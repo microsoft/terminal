@@ -430,6 +430,7 @@
                 <AutoSuggestBox x:Name="ShortcutActionBox"
                                 MinWidth="248"
                                 AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
+                                GettingFocus="ShortcutActionBox_GettingFocus"
                                 GotFocus="ShortcutActionBox_GotFocus"
                                 LostFocus="ShortcutActionBox_LostFocus"
                                 QuerySubmitted="ShortcutActionBox_QuerySubmitted"
@@ -438,8 +439,7 @@
 
             <!--  Key bindings  -->
             <StackPanel x:Name="KeyBindingsContainer"
-                        Spacing="4"
-                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.HasNoKeyChords), Mode=OneWay}">
+                        Spacing="4">
                 <TextBlock x:Uid="EditAction_KeyBindings"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
 
@@ -462,7 +462,8 @@
                               HorizontalContentAlignment="Stretch"
                               IsTabStop="False"
                               ItemTemplate="{StaticResource KeyChordTemplate}"
-                              ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}">
+                              ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
+                              Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.HasNoKeyChords), Mode=OneWay}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Vertical"
