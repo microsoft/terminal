@@ -486,14 +486,20 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::UI::Xaml::Controls::TabViewItem item{ nullptr };
             winrt::Windows::UI::Xaml::Media::TranslateTransform dragTransform{ nullptr };
             winrt::Windows::UI::Xaml::UIElement::PointerCaptureLost_revoker pointerCaptureLost;
+
+            void reset()
+            {
+                // Revoke first so the handler can't fire as we drop the rest of the state.
+                pointerCaptureLost.revoke();
+                *this = PointerReorderState{};
+            }
         };
         PointerReorderState _pointerReorder{};
-        static constexpr double _pointerReorderThresholdPx{ 8.0 };
-        void _OnTabPointerMoved(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        void _BeginPointerReorder(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& item,
-                                  const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
-        void _UpdatePointerReorder(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
-        void _EndPointerReorder();
+        void _OnTabElevatedPointerMoved(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _BeginElevatedPointerReorder(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& item,
+                                          const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _UpdateElevatedPointerReorder(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _EndElevatedPointerReorder();
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
