@@ -1443,6 +1443,15 @@ void Pane::_CloseChild(const bool closeFirst)
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
 
+        // Remember whether the surviving child's pane header was visible. We
+        // recreate our own header collapsed below (see _CreatePaneHeader), so we
+        // must restore this state; otherwise a pane promoted to a leaf during a
+        // close would lose its header even though multiple panes still remain
+        // (this can happen for closes in an inactive subtree that don't trigger
+        // an active-pane update in the Tab).
+        const auto showPaneHeader = remainingChild->_paneHeaderBorder &&
+                                    remainingChild->_paneHeaderBorder.Visibility() == winrt::Windows::UI::Xaml::Visibility::Visible;
+
         // If we or either of our children was focused, we want to take that
         // focus from them.
         _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
@@ -1499,6 +1508,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // Release our children.
         _firstChild = nullptr;
         _secondChild = nullptr;
+
+        // Now that we're a leaf again, restore the pane header visibility we
+        // captured above (_CreatePaneHeader always starts collapsed).
+        ShowPaneHeaders(showPaneHeader);
     }
     else
     {
@@ -1795,6 +1808,12 @@ void Pane::_CreatePaneHeader()
     _paneHeaderBorder.Padding({ 0, 0, 0, 0 });
     _paneHeaderBorder.Child(_paneHeaderText);
     _paneHeaderBorder.Visibility(WUX::Visibility::Collapsed);
+
+    // Focus this pane when its header is tapped. Without this, the tap bubbles
+    // up to the parent pane's border handler, which would focus the parent's
+    // first child (the wrong pane). _borderTappedHandler focuses this leaf and
+    // marks the event handled so it doesn't bubble.
+    _paneHeaderBorder.Tapped({ this, &Pane::_borderTappedHandler });
 }
 
 // Method Description:
