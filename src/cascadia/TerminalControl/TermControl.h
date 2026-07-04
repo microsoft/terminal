@@ -317,6 +317,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _showMarksInScrollbar{ false };
 
         std::optional<SafeDispatcherTimer> _resizeOverlayTimer;
+        int _lastResizeOverlayCols{ 0 };
+        int _lastResizeOverlayRows{ 0 };
         void _ShowResizeOverlay();
 
         bool _isBackgroundLight{ false };
