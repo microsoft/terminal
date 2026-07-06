@@ -1299,6 +1299,30 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Re-evaluates whether the per-pane title headers should be visible. Headers
+    //   are shown only when the "showPaneHeaders" global setting is enabled AND the
+    //   tab currently has more than one pane. Calling this after any structural
+    //   change (split/close) keeps the header state correct - in particular it hides
+    //   the header when the tab collapses back to a single pane.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_UpdatePaneHeaderVisibility()
+    {
+        auto showHeaders = false;
+        try
+        {
+            // Make sure to try/catch this, because the LocalTests won't be
+            // able to use this helper.
+            showHeaders = winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings().GlobalSettings().ShowPaneHeaders();
+        }
+        CATCH_LOG();
+
+        _rootPane->ShowPaneHeaders(showHeaders && _rootPane->GetLeafPaneCount() > 1);
+    }
+
+    // Method Description:
     // - Mark the given pane as the active pane in this tab. All other panes
     //   will be marked as inactive. We'll also update our own UI state to
     //   reflect this newly active pane.
@@ -1336,8 +1360,9 @@ namespace winrt::TerminalApp::implementation
         if (_rootPane->GetLeafPaneCount() == 1)
         {
             _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
-            _rootPane->ShowPaneHeaders(false);
         }
+
+        _UpdatePaneHeaderVisibility();
 
         _RecalculateAndApplyReadOnly();
 
@@ -1399,6 +1424,15 @@ namespace winrt::TerminalApp::implementation
                         tab->_UpdateActivePane(sender);
                         tab->_RecalculateAndApplyTabColor();
                     }
+                }
+                else
+                {
+                    // The already-active pane raised GotFocus without the active
+                    // pane changing. This happens when a pane is promoted to a
+                    // leaf during a close (see Pane::_CloseChild). Re-evaluate
+                    // header visibility so collapsing back to a single pane hides
+                    // the header even though _UpdateActivePane isn't called here.
+                    tab->_UpdatePaneHeaderVisibility();
                 }
                 tab->_focusState = WUX::FocusState::Programmatic;
                 // This tab has gained focus, remove the bell indicator if it is active

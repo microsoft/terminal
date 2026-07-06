@@ -1486,6 +1486,14 @@ void Pane::_CloseChild(const bool closeFirst)
             _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
         }
 
+        // Restore the pane header visibility captured above (our rebuilt header
+        // starts collapsed). Do this *before* focusing below: focusing raises
+        // GotFocus, which makes the Tab re-evaluate header visibility and
+        // correctly hide the header if the tab has collapsed to a single pane.
+        // For closes in an inactive subtree (where no GotFocus fires and the tab
+        // still has multiple panes) this restore is the final state.
+        ShowPaneHeaders(showPaneHeader);
+
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
@@ -1508,10 +1516,6 @@ void Pane::_CloseChild(const bool closeFirst)
         // Release our children.
         _firstChild = nullptr;
         _secondChild = nullptr;
-
-        // Now that we're a leaf again, restore the pane header visibility we
-        // captured above (_CreatePaneHeader always starts collapsed).
-        ShowPaneHeaders(showPaneHeader);
     }
     else
     {
