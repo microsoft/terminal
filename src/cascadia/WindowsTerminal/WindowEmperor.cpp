@@ -284,11 +284,6 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
 
-    // Wire the new window's TerminalPage::ProtocolVtSequenceReceived
-    // into the COM fan-out so events emitted by panes in this window
-    // actually reach connected wta clients.
-    TerminalProtocolComServer::s_OnWindowAdded(_windows.back().get());
-
     if (_windowCount == 1)
     {
         // The first CoreWindow is created implicitly by XAML and parented to the

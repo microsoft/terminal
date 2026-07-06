@@ -3,16 +3,12 @@
 
 #pragma once
 
-#include <mutex>
-#include <vector>
-
 #include <wrl/implements.h>
 #include <wrl/client.h>
 
 #include "ITerminalProtocol.h"
 
-// Per-brand CLSIDs — same pattern as CTerminalHandoff. Reused unchanged from the
-// previous WinRT/MBM server, so WT_COM_CLSID discovery on the client is identical.
+// Per-brand CLSIDs — same pattern as CTerminalHandoff.
 #if defined(WT_BRANDING_RELEASE)
 #define __CLSID_TerminalProtocolServer "832FDEC7-AA6F-4BAB-85FA-A491405638FC"
 #elif defined(WT_BRANDING_PREVIEW)
@@ -36,8 +32,6 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
                                 Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>,
                                 ITerminalProtocol>
 {
-    ~TerminalProtocolComServer();
-
     // ── ITerminalProtocol ──
     STDMETHODIMP GetCapabilities(BSTR* json) override;
     STDMETHODIMP GetActivePane(BSTR* json) override;
@@ -54,9 +48,6 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
     STDMETHODIMP SendInput(GUID sessionId, BSTR text) override;
     STDMETHODIMP FocusPane(GUID sessionId) override;
     STDMETHODIMP SetSessionVariable(GUID sessionId, BSTR name, BSTR value) override;
-    STDMETHODIMP Subscribe(ITerminalProtocolEventSink* sink) override;
-    STDMETHODIMP Unsubscribe() override;
-    STDMETHODIMP SendEvent(BSTR eventJson) override;
 
     // Static setup — must be called before s_StartListening().
     static void s_setEmperor(WindowEmperor* emperor) noexcept;
@@ -64,40 +55,7 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
     static HRESULT s_StartListening();
     static HRESULT s_StopListening();
 
-    // Re-runs per-window page event registration after a new AppHost is added.
-    static void s_OnWindowAdded(class AppHost* host);
-
-    // Deliver an event to all connected COM clients.
-    static void s_NotifyEventToComClients(const std::string& eventJson);
-
 private:
-
-    // Per-instance event sink, stored as an agile reference so it can be
-    // resolved + called from any apartment (set via Subscribe, cleared via
-    // Unsubscribe).
-    std::mutex _callbackMutex;
-    Microsoft::WRL::ComPtr<IAgileReference> _sinkRef;
-
-    // Static tracking of live COM instances for event delivery.
-    static std::mutex s_instancesMutex;
-    static std::vector<TerminalProtocolComServer*> s_instances;
-
-    bool _instanceRegistered{ false };
-
-    void _addInstance();
-    void _removeInstance();
-    static void _ensurePageEventsRegistered();
-
-    // Per-method UI-thread dispatch helpers (unchanged from the WinRT server;
-    // they marshal SendEvent payloads onto each window's TerminalPage).
-    static void _dispatchAutofixStateToPage(const winrt::hstring& eventJson);
-    static void _dispatchAgentStatusToPage(const winrt::hstring& eventJson);
-    static void _dispatchCloseAgentPaneToPage(const winrt::hstring& eventJson);
-    static void _dispatchAgentStateChangedToPage(const winrt::hstring& eventJson);
-    static void _dispatchResumeInNewAgentTabToPage(const winrt::hstring& eventJson);
-    static void _dispatchAgentChipTargetToPage(const winrt::hstring& eventJson);
-    static void _dispatchRestartAgentStackToPage(const winrt::hstring& eventJson);
-    static void _dispatchRestartAgentPaneToPage(const winrt::hstring& eventJson);
 
     static WindowEmperor* s_emperor;
 };

@@ -17,17 +17,6 @@ import "unknwn.idl";
 // LOAD BEARING (same discipline as ITerminalHandoff): OpenConsoleProxy.dll is a
 // single shared proxy/stub DLL. Never change or reuse the UUIDs below.
 
-// Event sink — implemented by the CLIENT (wtcli). The server calls back into
-// this cross-process to push events (each event is a JSON string).
-[
-    object,
-    uuid(DD47E357-3D5E-4EFD-901B-C02CE6C45B7D),
-    pointer_default(unique)
-] interface ITerminalProtocolEventSink : IUnknown
-{
-    HRESULT OnEvent([in] BSTR eventJson);
-};
-
 // Terminal protocol — implemented by WindowsTerminal.exe, activated by the
 // client via CoCreateInstance(CLSCTX_LOCAL_SERVER) with the per-brand CLSID.
 [
@@ -69,9 +58,4 @@ import "unknwn.idl";
     HRESULT SendInput([in] GUID sessionId, [in] BSTR text);
     HRESULT FocusPane([in] GUID sessionId);
     HRESULT SetSessionVariable([in] GUID sessionId, [in] BSTR name, [in] BSTR value);
-
-    // ── Events ──
-    HRESULT Subscribe([in] ITerminalProtocolEventSink* sink);
-    HRESULT Unsubscribe();
-    HRESULT SendEvent([in] BSTR eventJson);
 };
