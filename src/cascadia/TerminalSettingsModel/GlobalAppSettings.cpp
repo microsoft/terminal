@@ -102,6 +102,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_DisabledProfileSources->Append(src);
         }
     }
+    if (_SafeUriSchemes)
+    {
+        globals->_SafeUriSchemes = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_SafeUriSchemes)
+        {
+            globals->_SafeUriSchemes->Append(src);
+        }
+    }
 
     for (const auto& parent : _parents)
     {
@@ -160,7 +168,16 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmOnClose = legacyConfirmClose.value() ? ConfirmOnClose::Automatic : ConfirmOnClose::Never;
+            _fixupsAppliedDuringLoad = true;
+        }
+    }
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \

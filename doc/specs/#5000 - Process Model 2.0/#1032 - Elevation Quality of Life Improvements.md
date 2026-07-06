@@ -109,7 +109,7 @@ each thing in the elevated window that they'd want to create it elevated. Or the
 Terminal would need to provide some setting like
 `"autoElevateEverythingInAnElevatedWindow"`.
 
-We cannot support mixed elevation when starting in a unelevated window.
+We cannot support mixed elevation when starting in an unelevated window.
 Therefore, it doesn't make a lot of UX sense to support it in the other
 direction. It's a cleaner UX story to just have everything in a single window at
 the same elevation level.
@@ -141,7 +141,7 @@ We could also simplify this to only allow a boolean true/false for displaying
 the shield. As we do often with other enums, we could define `true` to be the
 same as the default appearance, and `false` to be the hidden option. As always,
 the development of the Terminal is an iterative process, where we can
-incrementally improve from no setting, to a boolean setting, to a enum-backed
+incrementally improve from no setting, to a boolean setting, to an enum-backed
 one.
 
 ### Configuring a profile to always run elevated

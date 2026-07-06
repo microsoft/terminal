@@ -131,7 +131,7 @@ bool IntegrityTest::ClassSetup()
     VERIFY_IS_NOT_NULL(appAumids);
     VERIFY_ARE_EQUAL(appAumids->Size, 1u);
 
-    // save off aumid
+    // save off AUMID
     this->_appAumid = appAumids->GetAt(0);
 
     return true;

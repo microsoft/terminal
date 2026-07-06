@@ -273,7 +273,7 @@ with GUIDs set.
 After a dynamic profile generator runs, we will determine what new profiles need
 to be added to the user settings, so we can append those to the list of
 profiles. The deserializer will look at the list of generated profiles and check
-if each and every one already has a entry in the user settings. The generator
+if each and every one already has an entry in the user settings. The generator
 will just blind hand back a list of profiles, and the deserializer will figure
 out if any of them need to be added to the user settings. We'll store some sort
 of result indicating that we want a save operation to occur. After the rest of
@@ -505,8 +505,8 @@ like so:
 // To view the default settings, open the defaults.json file in this directory
 ```
 
-The "Settings" button would then only open the file the user needs to edit, and
-provide them instructions on how to open the defaults file.
+The "Settings" button would then only open the file that the user needs to edit,
+and provide them instructions on how to open the defaults file.
 
 There could alternatively be a hidden option for the "Open Settings" button,
 where holding <kbd>Alt</kbd> while clicking on the button would open the

@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Restablecer el nombre de la ventana</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Abrir área de trabajo "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Abrir área de trabajo</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Cambiar el nombre de la ventana...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>Reiniciar conexión</value>
+    <value>Reiniciar sesión</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Abrir el bloc de notas</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Abrir directorio de trabajo actual</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Áreas de trabajo...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Cerrar pestaña</value>

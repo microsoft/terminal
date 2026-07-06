@@ -213,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto sanitized{ Sanitize(newOutput) };
         // Try to suppress any events (or event data)
-        // that are just the keypresses the user made
+        // that are just the keypresses that the user made
         {
             auto keyEvents = _keyEvents.lock();
             while (!keyEvents->empty() && IsReadable(sanitized))

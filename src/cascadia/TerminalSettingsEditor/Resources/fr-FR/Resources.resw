@@ -507,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Masquer la barre de titre (redémarrage nécessaire)</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>Une fois désactivée, la barre de titre s’affiche au-dessus des onglets.</value>
@@ -572,6 +572,14 @@
   <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
     <value>Autoriser OSC 52 (Manipulate Selection Data) à écrire dans le Presse-papiers</value>
     <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
+  <data name="Profile_AllowOscNotifications.Header" xml:space="preserve">
+    <value>Autoriser OSC 777 (Desktop Notification) à afficher des notifications toast</value>
+    <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
+  </data>
+  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+    <value>Lorsque cette option est activée, les applications peuvent envoyer la séquence d’échappement OSC 777 pour déclencher une notification de bureau avec un titre et un corps personnalisés.</value>
+    <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Autoriser Terminal Windows à s’exécuter en arrière-plan</value>
@@ -668,6 +676,14 @@
   <data name="Nav_Launch.Content" xml:space="preserve">
     <value>Démarrage</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
+  </data>
+  <data name="Nav_PaneOpenedAnnouncement" xml:space="preserve">
+    <value>Volet de navigation ouvert</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that opens the settings navigation pane.</comment>
+  </data>
+  <data name="Nav_PaneClosedAnnouncement" xml:space="preserve">
+    <value>Volet de navigation fermé</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that closes the settings navigation pane.</comment>
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Ouvrir le fichier JSON</value>
@@ -983,11 +999,11 @@
     <comment>{Locked="‗"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a stacked set of two underscores. The character in the parentheses is used to show what it looks like.</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
-    <value>Type de police</value>
+    <value>Style de police</value>
     <comment>Header for a control to select the font for text in the app.</comment>
   </data>
   <data name="Profile_FontFaceBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Type de police</value>
+    <value>Style de police</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
   <data name="Profile_FontFace.HelpText" xml:space="preserve">
@@ -1195,15 +1211,15 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Répertoire de démarrage</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Répertoire de démarrage</value>
-    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Répertoire de démarrage</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>Répertoire dans lequel le shell démarre lorsqu’il est chargé.</value>
@@ -1552,6 +1568,10 @@
   <data name="Profile_BellStyleWindow.Content" xml:space="preserve">
     <value>Fenêtre Flash</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
+  </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>Notification de bureau</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
   </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Ajouter nouveau</value>
@@ -2147,7 +2167,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Raccourci</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Mise en forme du texte</value>
@@ -2196,6 +2216,26 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>M'avertir lorsque je ferme plusieurs onglets</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
+    <value>Avertir lors de la fermeture</value>
+    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>Contrôle l’apparition d’une boîte de dialogue de confirmation avant la fermeture des onglets ou des fenêtres. « Toujours » affiche la boîte de dialogue lors de la fermeture de n’importe quel volet.</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
+    <value>Jamais</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAlways.Content" xml:space="preserve">
+    <value>Toujours</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Always" means that the system will always display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAutomatic.Content" xml:space="preserve">
+    <value>Plusieurs onglets ou volets</value>
+    <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avertir lorsque le « service clavier tactile et volet d’écriture manuscrite » est désactivé</value>
@@ -2370,8 +2410,8 @@
     <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
   <data name="Nav_NewTabMenu.Content" xml:space="preserve">
-    <value>Menu Nouvel onglet</value>
-    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+    <value>Menu déroulant</value>
+    <comment>Header for the "dropdown menu" menu item (formerly "new tab menu"). This navigates to a page that lets you see and modify settings related to the app's dropdown menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
   </data>
   <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
     <value>&lt;Separator&gt;</value>
@@ -2606,19 +2646,19 @@
     <comment>An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
-    <value>WSL (C :\ -&gt; /mnt/c)</value>
+    <value>WSL (C:\ 🡒 /mnt/c)</value>
     <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
-    <value>Cygwin (C :\ -&gt; /cygdrive/c)</value>
+    <value>Cygwin (C:\ 🡒 /cygdrive/c)</value>
     <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
-    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <value>MSYS2 (C:\ 🡒 /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
-    <value>MinGW (C:\ -&gt; C:/)</value>
+    <value>MinGW (C:\ 🡒 C:/)</value>
     <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
@@ -2743,5 +2783,13 @@
   <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
     <value>Taper pour filtrer les icônes</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>Glisser-déplacer le délimiteur</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>Ce texte sera inséré entre les chemins d’accès de plusieurs fichiers déposés dans le terminal.</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>
 </root>

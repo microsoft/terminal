@@ -17,9 +17,9 @@
         g_hConhostV2EventTraceProvider,                              \
         "API_" ApiName,                                              \
         TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
-        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread"),   \
-        __VA_ARGS__ __VA_OPT__(, )                                   \
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),               \
+        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread")    \
+            __VA_OPT__(, ) __VA_ARGS__,                              \
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),                   \
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
 static DWORD TraceGetProcessId(CONSOLE_API_MSG* const m)
@@ -595,9 +595,12 @@ constexpr T saturate(auto val)
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
     // See ConptyCursorPositionMayBeWrong() for details.
-    if (pObj->ConptyCursorPositionMayBeWrong())
+    auto& activeBuffer = pObj->GetActiveBuffer();
+    // GetConsoleScreenBufferInfoExImpl uses GetActiveBuffer internally, but
+    // under the console lock.
+    if (activeBuffer.ConptyCursorPositionMayBeWrong())
     {
-        pObj->WaitForConptyCursorPositionToBeSynchronized();
+        activeBuffer.WaitForConptyCursorPositionToBeSynchronized();
     }
 
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);

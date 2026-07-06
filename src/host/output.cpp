@@ -381,7 +381,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     const auto originalTargetOrigin = target.Origin();
     target = Viewport::Intersect(clip, target);
 
-    // OK, if the target became smaller than before, we need to also adjust the source accordingly
+    // OK, if the target became smaller than before, we also need to adjust the source accordingly
     // so we don't waste time loading up/copying things that have no place to go within the target.
     {
         const auto currentTargetOrigin = target.Origin();

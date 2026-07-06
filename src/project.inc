@@ -35,7 +35,8 @@ USE_NATIVE_EH           = 1
 
 USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /Zc:preprocessor /fp:contract /utf-8
+USER_C_FLAGS            = $(USER_C_FLAGS) /fp:contract /utf-8
+ZC_PREPROCESSOR         = 1
 
 # -------------------------------------
 # Common Console Includes and Libraries

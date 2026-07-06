@@ -23,8 +23,10 @@ FTCS
 gantt
 gfm
 ghe
+github
 godbolt
 hstrings
+https
 hyperlinking
 hyperlinks
 Kbds
@@ -44,6 +46,7 @@ mru
 notwrapped
 NTMTo
 overlined
+passthrough
 perlw
 postmodern
 Powerline
@@ -65,6 +68,7 @@ rubyw
 runtimes
 servicebus
 slnt
+ssh
 stakeholders
 subpage
 subpages
@@ -72,10 +76,11 @@ sustainability
 sxn
 Tencent
 toolset
-Uids
+ubuntu
 UEFI
-UIDs
 uiatextrange
+Uids
+UIDs
 und
 vsdevcmd
 westus

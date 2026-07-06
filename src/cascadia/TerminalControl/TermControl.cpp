@@ -328,6 +328,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
+        _revokers.ShowNotification = _core.ShowNotification(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowNotification });
         _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
         _revokers.WriteToClipboard = _core.WriteToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWriteToClipboard });
 
@@ -586,7 +587,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto data = buffer.data();
             const auto stride = scrollBarWidthInPx * sizeof(til::color);
 
-            // The bitmap has the size of the entire scrollbar, but we want the marks to only show in the range the "thumb"
+            // The bitmap has the size of the entire scrollbar, but we want the marks to only show in the range that the "thumb"
             // (the scroll indicator) can move. That's why we need to add an offset to the start of the drawable bitmap area
             // (to offset the decrease button) and subtract twice that (to offset the increase button as well).
             //
@@ -1935,8 +1936,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: event data
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
-        Focus(FocusState::Pointer);
-
         if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:
@@ -2908,8 +2907,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            // Do we ever get here (= uninitialized terminal)? If so: How?
-            assert(false);
             return { 10, 10 };
         }
     }

@@ -17,6 +17,7 @@
 
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
+#include "DesktopNotification.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
@@ -147,6 +148,18 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->RaiseVisualBell.raise(nullptr, nullptr);
+            }
+        });
+
+        // When a tab requests a desktop toast notification, send the toast
+        // and handle activation by summoning this window and switching to the tab.
+        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }, weakTab{ newTabImpl->get_weak() }](const winrt::hstring& title, const winrt::hstring& body, const winrt::TerminalApp::IPaneContent& content) {
+            if (const auto page{ weakThis.get() })
+            {
+                if (const auto tab{ weakTab.get() })
+                {
+                    page->_SendDesktopNotification(title, body, tab, content);
+                }
             }
         });
 
@@ -391,10 +404,28 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - If this window has a name, persist its current workspace layout to
+    //   ApplicationState. Intended to be called from the close-pane / close-tab
+    //   paths while tab/pane content is still alive (before it gets torn down).
+    void TerminalPage::_SaveWorkspaceIfNeeded()
+    {
+        const auto& windowName = _WindowProperties.WindowName();
+        if (!windowName.empty())
+        {
+            if (const auto layout = GetWindowLayout())
+            {
+                ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+            }
+        }
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
-    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::Tab tab)
+    // - skipConfirmClose: if true, skip the confirmOnClose check. Used when
+    //   an aggregate confirmation has already been shown (i.e. close other tabs)
+    winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::Tab tab, bool skipConfirmClose)
     {
         winrt::com_ptr<TerminalPage> strong;
 
@@ -413,9 +444,35 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // Skip the per-tab confirmOnClose check when the caller has already
+        // shown an aggregate confirmation dialog (e.g. _RemoveTabs).
+        if (!skipConfirmClose)
+        {
+            const auto tabImpl = _GetTabImpl(tab);
+            if (tabImpl && _ShouldWarnOnCloseTab(tabImpl))
+            {
+                const auto weak = get_weak();
+
+                auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Tab);
+                strong = weak.get();
+                if (!strong || warningResult != ContentDialogResult::Primary)
+                {
+                    co_return;
+                }
+            }
+        }
+
         auto t = winrt::get_self<implementation::Tab>(tab);
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
+
+        // If this is the last tab in a named window, persist the workspace
+        // layout now while tab content is still alive. After tab.Close()
+        // the pane content will be torn down by the time _RemoveTab runs.
+        if (_tabs.Size() == 1)
+        {
+            _SaveWorkspaceIfNeeded();
+        }
 
         tab.Close();
     }
@@ -437,6 +494,13 @@ namespace winrt::TerminalApp::implementation
         auto unsetRemoving = wil::scope_exit([&]() noexcept { _removing = false; });
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
+
+        // NOTE: Workspace persistence for named windows used to live here,
+        // but by the time _RemoveTab runs the pane content may already be
+        // torn down (e.g. from the close-pane path). Instead, workspace
+        // saves are handled earlier:
+        //  - Close-pane (last pane): in _HandleClosePaneRequested
+        //  - Close-tab: in _HandleCloseTabRequested
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
@@ -477,40 +541,10 @@ namespace winrt::TerminalApp::implementation
             // 1. We want to customize this behavior (e.g., use MRU logic)
             // 2. In fullscreen (GH#5799) and focus (GH#7916) modes the _OnTabItemsChanged is not fired
             // 3. When rearranging tabs (GH#7916) _OnTabItemsChanged is suppressed
-            const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
 
-            if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed)
-            {
-                const auto newSelectedTab = _mruTabs.GetAt(0);
-                _UpdatedSelectedTab(newSelectedTab);
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
-            else
-            {
-                // We can't use
-                //   auto selectedIndex = _tabView.SelectedIndex();
-                // Because this will always return -1 in this scenario unfortunately.
-                //
-                // So, what we're going to try to do is move the focus to the tab
-                // to the right, within the bounds of how many tabs we have.
-                //
-                // EX: we have 4 tabs: [A, B, C, D]. If we close:
-                // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
-                // * B (tabIndex=1): We'll want to focus tab C (now in index 1)
-                // * C (tabIndex=2): We'll want to focus tab D (now in index 2)
-                // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex, 0, _tabs.Size() - 1);
-                // _UpdatedSelectedTab will do the work of setting up the new tab as
-                // the focused one, and unfocusing all the others.
-                auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
-                _UpdatedSelectedTab(newSelectedTab);
-
-                // Also, we need to _manually_ set the SelectedItem of the tabView
-                // here. If we don't, then the TabView will technically not have a
-                // selected item at all, which can make things like ClosePane not
-                // work correctly.
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
+            const auto newSelectedTab = _mruTabs.GetAt(0);
+            _UpdatedSelectedTab(newSelectedTab);
+            _tabView.SelectedItem(newSelectedTab.TabViewItem());
         }
 
         // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
@@ -765,6 +799,21 @@ namespace winrt::TerminalApp::implementation
         }
         _AddPreviouslyClosedPaneOrTab(std::move(state.args));
 
+        // If this is the last pane on the last tab of a named window, persist
+        // the workspace layout now while the pane content is still alive.
+        // We can't wait until _RemoveTab, because pane->Close() below will
+        // destroy the content before _RemoveTab is reached.
+        if (_tabs.Size() == 1)
+        {
+            if (const auto activeTab{ _GetFocusedTabImpl() })
+            {
+                if (activeTab->GetLeafPaneCount() == 1)
+                {
+                    _SaveWorkspaceIfNeeded();
+                }
+            }
+        }
+
         // If specified, detach before closing to directly update the pane structure
         pane->Close();
     }
@@ -782,6 +831,26 @@ namespace winrt::TerminalApp::implementation
             if (const auto pane{ activeTab->GetActivePane() })
             {
                 const auto weak = get_weak();
+
+                // Check if we should warn before closing a single pane
+                // (only triggers on Always — Automatic doesn't warn for single pane)
+                const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+                if (setting == ConfirmOnClose::Always)
+                {
+                    // If this is the last pane, closing it closes the tab,
+                    // so use the tab dialog text instead.
+                    const auto kind = activeTab->GetLeafPaneCount() == 1 ? ConfirmCloseDialogKind::Tab : ConfirmCloseDialogKind::Pane;
+                    auto warningResult = co_await _ShowConfirmCloseDialog(kind);
+
+                    // Hold a strong reference to `this` for the rest of the
+                    // method; we may be the last holder after `co_await`.
+                    auto strong = weak.get();
+                    if (!strong || warningResult != ContentDialogResult::Primary)
+                    {
+                        co_return;
+                    }
+                }
+
                 if (co_await _PaneConfirmCloseReadOnly(pane))
                 {
                     if (const auto strong = weak.get())
@@ -795,10 +864,37 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Close all panes with the given IDs sequentially.
+    // - Shows a single aggregate confirmation dialog upfront if the confirmOnClose setting warrants it.
     // Arguments:
-    // - weakTab: weak reference to the tab that the pane belongs to.
+    // - weakTab: weak reference to the tab that the panes belong to.
     // - paneIds: collection of the IDs of the panes that are marked for removal.
-    void TerminalPage::_ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds)
+    safe_void_coroutine TerminalPage::_ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds)
+    {
+        // Show a single aggregate confirmation for closing multiple panes.
+        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        {
+            const auto weak = get_weak();
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultiplePanes);
+
+            // Hold a strong reference to `this` after the co_await; we may
+            // be the last holder if the page was being torn down.
+            auto strong = weak.get();
+            if (!strong || warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+        }
+        _CloseRemainingPanes(weakTab, std::move(paneIds));
+    }
+
+    // Method Description:
+    // - Recursively closes panes by ID, chaining each close via the
+    //   ClosedByParent callback. Called after confirmation has already
+    //   been handled by _ClosePanes.
+    // Arguments:
+    // - weakTab: weak reference to the tab that the panes belong to
+    // - paneIds: remaining pane IDs to close
+    void TerminalPage::_CloseRemainingPanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds)
     {
         if (auto strongTab{ weakTab.get() })
         {
@@ -813,10 +909,9 @@ namespace winrt::TerminalApp::implementation
                     pane->ClosedByParent([ids{ std::move(paneIds) }, weakThis{ get_weak() }, weakTab]() {
                         if (auto strongThis{ weakThis.get() })
                         {
-                            strongThis->_ClosePanes(weakTab, std::move(ids));
+                            strongThis->_CloseRemainingPanes(weakTab, std::move(ids));
                         }
                     });
-
                     // Close the pane which will eventually trigger the closed by parent event
                     _HandleClosePaneRequested(pane);
                     break;
@@ -841,18 +936,37 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Closes provided tabs one by one
+    // - Shows a single aggregate confirmation dialog upfront if the confirmOnClose setting warrants it.
     // Arguments:
     // - tabs - tabs to remove
     safe_void_coroutine TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::Tab> tabs)
     {
+        if (tabs.empty())
+        {
+            co_return;
+        }
+
+        // Show a single aggregate confirmation instead of per-tab dialogs.
         const auto weak = get_weak();
+        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        {
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultipleTabs);
+
+            // Hold a strong reference to `this` after the co_await so that
+            // the for-loop below can safely dispatch on us.
+            auto strong = weak.get();
+            if (!strong || warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+        }
 
         for (auto& tab : tabs)
         {
             winrt::Windows::Foundation::IAsyncAction action{ nullptr };
             if (const auto strong = weak.get())
             {
-                action = _HandleCloseTabRequested(tab);
+                action = _HandleCloseTabRequested(tab, /*skipConfirmClose*/ true);
             }
 
             if (!action)
@@ -1184,5 +1298,133 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_HasMultipleTabs() const
     {
         return _tabs.Size() > 1;
+    }
+
+    // Method Description:
+    // - Attempts to find and focus the given tab in this window.
+    // Arguments:
+    // - tab: The tab to focus.
+    // Return Value:
+    // - true if the tab was found and focused, false otherwise.
+    bool TerminalPage::FocusTab(const winrt::TerminalApp::Tab& tab)
+    {
+        if (const auto tabIndex{ _GetTabIndex(tab) })
+        {
+            _SelectTab(tabIndex.value());
+            return true;
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - Sends a desktop toast notification with the given title and body.
+    //   When the toast is activated (clicked), the window is summoned and
+    //   the originating tab is focused.
+    // Arguments:
+    // - tabTitle: The title to display in the notification.
+    // - body: The body text. If empty, a standard tab-activity message is built.
+    // - tab: The tab to switch to when the toast is activated.
+    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, const winrt::com_ptr<Tab>& tab, const winrt::TerminalApp::IPaneContent& content)
+    {
+        // Don't send a notification if the window is focused and the requesting
+        // pane is the active pane. The user is already looking at it.
+        if (_activated && tab == _GetFocusedTabImpl())
+        {
+            if (const auto activePane{ tab->GetActivePane() })
+            {
+                if (activePane->GetContent() == content)
+                {
+                    return;
+                }
+            }
+        }
+
+        // Build the notification message.
+        // If a custom body is provided (e.g. from OSC 777), use the title/body directly.
+        // Otherwise, build the standard tab-activity notification message.
+        winrt::hstring notificationTitle;
+        winrt::hstring message;
+        if (!body.empty())
+        {
+            notificationTitle = tabTitle;
+            message = body;
+        }
+        else
+        {
+            // Use the window name if available for context; otherwise just use the tab title.
+            // Use the raw WindowName (not WindowNameForDisplay) so we don't include
+            // the "<unnamed window>" placeholder in the notification body.
+            const auto windowName = _WindowProperties ? _WindowProperties.WindowName() : winrt::hstring{};
+            if (!windowName.empty())
+            {
+                message = RS_fmt(L"NotificationMessage_TabActivityInWindow", std::wstring_view{ tabTitle }, std::wstring_view{ windowName });
+            }
+            else
+            {
+                message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
+            }
+            notificationTitle = CascadiaSettings::ApplicationDisplayName();
+        }
+
+        // Use the Tab object's identity hash as a stable toast tag.
+        // This survives tab reordering and cross-window moves.
+        const auto tabHash = std::hash<winrt::Windows::Foundation::IUnknown>{}(*tab);
+#ifdef _WIN64
+        const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:016x}"), tabHash) };
+#else
+        const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:08x}"), tabHash) };
+#endif
+
+        const implementation::DesktopNotificationArgs args{
+            .Title = notificationTitle,
+            .Message = message,
+            .Tag = tabTag
+        };
+
+        implementation::DesktopNotification::SendNotification(args, [weakThis{ get_weak() }, weakTab{ tab->get_weak() }, weakContent{ winrt::make_weak(content) }]() {
+            if (const auto page{ weakThis.get() })
+            {
+                // The toast Activated callback runs on a background thread.
+                // Marshal to the UI thread for tab focus and window summon.
+                page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakPage{ page->get_weak() }, weakTab, weakContent]() {
+                    if (const auto p{ weakPage.get() })
+                    {
+                        if (const auto t{ weakTab.get() })
+                        {
+                            // Try to find and focus the tab in this window first.
+                            if (const auto tabIndex{ p->_GetTabIndex(*t) })
+                            {
+                                p->SummonWindowRequested.raise(nullptr, nullptr);
+                                p->_SelectTab(tabIndex.value());
+
+                                // Focus the specific pane that raised the notification.
+                                if (const auto paneContent{ weakContent.get() })
+                                {
+                                    const auto rootPane = t->GetRootPane();
+                                    rootPane->WalkTree([&](const auto& pane) {
+                                        if (pane->GetContent() == paneContent)
+                                        {
+                                            rootPane->FocusPane(pane);
+                                        }
+                                    });
+                                }
+                            }
+                            else
+                            {
+                                // The tab may have moved to another window.
+                                // Raise FocusTabRequested so the emperor can
+                                // search all windows for it.
+                                p->FocusTabRequested.raise(nullptr, *t);
+                            }
+                        }
+                        else
+                        {
+                            // Tab was closed. Just summon this window.
+                            p->SummonWindowRequested.raise(nullptr, nullptr);
+                        }
+                    }
+                });
+            }
+        });
     }
 }

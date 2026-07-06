@@ -1764,7 +1764,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
 //     machine with the main buffer it belongs to.
 // TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // - ppsiNewScreenBuffer - a pointer to receive the newly created buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
@@ -1871,7 +1871,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded. This allows applications to retain one HANDLE, and switch which buffer it points to seamlessly.
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer(const TextAttribute& initAttributes)

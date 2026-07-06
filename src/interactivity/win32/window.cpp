@@ -238,7 +238,7 @@ void Window::_UpdateSystemMetrics() const
             //if launched from a shortcut, ensure window is visible on screen
             if (pSettings->IsStartupTitleIsLinkNameSet())
             {
-                // if window would be fully OFFscreen, change position so it is ON screen.
+                // if window would be fully OFF-screen, change position so it is ON-screen.
                 // This doesn't change the actual coordinates
                 // stored in the link, just the starting position
                 // of the window.

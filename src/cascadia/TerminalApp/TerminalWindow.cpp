@@ -108,13 +108,19 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     Documents::Run textRun;
     textRun.Text(text);
 
-    // Color the text red (light theme) or yellow (dark theme) based on the system theme
-    auto key = winrt::box_value(L"ErrorTextBrush");
-    if (resources.HasKey(key))
+    // GH #18147 - In High Contrast mode, don't override the foreground.
+    // Let the text inherit the system HC text color from its parent element,
+    // since SystemErrorTextColor doesn't adapt to High Contrast themes.
+    if (!winrt::Windows::UI::ViewManagement::AccessibilitySettings{}.HighContrast())
     {
-        auto g = resources.Lookup(key);
-        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
-        textRun.Foreground(brush);
+        // Color the text red (light theme) or yellow (dark theme) based on the system theme
+        auto key = winrt::box_value(L"ErrorTextBrush");
+        if (resources.HasKey(key))
+        {
+            auto g = resources.Lookup(key);
+            auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+            textRun.Foreground(brush);
+        }
     }
 
     return textRun;
@@ -250,6 +256,15 @@ namespace winrt::TerminalApp::implementation
         }
 
         AppLogic::Current()->NotifyRootInitialized();
+    }
+
+    WindowLayout TerminalWindow::GetWindowLayout() const
+    {
+        if (_root)
+        {
+            return _root->GetWindowLayout();
+        }
+        return nullptr;
     }
 
     void TerminalWindow::PersistState()
@@ -861,7 +876,7 @@ namespace winrt::TerminalApp::implementation
     // - Used to tell the app that the titlebar has been clicked. The App won't
     //   actually receive any clicks in the titlebar area, so this is a helper
     //   to clue the app in that a click has happened. The App will use this as
-    //   a indicator that it needs to dismiss any open flyouts.
+    //   an indicator that it needs to dismiss any open flyouts.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1098,6 +1113,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Provide a pre-built list of startup actions for this window. Used by
+    //   the in-proc OpenNewWindow event (see TerminalPage::_OpenNewWindow ->
+    //   TerminalWindow -> AppHost -> WindowEmperor::OpenNewWindow)
+    void TerminalWindow::SetStartupActions(const IVector<ActionAndArgs>& actions)
+    {
+        _initialContentArgs = wil::to_vector(actions);
+    }
+
+    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
+    {
+        _cachedLayout = layout;
+    }
+
+    // Method Description:
     // - Parse the provided commandline arguments into actions, and try to
     //   perform them immediately.
     // - This function returns 0, unless a there was a non-zero result from
@@ -1205,10 +1234,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalWindow::FocusTab(const winrt::TerminalApp::Tab& tab)
+    {
+        if (_root)
+        {
+            return _root->FocusTab(tab);
+        }
+        return false;
+    }
+
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        const auto oldName = _WindowProperties->WindowName();
         _WindowProperties->WindowName(name);
+        // If this window had a persisted workspace under the old name, rename
+        // that entry too so we don't leave a stale copy behind.
+        if (!oldName.empty() && !name.empty() && oldName != name)
+        {
+            ApplicationState::SharedInstance().RenameWorkspace(oldName, name);
+        }
         if (!_root)
         {
             return;

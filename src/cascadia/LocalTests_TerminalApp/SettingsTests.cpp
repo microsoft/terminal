@@ -741,7 +741,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestNestedInIterableCommand()
     {
-        // This test checks a iterable command that includes a nested command.
+        // This test checks an iterable command that includes a nested command.
         // The commands should look like:
         //
         // <Command Palette>
