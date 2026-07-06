@@ -5,7 +5,6 @@ BBDM
 BBGGRR
 CBN
 cbt
-Ccc
 cch
 efg
 efgh

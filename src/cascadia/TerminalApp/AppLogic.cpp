@@ -294,7 +294,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Registers for changes to the settings folder and upon a updated settings
+    // - Registers for changes to the settings folder and upon an updated settings
     //      profile calls ReloadSettings().
     // Arguments:
     // - <none>
@@ -307,7 +307,7 @@ namespace winrt::TerminalApp::implementation
             settingsPath.parent_path().c_str(),
             false,
             // We want file modifications, AND when files are renamed to be
-            // settings.json. This second case will oftentimes happen with text
+            // settings.json. This second case will often happen with text
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,

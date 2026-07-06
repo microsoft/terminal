@@ -60,7 +60,8 @@
             "enum": [
               "audible",
               "window",
-              "taskbar"
+              "taskbar",
+              "notification"
             ]
           }
         },
@@ -70,6 +71,7 @@
             "audible",
             "taskbar",
             "window",
+            "notification",
             "all",
             "none"
           ]
@@ -439,6 +441,7 @@
         "openTabColorPicker",
         "openTabRenamer",
         "openWindowRenamer",
+        "openWorkspace",
         "paste",
         "prevTab",
         "quakeMode",
@@ -477,6 +480,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "toggleSplitOrientation",
+        "workspaces",
         "wt",
         "unbound"
       ],
@@ -1719,6 +1723,28 @@
         }
       ]
     },
+    "OpenWorkspaceAction": {
+      "description": "Arguments corresponding to an openWorkspace Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "openWorkspace"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the workspace to open. If omitted, the workspaces UI will be shown so the user can pick one."
+            }
+          }
+        }
+      ]
+    },
     "FocusPaneAction": {
       "description": "Arguments corresponding to a focusPane Action",
       "allOf": [
@@ -1765,7 +1791,7 @@
       ]
     },
     "ExportBufferAction": {
-      "description": "Arguments corresponding to a exportBuffer Action",
+      "description": "Arguments corresponding to an exportBuffer Action",
       "allOf": [
         {
           "$ref": "#/$defs/ShortcutAction"
@@ -2038,6 +2064,11 @@
         "unfocusedFrame": {
           "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
           "$ref": "#/$defs/ThemeColor"
+        },
+        "showWorkspacesButton": {
+          "description": "When set to true, the workspaces button will be shown in the tab row.",
+          "type": "boolean",
+          "default": true
         }
       }
     },
@@ -2207,6 +2238,9 @@
               "$ref": "#/$defs/RenameWindowAction"
             },
             {
+              "$ref": "#/$defs/OpenWorkspaceAction"
+            },
+            {
               "$ref": "#/$defs/FocusPaneAction"
             },
             {
@@ -2242,7 +2276,7 @@
           "$ref": "#/$defs/Icon"
         },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is an object, the key property of the object will be used to lookup a localized string resource for the command",
           "type": [
             "string",
             "object",
@@ -2470,6 +2504,13 @@
           },
           "type": "array"
         },
+        "safeUriSchemes": {
+          "description": "Specifies a list of URI schemes that are considered safe. No confirmation will be required to open URIs with these schemes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "rendering.graphicsAPI": {
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
@@ -2654,9 +2695,20 @@
           "type": "string"
         },
         "warning.confirmCloseAllTabs": {
+          "deprecated": true,
+          "description": "[Deprecated] Use \"warning.confirmOnClose\" instead.",
           "default": true,
-          "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
+        },
+        "warning.confirmOnClose": {
+          "default": "automatic",
+          "description": "Controls when a confirmation dialog appears before closing tabs or windows.",
+          "enum": [
+            "never",
+            "automatic",
+            "always"
+          ],
+          "type": "string"
         },
         "useTabSwitcher": {
           "description": "[Deprecated] Replaced with the \"tabSwitcherMode\" setting.",
@@ -2772,6 +2824,11 @@
         "compatibility.allowOSC52": {
           "default": true,
           "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC777": {
+          "default": false,
+          "description": "When set to true, applications can send OSC 777 escape sequences to trigger desktop toast notifications with a custom title and body.",
           "type": "boolean"
         },
         "unfocusedAppearance": {

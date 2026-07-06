@@ -743,7 +743,7 @@ void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _O
 // - Coalescing here means updating a record that already exists in
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
-// redundant/out of date with the most current state).
+// redundant/out-of-date with the most current state).
 bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
 {
     auto& lastEvent = _storage.back();

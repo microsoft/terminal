@@ -12,10 +12,13 @@ namespace Microsoft.Terminal.Settings.Editor
         InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
 
         IInspectable CurrentTabSwitcherMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> TabSwitcherModeList { get; };
 
         IInspectable CurrentCopyFormat;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> CopyFormatList { get; };
+
+        IInspectable CurrentConfirmOnClose;
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> ConfirmOnCloseList { get; };
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
@@ -27,7 +30,6 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);

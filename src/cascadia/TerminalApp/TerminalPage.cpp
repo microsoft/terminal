@@ -25,7 +25,10 @@
 #include "TerminalSettingsCache.h"
 
 #include "LaunchPositionRequest.g.cpp"
+#include "WindowListEntry.g.cpp"
+#include "WindowListRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "OpenWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
 #include "TerminalPage.g.cpp"
 
@@ -334,6 +337,21 @@ namespace winrt::TerminalApp::implementation
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
+        _workspaceFlyout = tabRowImpl->WorkspaceFlyout();
+        _workspaceDropdown = tabRowImpl->WorkspaceDropdown();
+
+        // Set the initial workspace name from the window name.
+        // Use raw WindowName() so unnamed windows show no text.
+        _tabRow.WorkspaceName(_WindowProperties.WindowName());
+
+        // Rebuild the workspace flyout each time it opens so it always
+        // reflects the latest set of persisted workspaces.
+        _workspaceFlyout.Opening([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_PopulateWorkspaceFlyout();
+            }
+        });
 
         if (_settings.GlobalSettings().ShowTabsInTitlebar())
         {
@@ -442,6 +460,12 @@ namespace winrt::TerminalApp::implementation
         // them.
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        // Apply the ShowWorkspacesButton theme setting.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
+        }
 
         _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
             DispatcherQueue::GetForCurrentThread(),
@@ -884,26 +908,78 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Displays a dialog to warn the user that they are about to close all open windows.
-    //   Once the user clicks the OK button, shut down the application.
-    //   If cancel is clicked, the dialog will close.
+    // - Displays the unified close confirmation dialog configured for the
+    //   given scenario. Resets the "don't ask me again" checkbox before showing.
+    //   If the user confirms and checked "don't ask me again", sets
+    //   confirmOnClose to Never and writes settings to disk.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowConfirmCloseDialog(ConfirmCloseDialogKind kind)
     {
-        return _ShowDialogHelper(L"QuitDialog");
-    }
+        // Load the dialog (triggers x:Load) and configure its strings.
+        const auto dialog = FindName(L"ConfirmCloseDialog").as<ContentDialog>();
 
-    // Method Description:
-    // - Displays a dialog for warnings found while closing the terminal app using
-    //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tab is opened, and once the user clicks the OK button, remove
-    //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
-    {
-        return _ShowDialogHelper(L"CloseAllDialog");
+        winrt::hstring title;
+        winrt::hstring primary;
+        switch (kind)
+        {
+        case ConfirmCloseDialogKind::CloseAll:
+            title = RS_(L"ConfirmCloseDialog_CloseAllTitle");
+            primary = RS_(L"ConfirmCloseDialog_CloseAllPrimary");
+            break;
+        case ConfirmCloseDialogKind::Window:
+            title = RS_(L"ConfirmCloseDialog_WindowTitle");
+            primary = RS_(L"ConfirmCloseDialog_WindowPrimary");
+            break;
+        case ConfirmCloseDialogKind::Tab:
+            title = RS_(L"ConfirmCloseDialog_TabTitle");
+            primary = RS_(L"ConfirmCloseDialog_TabPrimary");
+            break;
+        case ConfirmCloseDialogKind::MultiplePanes:
+            title = RS_(L"ConfirmCloseDialog_MultiplePanesTitle");
+            primary = RS_(L"ConfirmCloseDialog_MultiplePanesPrimary");
+            break;
+        case ConfirmCloseDialogKind::MultipleTabs:
+            title = RS_(L"ConfirmCloseDialog_MultipleTabsTitle");
+            primary = RS_(L"ConfirmCloseDialog_MultipleTabsPrimary");
+            break;
+        case ConfirmCloseDialogKind::Pane:
+            title = RS_(L"ConfirmCloseDialog_PaneTitle");
+            primary = RS_(L"ConfirmCloseDialog_PanePrimary");
+            break;
+        }
+        dialog.Title(winrt::box_value(title));
+        dialog.PrimaryButtonText(primary);
+        dialog.CloseButtonText(RS_(L"ConfirmCloseDialog_Cancel"));
+
+        // BODGY: After a ContentDialog is dismissed, FindName() can no longer
+        // resolve children inside it. Use Content() to get the checkbox directly.
+        const auto checkbox = dialog.Content().as<CheckBox>();
+        checkbox.IsChecked(false);
+
+        auto result = ContentDialogResult::None;
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            const auto weak = get_weak();
+            result = co_await presenter.ShowDialog(dialog);
+
+            // ShowDialog blocks until the dialog is dismissed, so it is
+            // possible for `this` to be torn down while we wait. Re-acquire
+            // a strong reference before touching any of our state.
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return ContentDialogResult::None;
+            }
+
+            if (result == ContentDialogResult::Primary && checkbox.IsChecked().Value())
+            {
+                _settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
+                _settings.WriteSettingsToDisk();
+            }
+        }
+
+        co_return result;
     }
 
     // Method Description:
@@ -2209,12 +2285,13 @@ namespace winrt::TerminalApp::implementation
     //   signal that we want to close everything.
     safe_void_coroutine TerminalPage::RequestQuit()
     {
-        if (!_displayingCloseDialog)
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        if (setting != ConfirmOnClose::Never && !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
 
             const auto weak = get_weak();
-            auto warningResult = co_await _ShowQuitDialog();
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::CloseAll);
             const auto strong = weak.get();
             if (!strong)
             {
@@ -2227,19 +2304,19 @@ namespace winrt::TerminalApp::implementation
             {
                 co_return;
             }
-
-            QuitRequested.raise(nullptr, nullptr);
         }
+
+        QuitRequested.raise(nullptr, nullptr);
     }
 
-    void TerminalPage::PersistState()
+    WindowLayout TerminalPage::GetWindowLayout()
     {
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
         const auto tabCount = _tabs.Size();
         if (_startupState != StartupState::Initialized || tabCount == 0)
         {
-            return;
+            return nullptr;
         }
 
         std::vector<ActionAndArgs> actions;
@@ -2254,7 +2331,7 @@ namespace winrt::TerminalApp::implementation
         // Avoid persisting a window with zero tabs, because `BuildStartupActions` happened to return an empty vector.
         if (actions.empty())
         {
-            return;
+            return nullptr;
         }
 
         // if the focused tab was not the last tab, restore that
@@ -2303,16 +2380,105 @@ namespace winrt::TerminalApp::implementation
         RequestLaunchPosition.raise(*this, launchPosRequest);
         layout.InitialPosition(launchPosRequest.Position());
 
-        ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
+        return layout;
+    }
+
+    void TerminalPage::PersistState()
+    {
+        // There are two persistence mechanisms in play here:
+        //   * PersistedWindowLayouts (vector) — consumed on next startup to
+        //     re-open a matching set of windows. Cleared after restore.
+        //   * PersistedWorkspaces (name-keyed map) — the full tab/buffer
+        //     state of a named window, claimed by name on demand via
+        //     ApplicationState::TakeWorkspace.
+        //
+        // For named windows we save the full layout into the workspace map
+        // and drop a lightweight `openWorkspace` stub into the generic vector,
+        // so the generic restore path re-opens the named window which in
+        // turn claims its own workspace. Unnamed windows don't have a stable
+        // key, so their full layout is stored directly in the vector.
+        if (const auto layout = GetWindowLayout())
+        {
+            const auto& windowName = _WindowProperties.WindowName();
+            if (!windowName.empty())
+            {
+                // Persist the full layout into the workspace collection.
+                ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+
+                // Build a minimal layout with just an openWorkspace action
+                // so the generic restore path re-opens this workspace by name.
+                std::vector<ActionAndArgs> actions;
+                ActionAndArgs action;
+                action.Action(ShortcutAction::OpenWorkspace);
+                OpenWorkspaceArgs args{ windowName };
+                action.Args(args);
+                actions.emplace_back(std::move(action));
+
+                WindowLayout stub;
+                stub.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+                ApplicationState::SharedInstance().AppendPersistedWindowLayout(stub);
+            }
+            else
+            {
+                ApplicationState::SharedInstance().AppendPersistedWindowLayout(layout);
+            }
+        }
     }
 
     // Method Description:
-    // - Close the terminal app. If there is more
-    //   than one tab opened, show a warning dialog.
+    // - Determines whether a close-window action should show a confirmation
+    //   dialog, based on the confirmOnClose setting and the current window state.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true, if a warning dialog should be shown before closing the window
+    bool TerminalPage::_ShouldWarnOnClose() const
+    {
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        switch (setting)
+        {
+        case ConfirmOnClose::Always:
+            return true;
+        case ConfirmOnClose::Automatic:
+        {
+            // Warn if there's more than one tab, or the one tab has more than one pane.
+            return _HasMultipleTabs() || _GetTabImpl(_tabs.GetAt(0))->GetLeafPaneCount() > 1;
+        }
+        case ConfirmOnClose::Never:
+        default:
+            return false;
+        }
+    }
+
+    // Method Description:
+    // - Determines whether closing a specific tab should show a confirmation
+    //   dialog, based on the confirmOnClose setting and the tab's state.
+    // Arguments:
+    // - tab: The tab being closed
+    // Return Value:
+    // - true, if a warning dialog should be shown before closing the tab
+    bool TerminalPage::_ShouldWarnOnCloseTab(const winrt::com_ptr<Tab>& tab) const
+    {
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        switch (setting)
+        {
+        case ConfirmOnClose::Always:
+            return true;
+        case ConfirmOnClose::Automatic:
+            // Warn if this tab has more than one pane.
+            return tab->GetLeafPaneCount() > 1;
+        case ConfirmOnClose::Never:
+        default:
+            return false;
+        }
+    }
+
+    // Method Description:
+    // - Close the terminal app. If the confirmOnClose setting indicates we should
+    //   warn for the current window state, show a warning dialog.
     safe_void_coroutine TerminalPage::CloseWindow()
     {
-        if (_HasMultipleTabs() &&
-            _settings.GlobalSettings().ConfirmCloseAllTabs() &&
+        if (_ShouldWarnOnClose() &&
             !_displayingCloseDialog)
         {
             if (_newTabButton && _newTabButton.Flyout())
@@ -2321,7 +2487,17 @@ namespace winrt::TerminalApp::implementation
             }
             _DismissTabContextMenus();
             _displayingCloseDialog = true;
-            auto warningResult = co_await _ShowCloseWarningDialog();
+
+            const auto weak = get_weak();
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Window);
+            // Hold a strong reference to `this` after the co_await; we may
+            // be the last holder if the window was already being torn down.
+            auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
+
             _displayingCloseDialog = false;
 
             if (warningResult != ContentDialogResult::Primary)
@@ -2790,14 +2966,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the separator in.
     // Return Value:
-    // - <none>
-    void TerminalPage::_ResizePane(const ResizeDirection& direction)
+    // - whether a pane was resized
+    bool TerminalPage::_ResizePane(const ResizeDirection& direction)
     {
         if (const auto tabImpl{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            tabImpl->ResizePane(direction);
+            return tabImpl->ResizePane(direction);
         }
+        return false;
     }
 
     // Method Description:
@@ -3085,18 +3262,42 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
+            auto uriString{ eventArgs.Uri() };
+            auto parsed = winrt::Windows::Foundation::Uri(uriString);
             if (_IsUriSupported(parsed))
             {
-                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+
+                if (!shouldLaunch)
+                {
+                    if (auto presenter{ _dialogPresenter.get() })
+                    {
+                        // FindName needs to be called first to actually load the xaml object
+                        auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
+
+                        // Insert the reason and the URI
+                        unopenedUriDialog.SecondaryButtonText(RS_(L"UnsafeUrlConfirmAllowAction"));
+                        CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
+                        UnopenedUri().Text(uriString);
+
+                        // Show the dialog
+                        auto result = co_await presenter.ShowDialog(unopenedUriDialog);
+                        shouldLaunch = result == ContentDialogResult::Secondary;
+                    }
+                }
+
+                if (shouldLaunch)
+                {
+                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
             }
             else
             {
-                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), uriString);
             }
         }
         catch (...)
@@ -3116,9 +3317,10 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             // FindName needs to be called first to actually load the xaml object
-            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+            auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
 
             // Insert the reason and the URI
+            unopenedUriDialog.SecondaryButtonText({});
             CouldNotOpenUriReason().Text(reason);
             UnopenedUri().Text(uri);
 
@@ -3169,6 +3371,42 @@ namespace winrt::TerminalApp::implementation
         // clicking on those sorts of links.
         // See discussion in GH#7562 for more details.
         return true;
+    }
+
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
+    {
+        const auto& schemeName = parsedUri.SchemeName();
+
+        if (schemeName == L"http" || schemeName == L"https")
+        {
+            return true;
+        }
+        if (schemeName == L"file")
+        {
+            static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
+            const auto filename = parsedUri.Path();
+            for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
+            {
+                if (til::ends_with_insensitive_ascii(filename, e))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        if (const auto& safeSchemes = _settings.GlobalSettings().SafeUriSchemes())
+        {
+            for (const auto& scheme : safeSchemes)
+            {
+                if (til::equals_insensitive_ascii(schemeName, scheme))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // Important! Don't take this eventArgs by reference, we need to extend the
@@ -3884,6 +4122,12 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        // Apply the ShowWorkspacesButton theme setting.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        {
+            _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
+        }
 
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
         _tabView.Background(transparent);
@@ -4678,7 +4922,7 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // - Helper to launch a new WT instance elevated. It'll do this by spawning
-    //   a helper process, who will asking the shell to elevate the process for
+    //   a helper process, that will ask the shell to elevate the process for
     //   us. This might cause a UAC prompt. The elevation is performed on a
     //   background thread, as to not block the UI thread.
     // Arguments:
@@ -5525,6 +5769,196 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Rebuild the workspace flyout contents. Called every time the flyout opens
+    // so it reflects the current set of persisted workspaces.
+    void TerminalPage::_PopulateWorkspaceFlyout()
+    {
+        if (!_workspaceFlyout)
+        {
+            return;
+        }
+
+        _workspaceFlyout.Items().Clear();
+
+        // --- "Name / Rename this window" ---
+        {
+            MenuFlyoutItem item{};
+            item.Text(_WindowProperties.WindowName().empty() ? RS_(L"NameThisWindowMenuItem") : RS_(L"RenameThisWindowMenuItem"));
+
+            auto iconElement = UI::IconPathConverter::IconWUX(L"\uE8AC"); // Rename glyph
+            Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+            item.Icon(iconElement);
+
+            item.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_actionDispatch->DoAction(ActionAndArgs{ ShortcutAction::OpenWindowRenamer, nullptr });
+                }
+            });
+            _workspaceFlyout.Items().Append(item);
+        }
+
+        // --- Gather open window info first so we can filter workspaces ---
+        const auto windowListReq{ winrt::make<WindowListRequest>() };
+        RequestWindowList.raise(*this, windowListReq);
+        const auto windowEntries = windowListReq.Entries();
+
+        std::set<winrt::hstring> openWindowNames;
+        if (windowEntries)
+        {
+            for (const auto& entry : windowEntries)
+            {
+                const auto& name = entry.Name();
+                if (!name.empty())
+                {
+                    openWindowNames.emplace(name);
+                }
+            }
+        }
+
+        // --- Saved workspaces section (only those not currently open) ---
+        // Collect workspace names that aren't currently open so we can show
+        // them both as top-level "open" items and inside the delete sub-menu.
+        const auto workspaces = ApplicationState::SharedInstance().AllPersistedWorkspaces();
+        if (workspaces && workspaces.Size() > 0)
+        {
+            bool addedSeparator = false;
+
+            for (const auto& pair : workspaces)
+            {
+                const auto name = pair.Key();
+
+                // Skip workspaces that correspond to a currently-open window.
+                if (openWindowNames.contains(name))
+                {
+                    continue;
+                }
+
+                if (!addedSeparator)
+                {
+                    _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+                    addedSeparator = true;
+                }
+
+                MenuFlyoutItem item{};
+                item.Text(name);
+
+                auto iconElement = UI::IconPathConverter::IconWUX(L"\uE8F1"); // SwitchApps glyph
+                Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                item.Icon(iconElement);
+
+                item.Click([weakThis{ get_weak() }, name](auto&&, auto&&) {
+                    if (auto page{ weakThis.get() })
+                    {
+                        page->_OpenWorkspaceWindow(name);
+                    }
+                });
+
+                // Right-click to delete: attach a context flyout with a
+                // "Delete workspace?" item that opens a confirmation dialog.
+                {
+                    WUX::Controls::MenuFlyout deleteFlyout{};
+                    deleteFlyout.Placement(WUX::Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedRight);
+
+                    WUX::Controls::MenuFlyoutItem deleteItem{};
+                    deleteItem.Text(RS_(L"DeleteWorkspaceMenuItem"));
+
+                    auto trashIcon = UI::IconPathConverter::IconWUX(L"\xE74D"); // Delete  glyph
+
+                    deleteItem.Click([weakThis{ get_weak() }, name](auto&&, auto&&) -> safe_void_coroutine {
+                        auto page{ weakThis.get() };
+                        if (!page)
+                        {
+                            co_return;
+                        }
+
+                        // Build and show a confirmation ContentDialog.
+                        ContentDialog dialog{};
+                        dialog.Title(winrt::box_value(winrt::hstring{ RS_fmt(L"ConfirmDeleteWorkspaceTitle", name) }));
+                        dialog.Content(winrt::box_value(winrt::hstring{ RS_fmt(L"ConfirmDeleteWorkspaceBody", name) }));
+                        dialog.PrimaryButtonText(RS_(L"ConfirmDeleteWorkspaceDelete"));
+                        dialog.CloseButtonText(RS_(L"ConfirmDeleteWorkspaceCancel"));
+                        dialog.DefaultButton(ContentDialogButton::Close);
+
+                        if (auto presenter{ page->_dialogPresenter.get() })
+                        {
+                            const auto result = co_await presenter.ShowDialog(dialog);
+                            // Re-check after co_await
+                            page = weakThis.get();
+                            if (!page)
+                            {
+                                co_return;
+                            }
+                            if (result == ContentDialogResult::Primary)
+                            {
+                                ApplicationState::SharedInstance().RemoveWorkspace(name);
+                                page->_PopulateWorkspaceFlyout();
+                            }
+                        }
+                    });
+
+                    deleteFlyout.Items().Append(deleteItem);
+                    WUX::Controls::Primitives::FlyoutBase::SetAttachedFlyout(item, deleteFlyout);
+                    item.ContextRequested([item](auto&&, auto&&) {
+                        WUX::Controls::Primitives::FlyoutBase::ShowAttachedFlyout(item);
+                    });
+                }
+
+                _workspaceFlyout.Items().Append(item);
+            }
+        }
+
+        // --- Open windows section ---
+        if (windowEntries && windowEntries.Size() > 0)
+        {
+            _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+
+            const auto thisWindowId = _WindowProperties.WindowId();
+
+            for (const auto& entry : windowEntries)
+            {
+                const auto id = entry.Id();
+                const auto& name = entry.Name();
+
+                winrt::hstring displayText;
+                if (name.empty())
+                {
+                    displayText = winrt::hstring{ RS_fmt(L"WindowListUnnamedEntry", id) };
+                }
+                else
+                {
+                    displayText = winrt::hstring{ fmt::format(FMT_COMPILE(L"#{}: {}"), id, name) };
+                }
+
+                MenuFlyoutItem item{};
+                item.Text(displayText);
+
+                if (id == thisWindowId)
+                {
+                    auto iconElement = UI::IconPathConverter::IconWUX(L"\uE73E"); // CheckMark glyph
+                    Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                    item.Icon(iconElement);
+                    item.IsEnabled(false);
+                }
+                else
+                {
+                    auto iconElement = UI::IconPathConverter::IconWUX(L"\uE737"); // ChromeRestore glyph
+                    Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                    item.Icon(iconElement);
+
+                    item.Click([weakThis{ get_weak() }, id](auto&&, auto&&) {
+                        if (auto page{ weakThis.get() })
+                        {
+                            page->SummonWindowByIdRequested.raise(*page, winrt::make<SummonWindowByIdRequestedArgs>(id));
+                        }
+                    });
+                }
+
+                _workspaceFlyout.Items().Append(item);
+            }
+        }
+    }
+
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
     // to pop the "Identify Window" toast when the user renames our window.
     void TerminalPage::_windowPropertyChanged(const IInspectable& /*sender*/, const WUX::Data::PropertyChangedEventArgs& args)
@@ -5533,6 +5967,10 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
+
+        // Keep the workspace dropdown label in sync with the window name.
+        // Use raw WindowName() so clearing the name hides the text.
+        _tabRow.WorkspaceName(_WindowProperties.WindowName());
 
         // DON'T display the confirmation if this is the name we were
         // given on startup!

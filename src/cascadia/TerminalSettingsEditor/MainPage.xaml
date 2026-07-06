@@ -68,6 +68,8 @@
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
                          Loaded="SettingsNav_Loaded"
+                         PaneClosed="SettingsNav_PaneClosed"
+                         PaneOpened="SettingsNav_PaneOpened"
                          TabFocusNavigation="Cycle">
         <muxc:NavigationView.Resources>
             <ResourceDictionary>

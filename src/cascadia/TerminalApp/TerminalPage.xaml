@@ -86,17 +86,12 @@
                            Grid.Row="2"
                            x:Load="False" />
 
-        <ContentDialog x:Name="QuitDialog"
-                       x:Uid="QuitDialog"
+        <ContentDialog x:Name="ConfirmCloseDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       DefaultButton="Primary" />
-
-        <ContentDialog x:Name="CloseAllDialog"
-                       x:Uid="CloseAllDialog"
-                       Grid.Row="2"
-                       x:Load="False"
-                       DefaultButton="Primary" />
+                       DefaultButton="Primary">
+            <CheckBox x:Uid="DontAskAgainCheckBox" />
+        </ContentDialog>
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
@@ -144,17 +139,17 @@
             </TextBlock>
         </ContentDialog>
 
-        <ContentDialog x:Name="CouldNotOpenUriDialog"
-                       x:Uid="CouldNotOpenUriDialog"
+        <ContentDialog x:Name="UriErrorDialog"
+                       x:Uid="UriErrorDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       DefaultButton="Primary">
+                       DefaultButton="Close">
             <TextBlock IsTextSelectionEnabled="True"
                        TextWrapping="WrapWholeWords">
                 <TextBlock.ContextFlyout>
                     <mtu:TextMenuFlyout />
                 </TextBlock.ContextFlyout>
-                <Run x:Name="CouldNotOpenUriReason" /> <LineBreak />
+                <Run x:Name="CouldNotOpenUriReason" /> <LineBreak /> <LineBreak />
                 <Run x:Name="UnopenedUri"
                      FontFamily="Cascadia Mono" />
             </TextBlock>

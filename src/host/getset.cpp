@@ -874,7 +874,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         NewWindowSize.height = CalcWindowSizeY(Window);
 
         // see MSFT:17415266
-        // If we have a actual head, we care about the maximum size the window can be.
+        // If we have an actual head, we care about the maximum size the window can be.
         // if we're headless, not so much. However, GetMaxWindowSizeInCharacters
         //      will only return the buffer size, so we can't use that to clip the arg here.
         // So only clip the requested size if we're not headless

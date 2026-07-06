@@ -4,6 +4,7 @@
 import "IPaneContent.idl";
 import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
+import "Tab.idl";
 
 namespace TerminalApp
 {
@@ -55,11 +56,14 @@ namespace TerminalApp
 
         Int32 SetStartupCommandline(CommandlineArgs args);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void SetStartupActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.ActionAndArgs> actions);
+        void SetPersistedLayout(Microsoft.Terminal.Settings.Model.WindowLayout layout);
         Int32 ExecuteCommandline(CommandlineArgs args);
 
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
+        Microsoft.Terminal.Settings.Model.WindowLayout GetWindowLayout();
         void PersistState();
 
         Windows.UI.Xaml.UIElement GetRoot();
@@ -74,6 +78,7 @@ namespace TerminalApp
         Boolean ShowTabsFullscreen { get; };
 
         void IdentifyWindow();
+        Boolean FocusTab(TerminalApp.Tab tab);
         void SetPersistedLayoutIdx(UInt32 idx);
         void RequestExitFullscreen();
 
@@ -126,6 +131,8 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SummonWindowByIdRequestedArgs> SummonWindowByIdRequested;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.Tab> FocusTabRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
@@ -137,6 +144,9 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+        event Windows.Foundation.TypedEventHandler<Object, WindowListRequest> RequestWindowList;
+        event Windows.Foundation.TypedEventHandler<Object, OpenWindowRequestedArgs> RequestOpenWindow;
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);

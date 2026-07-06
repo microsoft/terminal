@@ -647,7 +647,7 @@ style admin vs regular windows?
 ## Addenda
 
 This spec also has a follow-up spec which elaborates on the complexities of Mica
-in the Terminal. Please also refer to:
+in the Terminal. Please refer to:
 
 * [Mica in the Terminal]
 

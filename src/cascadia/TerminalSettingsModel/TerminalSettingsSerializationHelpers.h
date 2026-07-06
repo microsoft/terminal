@@ -88,14 +88,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConfirmOnClose)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        return BaseEnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseEnumMapper::CanConvert(json);
+    }
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 6> mappings = {
+    static constexpr std::array<pair_type, 7> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
         pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
         pair_type{ "window", ValueType::Window },
         pair_type{ "taskbar", ValueType::Taskbar },
+        pair_type{ "notification", ValueType::Notification },
         pair_type{ "all", AllSet },
     };
 

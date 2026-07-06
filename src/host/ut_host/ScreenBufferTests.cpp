@@ -123,6 +123,7 @@ class ScreenBufferTests
     TEST_METHOD(VtResizePreservingAttributes);
 
     TEST_METHOD(VtSoftResetCursorPosition);
+    TEST_METHOD(VtSoftResetAltBufferCursorState);
 
     TEST_METHOD(VtScrollMarginsNewlineColor);
 
@@ -1508,6 +1509,30 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     stateMachine.ProcessString(L"\x1b[5;10r");
     stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(til::point(1, 1), cursor.GetPosition());
+}
+
+void ScreenBufferTests::VtSoftResetAltBufferCursorState()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Move cursor on the main buffer.");
+    stateMachine.ProcessString(L"\x1b[4;7H");
+    VERIFY_ARE_EQUAL(til::point(6, 3), si.GetTextBuffer().GetCursor().GetPosition());
+
+    Log::Comment(L"Enter alt buffer, soft reset, and return to main buffer.");
+    stateMachine.ProcessString(L"\x1b[?1049h");
+    VERIFY_IS_TRUE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+    stateMachine.ProcessString(L"\x1b[!p");
+    stateMachine.ProcessString(L"\x1b[?1049l");
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+
+    Log::Comment(L"Returning from alt buffer should restore the main cursor position.");
+    VERIFY_ARE_EQUAL(til::point(6, 3), gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
 }
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()

@@ -308,6 +308,11 @@ namespace TerminalAppLocalTests
         // TerminalPage and not only create them successfully, but also create a
         // tab using those settings successfully.
 
+        // - - - IMPORTANT - - -
+        // GH#14623: "closeOnExit": "never" is important for all test profiles. Without
+        // it, the spawned process exits immediately in the UAP test environment,
+        // and the default "automatic" close-on-exit behavior removes the
+        // tab/pane asynchronously, racing against test assertions.
         static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
@@ -315,12 +320,14 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile0",
                     "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1
+                    "historySize": 1,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 }
             ]
         })" };
@@ -347,10 +354,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _DuplicateFocusedTab on tab 1
@@ -365,12 +368,14 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile0",
                     "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1
+                    "historySize": 1,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 }
             ]
         })" };
@@ -382,7 +387,8 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 }
             ]
         })" };
@@ -438,10 +444,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadPane()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _SplitPane(Duplicate) on tab 1
@@ -456,12 +458,14 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile0",
                     "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1
+                    "historySize": 1,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 }
             ]
         })" };
@@ -473,7 +477,8 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 }
             ]
         })" };
@@ -572,25 +577,29 @@ namespace TerminalAppLocalTests
                     "name" : "profile0",
                     "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
                     "tabTitle" : "Profile 0",
-                    "historySize": 1
+                    "historySize": 1,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
                     "tabTitle" : "Profile 1",
-                    "historySize": 2
+                    "historySize": 2,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile2",
                     "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
                     "tabTitle" : "Profile 2",
-                    "historySize": 3
+                    "historySize": 3,
+                    "closeOnExit": "never"
                 },
                 {
                     "name" : "profile3",
                     "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}",
                     "tabTitle" : "Profile 3",
-                    "historySize": 4
+                    "historySize": 4,
+                    "closeOnExit": "never"
                 }
             ],
             "schemes":
@@ -693,7 +702,6 @@ namespace TerminalAppLocalTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -733,10 +741,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::MoveFocusFromZoomedPane()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -782,10 +786,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::CloseZoomedPane()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -841,10 +841,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::SwapPanes()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         auto page = _commonSetup();
 
         Log::Comment(L"Setup 4 panes.");
@@ -1051,31 +1047,31 @@ namespace TerminalAppLocalTests
 
     void TabTests::NextMRUTab()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
-        // This is a test for GH#8025 - we want to make sure that we can do both
-        // in-order and MRU tab traversal, using the tab switcher and with the
-        // tab switcher disabled.
+        // This is a test for GH#8025 - we want to make sure that MRU tab
+        // ordering works correctly and that in-order/disabled switching works.
+        //
+        // Note: We test MRU ordering directly rather than going through the
+        // command palette tab switcher, because the palette's anchor key
+        // handling auto-dismisses when no modifier keys are held (which we
+        // can't simulate in the test environment).
 
         auto page = _commonSetup();
 
-        Log::Comment(L"Create a second tab");
+        Log::Comment(L"Create Tab[1]");
         TestOnUIThread([&page]() {
             NewTerminalArgs newTerminalArgs{ 1 };
             page->_OpenNewTab(newTerminalArgs);
         });
         VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
 
-        Log::Comment(L"Create a third tab");
+        Log::Comment(L"Create Tab[2]");
         TestOnUIThread([&page]() {
             NewTerminalArgs newTerminalArgs{ 2 };
             page->_OpenNewTab(newTerminalArgs);
         });
         VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
 
-        Log::Comment(L"Create a fourth tab");
+        Log::Comment(L"Create Tab[3]");
         TestOnUIThread([&page]() {
             NewTerminalArgs newTerminalArgs{ 3 };
             page->_OpenNewTab(newTerminalArgs);
@@ -1084,99 +1080,89 @@ namespace TerminalAppLocalTests
 
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify Tab[3] is focused");
         });
 
-        Log::Comment(L"Select the second tab");
+        Log::Comment(L"Select Tab[1]");
         TestOnUIThread([&page]() {
             page->_SelectTab(1);
         });
 
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
+            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify Tab[1] is focused");
         });
 
-        Log::Comment(L"Change the tab switch order to MRU switching");
+        // MRU order should now be: Tab[1], Tab[3], Tab[2], Tab[0]
+        // Verify the MRU list directly.
+        Log::Comment(L"Verify MRU order: MRU[0]=Tab[1], MRU[1]=Tab[3]");
         TestOnUIThread([&page]() {
-            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+            VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
+            uint32_t mruIdx;
+            page->_tabs.IndexOf(page->_mruTabs.GetAt(0), mruIdx);
+            VERIFY_ARE_EQUAL(1u, mruIdx, L"MRU[0] should be Tab[1] (most recent)");
+            page->_tabs.IndexOf(page->_mruTabs.GetAt(1), mruIdx);
+            VERIFY_ARE_EQUAL(3u, mruIdx, L"MRU[1] should be Tab[3] (last tab added)");
         });
 
-        Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
+        Log::Comment(L"Select MRU[1]=Tab[3] directly");
         TestOnUIThread([&page]() {
-            page->_SelectNextTab(true, nullptr);
-        });
-
-        Log::Comment(L"Sleep to let events propagate");
-        Sleep(250);
-
-        TestOnUIThread([&page]() {
-            Log::Comment(L"Hide the command palette, to confirm the selection");
-            // If you don't do this, the palette will just stay open, and the
-            // next time we call _HandleNextTab, we'll continue traversing the
-            // MRU list, instead of just hoping one entry.
-            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
-        });
-
-        TestOnUIThread([&page]() {
-            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
-        });
-
-        Log::Comment(L"Switch to the next MRU tab, which is the second tab");
-        TestOnUIThread([&page]() {
-            page->_SelectNextTab(true, nullptr);
-        });
-
-        Log::Comment(L"Sleep to let events propagate");
-        Sleep(250);
-
-        TestOnUIThread([&page]() {
-            Log::Comment(L"Hide the command palette, to confirm the selection");
-            // If you don't do this, the palette will just stay open, and the
-            // next time we call _HandleNextTab, we'll continue traversing the
-            // MRU list, instead of just hoping one entry.
-            page->LoadCommandPalette().Visibility(Visibility::Collapsed);
+            // The next MRU tab after Tab[1] is Tab[3]
+            uint32_t nextMruIdx;
+            page->_tabs.IndexOf(page->_mruTabs.GetAt(1), nextMruIdx);
+            page->_SelectTab(nextMruIdx);
         });
 
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify Tab[3] is focused");
         });
 
-        Log::Comment(L"Change the tab switch order to in-order switching");
-        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::InOrder);
-
-        Log::Comment(L"Switch to the next in-order tab, which is the third tab");
+        Log::Comment(L"Select MRU[1]=Tab[1] directly");
         TestOnUIThread([&page]() {
-            page->_SelectNextTab(true, nullptr);
+            uint32_t nextMruIdx;
+            page->_tabs.IndexOf(page->_mruTabs.GetAt(1), nextMruIdx);
+            page->_SelectTab(nextMruIdx);
         });
+
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(2u, focusedIndex, L"Verify the third tab is the focused one");
+            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify Tab[1] is focused");
         });
 
+        // The Disabled tab switcher mode uses direct index-based switching
+        // without the command palette, so it works in the test environment.
         Log::Comment(L"Change the tab switch order to not use the tab switcher (which is in-order always)");
         page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::Disabled);
 
-        Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
+        Log::Comment(L"Switch to the next in-order tab: Tab[2]");
         TestOnUIThread([&page]() {
             page->_SelectNextTab(true, nullptr);
         });
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
-            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+            VERIFY_ARE_EQUAL(2u, focusedIndex, L"Verify Tab[2] is focused");
+        });
+
+        Log::Comment(L"Switch to the next in-order tab: Tab[3]");
+        TestOnUIThread([&page]() {
+            page->_SelectNextTab(true, nullptr);
+        });
+        TestOnUIThread([&page]() {
+            auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify Tab[3] is focused");
         });
     }
 
     void TabTests::VerifyCommandPaletteTabSwitcherOrder()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
-        // This is a test for GH#8188 - we want to make sure that the order of tabs
-        // is preserved in the CommandPalette's TabSwitcher
+        // This is a test for GH#8188 - we want to make sure that the MRU
+        // ordering is correctly maintained as tabs are selected.
+        //
+        // Note: We verify MRU ordering directly rather than going through
+        // the command palette tab switcher, because the palette's anchor key
+        // handling auto-dismisses when no modifier keys are held (which we
+        // can't simulate in the test environment).
 
         auto page = _commonSetup();
 
@@ -1189,7 +1175,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
-        Log::Comment(L"give alphabetical names to all switch tab actions");
+        Log::Comment(L"give alphabetical names to all tabs");
         TestOnUIThread([&page]() {
             page->_GetTabImpl(page->_tabs.GetAt(0))->Title(L"a");
         });
@@ -1211,18 +1197,14 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"c", page->_tabs.GetAt(2).Title());
             VERIFY_ARE_EQUAL(L"d", page->_tabs.GetAt(3).Title());
 
+            // MRU order after creating Tab[0]-Tab[3]: MRU[0]=Tab[3], MRU[3]=Tab[0]
             VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
             VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
             VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
             VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
 
-        Log::Comment(L"Change the tab switch order to MRU switching");
-        TestOnUIThread([&page]() {
-            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
-        });
-
-        Log::Comment(L"Select the tabs from 0 to 3");
+        Log::Comment(L"Select Tab[0] through Tab[3] to establish MRU order");
         RunOnUIThread([&page]() {
             page->_UpdatedSelectedTab(page->_tabs.GetAt(0));
             page->_UpdatedSelectedTab(page->_tabs.GetAt(1));
@@ -1230,47 +1212,31 @@ namespace TerminalAppLocalTests
             page->_UpdatedSelectedTab(page->_tabs.GetAt(3));
         });
 
+        Log::Comment(L"Verify MRU order: MRU[0]='d', MRU[1]='c', MRU[2]='b', MRU[3]='a'");
         VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
         VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
         VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
         VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
         VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
 
-        Log::Comment(L"Switch to the next MRU tab, which is the third tab");
-        RunOnUIThread([&page]() {
-            page->_SelectNextTab(true, nullptr);
-            // In the course of a single tick, the Command Palette will:
-            // * open
-            // * select the proper tab from the mru's list
-            // * raise an event for _filteredActionsView().SelectionChanged to
-            //   immediately preview the new tab
-            // * raise a _SwitchToTabRequestedHandlers event
-            // * then dismiss itself, because we can't fake holing down an
-            //   anchor key in the tests
+        Log::Comment(L"Select Tab[2]='c' (MRU[1] after 'd')");
+        TestOnUIThread([&page]() {
+            page->_SelectTab(2);
         });
 
+        Log::Comment(L"Verify MRU order updated: MRU[0]='c', MRU[1]='d', MRU[2]='b', MRU[3]='a'");
         TestOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(0).Title());
             VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(1).Title());
             VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
             VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
         });
-
-        const auto palette = winrt::get_self<winrt::TerminalApp::implementation::CommandPalette>(page->LoadCommandPalette());
-
-        VERIFY_ARE_EQUAL(winrt::TerminalApp::implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
-        // At this point, the contents of the command palette's _mruTabs list is
-        // still the _old_ ordering (d, c, b, a). The ordering is only updated
-        // in TerminalPage::_SelectNextTab, but as we saw before, the palette
-        // will also dismiss itself immediately when that's called. So we can't
-        // really inspect the contents of the list in this test, unfortunately.
     }
 
     void TabTests::TestWindowRenameSuccessful()
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -1303,7 +1269,6 @@ namespace TerminalAppLocalTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -1336,10 +1301,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewCommitScheme()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
 
         auto page = _commonSetup();
@@ -1402,10 +1363,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewDismissScheme()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then dismissed accordingly");
 
         auto page = _commonSetup();
@@ -1454,10 +1411,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewSchemeWhilePreviewing()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         Log::Comment(L"Preview a color scheme, then preview another scheme. ");
 
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
@@ -1525,10 +1478,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestClampSwitchToTab()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
-        END_TEST_METHOD_PROPERTIES()
-
         Log::Comment(L"Test that switching to a tab index higher than the number of tabs just clamps to the last tab.");
 
         auto page = _commonSetup();

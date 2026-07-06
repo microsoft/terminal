@@ -132,9 +132,19 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
     // We don't have XAML yet, but we do have other stuff.
     _windowLogic = _appLogic.CreateNewWindow();
 
-    if (const auto content = windowArgs.Content(); !content.empty())
+    if (const auto layout = windowArgs.PersistedLayout())
+    {
+        _windowLogic.SetPersistedLayout(layout);
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto content = windowArgs.Content(); !content.empty())
     {
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
+    {
+        _windowLogic.SetStartupActions(actions);
         _launchShowWindowCommand = SW_NORMAL;
     }
     else
@@ -265,11 +275,16 @@ void AppHost::Initialize()
 
     _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.SummonWindowByIdRequested = _windowLogic.SummonWindowByIdRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowByIdRequested });
+    _revokers.FocusTabRequested = _windowLogic.FocusTabRequested(winrt::auto_revoke, { this, &AppHost::_FocusTabRequested });
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
+    _revokers.RequestOpenWindow = _windowLogic.RequestOpenWindow(winrt::auto_revoke, { this, &AppHost::_HandleOpenWindowRequested });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -407,6 +422,52 @@ void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IIn
                                            winrt::TerminalApp::LaunchPositionRequest args)
 {
     args.Position(_GetWindowLaunchPosition());
+}
+
+void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                       winrt::TerminalApp::WindowListRequest args)
+{
+    // Ask the Emperor (on the main thread) for the current window list.
+    // SendMessage blocks until the message is processed, so this is
+    // synchronous and the results vector is filled in-place.
+    std::vector<WindowEmperor::WindowListEntry> entries;
+    SendMessage(_windowManager->GetMainWindow(),
+                WindowEmperor::WM_GET_WINDOW_LIST,
+                0,
+                reinterpret_cast<LPARAM>(&entries));
+
+    auto windowEntries = args.Entries();
+    for (const auto& entry : entries)
+    {
+        winrt::TerminalApp::WindowListEntry w;
+        w.Id(entry.Id);
+        w.Name(winrt::hstring{ entry.Name });
+        windowEntries.Append(w);
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w ...")` dance.
+// Asks the WindowEmperor to summon a named window or restore its persisted
+// workspace, without launching a second wt.exe.
+void AppHost::_HandleOpenWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::OpenWindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->OpenWindow(args.Name());
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
+// dance. The page hands us a pre-built WindowRequestedArgs (with its
+// StartupActions already populated); we just forward it to the WindowEmperor.
+void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                        const winrt::TerminalApp::WindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->CreateNewWindow(args);
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -1062,6 +1123,31 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     HandleSummon(std::move(summonArgs));
+}
+
+void AppHost::_SummonWindowByIdRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::SummonWindowByIdRequestedArgs& args)
+{
+    // Summon the window by its ID without creating a new tab.
+    // We look up the target window in WindowEmperor and call HandleSummon directly.
+    const auto targetId = args.WindowId();
+    if (auto* targetWindow = _windowManager->GetWindowById(targetId))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summonBehavior;
+        summonBehavior.MoveToCurrentDesktop(false);
+        summonBehavior.DropdownDuration(0);
+        summonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summonBehavior.ToggleVisibility(false); // Do not toggle, just make visible.
+        targetWindow->HandleSummon(std::move(summonBehavior));
+    }
+}
+
+void AppHost::_FocusTabRequested(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::TerminalApp::Tab& tab)
+{
+    // The tab may have moved to another window. Ask the emperor to
+    // search all windows and focus the tab wherever it currently lives.
+    _windowManager->FocusTabInAnyWindow(tab);
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
