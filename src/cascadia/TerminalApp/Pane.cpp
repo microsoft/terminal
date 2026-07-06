@@ -1759,6 +1759,7 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
+    _titleChangedRevoker.revoke();
     return std::move(_content);
 }
 
@@ -1796,14 +1797,21 @@ void Pane::_CreatePaneHeader()
     if (_content)
     {
         _paneHeaderText.Text(_content.Title());
-        _titleChangedRevoker = _content.TitleChanged(winrt::auto_revoke, [this](auto&&, auto&&) {
-            _paneHeaderBorder.Dispatcher().RunAsync(
+        // Capture the content and header TextBlock by value (both are
+        // independently ref-counted WinRT objects) instead of the raw Pane
+        // `this`. The Pane may be closed and destroyed before the queued
+        // dispatcher callback runs; capturing `this` would be a use-after-free.
+        // auto_revoke unsubscribes when this Pane (and its revoker member) is
+        // destroyed, so there's no reference cycle.
+        const auto content = _content;
+        const auto headerText = _paneHeaderText;
+        _titleChangedRevoker = _content.TitleChanged(winrt::auto_revoke, [content, headerText](auto&&, auto&&) {
+            // TitleChanged may arrive off the UI thread, so hop back onto it
+            // before touching XAML.
+            headerText.Dispatcher().RunAsync(
                 winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
-                [this]() {
-                    if (_content && _paneHeaderText)
-                    {
-                        _paneHeaderText.Text(_content.Title());
-                    }
+                [content, headerText]() {
+                    headerText.Text(content.Title());
                 });
         });
     }
