@@ -209,7 +209,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
-        _appearance{ appearance }
+        _appearance{ appearance },
+        _useSeparateLightColorScheme{ appearance.DarkColorSchemeName() != appearance.LightColorSchemeName() }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -248,7 +249,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
             {
-                _NotifyChanges(L"CurrentColorScheme");
+                // If the two scheme names diverged (e.g. via inheritance),
+                // make sure the split light/dark UI is showing.
+                if (!_useSeparateLightColorScheme && DarkColorSchemeName() != LightColorSchemeName())
+                {
+                    _useSeparateLightColorScheme = true;
+                    _NotifyChanges(L"UseSeparateLightColorScheme");
+                }
+                _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
@@ -1011,12 +1019,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AppearanceViewModel::ClearColorScheme()
     {
         ClearDarkColorSchemeName();
-        _NotifyChanges(L"CurrentColorScheme");
+        ClearLightColorSchemeName();
+        const auto split = DarkColorSchemeName() != LightColorSchemeName();
+        if (split != _useSeparateLightColorScheme)
+        {
+            _useSeparateLightColorScheme = split;
+            _NotifyChanges(L"UseSeparateLightColorScheme");
+        }
+        _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
     }
 
-    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
+    Editor::ColorSchemeViewModel AppearanceViewModel::_schemeWithName(const winrt::hstring& schemeName) const
     {
-        const auto schemeName{ DarkColorSchemeName() };
         const auto allSchemes{ SchemesList() };
         for (const auto& scheme : allSchemes)
         {
@@ -1030,10 +1044,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return allSchemes.GetAt(0);
     }
 
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
+    {
+        return _schemeWithName(DarkColorSchemeName());
+    }
+
     void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
     {
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentDarkColorScheme() const
+    {
+        return _schemeWithName(DarkColorSchemeName());
+    }
+
+    void AppearanceViewModel::CurrentDarkColorScheme(const ColorSchemeViewModel& val)
+    {
+        DarkColorSchemeName(val.Name());
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentLightColorScheme() const
+    {
+        return _schemeWithName(LightColorSchemeName());
+    }
+
+    void AppearanceViewModel::CurrentLightColorScheme(const ColorSchemeViewModel& val)
+    {
+        LightColorSchemeName(val.Name());
+    }
+
+    bool AppearanceViewModel::UseSeparateLightColorScheme() const
+    {
+        return _useSeparateLightColorScheme;
+    }
+
+    void AppearanceViewModel::UseSeparateLightColorScheme(bool value)
+    {
+        if (value == _useSeparateLightColorScheme)
+        {
+            return;
+        }
+        _useSeparateLightColorScheme = value;
+        if (!value)
+        {
+            // Collapse back down to a single scheme for both themes.
+            LightColorSchemeName(DarkColorSchemeName());
+        }
+        _NotifyChanges(L"UseSeparateLightColorScheme");
+    }
+
+    bool AppearanceViewModel::HasColorScheme() const
+    {
+        return HasDarkColorSchemeName() || HasLightColorSchemeName();
     }
 
     static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
@@ -1384,6 +1448,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentDarkColorScheme" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentLightColorScheme" });
                 }
                 else if (settingName == L"BackgroundImageStretchMode")
                 {
@@ -1455,6 +1521,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentDarkColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentLightColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"UseSeparateLightColorScheme" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
             _UpdateBIAlignmentControl(static_cast<int32_t>(appearance.BackgroundImageAlignment()));
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });

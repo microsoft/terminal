@@ -131,6 +131,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ClearColorScheme();
         Editor::ColorSchemeViewModel CurrentColorScheme() const;
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
+        Editor::ColorSchemeViewModel CurrentDarkColorScheme() const;
+        void CurrentDarkColorScheme(const Editor::ColorSchemeViewModel& val);
+        Editor::ColorSchemeViewModel CurrentLightColorScheme() const;
+        void CurrentLightColorScheme(const Editor::ColorSchemeViewModel& val);
+        bool UseSeparateLightColorScheme() const;
+        void UseSeparateLightColorScheme(bool value);
+        bool HasColorScheme() const;
 
         Windows::UI::Color ForegroundPreview() const;
         Windows::UI::Color BackgroundPreview() const;
@@ -179,9 +186,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _addMenuFlyoutItemToUnused(FontSettingIndex index, Windows::UI::Xaml::Controls::MenuFlyoutItemBase item);
 
         double _parseCellSizeValue(const hstring& val) const;
+        Editor::ColorSchemeViewModel _schemeWithName(const winrt::hstring& schemeName) const;
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
+        bool _useSeparateLightColorScheme{ false };
         std::optional<FontFaceDependentsData> _fontFaceDependents;
     };
 

@@ -59,7 +59,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<float, IntAsFloatPercentConversionTrait>{});
     if (HasDarkColorSchemeName() || HasLightColorSchemeName())
     {
-        // check if the setting is coming from the UI, if so grab the ColorSchemeName until the settings UI is fixed.
+        // Only serialize the pair form if the two schemes actually differ.
         if (_LightColorSchemeName != _DarkColorSchemeName)
         {
             JsonUtils::SetValueForKey(json["colorScheme"], "dark", _DarkColorSchemeName);
