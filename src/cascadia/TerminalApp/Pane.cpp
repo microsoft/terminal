@@ -1805,8 +1805,8 @@ void Pane::_CreatePaneHeader()
         // independently ref-counted WinRT objects) instead of the raw Pane
         // `this`. The Pane may be closed and destroyed before the queued
         // dispatcher callback runs; capturing `this` would be a use-after-free.
-        // auto_revoke unsubscribes when this Pane (and its revoker member) is
-        // destroyed, so there's no reference cycle.
+        // auto_revoke removes the subscription when this Pane (and its revoker
+        // member) is destroyed, so there's no reference cycle.
         const auto content = _content;
         const auto headerText = _paneHeaderText;
         _titleChangedRevoker = _content.TitleChanged(winrt::auto_revoke, [content, headerText](auto&&, auto&&) {
