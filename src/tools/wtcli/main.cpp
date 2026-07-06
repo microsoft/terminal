@@ -68,74 +68,29 @@ struct EventSink : ITerminalProtocolEventSink
 
 // ── Helpers ──
 
-static winrt::com_ptr<ITerminalProtocol> ConnectToTerminal(bool* outAuthenticated = nullptr, std::string* outVersion = nullptr)
+// Per-brand CLSID — matches the server's compile-time selection.
+#if defined(WT_BRANDING_RELEASE)
+static constexpr CLSID CLSID_TerminalProtocol = { 0x832FDEC7, 0xAA6F, 0x4BAB, { 0x85, 0xFA, 0xA4, 0x91, 0x40, 0x56, 0x38, 0xFC } };
+#elif defined(WT_BRANDING_PREVIEW)
+static constexpr CLSID CLSID_TerminalProtocol = { 0xD77C8A1A, 0x83C0, 0x42FC, { 0xBA, 0xDF, 0x9B, 0xE8, 0x2E, 0x2A, 0x16, 0x24 } };
+#elif defined(WT_BRANDING_CANARY)
+static constexpr CLSID CLSID_TerminalProtocol = { 0x264DE65B, 0xF597, 0x4183, { 0x8A, 0x76, 0x6A, 0x03, 0x9A, 0x60, 0x47, 0x25 } };
+#else
+static constexpr CLSID CLSID_TerminalProtocol = { 0xAD9425AA, 0x1722, 0x4E7B, { 0xA4, 0x51, 0xAA, 0x1D, 0x09, 0x10, 0x6E, 0x83 } };
+#endif
+
+static winrt::com_ptr<ITerminalProtocol> ConnectToTerminal(std::string* outVersion = nullptr)
 {
-    wchar_t clsid[128]{};
-    if (!GetEnvironmentVariableW(L"WT_COM_CLSID", clsid, ARRAYSIZE(clsid)))
-    {
-        fprintf(stderr, "[wtcli] WT_COM_CLSID not set. Must run inside a Windows Terminal pane.\n");
-        return nullptr;
-    }
-
-    CLSID cls{};
-    if (FAILED(CLSIDFromString(clsid, &cls)))
-    {
-        fprintf(stderr, "[wtcli] Invalid CLSID: %ls\n", clsid);
-        return nullptr;
-    }
-
     winrt::com_ptr<ITerminalProtocol> server;
-    auto hr = CoCreateInstance(cls, nullptr, CLSCTX_LOCAL_SERVER, __uuidof(ITerminalProtocol), server.put_void());
+    auto hr = CoCreateInstance(CLSID_TerminalProtocol, nullptr, CLSCTX_LOCAL_SERVER, __uuidof(ITerminalProtocol), server.put_void());
     if (FAILED(hr))
     {
         fprintf(stderr, "[wtcli] Connection failed: 0x%08X\n", static_cast<uint32_t>(hr));
         return nullptr;
     }
 
-    BSTR rawAuth = nullptr;
-    hr = server->Authenticate(nullptr, &rawAuth);
-    bool parsed = false;
-    bool authenticated = false;
-    std::string version;
-    if (SUCCEEDED(hr) && rawAuth)
-    {
-        Json::Value v;
-        Json::CharReaderBuilder rb;
-        std::string errs;
-        auto s = winrt::to_string(winrt::hstring{ rawAuth });
-        std::istringstream ss(s);
-        if (Json::parseFromStream(rb, ss, &v, &errs))
-        {
-            parsed = true;
-            authenticated = v["authenticated"].asBool();
-            version = v["protocol_version"].asString();
-        }
-    }
-    if (rawAuth)
-        SysFreeString(rawAuth);
-
-    if (FAILED(hr))
-    {
-        fprintf(stderr, "[wtcli] Authentication failed: 0x%08X\n", static_cast<uint32_t>(hr));
-        return nullptr;
-    }
-    if (!parsed)
-    {
-        // Success HRESULT but a null/malformed auth payload is a broken
-        // server contract — don't misreport it as a server rejection.
-        fprintf(stderr, "[wtcli] Authentication response missing or malformed (server contract error)\n");
-        return nullptr;
-    }
-    if (!authenticated)
-    {
-        fprintf(stderr, "[wtcli] Authentication rejected by server\n");
-        return nullptr;
-    }
-
-    if (outAuthenticated)
-        *outAuthenticated = authenticated;
     if (outVersion)
-        *outVersion = version;
+        *outVersion = "2.2";
     return server;
 }
 
@@ -593,7 +548,7 @@ int main()
         printf("Connecting to Windows Terminal...\n");
         auto server = connect();
         if (!server) { fprintf(stderr, "Connection failed.\n"); return; }
-        printf("Connected and authenticated!\n\n");
+        printf("Connected!\n\n");
 
         Json::Value windows;
         if (SUCCEEDED(CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows)))
@@ -620,7 +575,7 @@ int main()
         auto hasClsid = GetEnvironmentVariableW(L"WT_COM_CLSID", clsid, ARRAYSIZE(clsid)) > 0;
 
         std::string version;
-        auto server = ConnectToTerminal(nullptr, &version);
+        auto server = ConnectToTerminal(&version);
 
         Json::Value methods(Json::arrayValue);
         if (server)

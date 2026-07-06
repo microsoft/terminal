@@ -21,7 +21,7 @@ import "unknwn.idl";
 // this cross-process to push events (each event is a JSON string).
 [
     object,
-    uuid(3D8F4B26-5C7E-4A9B-B1D0-2F5A7C9E1B4D),
+    uuid(DD47E357-3D5E-4EFD-901B-C02CE6C45B7D),
     pointer_default(unique)
 ] interface ITerminalProtocolEventSink : IUnknown
 {
@@ -29,16 +29,14 @@ import "unknwn.idl";
 };
 
 // Terminal protocol — implemented by WindowsTerminal.exe, activated by the
-// client via CoCreateInstance(CLSCTX_LOCAL_SERVER) under the existing
-// per-branding CLSID (discovered through the WT_COM_CLSID env var).
+// client via CoCreateInstance(CLSCTX_LOCAL_SERVER) with the per-brand CLSID.
 [
     object,
-    uuid(9C7E2A14-3B5D-4F8A-A2C9-1E4F6B8D0A3C),
+    uuid(D999831E-7EBD-4B14-9D2F-8B09417582D4),
     pointer_default(unique)
 ] interface ITerminalProtocol : IUnknown
 {
     // ── Meta ──
-    HRESULT Authenticate([in] BSTR token, [out, retval] BSTR* resultJson);
     HRESULT GetCapabilities([out, retval] BSTR* json);
 
     // ── Queries (complex results as JSON) ──

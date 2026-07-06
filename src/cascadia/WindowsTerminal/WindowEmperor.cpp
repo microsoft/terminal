@@ -1745,19 +1745,6 @@ void WindowEmperor::_initializeProtocolServer()
 {
     // Register COM class factory for cross-process access (runs on MTA thread).
     TerminalProtocolComServer::s_setEmperor(this);
-    if (SUCCEEDED_LOG(TerminalProtocolComServer::s_StartListening()))
-    {
-        // Stringify the CLSID so child processes can discover us via CoCreateInstance.
-        wil::unique_cotaskmem_string clsidStr;
-        if (SUCCEEDED(StringFromCLSID(__uuidof(TerminalProtocolComServer), &clsidStr))
-            && clsidStr)
-        {
-            _comClsid = clsidStr.get();
-            SetEnvironmentVariableW(L"WT_COM_CLSID", _comClsid.c_str());
-        }
-    }
-
-    OutputDebugStringA(fmt::format("WT Protocol Server started\n  WT_COM_CLSID={}\n",
-                                   winrt::to_string(_comClsid))
-                           .c_str());
+    SUCCEEDED_LOG(TerminalProtocolComServer::s_StartListening());
+    OutputDebugStringA("WT Protocol Server started\n");
 }

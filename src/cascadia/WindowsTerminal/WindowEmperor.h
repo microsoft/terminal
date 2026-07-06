@@ -55,7 +55,6 @@ public:
     void OpenWindow(const winrt::hstring& name);
 
     // Protocol server access
-    const std::wstring& GetComClsid() const noexcept { return _comClsid; }
     const std::vector<std::shared_ptr<::AppHost>>& GetWindows() const noexcept { return _windows; }
     AppHost* GetMostRecentWindow() const noexcept { return _mostRecentWindow(); }
 
@@ -99,7 +98,6 @@ private:
     std::vector<std::shared_ptr<::AppHost>> _windows;
 
     // Protocol server for AI CLI integration
-    std::wstring _comClsid; // Stringified CLSID for WT_COM_CLSID env var
     void _initializeProtocolServer();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     NOTIFYICONDATA _notificationIcon{};
