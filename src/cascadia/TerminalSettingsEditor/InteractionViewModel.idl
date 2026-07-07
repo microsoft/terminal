@@ -34,5 +34,13 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableColorSelection);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableTabDragDrop);
+
+        // False when the OS would refuse drag/drop anyway (elevated or running
+        // as a different user); used to disable the EnableTabDragDrop control.
+        Boolean CanEnableTabDragDrop { get; };
+        // Help text for the EnableTabDragDrop control that explains why it is
+        // disabled when CanEnableTabDragDrop is false.
+        String TabDragDropStatefulHelpText { get; };
     }
 }

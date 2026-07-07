@@ -328,7 +328,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop();
+        const auto canDragDrop = CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -4123,6 +4123,16 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
+        // Re-evaluate whether tabs can be dragged so toggling the
+        // enableTabDragDrop setting takes effect on hot-reload. This stays
+        // disabled regardless when drag/drop would crash us (elevated or running
+        // as a different user - see Utils::CanUwpDragDrop, GH#15689).
+        {
+            const auto canDragDrop = CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+            _tabView.CanReorderTabs(canDragDrop);
+            _tabView.CanDragTabs(canDragDrop);
+        }
+
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
@@ -5983,6 +5993,19 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
+        // Veto the drag entirely when drag/drop is disabled or unavailable.
+        // Toggling TabView.CanReorderTabs/CanDragTabs at runtime doesn't
+        // reliably propagate to the inner ListView, so the enableTabDragDrop
+        // setting wouldn't otherwise take effect until the next launch. Reading
+        // the setting here (and CanDragDrop, which stays false when a drag would
+        // fail-fast us - elevated or running as a different user, GH#15689)
+        // cancels both reorder and tear-out, since both begin with this event.
+        if (!(CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop()))
+        {
+            e.Cancel(true);
+            return;
+        }
+
         // Get the tab impl from this event.
         const auto eventTab = e.Tab();
         const auto tabBase = _GetTabByTabViewItem(eventTab);
