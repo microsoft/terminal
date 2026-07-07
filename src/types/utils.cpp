@@ -1021,7 +1021,7 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         THROW_IF_WIN32_BOOL_FALSE(LookupAccountNameW(nullptr, account.c_str(), sidBuffer.data(), &sidSize, domainBuffer.data(), &domainSize, &sidUse));
 
         const auto sessionSid = reinterpret_cast<PSID>(sidBuffer.data());
-        // Different SIDs -> different user -> drag/drop would crash us.
+        // A different SID means a different user -> drag/drop would crash us.
         return !EqualSid(tokenUser->User.Sid, sessionSid);
     }
     catch (...)
