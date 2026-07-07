@@ -318,6 +318,13 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Tabs may be reordered/torn out only when the OS allows drag/drop (not
+    // elevated or a different user - GH#15689) and the user hasn't disabled it.
+    bool TerminalPage::_tabDragDropEnabled() const
+    {
+        return CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -328,7 +335,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+        const auto canDragDrop = _tabDragDropEnabled();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -4123,12 +4130,11 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
-        // Re-evaluate whether tabs can be dragged so toggling the
-        // enableTabDragDrop setting takes effect on hot-reload. This stays
-        // disabled regardless when drag/drop would crash us (elevated or running
-        // as a different user - see Utils::CanUwpDragDrop, GH#15689).
+        // Re-apply on hot-reload so toggling enableTabDragDrop takes effect.
+        // Stays off when drag/drop would crash us anyway (elevated / different
+        // user - see Utils::CanUwpDragDrop). GH#15689.
         {
-            const auto canDragDrop = CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+            const auto canDragDrop = _tabDragDropEnabled();
             _tabView.CanReorderTabs(canDragDrop);
             _tabView.CanDragTabs(canDragDrop);
         }
@@ -5993,15 +5999,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
-        // Veto the drag entirely when drag/drop is disabled or unavailable.
-        // Toggling TabView.CanReorderTabs/CanDragTabs at runtime doesn't
-        // reliably propagate to the inner ListView, so the enableTabDragDrop
-        // setting wouldn't otherwise take effect until the next launch. Reading
-        // the setting here (and CanDragDrop, which stays false when a drag would
-        // fail-fast us - elevated or running as a different user, GH#15689)
-        // cancels both reorder and tear-out, since both begin with this event.
-        if (!(CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop()))
+        // CanReorderTabs/CanDragTabs don't reliably update after the TabView is
+        // live, so gate here too: this makes enableTabDragDrop take effect
+        // without a restart and blocks the drag that would fail-fast us when
+        // elevated or running as a different user. GH#15689.
+        if (!_tabDragDropEnabled())
         {
+            // _TabDragStarted (subscribed first) already set _rearranging; a
+            // cancelled drag raises no TabDragCompleted to clear it, so undo it.
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
             e.Cancel(true);
             return;
         }

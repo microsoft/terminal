@@ -959,30 +959,21 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     return EndianSwap(newGuid);
 }
 
-// Returns true if this process is running as a different user than the one
-// logged on to our session (e.g. it was launched via `runas /user:...`).
-//
-// The modern drag/drop broker (the "DataExchangeHost"/"DragExperienceHost"
-// service that XAML uses for tab drag/drop) refuses to service a process whose
-// token user doesn't match the interactive session's user: it fails with
-// E_ACCESSDENIED, which XAML turns into an uncaught exception and fail-fasts
-// the entire process. This is the same class of failure as running elevated,
-// just triggered by a different token rather than a higher integrity level.
-// See GH#15689.
+// True if this process runs as a user other than the session's logged-on user
+// (e.g. launched via `runas /user:...`). XAML's drag/drop broker denies such a
+// process with E_ACCESSDENIED and fail-fasts the process, same as elevation.
+// GH#15689.
 static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
 {
     try
     {
-        // The user SID backing our process token.
         const auto tokenUser = wil::get_token_information<TOKEN_USER>(processToken);
 
-        // The Terminal Services session we belong to.
         DWORD sessionId = 0;
         THROW_IF_WIN32_BOOL_FALSE(ProcessIdToSessionId(GetCurrentProcessId(), &sessionId));
 
-        // The user logged on to that session. There's no WTS info class that
-        // hands back a SID directly, so we ask for the account name and resolve
-        // it ourselves below.
+        // WTS has no info class for the session user's SID, so fetch the account
+        // name/domain and resolve it to a SID below.
         LPWSTR wtsUserName = nullptr;
         LPWSTR wtsDomainName = nullptr;
         const auto freeWts = wil::scope_exit([&]() noexcept {
@@ -1000,8 +991,7 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSUserName, &wtsUserName, &bytesReturned));
         THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSDomainName, &wtsDomainName, &bytesReturned));
 
-        // A session with no interactive user (e.g. a service session) gives us
-        // an empty name. Don't try to make a judgement in that case.
+        // No interactive user (e.g. a service session) -> empty name; can't judge.
         if (!wtsUserName || !*wtsUserName)
         {
             return false;
@@ -1015,13 +1005,11 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         }
         account.append(wtsUserName);
 
-        // Resolve the session user's name to a SID so we can compare it to our
-        // token's user by identity rather than by (spoofable) display name.
+        // Resolve to a SID and compare by identity, not by display name.
         DWORD sidSize = 0;
         DWORD domainSize = 0;
         SID_NAME_USE sidUse{};
-        // First call is expected to fail with ERROR_INSUFFICIENT_BUFFER; it
-        // just tells us how much to allocate.
+        // First call fails with ERROR_INSUFFICIENT_BUFFER and returns the sizes.
         LookupAccountNameW(nullptr, account.c_str(), nullptr, &sidSize, nullptr, &domainSize, &sidUse);
         if (sidSize == 0)
         {
@@ -1033,16 +1021,13 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         THROW_IF_WIN32_BOOL_FALSE(LookupAccountNameW(nullptr, account.c_str(), sidBuffer.data(), &sidSize, domainBuffer.data(), &domainSize, &sidUse));
 
         const auto sessionSid = reinterpret_cast<PSID>(sidBuffer.data());
-        // If the two SIDs differ, we're running as somebody other than the
-        // person sitting at this session -> drag/drop will crash us.
+        // Different SIDs -> different user -> drag/drop would crash us.
         return !EqualSid(tokenUser->User.Sid, sessionSid);
     }
     catch (...)
     {
-        // If any of this failed we genuinely can't tell, so don't claim it's a
-        // different user (that would needlessly disable drag/drop for everyone
-        // if, say, the Terminal Services APIs were unavailable). The caller's
-        // elevation checks still apply.
+        // Fail safe: report "same user" on any failure so we never disable
+        // drag/drop for the normal case. Elevation checks still apply.
         LOG_CAUGHT_EXCEPTION();
         return false;
     }
@@ -1066,10 +1051,8 @@ bool Utils::CanUwpDragDrop()
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
 
-            // Running as a different user than the one logged into our session
-            // (e.g. via `runas /user:...`) crashes the drag/drop broker the
-            // same way elevation does. Check this first: it holds regardless of
-            // our own token's elevation state. See GH#15689.
+            // Different-user (runas) breaks drag/drop like elevation does, and
+            // independently of our own elevation. Check it first. GH#15689.
             if (_isRunningAsDifferentSessionUser(processToken.get()))
             {
                 return true;
