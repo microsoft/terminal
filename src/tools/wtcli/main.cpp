@@ -5,7 +5,6 @@
 #include <winrt/Windows.Foundation.h>
 
 #include "Formatting.h"
-#include "wtcli_functions.h"
 
 // Classic-COM Terminal protocol. Generated from
 // src/host/proxy/ITerminalProtocol.idl; found via the OpenConsoleProxy IntDir
@@ -19,13 +18,10 @@
 #include <wil/resource.h>
 
 #include <charconv>
-#include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include <functional>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <vector>
 
 // ── Helpers ──
@@ -451,36 +447,6 @@ int main()
         }
     });
 
-    // ── send-keys ──
-    std::string sendKeysTarget;
-    std::vector<std::string> sendKeysArgs;
-    bool sendKeysRaw = false;
-    auto* sendKeysCmd = app.add_subcommand("send-keys", "Send keys to a pane")->alias("send");
-    sendKeysCmd->add_option("-t,--target", sendKeysTarget, "Session ID (GUID)");
-    sendKeysCmd->add_flag("--raw", sendKeysRaw,
-                          "Treat the payload as literal UTF-8 text — skip tmux-style "
-                          "token translation (Enter/Tab/Escape/BSpace/C-x). Use this when "
-                          "forwarding arbitrary agent-supplied text.");
-    sendKeysCmd->add_option("keys", sendKeysArgs, "Keys to send")->required();
-    sendKeysCmd->callback([&]() {
-        auto server = connect();
-        if (!server) return;
-        auto sessionId = ResolveSessionId(server.get(), sendKeysTarget);
-        auto text = sendKeysRaw
-            ? wtcli::JoinAsUtf16(sendKeysArgs)
-            : wtcli::TranslateKeys(sendKeysArgs);
-        wil::unique_bstr textB{ SysAllocString(text.c_str()) };
-        auto hr = server->SendInput(sessionId, textB.get());
-        if (FAILED(hr)) { fprintf(stderr, "SendInput failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
-        if (jsonMode)
-        {
-            Json::Value v;
-            v["ok"] = true;
-            v["session_id"] = GuidToString(sessionId);
-            PrintJson(v);
-        }
-    });
-
     // ── focus-pane ──
     std::string focusPaneTarget;
     auto* focusPaneCmd = app.add_subcommand("focus-pane", "Switch focus to a pane")->alias("focusp");
@@ -501,173 +467,6 @@ int main()
         else
         {
             printf("Focused pane %s.\n", GuidToString(sessionId).c_str());
-        }
-    });
-
-    // ── test-pipe ──
-    auto* testPipeCmd = app.add_subcommand("test-pipe", "Test connection to Windows Terminal");
-    testPipeCmd->callback([&]() {
-        printf("Connecting to Windows Terminal...\n");
-        auto server = connect();
-        if (!server) { fprintf(stderr, "Connection failed.\n"); return; }
-        printf("Connected!\n\n");
-
-        Json::Value windows;
-        if (SUCCEEDED(CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows)))
-        {
-            Json::Value arr(Json::objectValue);
-            arr["windows"] = windows;
-            printf("list_windows:\n");
-            PrintJson(arr);
-        }
-        printf("\n");
-
-        Json::Value caps;
-        if (SUCCEEDED(CallJson([&](BSTR* j) { return server->GetCapabilities(j); }, caps)))
-        {
-            printf("get_capabilities:\n");
-            PrintJson(caps);
-        }
-    });
-
-    // ── info ──
-    auto* infoCmd = app.add_subcommand("info", "Show connection info");
-    infoCmd->callback([&]() {
-        wchar_t clsid[128]{};
-        auto hasClsid = GetEnvironmentVariableW(L"WT_COM_CLSID", clsid, ARRAYSIZE(clsid)) > 0;
-
-        std::string version;
-        auto server = ConnectToTerminal(&version);
-
-        Json::Value methods(Json::arrayValue);
-        if (server)
-        {
-            CallJson([&](BSTR* j) { return server->GetCapabilities(j); }, methods);
-        }
-
-        if (jsonMode)
-        {
-            Json::Value v;
-            if (hasClsid)
-                v["com_clsid"] = winrt::to_string(winrt::hstring{ clsid });
-            v["connected"] = (server != nullptr);
-            if (!version.empty())
-                v["protocol_version"] = version;
-            v["methods"] = methods.isArray() ? methods : Json::Value(Json::arrayValue);
-            PrintJson(v);
-        }
-        else
-        {
-            printf("Windows Terminal Protocol Info\n");
-            printf("========================================\n");
-            if (hasClsid)
-                printf("  COM CLSID:  %ls\n", clsid);
-            else
-                printf("  COM CLSID:  (not set)\n");
-            printf("\n");
-            if (!server)
-            {
-                printf("  Connection: FAILED\n");
-            }
-            else
-            {
-                printf("  Connection: OK\n");
-                if (!version.empty())
-                    printf("  Protocol:   %s\n", version.c_str());
-                printf("\n");
-                if (methods.isArray() && methods.size() > 0)
-                {
-                    printf("  Methods:    %u supported\n", methods.size());
-                    for (const auto& m : methods)
-                        printf("              - %s\n", m.asString().c_str());
-                }
-            }
-        }
-
-        if (!server)
-            exitCode = 1;
-    });
-
-    // ── wait-for ──
-    std::string waitForTarget;
-    int waitInterval = 500;
-    int waitTimeout = 0;
-    auto* waitForCmd = app.add_subcommand("wait-for", "Wait for a pane to exit");
-    waitForCmd->add_option("-t,--target", waitForTarget, "Session ID (GUID)")->required();
-    waitForCmd->add_option("--interval", waitInterval, "Poll interval (ms)");
-    waitForCmd->add_option("--timeout", waitTimeout, "Timeout (seconds, 0=forever)");
-    waitForCmd->callback([&]() {
-        auto server = connect();
-        if (!server) return;
-        auto sessionId = ResolveSessionId(server.get(), waitForTarget);
-        auto start = std::chrono::steady_clock::now();
-
-        while (true)
-        {
-            Json::Value status;
-            auto hr = CallJson([&](BSTR* j) { return server->GetProcessStatus(sessionId, j); }, status);
-            if (FAILED(hr))
-            {
-                fprintf(stderr, "GetProcessStatus failed: 0x%08X\n", static_cast<uint32_t>(hr));
-                exitCode = 1;
-                return;
-            }
-            if (status["state"].asString() == "exited")
-            {
-                if (jsonMode)
-                {
-                    Json::Value v;
-                    v["state"] = "exited";
-                    if (status.isMember("exit_code"))
-                        v["exit_code"] = status["exit_code"].asInt();
-                    PrintJson(v);
-                }
-                else
-                {
-                    printf("Process exited");
-                    if (status.isMember("has_exit_code") ? status["has_exit_code"].asBool() : status.isMember("exit_code"))
-                        printf(" (code %d)", status["exit_code"].asInt());
-                    printf("\n");
-                }
-                return;
-            }
-
-            if (waitTimeout > 0)
-            {
-                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
-                                   std::chrono::steady_clock::now() - start)
-                                   .count();
-                if (elapsed >= waitTimeout)
-                {
-                    fprintf(stderr, "Timeout waiting for pane %s\n", waitForTarget.c_str());
-                    exitCode = 1;
-                    return;
-                }
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(waitInterval));
-        }
-    });
-
-    // ── set-env ──
-    std::string setEnvShell = "powershell";
-    auto* setEnvCmd = app.add_subcommand("set-env", "Print env setup commands")->alias("setenv");
-    setEnvCmd->add_option("-s,--shell", setEnvShell, "Shell: powershell, bash, cmd");
-    setEnvCmd->callback([&]() {
-        wchar_t clsid[128]{};
-        GetEnvironmentVariableW(L"WT_COM_CLSID", clsid, ARRAYSIZE(clsid));
-        auto cl = winrt::to_string(winrt::hstring{ clsid });
-
-        if (setEnvShell == "powershell" || setEnvShell == "pwsh")
-        {
-            if (!cl.empty()) printf("$env:WT_COM_CLSID = '%s'\n", cl.c_str());
-        }
-        else if (setEnvShell == "bash" || setEnvShell == "sh" || setEnvShell == "zsh")
-        {
-            if (!cl.empty()) printf("export WT_COM_CLSID='%s'\n", cl.c_str());
-        }
-        else if (setEnvShell == "cmd")
-        {
-            if (!cl.empty()) printf("set WT_COM_CLSID=%s\n", cl.c_str());
         }
     });
 

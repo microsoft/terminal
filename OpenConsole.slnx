@@ -1048,15 +1048,6 @@
     </Project>
   </Folder>
   <Project Path="src/tools/wtcli/wtcli.vcxproj" Id="8a3b5e2f-1c4d-4f6a-9b8c-0d1e2f3a4b5c" />
-  <Project Path="src/tools/wtcli/ft_fuzzer/WtcliFuzzer.vcxproj" Id="c5fae84e-310e-4cbc-8242-5ad6a37fdaa5">
-    <Platform Solution="*|Any CPU" Project="Win32" />
-    <Build Solution="*|Any CPU" Project="false" />
-    <Build Solution="*|ARM64" Project="false" />
-    <Build Solution="*|x86" Project="false" />
-    <Build Solution="AuditMode|x64" Project="false" />
-    <Build Solution="Debug|x64" Project="false" />
-    <Build Solution="Release|x64" Project="false" />
-  </Project>
   <Project Path="src/cascadia/TerminalProtocol/TerminalProtocol.vcxproj" Id="f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5d" />
   <Project Path="src/cascadia/TerminalProtocol/ft_fuzzer/ProtocolFuzzer.vcxproj" Id="26711d2f-ca10-45be-9e89-43771030bdb0">
     <Platform Solution="*|Any CPU" Project="Win32" />

@@ -21,7 +21,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Formatting.h" />
-    <ClInclude Include="wtcli_functions.h" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
