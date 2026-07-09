@@ -1,11 +1,11 @@
 
 # How to build OpenConsole
 
-This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for some of its dependencies. To make sure submodules are restored or updated, be sure to run the following prior to building:
+## Prerequisites
 
-```shell
-git submodule update --init --recursive
-```
+Make sure your machine matches the [Developer Guidance in the README](../README.md#developer-guidance). The most common source of mysterious build failures is an out-of-date toolchain — as of mid-2026 this repository requires **Visual Studio 2026 (18.6 or later)**, which provides the v145 platform toolset, and the **Windows 11 SDK 10.0.26100**. Visual Studio 2022 can no longer build `main`; see [Troubleshooting](#troubleshooting-command-line-builds) below for what that failure looks like.
+
+The repository does not use git submodules; a plain `git clone` gives you everything. NuGet packages are restored automatically by the build scripts (using the `nuget.exe` bundled at `dep/nuget/nuget.exe`) or by Visual Studio.
 
 OpenConsole.slnx may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
@@ -45,6 +45,17 @@ There are also scripts for running the tests:
 - `runft.cmd` - run the feature tests
 - `runuia.cmd` - run the UIA tests
 - `runformat` - uses clang-format to format all c++ files to match our coding style.
+
+### Troubleshooting command-line builds
+
+* **`Invalid input 'OpenConsole.slnx'. The file type was not recognized.`** — your checkout has an old `dep/nuget/nuget.exe` that predates `.slnx` solution support. Pull the latest `main` (the bundled nuget.exe understands `.slnx`), or download the [latest nuget.exe](https://dist.nuget.org/win-x86-commandline/latest/nuget.exe) over `dep/nuget/nuget.exe`.
+* **vcpkg: `Unable to find a valid Visual Studio instance` ... `with toolset version v145`** — you are building with Visual Studio 2022 (or older). This repository requires Visual Studio 2026; the v145 platform toolset does not exist in VS 2022.
+* **`Xaml Internal Error error WMC9999`** on sources you haven't touched — another symptom of building with a pre-2026 Visual Studio; the XAML compiler crashes rather than reporting the real problem. Install VS 2026 and rebuild.
+* **`C3859: Failed to create virtual memory for PCH` / `C1076: internal heap limit reached` / MSBuild hanging after an `MSB8084 ... OutOfMemoryException`** — the default fully-parallel build can exhaust commit memory; several projects here compile multi-GB precompiled headers concurrently. Rerun with reduced parallelism, e.g.:
+
+  ```powershell
+  Invoke-OpenConsoleBuild /m:2 /p:CL_MPCount=2
+  ```
 
 ## Running & Debugging
 
@@ -106,7 +117,7 @@ The Terminal is bundled as an `.msix`, which is produced by the `CascadiaPackage
 "%msbuild%" "%OPENCON%\OpenConsole.slnx" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
 ```
 
-This takes quite some time, and only generates an `msix`. It does not install the msix. To deploy the package:
+This takes quite some time, and only generates an `msix`. It does not install the msix. To deploy the package (requires [Developer Mode](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to register an unsigned loose layout):
 
 ```powershell
 # If you haven't already:
@@ -116,6 +127,9 @@ Set-MsBuildDevEnvironment;
 # The Set-MsBuildDevEnvironment call is needed for finding the path to
 # makeappx. It also takes a little longer to run. If you're sticking in powershell, best to do that.
 
+# The AppPackages folder name and msix name include the build configuration for
+# Debug builds (CascadiaPackage_0.0.1.0_x64_Debug_Test / ..._Debug.msix), but
+# NOT for Release builds (CascadiaPackage_0.0.1.0_x64_Test / ..._x64.msix).
 Set-Location -Path src\cascadia\CascadiaPackage\AppPackages\CascadiaPackage_0.0.1.0_x64_Debug_Test;
 if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) {
 Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'
@@ -125,29 +139,18 @@ makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\loose\;
 Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
 ```
 
-Or the cmd.exe version:
-```cmd
-@rem razzle.cmd doesn't set:
-@rem set WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\
-@rem vsdevcmd.bat does a lot of logic to find that.
-@rem
-@rem I'm gonna hard code it below:
+Once registered, the dev build is launchable as `wtd.exe` (or "Windows Terminal Dev" in Start).
 
-powershell -Command Set-Location -Path %OPENCON%\src\cascadia\CascadiaPackage\AppPackages\CascadiaPackage_0.0.1.0_x64_Debug_Test;if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) { Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'};New-Item ..\loose -Type Directory -Force;C:\'Program Files (x86)'\'Windows Kits'\10\bin\10.0.19041.0\x64\makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
-```
+Building the package from VS generates the loose layout to begin with, and then registers the loose manifest, skipping the msix step. It's a lot faster than the commandline inner loop here, unfortunately.
 
-(yes, the cmd version is just calling powershell to do the powershell version. Too lazy to convert the rest by hand, I'm already copying from `.vscode\tasks.json`)
+### Deploying with DeployAppRecipe
 
-Building the package from VS generates the loose layout to begin with, and then registers the loose manifest, skipping the msix stop. It's a lot faster than the commandline inner loop here, unfortunately.
-
-### 2022 Update
-
-The following command can be used to build the terminal package, and then deploy it.
+The following command can be used to build the terminal package, and then deploy it — locate `DeployAppRecipe.exe` under your Visual Studio installation's `Common7\IDE` directory (e.g. `%VSINSTALLDIR%Common7\IDE\DeployAppRecipe.exe` from a developer prompt):
 
 ```cmd
 pushd %OPENCON%\src\cascadia\CascadiaPackage
 bx
-"C:\Program Files\Microsoft Visual Studio\2022\Preview\Common7\IDE\DeployAppRecipe.exe" bin\%ARCH%\%_LAST_BUILD_CONF%\CascadiaPackage.build.appxrecipe
+"%VSINSTALLDIR%\Common7\IDE\DeployAppRecipe.exe" bin\%ARCH%\%_LAST_BUILD_CONF%\CascadiaPackage.build.appxrecipe
 popd
 ```
 
