@@ -938,9 +938,13 @@
     <value>Light</value>
     <comment>Label for a control to select the color scheme used while the app is using the light theme.</comment>
   </data>
-  <data name="Profile_ColorSchemeUseSeparateLight.Content" xml:space="preserve">
+  <data name="Profile_ColorSchemeUseSeparateLight.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Use a different color scheme in light mode</value>
-    <comment>A checkbox. When checked, the profile uses one color scheme while the app is using the dark theme and a different one while the app is using the light theme.</comment>
+    <comment>Name for a checkbox. When checked, the profile uses one color scheme while the app is using the dark theme and a different one while the app is using the light theme.</comment>
+  </data>
+  <data name="Profile_ColorSchemeUseSeparateLightLabel.Text" xml:space="preserve">
+    <value>Use a different color scheme in light mode</value>
+    <comment>Label for a checkbox. When checked, the profile uses one color scheme while the app is using the dark theme and a different one while the app is using the light theme.</comment>
   </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Command line</value>

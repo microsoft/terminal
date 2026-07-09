@@ -1051,6 +1051,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
     {
+        // A ComboBox pushes a null SelectedItem through a TwoWay binding while
+        // it's being unloaded; writing while the split UI owns the scheme names
+        // would clobber the user's separate dark/light selections.
+        if (!val || _useSeparateLightColorScheme)
+        {
+            return;
+        }
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
     }
@@ -1062,6 +1069,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::CurrentDarkColorScheme(const ColorSchemeViewModel& val)
     {
+        // The pair combo boxes stay TwoWay-bound while collapsed; ignore their
+        // writes (including the null a ComboBox pushes during teardown) unless
+        // the split UI is the active mode.
+        if (!val || !_useSeparateLightColorScheme)
+        {
+            return;
+        }
         DarkColorSchemeName(val.Name());
     }
 
@@ -1072,6 +1086,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::CurrentLightColorScheme(const ColorSchemeViewModel& val)
     {
+        if (!val || !_useSeparateLightColorScheme)
+        {
+            return;
+        }
         LightColorSchemeName(val.Name());
     }
 
