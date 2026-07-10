@@ -781,6 +781,14 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         }
         break;
     }
+    case CM_SET_TASKBAR_PROGRESS:
+{
+    // Unpack: bits 16-31 = state, bits 0-15 = progress
+    const auto state    = static_cast<DispatchTypes::TaskbarState>((lParam >> 16) & 0xFFFF);
+    const auto progress = static_cast<size_t>(lParam & 0xFFFF);
+    LOG_IF_FAILED(_HandleSetTaskbarProgress(state, progress));
+    break;
+}
 
     default:
     CallDefWin:

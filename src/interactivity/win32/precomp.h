@@ -5,3 +5,4 @@
 
 #include <commoncontrols.h>
 #include <commctrl.h>
+#include <ShObjIdl.h>

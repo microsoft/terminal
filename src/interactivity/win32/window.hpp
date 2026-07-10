@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IConsoleWindow.hpp"
+#include <ShObjIdl.h>                         
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -133,6 +134,12 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleWindowPosChanged(const LPARAM lParam);
         LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
+        // Taskbar progress                     // ← ADD THIS SECTION
+        [[nodiscard]] HRESULT _HandleSetTaskbarProgress(
+            DispatchTypes::TaskbarState state,
+            size_t progress) noexcept;
+        wil::com_ptr<ITaskbarList3> _taskbar;   // ← ADD THIS
+
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
                                                const WPARAM wParam,
@@ -181,5 +188,6 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
                                                    _Out_ til::rect* const prc);
+
     };
 }

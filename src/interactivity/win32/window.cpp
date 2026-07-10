@@ -1381,3 +1381,54 @@ BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint->as_win32_point());
 }
+
+[[nodiscard]] HRESULT Window::_HandleSetTaskbarProgress(
+    const DispatchTypes::TaskbarState state,
+    const size_t progress) noexcept
+{
+    if (!_taskbar)
+    {
+        RETURN_IF_FAILED(::CoCreateInstance(CLSID_TaskbarList,
+                                             nullptr,
+                                             CLSCTX_INPROC_SERVER,
+                                             IID_PPV_ARGS(&_taskbar)));
+        RETURN_IF_FAILED(_taskbar->HrInit());
+    }
+
+    const auto hwnd = GetWindowHandle();
+    RETURN_HR_IF_NULL(E_FAIL, hwnd);
+
+    TBPFLAG flags = TBPF_NOPROGRESS;
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        flags = TBPF_NOPROGRESS;
+        break;
+    case DispatchTypes::TaskbarState::Set:
+        flags = TBPF_NORMAL;
+        break;
+    case DispatchTypes::TaskbarState::Error:
+        flags = TBPF_ERROR;
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        flags = TBPF_INDETERMINATE;
+        break;
+    case DispatchTypes::TaskbarState::Paused:
+        flags = TBPF_PAUSED;
+        break;
+    default:
+        flags = TBPF_NOPROGRESS;
+        break;
+    }
+
+    RETURN_IF_FAILED(_taskbar->SetProgressState(hwnd, flags));
+
+    if (flags == TBPF_NORMAL || flags == TBPF_ERROR || flags == TBPF_PAUSED)
+    {
+        RETURN_IF_FAILED(_taskbar->SetProgressValue(hwnd,
+                                                     static_cast<ULONGLONG>(progress),
+                                                     100ULL));
+    }
+
+    return S_OK;
+}
