@@ -480,6 +480,7 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             visualColumnMap.clear();
+            visualCellMap.clear();
             bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
@@ -498,8 +499,10 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets;
         // Same size as glyphIndices.
         std::vector<u32> colors;
-        // Maps logical cell columns to visual cell columns for bidi cursor painting.
+        // Maps logical cell boundaries to visual cell boundaries for bidi cursor painting.
         std::vector<u16> visualColumnMap;
+        // Maps logical cells to visual cells for bidi color/selection painting.
+        std::vector<u16> visualCellMap;
 
         Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;

@@ -4,11 +4,35 @@
 #include "pch.h"
 #include "Terminal.hpp"
 #include "unicode.hpp"
+#include <icu.h>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 
 DEFINE_ENUM_FLAG_OPERATORS(Terminal::SelectionEndpoint);
+
+namespace
+{
+    using unique_ubidi = wistd::unique_ptr<UBiDi, wil::function_deleter<decltype(&ubidi_close), &ubidi_close>>;
+
+    unique_ubidi _openBidi(const std::wstring_view text, UErrorCode& status) noexcept
+    {
+        unique_ubidi bidi{ ubidi_openSized(gsl::narrow_cast<int32_t>(text.size()), 0, &status) };
+        if (U_FAILURE(status) || !bidi)
+        {
+            return nullptr;
+        }
+
+#pragma warning(suppress : 26490) // UChar/char16_t are ICU ABI types.
+        ubidi_setPara(bidi.get(), reinterpret_cast<const UChar*>(text.data()), gsl::narrow_cast<int32_t>(text.size()), UBIDI_DEFAULT_LTR, nullptr, &status);
+        if (U_FAILURE(status))
+        {
+            return nullptr;
+        }
+
+        return bidi;
+    }
+}
 
 /* Selection Pivot Description:
  *   The pivot helps properly update the selection when a user moves a selection over itself
@@ -993,7 +1017,66 @@ til::point Terminal::_ConvertToBufferCell(const til::point viewportPos, bool all
     const auto bufferSize = _activeBuffer().GetSize();
     bufferPos.x = std::clamp(bufferPos.x, bufferSize.Left(), allowRightExclusive ? bufferSize.RightExclusive() : bufferSize.RightInclusive());
     bufferPos.y = std::clamp(bufferPos.y, bufferSize.Top(), bufferSize.BottomInclusive());
+
+    if (_renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::BidirectionalText))
+    {
+        bufferPos.x = _MapBidiVisualBoundaryToLogical(bufferPos);
+    }
+
     return bufferPos;
+}
+
+til::CoordType Terminal::_MapBidiVisualBoundaryToLogical(til::point bufferPos) const noexcept
+try
+{
+    const auto& row = _activeBuffer().GetRowByOffset(bufferPos.y);
+    const auto text = row.GetText();
+    if (text.empty())
+    {
+        return bufferPos.x;
+    }
+
+    UErrorCode status = U_ZERO_ERROR;
+    auto bidi = _openBidi(text, status);
+    if (!bidi)
+    {
+        return bufferPos.x;
+    }
+
+    const auto runCount = ubidi_countRuns(bidi.get(), &status);
+    if (U_FAILURE(status) || runCount <= 0)
+    {
+        return bufferPos.x;
+    }
+
+    til::CoordType visualColumn = 0;
+    for (int32_t runIndex = 0; runIndex < runCount; ++runIndex)
+    {
+        int32_t logicalStart = 0;
+        int32_t length = 0;
+        const auto direction = ubidi_getVisualRun(bidi.get(), runIndex, &logicalStart, &length);
+
+        const auto colBeg = row.GetLeadingColumnAtCharOffset(logicalStart);
+        const auto colEnd = row.GetLeadingColumnAtCharOffset(logicalStart + length);
+        const auto colWidth = colEnd - colBeg;
+        const auto visualRunBeg = visualColumn;
+        const auto visualRunEnd = visualRunBeg + colWidth;
+
+        if (bufferPos.x >= visualRunBeg && bufferPos.x <= visualRunEnd)
+        {
+            return direction == UBIDI_RTL ?
+                       gsl::narrow_cast<til::CoordType>(colEnd - (bufferPos.x - visualRunBeg)) :
+                       gsl::narrow_cast<til::CoordType>(colBeg + (bufferPos.x - visualRunBeg));
+        }
+
+        visualColumn = visualRunEnd;
+    }
+
+    return bufferPos.x;
+}
+catch (...)
+{
+    return bufferPos.x;
 }
 
 // Method Description:

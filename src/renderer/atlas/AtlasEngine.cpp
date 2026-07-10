@@ -475,6 +475,41 @@ try
 }
 CATCH_RETURN()
 
+void AtlasEngine::_remapColorBitmapRowToVisualOrder(const u16 row) noexcept
+{
+    const auto& map = _p.rows[row]->visualCellMap;
+    if (map.empty())
+    {
+        return;
+    }
+
+    const auto width = static_cast<size_t>(_p.s->viewportCellCount.x);
+    const auto rowOffset = static_cast<size_t>(row) * _p.colorBitmapRowStride;
+    std::vector<u32> logical(width);
+
+    for (size_t plane = 0; plane < 3; ++plane)
+    {
+        auto bitmap = _p.colorBitmap.begin() + plane * _p.colorBitmapDepthStride + rowOffset;
+        std::copy_n(bitmap, width, logical.begin());
+
+        bool changed = false;
+        for (size_t logicalColumn = 0; logicalColumn < width && logicalColumn < map.size(); ++logicalColumn)
+        {
+            const auto visualColumn = map[logicalColumn];
+            if (visualColumn < width && bitmap[visualColumn] != logical[logicalColumn])
+            {
+                bitmap[visualColumn] = logical[logicalColumn];
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            _p.colorBitmapGenerations[plane].bump();
+        }
+    }
+}
+
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft) noexcept
 try
 {
@@ -840,6 +875,7 @@ void AtlasEngine::_flushBufferLine()
 
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
     row.visualColumnMap.clear();
+    row.visualCellMap.clear();
 
     if (_api.bidirectionalText)
     {
@@ -895,6 +931,11 @@ void AtlasEngine::_flushBufferLine()
             {
                 row.visualColumnMap[column] = gsl::narrow_cast<u16>(column);
             }
+            row.visualCellMap.resize(static_cast<size_t>(_p.s->viewportCellCount.x));
+            for (size_t column = 0; column < row.visualCellMap.size(); ++column)
+            {
+                row.visualCellMap[column] = gsl::narrow_cast<u16>(column);
+            }
 
             auto visualColumn = _api.bufferLineColumn.front();
             for (const auto& run : runs)
@@ -911,9 +952,19 @@ void AtlasEngine::_flushBufferLine()
                                                           gsl::narrow_cast<u16>(visualColumn + column - colBeg);
                     }
                 }
+                if (colEnd <= row.visualCellMap.size())
+                {
+                    for (auto column = colBeg; column < colEnd; ++column)
+                    {
+                        row.visualCellMap[column] = (run.resolvedLevel & 1) ?
+                                                        gsl::narrow_cast<u16>(visualColumn + colEnd - 1 - column) :
+                                                        gsl::narrow_cast<u16>(visualColumn + column - colBeg);
+                    }
+                }
                 visualColumn += colWidth;
                 _mapRegularText(run.textPosition, run.textPosition + run.textLength, (run.resolvedLevel & 1) != 0);
             }
+            _remapColorBitmapRowToVisualOrder(gsl::narrow_cast<u16>(_api.lastPaintBufferLineCoord.y));
             return;
         }
     }
@@ -1329,6 +1380,25 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 
             std::sort(clusterStarts.begin(), clusterStarts.end());
             clusterStarts.erase(std::unique(clusterStarts.begin(), clusterStarts.end()), clusterStarts.end());
+
+            for (size_t i = 1; i <= a.textLength; ++i)
+            {
+                const auto nextCluster = _api.clusterMap[i];
+                if (prevCluster == nextCluster)
+                {
+                    continue;
+                }
+
+                const auto col1 = _api.bufferLineColumn[a.textPosition + beg];
+                const auto fg = colors[col1 << shift];
+                for (auto glyph = prevCluster; glyph < nextCluster; ++glyph)
+                {
+                    glyphColors[glyph] = fg;
+                }
+
+                prevCluster = nextCluster;
+                beg = i;
+            }
 
             for (auto cluster = clusterStarts.size() - 1; cluster > 0; --cluster)
             {
