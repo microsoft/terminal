@@ -269,6 +269,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+        _BidirectionalText = appearance.BidirectionalText();
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();

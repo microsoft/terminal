@@ -658,6 +658,13 @@ try
 
     if (!isSettingDefaultBrushes)
     {
+        const auto bidirectionalText = renderSettings.GetRenderMode(RenderSettings::Mode::BidirectionalText);
+        if (_api.bidirectionalText != bidirectionalText)
+        {
+            _flushBufferLine();
+            _api.bidirectionalText = bidirectionalText;
+        }
+
         auto attributes = FontRelevantAttributes::None;
         WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsBold(renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold)));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
@@ -778,6 +785,8 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _api.bufferLineColumn.reserve(projectedTextSize + 1);
 
     _api.analysisResults = std::vector<TextAnalysisSinkResult>{};
+    _api.bidiResults = std::vector<BidiAnalysisSinkResult>{};
+    _api.bidiResults.reserve(16);
     _api.clusterMap = Buffer<u16>{ projectedTextSize };
     _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ projectedTextSize };
     _api.glyphIndices = Buffer<u16>{ projectedGlyphSize };
@@ -824,6 +833,63 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    if (_api.bidirectionalText)
+    {
+        _api.bidiResults.clear();
+        TextAnalysisSource source{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<u32>(_api.bufferLine.size()) };
+        TextAnalysisSink sink{ _api.bidiResults };
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&source, 0, gsl::narrow<u32>(_api.bufferLine.size()), &sink));
+
+        // Unicode Bidirectional Algorithm L2, as used by Mozilla's nsBidi::ReorderVisual:
+        // reverse each sequence at descending embedding levels. The text buffer itself remains
+        // untouched so selection, cursor positioning, and copy continue to use logical cells.
+        auto runs = _api.bidiResults;
+        if (!runs.empty())
+        {
+            uint8_t highest = 0;
+            uint8_t lowestOdd = UINT8_MAX;
+            for (const auto& run : runs)
+            {
+                highest = std::max(highest, run.resolvedLevel);
+                if (run.resolvedLevel & 1)
+                {
+                    lowestOdd = std::min(lowestOdd, run.resolvedLevel);
+                }
+            }
+
+            if (lowestOdd != UINT8_MAX)
+            {
+                for (auto level = highest;; --level)
+                {
+                    for (size_t i = 0; i < runs.size();)
+                    {
+                        if (runs[i].resolvedLevel < level)
+                        {
+                            ++i;
+                            continue;
+                        }
+                        const auto first = i++;
+                        while (i < runs.size() && runs[i].resolvedLevel >= level)
+                        {
+                            ++i;
+                        }
+                        std::reverse(runs.begin() + first, runs.begin() + i);
+                    }
+                    if (level == lowestOdd)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            for (const auto& run : runs)
+            {
+                _mapRegularText(run.textPosition, run.textPosition + run.textLength, (run.resolvedLevel & 1) != 0);
+            }
+            return;
+        }
+    }
+
     const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
     const auto len = _api.bufferLine.size();
@@ -869,7 +935,7 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
+void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft)
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
@@ -901,7 +967,7 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        if (_p.s->font->fontFeatures.empty())
+        if (_p.s->font->fontFeatures.empty() && !rightToLeft)
         {
             // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
             for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
@@ -928,13 +994,13 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
                 }
                 else
                 {
-                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
+                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row, rightToLeft);
                 }
             }
         }
         else
         {
-            _mapComplex(mappedFontFace.get(), idx, mappedLength, row);
+            _mapComplex(mappedFontFace.get(), idx, mappedLength, row, rightToLeft);
         }
 
         const auto indicesCount = row.glyphIndices.size();
@@ -1029,7 +1095,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
     assert(scale == 1);
 }
 
-void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
+void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row, bool rightToLeft)
 {
     _api.analysisResults.clear();
 
@@ -1076,7 +1142,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
+                /* isRightToLeft       */ rightToLeft,
                 /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
@@ -1128,7 +1194,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
+            /* isRightToLeft       */ rightToLeft,
             /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
@@ -1143,32 +1209,51 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
+        std::vector<u32> glyphColors(actualGlyphCount, colors[_api.bufferLineColumn[a.textPosition] << shift]);
 
-        for (size_t i = 1; i <= a.textLength; ++i)
+        if (rightToLeft)
         {
-            const auto nextCluster = _api.clusterMap[i];
-            if (prevCluster == nextCluster)
-            {
-                continue;
-            }
-
-            const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
-            const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = colors[col1 << shift];
-
+            // RTL cluster maps run in the opposite direction. DirectWrite has already emitted
+            // the glyphs in visual order, so preserve that order and normalize the run to the
+            // terminal cells as a whole. PaintBufferLine splits on font attributes, while the
+            // foreground bitmap continues to own per-cell colors.
+            const auto col1 = _api.bufferLineColumn[a.textPosition];
+            const auto col2 = _api.bufferLineColumn[a.textPosition + a.textLength];
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-            f32 actualAdvance = 0;
-            for (auto j = prevCluster; j < nextCluster; ++j)
+            const auto actualAdvance = std::accumulate(_api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount, 0.0f);
+            if (actualGlyphCount)
             {
-                actualAdvance += _api.glyphAdvances[j];
+                _api.glyphAdvances[actualGlyphCount - 1] += expectedAdvance - actualAdvance;
             }
-            _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
-
-            row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
-
-            prevCluster = nextCluster;
-            beg = i;
         }
+        else
+        {
+            for (size_t i = 1; i <= a.textLength; ++i)
+            {
+                const auto nextCluster = _api.clusterMap[i];
+                if (prevCluster == nextCluster)
+                {
+                    continue;
+                }
+
+                const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
+                const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
+                const auto fg = colors[col1 << shift];
+                const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                f32 actualAdvance = 0;
+                for (auto j = prevCluster; j < nextCluster; ++j)
+                {
+                    actualAdvance += _api.glyphAdvances[j];
+                    glyphColors[j] = fg;
+                }
+                _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
+
+                prevCluster = nextCluster;
+                beg = i;
+            }
+        }
+
+        row.colors.insert(row.colors.end(), glyphColors.begin(), glyphColors.end());
 
         row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);

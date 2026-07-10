@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
             AlwaysDistinguishableColors,
             IntenseIsBold,
             IntenseIsBright,
+            BidirectionalText,
             ScreenReversed,
             SynchronizedOutput,
         };
