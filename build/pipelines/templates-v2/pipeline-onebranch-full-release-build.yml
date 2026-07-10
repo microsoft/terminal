@@ -144,7 +144,7 @@ extends:
 
                 - template: ./build/pipelines/templates-v2/steps-install-terrapin.yml@self
                   parameters:
-                    useNuget: false
+                    nugetFeed: "https://pkgs.dev.azure.com/microsoft/_packaging/WindowsTerminal/nuget/v3/index.json"
 
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
