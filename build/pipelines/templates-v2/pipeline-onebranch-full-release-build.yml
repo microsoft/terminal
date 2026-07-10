@@ -97,6 +97,10 @@ extends:
       asyncSdl:
         enabled: true
         tsaOptionsFile: 'build/config/tsa.json'
+      codeql:
+        enabledOnNonDefaultBranches: true
+        compiled:
+          enabled: true
       tsa:
         enabled: true
         configFile: '$(Build.SourcesDirectory)\build\config\tsa.json'
