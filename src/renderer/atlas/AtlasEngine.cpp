@@ -967,6 +967,15 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
+    struct MappedRun
+    {
+        u32 textPosition = 0;
+        u32 textLength = 0;
+        wil::com_ptr<IDWriteFontFace2> fontFace;
+    };
+
+    std::vector<MappedRun> mappedRuns;
+
     for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
         u32 mappedLength = 0;
@@ -974,10 +983,19 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
         _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
+        mappedRuns.emplace_back(idx, mappedLength, std::move(mappedFontFace));
+    }
+
+    const auto mapRun = [this, &row, rightToLeft](const MappedRun& run) {
+        const auto idx = run.textPosition;
+        const auto mappedLength = run.textLength;
+        const auto mappedEnd = idx + mappedLength;
+        const auto& mappedFontFace = run.fontFace;
+
         if (!mappedFontFace)
         {
             _mapReplacementCharacter(idx, mappedEnd, row);
-            continue;
+            return;
         }
 
         const auto initialIndicesCount = row.glyphIndices.size();
@@ -998,10 +1016,10 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
         if (_p.s->font->fontFeatures.empty() && !rightToLeft)
         {
             // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-            for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+            for (u32 simpleIdx = idx, complexityLength = 0; simpleIdx < mappedEnd; simpleIdx += complexityLength)
             {
                 BOOL isTextSimple = FALSE;
-                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
+                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + simpleIdx, mappedEnd - simpleIdx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
                 if (isTextSimple)
                 {
@@ -1010,8 +1028,8 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
 
                     for (size_t i = 0; i < complexityLength; ++i)
                     {
-                        const auto col1 = _api.bufferLineColumn[idx + i + 0];
-                        const auto col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto col1 = _api.bufferLineColumn[simpleIdx + i + 0];
+                        const auto col2 = _api.bufferLineColumn[simpleIdx + i + 1];
                         const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
                         const auto fg = colors[static_cast<size_t>(col1) << shift];
                         row.glyphIndices.emplace_back(_api.glyphIndices[i]);
@@ -1022,7 +1040,7 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
                 }
                 else
                 {
-                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row, rightToLeft);
+                    _mapComplex(mappedFontFace.get(), simpleIdx, complexityLength, row, rightToLeft);
                 }
             }
         }
@@ -1038,12 +1056,27 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft
             // it can also repeatedly return the same font face again and again. :)
             if (row.mappings.empty() || row.mappings.back().fontFace != mappedFontFace)
             {
-                row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                row.mappings.emplace_back(mappedFontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
             }
             else
             {
                 row.mappings.back().glyphsTo = gsl::narrow_cast<u32>(indicesCount);
             }
+        }
+    };
+
+    if (rightToLeft)
+    {
+        for (auto it = mappedRuns.rbegin(); it != mappedRuns.rend(); ++it)
+        {
+            mapRun(*it);
+        }
+    }
+    else
+    {
+        for (const auto& run : mappedRuns)
+        {
+            mapRun(run);
         }
     }
 }
@@ -1131,8 +1164,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
-    for (const auto& a : _api.analysisResults)
-    {
+    const auto mapAnalysisRun = [this, mappedFontFace, &row, rightToLeft](const TextAnalysisSinkResult& a) {
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -1335,6 +1367,21 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
         row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
+    };
+
+    if (rightToLeft)
+    {
+        for (auto it = _api.analysisResults.rbegin(); it != _api.analysisResults.rend(); ++it)
+        {
+            mapAnalysisRun(*it);
+        }
+    }
+    else
+    {
+        for (const auto& a : _api.analysisResults)
+        {
+            mapAnalysisRun(a);
+        }
     }
 }
 
