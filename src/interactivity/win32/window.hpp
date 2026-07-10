@@ -134,11 +134,11 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleWindowPosChanged(const LPARAM lParam);
         LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
-        // Taskbar progress                     // ← ADD THIS SECTION
+        // Taskbar progress
         [[nodiscard]] HRESULT _HandleSetTaskbarProgress(
             DispatchTypes::TaskbarState state,
             size_t progress) noexcept;
-        wil::com_ptr<ITaskbarList3> _taskbar;   // ← ADD THIS
+        wil::com_ptr<ITaskbarList3> _taskbar;
 
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,

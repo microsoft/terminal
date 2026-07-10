@@ -286,4 +286,3 @@ profiles.json
 
 # MSBuildCache
 /MSBuildCacheLogs/
-vcpkg_installed/

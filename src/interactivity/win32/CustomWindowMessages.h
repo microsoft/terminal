@@ -30,6 +30,6 @@
 #endif
 
 #define CM_UPDATE_CLIPBOARD      (WM_USER+20)
-#define CM_SET_TASKBAR_PROGRESS   (WM_USER+21)
+#define CM_SET_TASKBAR_PROGRESS  (WM_USER+21)
 
 // clang-format on
