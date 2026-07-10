@@ -29,6 +29,7 @@ Author(s):
     X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
+    X(bool, BidirectionalText, "rendering.bidirectionalText", false)                                                                                                                                   \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
     X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, "compatibility.ambiguousWidth", winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                               \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                                 \
@@ -144,7 +145,6 @@ Author(s):
     X(ConvergedAlignment, BackgroundImageAlignment, "backgroundImageAlignment", ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center)       \
     X(IMediaResource, BackgroundImagePath, "backgroundImage", implementation::MediaResource::Empty())                                                              \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
-    X(bool, BidirectionalText, "bidirectionalText", false)                                                                                                        \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Automatic)                                       \
     X(bool, UseAcrylic, "useAcrylic", false)
 

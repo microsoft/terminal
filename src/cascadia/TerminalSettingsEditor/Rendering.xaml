@@ -44,5 +44,11 @@
             <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
+
+        <local:SettingContainer x:Name="BidirectionalText"
+                                x:Uid="Globals_BidirectionalText">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.BidirectionalText, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
     </StackPanel>
 </Page>

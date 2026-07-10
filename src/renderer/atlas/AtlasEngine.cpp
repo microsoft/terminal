@@ -620,8 +620,13 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
-        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        const auto row = _p.rows[top];
+        const auto shift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
         auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
+        if (left >= 0 && static_cast<size_t>(left) < row->visualColumnMap.size())
+        {
+            left = row->visualColumnMap[static_cast<size_t>(left)];
+        }
         auto right = left + cursorWidth;
 
         left <<= shift;
@@ -833,6 +838,9 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+    row.visualColumnMap.clear();
+
     if (_api.bidirectionalText)
     {
         _api.bidiResults.clear();
@@ -882,8 +890,28 @@ void AtlasEngine::_flushBufferLine()
                 }
             }
 
+            row.visualColumnMap.resize(static_cast<size_t>(_p.s->viewportCellCount.x) + 1);
+            for (size_t column = 0; column < row.visualColumnMap.size(); ++column)
+            {
+                row.visualColumnMap[column] = gsl::narrow_cast<u16>(column);
+            }
+
+            auto visualColumn = _api.bufferLineColumn.front();
             for (const auto& run : runs)
             {
+                const auto colBeg = _api.bufferLineColumn[run.textPosition];
+                const auto colEnd = _api.bufferLineColumn[run.textPosition + run.textLength];
+                const auto colWidth = gsl::narrow_cast<u16>(colEnd - colBeg);
+                if (colEnd < row.visualColumnMap.size())
+                {
+                    for (auto column = colBeg; column <= colEnd; ++column)
+                    {
+                        row.visualColumnMap[column] = (run.resolvedLevel & 1) ?
+                                                          gsl::narrow_cast<u16>(visualColumn + colEnd - column) :
+                                                          gsl::narrow_cast<u16>(visualColumn + column - colBeg);
+                    }
+                }
+                visualColumn += colWidth;
                 _mapRegularText(run.textPosition, run.textPosition + run.textLength, (run.resolvedLevel & 1) != 0);
             }
             return;
@@ -1211,22 +1239,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         size_t beg = 0;
         std::vector<u32> glyphColors(actualGlyphCount, colors[_api.bufferLineColumn[a.textPosition] << shift]);
 
-        if (rightToLeft)
-        {
-            // RTL cluster maps run in the opposite direction. DirectWrite has already emitted
-            // the glyphs in visual order, so preserve that order and normalize the run to the
-            // terminal cells as a whole. PaintBufferLine splits on font attributes, while the
-            // foreground bitmap continues to own per-cell colors.
-            const auto col1 = _api.bufferLineColumn[a.textPosition];
-            const auto col2 = _api.bufferLineColumn[a.textPosition + a.textLength];
-            const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-            const auto actualAdvance = std::accumulate(_api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount, 0.0f);
-            if (actualGlyphCount)
-            {
-                _api.glyphAdvances[actualGlyphCount - 1] += expectedAdvance - actualAdvance;
-            }
-        }
-        else
+        if (!rightToLeft)
         {
             for (size_t i = 1; i <= a.textLength; ++i)
             {
@@ -1250,6 +1263,70 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 
                 prevCluster = nextCluster;
                 beg = i;
+            }
+        }
+        else
+        {
+            // Gecko shapes RTL text in logical order with an RTL shaping direction, then makes
+            // placement explicitly RTL-aware when drawing. The atlas backends have a simpler
+            // contract: row glyphs are consumed from left to right and baselineX only advances
+            // positively. DirectWrite's RTL shaping output is therefore converted to the
+            // backend contract by reversing the shaped glyph clusters, preserving glyph order
+            // within each cluster so marks/ligatures remain intact.
+            std::vector<u16> reorderedGlyphIndices;
+            std::vector<f32> reorderedGlyphAdvances;
+            std::vector<DWRITE_GLYPH_OFFSET> reorderedGlyphOffsets;
+            std::vector<u32> reorderedGlyphColors;
+            reorderedGlyphIndices.reserve(actualGlyphCount);
+            reorderedGlyphAdvances.reserve(actualGlyphCount);
+            reorderedGlyphOffsets.reserve(actualGlyphCount);
+            reorderedGlyphColors.reserve(actualGlyphCount);
+
+            std::vector<u16> clusterStarts;
+            clusterStarts.reserve(static_cast<size_t>(a.textLength) + 2);
+            clusterStarts.emplace_back(u16{ 0 });
+            clusterStarts.emplace_back(gsl::narrow_cast<u16>(actualGlyphCount));
+            for (u32 i = 0; i < a.textLength; ++i)
+            {
+                const auto cluster = _api.clusterMap[i];
+                if (cluster <= actualGlyphCount)
+                {
+                    clusterStarts.emplace_back(cluster);
+                }
+            }
+
+            std::sort(clusterStarts.begin(), clusterStarts.end());
+            clusterStarts.erase(std::unique(clusterStarts.begin(), clusterStarts.end()), clusterStarts.end());
+
+            for (auto cluster = clusterStarts.size() - 1; cluster > 0; --cluster)
+            {
+                const auto from = clusterStarts[cluster - 1];
+                const auto to = clusterStarts[cluster];
+                for (auto glyph = from; glyph < to; ++glyph)
+                {
+                    reorderedGlyphIndices.emplace_back(_api.glyphIndices[glyph]);
+                    reorderedGlyphAdvances.emplace_back(_api.glyphAdvances[glyph]);
+                    reorderedGlyphOffsets.emplace_back(_api.glyphOffsets[glyph]);
+                    reorderedGlyphColors.emplace_back(glyphColors[glyph]);
+                }
+            }
+
+            std::copy(reorderedGlyphIndices.begin(), reorderedGlyphIndices.end(), _api.glyphIndices.begin());
+            std::copy(reorderedGlyphAdvances.begin(), reorderedGlyphAdvances.end(), _api.glyphAdvances.begin());
+            std::copy(reorderedGlyphOffsets.begin(), reorderedGlyphOffsets.end(), _api.glyphOffsets.begin());
+            glyphColors = std::move(reorderedGlyphColors);
+
+            const auto col1 = _api.bufferLineColumn[a.textPosition];
+            const auto col2 = _api.bufferLineColumn[a.textPosition + a.textLength];
+            const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+            f32 actualAdvance = 0;
+            for (u32 i = 0; i < actualGlyphCount; ++i)
+            {
+                actualAdvance += _api.glyphAdvances[i];
+            }
+            if (actualGlyphCount)
+            {
+                _api.glyphAdvances[actualGlyphCount - 1] += expectedAdvance - actualAdvance;
             }
         }
 

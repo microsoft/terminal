@@ -148,8 +148,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontWeight);
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs);
         OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BidirectionalText);
-
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);

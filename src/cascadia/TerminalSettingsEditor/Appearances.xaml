@@ -462,16 +462,6 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
-            <!--  Bidirectional text / Arabic rendering  -->
-            <local:SettingContainer x:Name="BidirectionalText"
-                                    x:Uid="Profile_BidirectionalText"
-                                    ClearSettingValue="{x:Bind Appearance.ClearBidirectionalText}"
-                                    HasSettingValue="{x:Bind Appearance.HasBidirectionalText, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.BidirectionalTextOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.BidirectionalText, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  Retro Terminal Effect  -->
             <local:SettingContainer x:Name="RetroTerminalEffect"
                                     x:Uid="Profile_RetroTerminalEffect"

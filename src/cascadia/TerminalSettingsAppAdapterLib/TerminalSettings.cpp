@@ -269,7 +269,6 @@ namespace winrt::Microsoft::Terminal::Settings
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
-        _BidirectionalText = appearance.BidirectionalText();
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
@@ -378,6 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
+        _BidirectionalText = globalSettings.BidirectionalText();
         _TextMeasurement = globalSettings.TextMeasurement();
         _AmbiguousWidth = globalSettings.AmbiguousWidth();
         _DefaultInputScope = globalSettings.DefaultInputScope();
