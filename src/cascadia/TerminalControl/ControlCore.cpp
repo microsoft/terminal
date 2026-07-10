@@ -1239,16 +1239,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal->ClearSelection();
 
+        // GH#20406: Resize the terminal first. UserResize reflows the entire scrollback
+        // into a freshly allocated buffer and can fail (e.g. E_OUTOFMEMORY under memory
+        // pressure). If we told the engine about the new size before that failure, the
+        // renderer would keep producing cursor coordinates for the terminal's old,
+        // larger viewport while the engine's row buffer already had the new, smaller
+        // size - an out-of-bounds access on the render thread. A failed resize must
+        // leave the terminal and the engine at the same, old size.
+        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        if (FAILED(hr))
+        {
+            return;
+        }
+
         // Tell the dx engine that our window is now the new size.
         THROW_IF_FAILED(_renderEngine->SetWindowSize({ cx, cy }));
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
 
-        // If this function succeeds with S_FALSE, then the terminal didn't
-        // actually change size. No need to notify the connection of this no-op.
-        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
-        if (FAILED(hr) || hr == S_FALSE)
+        // If UserResize returned S_FALSE, the terminal didn't actually change size.
+        // No need to notify the connection of this no-op.
+        if (hr == S_FALSE)
         {
             return;
         }

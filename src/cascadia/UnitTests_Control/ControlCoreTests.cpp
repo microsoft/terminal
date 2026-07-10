@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "../TerminalControl/EventArgs.h"
 #include "../TerminalControl/ControlCore.h"
+#include "../../renderer/atlas/AtlasEngine.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
 #include "../../inc/TestUtils.h"
@@ -27,6 +28,7 @@ namespace ControlUnitTests
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
         TEST_METHOD(TestInitialize);
+        TEST_METHOD(TestResizeTerminalAndEngineStayInLockstep);
         TEST_METHOD(TestAdjustAcrylic);
 
         TEST_METHOD(TestFreeAfterClose);
@@ -129,6 +131,48 @@ namespace ControlUnitTests
 #endif
         VERIFY_IS_TRUE(core->_initializedTerminal);
         VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
+    }
+
+    void ControlCoreTests::TestResizeTerminalAndEngineStayInLockstep()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        // GH#20406: _refreshSizeUnderLock resizes the terminal first and only then
+        // informs the render engine, so that a failed scrollback reflow cannot leave
+        // the two at different sizes (the render thread would then paint the cursor
+        // at a row beyond the engine's row buffer). The failure path itself
+        // (E_OUTOFMEMORY inside Terminal::UserResize) has no fault-injection seam,
+        // so this test covers the non-failure paths: after every resize, the
+        // terminal's viewport must match the cell count the engine derives from the
+        // pixel size it was handed.
+        const auto assertSizesInLockstep = [&](til::CoordType pxWidth, til::CoordType pxHeight) {
+            const auto viewInPixels = Types::Viewport::FromDimensions({ 0, 0 }, { pxWidth, pxHeight });
+            const auto vp = core->_renderEngine->GetViewportInCharacters(viewInPixels);
+            VERIFY_ARE_EQUAL(vp.Width(), core->_terminal->GetViewport().Width());
+            VERIFY_ARE_EQUAL(vp.Height(), core->_terminal->GetViewport().Height());
+        };
+
+        Log::Comment(L"Grow the control");
+        core->SizeChanged(360, 570); // 40x30 chars at 9x19px per cell
+        VERIFY_ARE_EQUAL(40, core->_terminal->GetViewport().Width());
+        VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Height());
+        assertSizesInLockstep(360, 570);
+
+        Log::Comment(L"Shrink the control");
+        core->SizeChanged(180, 190); // 20x10 chars
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Width());
+        VERIFY_ARE_EQUAL(10, core->_terminal->GetViewport().Height());
+        assertSizesInLockstep(180, 190);
+
+        Log::Comment(L"Change the pixel size without changing the cell count (UserResize returns S_FALSE)");
+        core->SizeChanged(184, 195); // still 20x10 chars
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Width());
+        VERIFY_ARE_EQUAL(10, core->_terminal->GetViewport().Height());
+        assertSizesInLockstep(184, 195);
     }
 
     void ControlCoreTests::TestAdjustAcrylic()
