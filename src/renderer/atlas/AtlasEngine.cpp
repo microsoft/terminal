@@ -620,6 +620,19 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
+
+        // GH#20269, GH#20406: coordCursor is computed against the renderer's viewport,
+        // while _p.rows is sized to our own viewportCellCount. The two can disagree
+        // when the terminal and engine sizes are transiently out of sync, for instance
+        // when a failed Terminal::UserResize left the terminal at its old size after
+        // we were already told the new one. Skip the cursor for this frame instead of
+        // reading out of bounds. EndPaint invalidates the previous cursor area either
+        // way, so no stale cursor pixels are left behind.
+        if (top < 0 || bottom > _p.s->viewportCellCount.y)
+        {
+            return S_OK;
+        }
+
         const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
         auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
         auto right = left + cursorWidth;
