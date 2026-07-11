@@ -108,7 +108,7 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdOut) :
     _commandline(commandline),
     _vtInHandle(hStdIn),
-    _vtOutHandle(hStdOut) 
+    _vtOutHandle(hStdOut)
 {
 }
 
