@@ -258,47 +258,6 @@ static winrt::hstring _hstr(BSTR b)
 }
 
 // ============================================================================
-// ITerminalProtocol — Meta
-// ============================================================================
-
-STDMETHODIMP TerminalProtocolComServer::GetCapabilities(BSTR* json)
-try
-{
-    RETURN_HR_IF_NULL(E_POINTER, json);
-    *json = nullptr;
-
-    static const std::vector<std::string> supportedMethods = {
-        "authenticate",
-        "get_capabilities",
-        "get_active_pane",
-        "list_windows",
-        "list_tabs",
-        "list_panes",
-        "read_pane_output",
-        "get_process_status",
-        "get_session_variable",
-        "get_settings",
-        "create_tab",
-        "split_pane",
-        "close_pane",
-        "send_input",
-        "focus_pane",
-        "set_session_variable",
-        "subscribe",
-        "unsubscribe",
-        "send_event",
-    };
-
-    Json::Value methods(Json::arrayValue);
-    for (const auto& m : supportedMethods)
-        methods.append(m);
-
-    *json = _bstrFromJson(methods);
-    return S_OK;
-}
-CATCH_RETURN()
-
-// ============================================================================
 // Queries
 // ============================================================================
 

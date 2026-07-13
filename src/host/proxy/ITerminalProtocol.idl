@@ -25,9 +25,6 @@ import "unknwn.idl";
     pointer_default(unique)
 ] interface ITerminalProtocol : IUnknown
 {
-    // ── Meta ──
-    HRESULT GetCapabilities([out, retval] BSTR* json);
-
     // ── Queries (complex results as JSON) ──
     HRESULT GetActivePane([out, retval] BSTR* json);
     HRESULT ListWindows([out, retval] BSTR* json);

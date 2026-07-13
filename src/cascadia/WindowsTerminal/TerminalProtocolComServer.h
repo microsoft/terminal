@@ -33,7 +33,6 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
                                 ITerminalProtocol>
 {
     // ── ITerminalProtocol ──
-    STDMETHODIMP GetCapabilities(BSTR* json) override;
     STDMETHODIMP GetActivePane(BSTR* json) override;
     STDMETHODIMP ListWindows(BSTR* json) override;
     STDMETHODIMP ListTabs(unsigned __int64 windowIdFilter, BSTR* json) override;
