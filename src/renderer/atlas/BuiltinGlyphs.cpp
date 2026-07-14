@@ -1037,6 +1037,488 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     },
 };
 
+static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][InstructionsPerGlyph] = {
+    // U+1FB00 🬀
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB01 🬁
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+    // U+1FB02 🬂
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // top 1/3
+    },
+    // U+1FB03 🬃
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+    },
+    // U+1FB04 🬄
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+    },
+    // U+1FB05 🬅
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+    },
+    // U+1FB06 🬆
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+    // U+1FB07 🬇
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+    },
+    // U+1FB08 🬈
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+    },
+    // U+1FB09 🬉
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+    },
+    // U+1FB0A 🬊
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB0B 🬋
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_1, Pos_6_9 }, // mid 1/3
+    },
+    // U+1FB0C 🬌
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+    },
+    // U+1FB0D 🬍
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+    },
+    // U+1FB0E 🬎
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // top 2/3
+    },
+    // U+1FB0F 🬏
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB10 🬐
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB11 🬑
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB12 🬒
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // top 1/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB13 🬓
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+    },
+    // U+1FB14 🬔
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+    // U+1FB15 🬕
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // left half
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+    // U+1FB16 🬖
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB17 🬗
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB18 🬘
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB19 🬙
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB1A 🬚
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+    },
+    // U+1FB1B 🬛
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // left half
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 }, // 1,1
+    },
+    // U+1FB1C 🬜
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // right top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+    },
+    // U+1FB1D 🬝
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // top 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB1E 🬞
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB1F 🬟
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB20 🬠
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB21 🬡
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // top 1/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB22 🬢
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB23 🬣
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB24 🬤
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB25 🬥
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB26 🬦
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+    },
+    // U+1FB27 🬧
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB28 🬨
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // right half
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB29 🬩
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+    },
+    // U+1FB2A 🬪
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // left top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+    },
+    // U+1FB2B 🬫
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // right half
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 }, // 0,1
+    },
+    // U+1FB2C 🬬
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // top 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB2D 🬭
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // bot 1/3
+    },
+    // U+1FB2E 🬮
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // bot 1/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB2F 🬯
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // bot 1/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+    // U+1FB30 🬰
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // top 1/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // bot 1/3
+    },
+    // U+1FB31 🬱
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB32 🬲
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // left half
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB33 🬳
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // left bot 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB34 🬴
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // left half
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 }, // 1,2
+    },
+    // U+1FB35 🬵
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB36 🬶
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // right bot 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB37 🬷
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // right half
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB38 🬸
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // right half
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 }, // 0,2
+    },
+    // U+1FB39 🬹
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // bot 2/3
+    },
+    // U+1FB3A 🬺
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // bot 2/3
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 }, // 0,0
+    },
+    // U+1FB3B 🬻
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // bot 2/3
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 }, // 1,0
+    },
+// U+1FB3C 🬼
+{
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB3D 🬽
+{
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 },
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB3E 🬾
+{
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 },
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB3F 🬿
+{
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 },
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB40 🭀
+{
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+    Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB41 🭁
+{
+},
+// U+1FB42 🭂
+{
+},
+// U+1FB43 🭃
+{
+},
+// U+1FB44 🭄
+{
+},
+// U+1FB45 🭅
+{
+},
+// U+1FB46 🭆
+{
+},
+// U+1FB47 🭇
+{
+},
+// U+1FB48 🭈
+{
+},
+// U+1FB49 🭉
+{
+},
+// U+1FB4A 🭊
+{
+},
+// U+1FB4B 🭋
+{
+},
+// U+1FB4C 🭌
+{
+},
+// U+1FB4D 🭍
+{
+},
+// U+1FB4E 🭎
+{
+},
+// U+1FB4F 🭏
+{
+},
+// U+1FB50 🭐
+{
+},
+// U+1FB51 🭑
+{
+},
+// U+1FB52 🭒
+{
+},
+// U+1FB53 🭓
+{
+},
+// U+1FB54 🭔
+{
+},
+// U+1FB55 🭕
+{
+},
+// U+1FB56 🭖
+{
+},
+// U+1FB57 🭗
+{
+},
+// U+1FB58 🭘
+{
+},
+// U+1FB59 🭙
+{
+},
+// U+1FB5A 🭚
+{
+},
+// U+1FB5B 🭛
+{
+},
+// U+1FB5C 🭜
+{
+},
+// U+1FB5D 🭝
+{
+},
+// U+1FB5E 🭞
+{
+},
+// U+1FB5F 🭟
+{
+},
+// U+1FB60 🭠
+{
+},
+// U+1FB61 🭡
+{
+},
+// U+1FB62 🭢
+{
+},
+// U+1FB63 🭣
+{
+},
+// U+1FB64 🭤
+{
+},
+// U+1FB65 🭥
+{
+},
+// U+1FB66 🭦
+{
+},
+// U+1FB67 🭧
+{
+},
+// U+1FB68 🭨
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
+},
+// U+1FB69 🭩
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_0_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
+},
+// U+1FB6A 🭪
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_0_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
+},
+// U+1FB6B 🭫
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
+},
+// U+1FB6C 🭬
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB6D 🭭
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
+},
+// U+1FB6E 🭮
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+// U+1FB6F 🭯
+{
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
+},
+};
+
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
 {
     return codepoint >= BoxDrawing_FirstChar && codepoint < (BoxDrawing_FirstChar + BoxDrawing_CharCount);
@@ -1047,11 +1529,16 @@ constexpr bool Powerline_IsMapped(char32_t codepoint)
     return codepoint >= Powerline_FirstChar && codepoint < (Powerline_FirstChar + Powerline_CharCount);
 }
 
+constexpr bool LegacyComputing_IsMapped(char32_t codepoint)
+{
+    return codepoint >= LegacyComputing_FirstChar && codepoint < (LegacyComputing_FirstChar + LegacyComputing_CharCount);
+}
+
 // How should I make this constexpr == inline, if it's an external symbol? Bad compiler!
 #pragma warning(suppress : 26497) // You can attempt to make '...' constexpr unless it contains any undefined behavior (f.4).
 bool BuiltinGlyphs::IsBuiltinGlyph(char32_t codepoint) noexcept
 {
-    return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint);
+    return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint) || LegacyComputing_IsMapped(codepoint);
 }
 
 static const Instruction* GetInstructions(char32_t codepoint) noexcept
@@ -1063,6 +1550,10 @@ static const Instruction* GetInstructions(char32_t codepoint) noexcept
     if (Powerline_IsMapped(codepoint))
     {
         return &Powerline[codepoint - Powerline_FirstChar][0];
+    }
+    if (LegacyComputing_IsMapped(codepoint))
+    {
+        return &LegacyComputing[codepoint - LegacyComputing_FirstChar][0];
     }
     return nullptr;
 }
@@ -1076,6 +1567,10 @@ i32 BuiltinGlyphs::GetBitmapCellIndex(char32_t codepoint) noexcept
     if (Powerline_IsMapped(codepoint))
     {
         return codepoint - Powerline_FirstChar + BoxDrawing_CharCount;
+    }
+    if (LegacyComputing_IsMapped(codepoint))
+    {
+        return codepoint - LegacyComputing_FirstChar + BoxDrawing_CharCount + Powerline_CharCount;
     }
     return -1;
 }

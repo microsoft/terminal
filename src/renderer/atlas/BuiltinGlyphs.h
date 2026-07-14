@@ -16,7 +16,10 @@ namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs
     inline constexpr char32_t Powerline_FirstChar = 0xE0B0;
     inline constexpr u32 Powerline_CharCount = 0x10;
 
-    inline constexpr u32 TotalCharCount = BoxDrawing_CharCount + Powerline_CharCount;
+    inline constexpr char32_t LegacyComputing_FirstChar = 0x1FB00;
+    inline constexpr u32 LegacyComputing_CharCount = 0x70;
+
+    inline constexpr u32 TotalCharCount = BoxDrawing_CharCount + Powerline_CharCount + LegacyComputing_CharCount;
 
     i32 GetBitmapCellIndex(char32_t codepoint) noexcept;
 
