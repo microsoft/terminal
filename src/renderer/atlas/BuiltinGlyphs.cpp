@@ -1039,717 +1039,717 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
 };
 
 static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][InstructionsPerGlyph] = {
-    // U+1FB00 🬀
+    // U+1FB00 '🬀' BLOCK SEXTANT-1
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB01 🬁
+    // U+1FB01 '🬁' BLOCK SEXTANT-2
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB02 🬂
+    // U+1FB02 '🬂' BLOCK SEXTANT-12
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // Top Horizontal 1/3
     },
-    // U+1FB03 🬃
+    // U+1FB03 '🬃' BLOCK SEXTANT-3
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
     },
-    // U+1FB04 🬄
+    // U+1FB04 '🬄' BLOCK SEXTANT-13
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
     },
-    // U+1FB05 🬅
+    // U+1FB05 '🬅' BLOCK SEXTANT-23
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
     },
-    // U+1FB06 🬆
+    // U+1FB06 '🬆' BLOCK SEXTANT-123
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB07 🬇
+    // U+1FB07 '🬇' BLOCK SEXTANT-4
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
     },
-    // U+1FB08 🬈
+    // U+1FB08 '🬈' BLOCK SEXTANT-14
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
     },
-    // U+1FB09 🬉
+    // U+1FB09 '🬉' BLOCK SEXTANT-24
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
     },
-    // U+1FB0A 🬊
+    // U+1FB0A '🬊' BLOCK SEXTANT-124
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB0B 🬋
+    // U+1FB0B '🬋' BLOCK SEXTANT-34
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_1, Pos_6_9 }, // Middle Horizontal 1/3
     },
-    // U+1FB0C 🬌
+    // U+1FB0C '🬌' BLOCK SEXTANT-134
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
     },
-    // U+1FB0D 🬍
+    // U+1FB0D '🬍' BLOCK SEXTANT-234
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
     },
-    // U+1FB0E 🬎
+    // U+1FB0E '🬎' BLOCK SEXTANT-1234
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top 2/3
     },
-    // U+1FB0F 🬏
+    // U+1FB0F '🬏' BLOCK SEXTANT-5
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB10 🬐
+    // U+1FB10 '🬐' BLOCK SEXTANT-15
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB11 🬑
+    // U+1FB11 '🬑' BLOCK SEXTANT-25
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB12 🬒
+    // U+1FB12 '🬒' BLOCK SEXTANT-125
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // Top Horizontal 1/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB13 🬓
+    // U+1FB13 '🬓' BLOCK SEXTANT-35
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
     },
-    // U+1FB14 🬔
+    // U+1FB14 '🬔' BLOCK SEXTANT-235
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB15 🬕
+    // U+1FB15 '🬕' BLOCK SEXTANT-1235
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // Left Half
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB16 🬖
+    // U+1FB16 '🬖' BLOCK SEXTANT-45
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB17 🬗
+    // U+1FB17 '🬗' BLOCK SEXTANT-145
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB18 🬘
+    // U+1FB18 '🬘' BLOCK SEXTANT-245
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB19 🬙
+    // U+1FB19 '🬙' BLOCK SEXTANT-1245
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB1A 🬚
+    // U+1FB1A '🬚' BLOCK SEXTANT-345
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
     },
-    // U+1FB1B 🬛
+    // U+1FB1B '🬛' BLOCK SEXTANT-1345
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // Left Half
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_6_9 },
     },
-    // U+1FB1C 🬜
+    // U+1FB1C '🬜' BLOCK SEXTANT-2345
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
     },
-    // U+1FB1D 🬝
+    // U+1FB1D '🬝' BLOCK SEXTANT-12345
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB1E 🬞
+    // U+1FB1E '🬞' BLOCK SEXTANT-6
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB1F 🬟
+    // U+1FB1F '🬟' BLOCK SEXTANT-16
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB20 🬠
+    // U+1FB20 '🬠' BLOCK SEXTANT-26
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB21 🬡
+    // U+1FB21 '🬡' BLOCK SEXTANT-126
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // Top Horizontal 1/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB22 🬢
+    // U+1FB22 '🬢' BLOCK SEXTANT-36
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB23 🬣
+    // U+1FB23 '🬣' BLOCK SEXTANT-136
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB24 🬤
+    // U+1FB24 '🬤' BLOCK SEXTANT-236
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB25 🬥
+    // U+1FB25 '🬥' BLOCK SEXTANT-1236
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB26 🬦
+    // U+1FB26 '🬦' BLOCK SEXTANT-46
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
     },
-    // U+1FB27 🬧
+    // U+1FB27 '🬧' BLOCK SEXTANT-146
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB28 🬨
+    // U+1FB28 '🬨' BLOCK SEXTANT-1246
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // Right Half
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB29 🬩
+    // U+1FB29 '🬩' BLOCK SEXTANT-346
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
     },
-    // U+1FB2A 🬪
+    // U+1FB2A '🬪' BLOCK SEXTANT-1346
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_6_9 }, // Top Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
     },
-    // U+1FB2B 🬫
+    // U+1FB2B '🬫' BLOCK SEXTANT-2346
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // Right Half
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_6_9 },
     },
-    // U+1FB2C 🬬
+    // U+1FB2C '🬬' BLOCK SEXTANT-12346
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_6_9 }, // Top 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB2D 🬭
+    // U+1FB2D '🬭' BLOCK SEXTANT-56
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // Bottom Horizontal 1/3
     },
-    // U+1FB2E 🬮
+    // U+1FB2E '🬮' BLOCK SEXTANT-156
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // Bottom Horizontal 1/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB2F 🬯
+    // U+1FB2F '🬯' BLOCK SEXTANT-256
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // Bottom Horizontal 1/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB30 🬰
+    // U+1FB30 '🬰' BLOCK SEXTANT-1256
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 }, // Top Horizontal 1/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 }, // Bottom Horizontal 1/3
     },
-    // U+1FB31 🬱
+    // U+1FB31 '🬱' BLOCK SEXTANT-356
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB32 🬲
+    // U+1FB32 '🬲' BLOCK SEXTANT-1356
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // Left Half
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB33 🬳
+    // U+1FB33 '🬳' BLOCK SEXTANT-2356
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 }, // Bottom Left Vertical 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB34 🬴
+    // U+1FB34 '🬴' BLOCK SEXTANT-12356
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 }, // Left Half
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_6_9, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB35 🬵
+    // U+1FB35 '🬵' BLOCK SEXTANT-456
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB36 🬶
+    // U+1FB36 '🬶' BLOCK SEXTANT-1456
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom Right Vertical 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB37 🬷
+    // U+1FB37 '🬷' BLOCK SEXTANT-2456
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // Right Half
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB38 🬸
+    // U+1FB38 '🬸' BLOCK SEXTANT-12456
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 }, // Right Half
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB39 🬹
+    // U+1FB39 '🬹' BLOCK SEXTANT-3456
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom 2/3
     },
-    // U+1FB3A 🬺
+    // U+1FB3A '🬺' BLOCK SEXTANT-13456
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom 2/3
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_3_9 },
     },
-    // U+1FB3B 🬻
+    // U+1FB3B '🬻' BLOCK SEXTANT-23456
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 }, // Bottom 2/3
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_3_9 },
     },
-    // U+1FB3C 🬼
+    // U+1FB3C '🬼' LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB3D 🬽
+    // U+1FB3D '🬽' LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB3E 🬾
+    // U+1FB3E '🬾' LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB3F 🬿
+    // U+1FB3F '🬿' LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB40 🭀
+    // U+1FB40 '🭀' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB41 🭁
+    // U+1FB41 '🭁' LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB42 🭂
+    // U+1FB42 '🭂' LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_3_9 },
     },
-    // U+1FB43 🭃
+    // U+1FB43 '🭃' LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB44 🭄
+    // U+1FB44 '🭄' LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_6_9 },
     },
-    // U+1FB45 🭅
+    // U+1FB45 '🭅' LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB46 🭆
+    // U+1FB46 '🭆' LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_6_9 },
     },
-    // U+1FB47 🭇
+    // U+1FB47 '🭇' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB48 🭈
+    // U+1FB48 '🭈' LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB49 🭉
+    // U+1FB49 '🭉' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB4A 🭊
+    // U+1FB4A '🭊' LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB4B 🭋
+    // U+1FB4B '🭋' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB4C 🭌
+    // U+1FB4C '🭌' LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB4D 🭍
+    // U+1FB4D '🭍' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB4E 🭎
+    // U+1FB4E '🭎' LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB4F 🭏
+    // U+1FB4F '🭏' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_6_9 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB50 🭐
+    // U+1FB50 '🭐' LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB51 🭑
+    // U+1FB51 '🭑' LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_1, Pos_6_9 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB52 🭒
+    // U+1FB52 '🭒' UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB53 🭓
+    // U+1FB53 '🭓' UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_6_9 },
     },
-    // U+1FB54 🭔
+    // U+1FB54 '🭔' UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB55 🭕
+    // U+1FB55 '🭕' UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_3_9 },
     },
-    // U+1FB56 🭖
+    // U+1FB56 '🭖' UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB57 🭗
+    // U+1FB57 '🭗' UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB58 🭘
+    // U+1FB58 '🭘' UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB59 🭙
+    // U+1FB59 '🭙' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB5A 🭚
+    // U+1FB5A '🭚' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB5B 🭛
+    // U+1FB5B '🭛' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB5C 🭜
+    // U+1FB5C '🭜' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_0_1, Pos_6_9 },
     },
-    // U+1FB5D 🭝
+    // U+1FB5D '🭝' UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB5E 🭞
+    // U+1FB5E '🭞' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB5F 🭟
+    // U+1FB5F '🭟' UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB60 🭠
+    // U+1FB60 '🭠' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB61 🭡
+    // U+1FB61 '🭡' UPPER LEFT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_1 },
     },
-    // U+1FB62 🭢
+    // U+1FB62 '🭢' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB63 🭣
+    // U+1FB63 '🭣' UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
     },
-    // U+1FB64 🭤
+    // U+1FB64 '🭤' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB65 🭥
+    // U+1FB65 '🭥' UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
     },
-    // U+1FB66 🭦
+    // U+1FB66 '🭦' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB67 🭧
+    // U+1FB67 '🭧' UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_0_1, Pos_3_9 },
     },
-    // U+1FB68 🭨
+    // U+1FB68 '🭨' UPPER AND RIGHT AND LOWER TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
-    // U+1FB69 🭩
+    // U+1FB69 '🭩' LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_0_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
-    // U+1FB6A 🭪
+    // U+1FB6A '🭪' UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_0_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
-    // U+1FB6B 🭫
+    // U+1FB6B '🭫' LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
-    // U+1FB6C 🭬
+    // U+1FB6C '🭬' LEFT TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_2 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB6D 🭭
+    // U+1FB6D '🭭' UPPER TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
-    // U+1FB6E 🭮
+    // U+1FB6E '🭮' RIGHT TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_2, Pos_1_2 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB6F 🭯
+    // U+1FB6F '🭯' LOWER TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_2, Pos_1_2 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
-    // U+1FB70 🭰
+    // U+1FB70 '🭰' VERTICAL ONE EIGHTH BLOCK-2
     {
         Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_4, Pos_1_1 },
     },
-    // U+1FB71 🭱
+    // U+1FB71 '🭱' VERTICAL ONE EIGHTH BLOCK-3
     {
         Instruction{ Shape_Filled100, Pos_1_4, Pos_0_1, Pos_3_8, Pos_1_1 },
     },
-    // U+1FB72 🭲
+    // U+1FB72 '🭲' VERTICAL ONE EIGHTH BLOCK-4
     {
         Instruction{ Shape_Filled100, Pos_3_8, Pos_0_1, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB73 🭳
+    // U+1FB73 '🭳' VERTICAL ONE EIGHTH BLOCK-5
     {
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_5_8, Pos_1_1 },
     },
-    // U+1FB74 🭴
+    // U+1FB74 '🭴' VERTICAL ONE EIGHTH BLOCK-6
     {
         Instruction{ Shape_Filled100, Pos_5_8, Pos_0_1, Pos_3_4, Pos_1_1 },
     },
-    // U+1FB75 🭵
+    // U+1FB75 '🭵' VERTICAL ONE EIGHTH BLOCK-7
     {
         Instruction{ Shape_Filled100, Pos_3_4, Pos_0_1, Pos_7_8, Pos_1_1 },
     },
-    // U+1FB76 🭶
+    // U+1FB76 '🭶' HORIZONTAL ONE EIGHTH BLOCK-2
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_8, Pos_1_1, Pos_1_4 },
     },
-    // U+1FB77 🭷
+    // U+1FB77 '🭷' HORIZONTAL ONE EIGHTH BLOCK-3
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_4, Pos_1_1, Pos_3_8 },
     },
-    // U+1FB78 🭸
+    // U+1FB78 '🭸' HORIZONTAL ONE EIGHTH BLOCK-4
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_8, Pos_1_1, Pos_1_2 },
     },
-    // U+1FB79 🭹
+    // U+1FB79 '🭹' HORIZONTAL ONE EIGHTH BLOCK-5
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_5_8 },
     },
-    // U+1FB7A 🭺
+    // U+1FB7A '🭺' HORIZONTAL ONE EIGHTH BLOCK-6
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_5_8, Pos_1_1, Pos_3_4 },
     },
-    // U+1FB7B 🭻
+    // U+1FB7B '🭻' HORIZONTAL ONE EIGHTH BLOCK-7
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_3_4, Pos_1_1, Pos_7_8 },
     },
-    // U+1FB7C 🭼
+    // U+1FB7C '🭼' LEFT AND LOWER ONE EIGHTH BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_8, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_1_8, Pos_7_8, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB7D 🭽
+    // U+1FB7D '🭽' LEFT AND UPPER ONE EIGHTH BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_8, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_1, Pos_1_8 },
     },
-    // U+1FB7E 🭾
+    // U+1FB7E '🭾' RIGHT AND UPPER ONE EIGHTH BLOCK
     {
         Instruction{ Shape_Filled100, Pos_7_8, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_7_8, Pos_1_8 },
     },
-    // U+1FB7F 🭿
+    // U+1FB7F '🭿' RIGHT AND LOWER ONE EIGHTH BLOCK
     {
         Instruction{ Shape_Filled100, Pos_7_8, Pos_0_1, Pos_1_1, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_7_8, Pos_1_1 },
     },
-    // U+1FB80 🮀
+    // U+1FB80 '🮀' UPPER AND LOWER ONE EIGHTH BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_8 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB81 🮁
+    // U+1FB81 '🮁' HORIZONTAL ONE EIGHTH BLOCK-1358
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_8 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_4, Pos_1_1, Pos_3_8 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_5_8 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB82 🮂
+    // U+1FB82 '🮂' UPPER ONE QUARTER BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_4 },
     },
-    // U+1FB83 🮃
+    // U+1FB83 '🮃' UPPER THREE EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_8 },
     },
-    // U+1FB84 🮄
+    // U+1FB84 '🮄' UPPER FIVE EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_5_8 },
     },
-    // U+1FB85 🮅
+    // U+1FB85 '🮅' UPPER THREE QUARTERS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_4 },
     },
-    // U+1FB86 🮆
+    // U+1FB86 '🮆' UPPER SEVEN EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_7_8 },
     },
-    // U+1FB87 🮇
+    // U+1FB87 '🮇' RIGHT ONE QUARTER BLOCK
     {
         Instruction{ Shape_Filled100, Pos_3_4, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB88 🮈
+    // U+1FB88 '🮈' RIGHT THREE EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_5_8, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB89 🮉
+    // U+1FB89 '🮉' RIGHT FIVE EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_3_8, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB8A 🮊
+    // U+1FB8A '🮊' RIGHT THREE QUARTERS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_1_4, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB8B 🮋
+    // U+1FB8B '🮋' RIGHT SEVEN EIGHTHS BLOCK
     {
         Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB8C 🮌
+    // U+1FB8C '🮌' LEFT HALF MEDIUM SHADE
     {
         Instruction{ Shape_Filled050, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
     },
-    // U+1FB8D 🮍
+    // U+1FB8D '🮍' RIGHT HALF MEDIUM SHADE
     {
         Instruction{ Shape_Filled050, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB8E 🮎
+    // U+1FB8E '🮎' UPPER HALF MEDIUM SHADE
     {
         Instruction{ Shape_Filled050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
     },
-    // U+1FB8F 🮏
+    // U+1FB8F '🮏' LOWER HALF MEDIUM SHADE
     {
         Instruction{ Shape_Filled050, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB90 🮐
+    // U+1FB90 '🮐' INVERSE MEDIUM SHADE
     {
         Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB91 🮑
+    // U+1FB91 '🮑' UPPER HALF BLOCK AND LOWER HALF INVERSE MEDIUM SHADE
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
         Instruction{ Shape_Invert050, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB92 🮒
+    // U+1FB92 '🮒' UPPER HALF INVERSE MEDIUM SHADE AND LOWER HALF BLOCK
     {
         Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
@@ -1758,7 +1758,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         // undefined!
     },
-    // U+1FB94 🮔
+    // U+1FB94 '🮔' LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
     {
         Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
