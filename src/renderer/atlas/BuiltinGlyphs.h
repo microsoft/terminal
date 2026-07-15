@@ -8,7 +8,7 @@
 namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs
 {
     bool IsBuiltinGlyph(char32_t codepoint) noexcept;
-    void DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[4], const D2D1_RECT_F& rect, char32_t codepoint);
+    void DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[5], const D2D1_RECT_F& rect, char32_t codepoint);
 
     inline constexpr char32_t BoxDrawing_FirstChar = 0x2500;
     inline constexpr u32 BoxDrawing_CharCount = 0xA0;

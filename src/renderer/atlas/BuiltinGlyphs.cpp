@@ -36,6 +36,7 @@ enum Shape : u32
     Shape_Filled050, // axis aligned rectangle, 50% filled
     Shape_Filled075, // axis aligned rectangle, 75% filled
     Shape_Filled100, // axis aligned rectangle, 100% filled
+    Shape_Invert050, // axis aligned rectangle, 50% filled (inverted)
     Shape_LightLine, // 1/8th wide line
     Shape_HeavyLine, // 1/4th wide line
     Shape_EmptyRect, // axis aligned hollow rectangle
@@ -1741,16 +1742,16 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     },
     // U+1FB90 🮐
     {
-        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
     // U+1FB91 🮑
     {
         Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
-        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_Invert050, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
     },
     // U+1FB92 🮒
     {
-        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
     },
     // U+1FB93 🮓
@@ -1759,7 +1760,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     },
     // U+1FB94 🮔
     {
-        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
 };
@@ -1820,7 +1821,7 @@ i32 BuiltinGlyphs::GetBitmapCellIndex(char32_t codepoint) noexcept
     return -1;
 }
 
-void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[4], const D2D1_RECT_F& rect, char32_t codepoint)
+void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[5], const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
     const auto restoreD2D = wil::scope_exit([&]() {
@@ -1893,6 +1894,7 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         case Shape_Filled050:
         case Shape_Filled075:
         case Shape_Filled100:
+        case Shape_Invert050:
         {
             const auto brushColor = brush->GetColor();
             brush->SetColor(&shadeColorMap[shape]);
