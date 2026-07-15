@@ -63,6 +63,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // The profile Guid does include the enclosing '{}'
             environment.as_map().insert_or_assign(L"WT_PROFILE_ID", Utils::GuidToString(_profileGuid));
 
+            // Advertise 24-bit color support to client applications (GH#11057).
+            environment.as_map().insert_or_assign(L"COLORTERM", L"truecolor");
+
             // WSLENV is a colon-delimited list of environment variables (+flags) that should appear inside WSL
             // https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
 
@@ -88,6 +91,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             static constexpr std::wstring_view builtinWslEnvVars[] = {
                 L"WT_SESSION",
                 L"WT_PROFILE_ID",
+                L"COLORTERM",
             };
             // Misdiagnosis in MSVC 14.44.35207. No pointer arithmetic in sight.
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
