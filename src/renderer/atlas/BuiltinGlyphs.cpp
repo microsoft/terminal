@@ -1357,83 +1357,208 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB41 🭁
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB42 🭂
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_3_9 },
+    },
     // U+1FB43 🭃
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB44 🭄
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_6_9 },
+    },
     // U+1FB45 🭅
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB46 🭆
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_6_9 },
+    },
     // U+1FB47 🭇
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB48 🭈
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB49 🭉
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB4A 🭊
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB4B 🭋
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB4C 🭌
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB4D 🭍
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_9 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB4E 🭎
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB4F 🭏
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_6_9 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB50 🭐
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB51 🭑
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_1, Pos_6_9 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB52 🭒
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB53 🭓
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_6_9 },
+    },
     // U+1FB54 🭔
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB55 🭕
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_3_9 },
+    },
     // U+1FB56 🭖
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
+    },
     // U+1FB57 🭗
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB58 🭘
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB59 🭙
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB5A 🭚
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB5B 🭛
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB5C 🭜
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_0_1, Pos_6_9 },
+    },
     // U+1FB5D 🭝
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB5E 🭞
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB5F 🭟
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB60 🭠
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB61 🭡
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB62 🭢
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB63 🭣
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
+    },
     // U+1FB64 🭤
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB65 🭥
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
+    },
     // U+1FB66 🭦
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
+    },
     // U+1FB67 🭧
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_0_1, Pos_3_9 },
+    },
     // U+1FB68 🭨
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
