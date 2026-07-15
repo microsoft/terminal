@@ -1754,9 +1754,9 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
         Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
         Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
     },
-    // U+1FB93 🮓
+    // U+1FB93 [RESERVED]
     {
-        // undefined!
+        // It has not been assigned a rendition.
     },
     // U+1FB94 '🮔' LEFT HALF INVERSE MEDIUM SHADE AND RIGHT HALF BLOCK
     {
