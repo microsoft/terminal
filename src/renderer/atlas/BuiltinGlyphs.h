@@ -17,7 +17,7 @@ namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs
     inline constexpr u32 Powerline_CharCount = 0x10;
 
     inline constexpr char32_t LegacyComputing_FirstChar = 0x1FB00;
-    inline constexpr u32 LegacyComputing_CharCount = 0x70;
+    inline constexpr u32 LegacyComputing_CharCount = 0x95;
 
     inline constexpr u32 TotalCharCount = BoxDrawing_CharCount + Powerline_CharCount + LegacyComputing_CharCount;
 

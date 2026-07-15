@@ -1603,6 +1603,165 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_2, Pos_1_2 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
+    // U+1FB70 🭰
+    {
+        Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_4, Pos_1_1 },
+    },
+    // U+1FB71 🭱
+    {
+        Instruction{ Shape_Filled100, Pos_1_4, Pos_0_1, Pos_3_8, Pos_1_1 },
+    },
+    // U+1FB72 🭲
+    {
+        Instruction{ Shape_Filled100, Pos_3_8, Pos_0_1, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB73 🭳
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_5_8, Pos_1_1 },
+    },
+    // U+1FB74 🭴
+    {
+        Instruction{ Shape_Filled100, Pos_5_8, Pos_0_1, Pos_3_4, Pos_1_1 },
+    },
+    // U+1FB75 🭵
+    {
+        Instruction{ Shape_Filled100, Pos_3_4, Pos_0_1, Pos_7_8, Pos_1_1 },
+    },
+    // U+1FB76 🭶
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_8, Pos_1_1, Pos_1_4 },
+    },
+    // U+1FB77 🭷
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_4, Pos_1_1, Pos_3_8 },
+    },
+    // U+1FB78 🭸
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_8, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FB79 🭹
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_5_8 },
+    },
+    // U+1FB7A 🭺
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_5_8, Pos_1_1, Pos_3_4 },
+    },
+    // U+1FB7B 🭻
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_4, Pos_1_1, Pos_7_8 },
+    },
+    // U+1FB7C 🭼
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_8, Pos_1_1 },
+        Instruction{ Shape_Filled100, Pos_1_8, Pos_7_8, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB7D 🭽
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_8, Pos_1_1 },
+        Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_1, Pos_1_8 },
+    },
+    // U+1FB7E 🭾
+    {
+        Instruction{ Shape_Filled100, Pos_7_8, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_7_8, Pos_1_8 },
+    },
+    // U+1FB7F 🭿
+    {
+        Instruction{ Shape_Filled100, Pos_7_8, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_7_8, Pos_1_1 },
+    },
+    // U+1FB80 🮀
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_8 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB81 🮁
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_8 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_4, Pos_1_1, Pos_3_8 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_5_8 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_7_8, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB82 🮂
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_4 },
+    },
+    // U+1FB83 🮃
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_8 },
+    },
+    // U+1FB84 🮄
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_5_8 },
+    },
+    // U+1FB85 🮅
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_3_4 },
+    },
+    // U+1FB86 🮆
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_7_8 },
+    },
+    // U+1FB87 🮇
+    {
+        Instruction{ Shape_Filled100, Pos_3_4, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB88 🮈
+    {
+        Instruction{ Shape_Filled100, Pos_5_8, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB89 🮉
+    {
+        Instruction{ Shape_Filled100, Pos_3_8, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB8A 🮊
+    {
+        Instruction{ Shape_Filled100, Pos_1_4, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB8B 🮋
+    {
+        Instruction{ Shape_Filled100, Pos_1_8, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB8C 🮌
+    {
+        Instruction{ Shape_Filled050, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB8D 🮍
+    {
+        Instruction{ Shape_Filled050, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB8E 🮎
+    {
+        Instruction{ Shape_Filled050, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FB8F 🮏
+    {
+        Instruction{ Shape_Filled050, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB90 🮐
+    {
+        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB91 🮑
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB92 🮒
+    {
+        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB93 🮓
+    {
+        // undefined!
+    },
+    // U+1FB94 🮔
+    {
+        Instruction{ Shape_Filled050 /*INV*/, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
 };
 
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
