@@ -454,13 +454,16 @@ void CascadiaSettings::_validateSettings()
 // - <none>
 // Return Value:
 // - <none>
-// - Appends a SettingsLoadWarnings::UnknownColorScheme to our list of warnings if
-//   we find any such duplicate.
+// - Appends a SettingsLoadWarnings::UnknownColorScheme if a profile references a
+//   scheme that doesn't exist, or SettingsLoadWarnings::IncompleteColorScheme
+//   (GH#11457) if the referenced scheme exists but was rejected for missing colors.
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
-    auto foundInvalidDarkScheme = false;
-    auto foundInvalidLightScheme = false;
+    auto foundUnknownScheme = false;
+    // GH#11457: distinguish a scheme that doesn't exist at all from one that exists but
+    // is incomplete (missing colors), so the user gets an accurate warning.
+    auto foundIncompleteScheme = false;
 
     for (const auto& profile : _allProfiles)
     {
@@ -468,22 +471,40 @@ void CascadiaSettings::_validateAllSchemesExist()
         {
             if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
             {
+                if (_incompleteColorSchemes.contains(appearance.DarkColorSchemeName()))
+                {
+                    foundIncompleteScheme = true;
+                }
+                else
+                {
+                    foundUnknownScheme = true;
+                }
                 // Clear the user set dark color scheme. We'll just fallback instead.
                 appearance.ClearDarkColorSchemeName();
-                foundInvalidDarkScheme = true;
             }
             if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
             {
+                if (_incompleteColorSchemes.contains(appearance.LightColorSchemeName()))
+                {
+                    foundIncompleteScheme = true;
+                }
+                else
+                {
+                    foundUnknownScheme = true;
+                }
                 // Clear the user set light color scheme. We'll just fallback instead.
                 appearance.ClearLightColorSchemeName();
-                foundInvalidLightScheme = true;
             }
         }
     }
 
-    if (foundInvalidDarkScheme || foundInvalidLightScheme)
+    if (foundUnknownScheme)
     {
         _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
+    }
+    if (foundIncompleteScheme)
+    {
+        _warnings.Append(SettingsLoadWarnings::IncompleteColorScheme);
     }
 }
 
