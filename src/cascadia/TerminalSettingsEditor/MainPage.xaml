@@ -205,7 +205,18 @@
             <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
                                      x:Uid="Nav_OpenJSON"
                                      SelectsOnInvoked="False"
-                                     Tag="OpenJson_Nav" />
+                                     Tag="OpenJson_Nav" >
+                <muxc:NavigationViewItem.ContextFlyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Uid="Nav_OpenSettingsFolder"
+                                        Click="OpenSettingsFolder_Click">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE838;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </muxc:NavigationViewItem.ContextFlyout>
+            </muxc:NavigationViewItem>
         </muxc:NavigationView.FooterMenuItems>
 
         <Grid>

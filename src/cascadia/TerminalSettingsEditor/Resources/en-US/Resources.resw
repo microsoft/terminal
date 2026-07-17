@@ -689,6 +689,10 @@
     <value>Open JSON file</value>
     <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
   </data>
+  <data name="Nav_OpenSettingsFolder.Text" xml:space="preserve">
+    <value>Open settings folder</value>
+    <comment>Header for a context menu item. This opens the parent folder of the settings.json file in File Explorer.</comment>
+  </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
