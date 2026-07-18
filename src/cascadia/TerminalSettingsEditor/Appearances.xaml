@@ -197,6 +197,7 @@
                                     x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorScheme}"
                                     CurrentValueAccessibleName="{x:Bind Appearance.CurrentColorScheme.Name, Mode=OneWay}"
+                                    CurrentValueMaxWidth="330"
                                     HasSettingValue="{x:Bind Appearance.HasColorScheme, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">

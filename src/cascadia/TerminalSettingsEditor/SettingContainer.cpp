@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueAccessibleNameProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueMaxWidthProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
     DependencyProperty SettingContainer::_StartExpandedProperty{ nullptr };
@@ -82,6 +83,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Windows::UI::Xaml::DataTemplate>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L""), PropertyChangedCallback{ &SettingContainer::_OnCurrentValueChanged } });
+        }
+        if (!_CurrentValueMaxWidthProperty)
+        {
+            _CurrentValueMaxWidthProperty =
+                DependencyProperty::Register(
+                    L"CurrentValueMaxWidth",
+                    xaml_typename<double>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(248.0) });
         }
         if (!_HasSettingValueProperty)
         {
