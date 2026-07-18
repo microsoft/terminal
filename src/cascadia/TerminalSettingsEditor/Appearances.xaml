@@ -201,27 +201,16 @@
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <local:SettingContainer.CurrentValue>
-                    <!--  Explicit Width/Height on the scheme ComboBoxes pin the closed control's
-                          geometry: while the dropdown is open, WinUI does not render the selection
-                          content inline, so an auto-sized box collapses and shifts the layout.  -->
-                    <!--  No StackPanel.Spacing here: WinUI 2 applies Spacing around collapsed
-                          children too, which would knock the single-mode ComboBox off center.  -->
                     <StackPanel>
                         <!--  One scheme, used for both the dark & light app theme.  -->
-                        <!--  NOTE: the collapsed ComboBox keeps a live TwoWay binding; the view model  -->
-                        <!--  ignores writes from whichever of the two modes is currently inactive.  -->
-                        <ComboBox Width="248"
-                                  Height="42"
-                                  Padding="4"
+                        <ComboBox Padding="4"
                                   ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                   ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
                                   SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
                                   Style="{StaticResource ComboBoxSettingStyle}"
                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Appearance.UseSeparateLightColorScheme), Mode=OneWay}" />
                         <!--  A pair of schemes: one for the dark app theme, one for the light app theme.  -->
-                        <!--  The bottom margin keeps the Light row off the header's bottom edge; it must
-                              not live on the parent StackPanel or it uncenters the single-mode ComboBox.  -->
-                        <Grid Margin="0,0,0,8"
+                        <Grid Padding="4"
                               ColumnSpacing="8"
                               RowSpacing="8"
                               Visibility="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=OneWay}">
@@ -240,8 +229,6 @@
                             <ComboBox x:Uid="Profile_ColorSchemeDarkComboBox"
                                       Grid.Row="0"
                                       Grid.Column="1"
-                                      Width="248"
-                                      Height="42"
                                       Padding="4"
                                       ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                       ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
@@ -254,27 +241,19 @@
                             <ComboBox x:Uid="Profile_ColorSchemeLightComboBox"
                                       Grid.Row="1"
                                       Grid.Column="1"
-                                      Width="248"
-                                      Height="42"
                                       Padding="4"
                                       ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                       ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
                                       SelectedItem="{x:Bind Appearance.CurrentLightColorScheme, Mode=TwoWay}"
                                       Style="{StaticResource ComboBoxSettingStyle}" />
                         </Grid>
+                        <CheckBox x:Uid="Profile_ColorSchemeUseSeparateLight"
+                                  Margin="0,4,0,0"
+                                  IsChecked="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer.CurrentValue>
                 <local:SettingContainer.Content>
                     <StackPanel>
-
-                        <!--  Use a separate color scheme while the app uses the light theme  -->
-                        <CheckBox x:Uid="Profile_ColorSchemeUseSeparateLight"
-                                  Margin="0,0,0,8"
-                                  IsChecked="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=TwoWay}">
-                            <TextBlock x:Uid="Profile_ColorSchemeUseSeparateLightLabel"
-                                       TextWrapping="NoWrap" />
-                        </CheckBox>
-
                         <!--  Foreground Color  -->
                         <local:SettingContainer x:Name="Foreground"
                                                 x:Uid="Profile_Foreground"

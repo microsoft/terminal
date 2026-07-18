@@ -209,9 +209,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
-        _appearance{ appearance },
-        _useSeparateLightColorScheme{ appearance.DarkColorSchemeName() != appearance.LightColorSchemeName() }
+        _appearance{ appearance }
     {
+        _setUseSeparateLightColorScheme(appearance.DarkColorSchemeName() != appearance.LightColorSchemeName());
+
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
         //  unique view model members.
@@ -251,12 +252,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // If the two scheme names diverged (e.g. via inheritance),
                 // make sure the split light/dark UI is showing.
-                if (!_useSeparateLightColorScheme && DarkColorSchemeName() != LightColorSchemeName())
+                if (DarkColorSchemeName() != LightColorSchemeName())
                 {
-                    _useSeparateLightColorScheme = true;
-                    _NotifyChanges(L"UseSeparateLightColorScheme");
+                    UseSeparateLightColorScheme(true);
                 }
                 _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
+            }
+            else if (viewModelProperty == L"UseSeparateLightColorScheme")
+            {
+                // Unchecking collapses back down to a single scheme for both
+                // themes. The divergence guard keeps ClearColorScheme's reset
+                // from writing the inherited name back as an override.
+                if (!UseSeparateLightColorScheme() && DarkColorSchemeName() != LightColorSchemeName())
+                {
+                    LightColorSchemeName(DarkColorSchemeName());
+                }
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
@@ -1020,12 +1030,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ClearDarkColorSchemeName();
         ClearLightColorSchemeName();
-        const auto split = DarkColorSchemeName() != LightColorSchemeName();
-        if (split != _useSeparateLightColorScheme)
-        {
-            _useSeparateLightColorScheme = split;
-            _NotifyChanges(L"UseSeparateLightColorScheme");
-        }
+        UseSeparateLightColorScheme(DarkColorSchemeName() != LightColorSchemeName());
         _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
     }
 
@@ -1054,7 +1059,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // A ComboBox pushes a null SelectedItem through a TwoWay binding while
         // it's being unloaded; writing while the split UI owns the scheme names
         // would clobber the user's separate dark/light selections.
-        if (!val || _useSeparateLightColorScheme)
+        if (!val || UseSeparateLightColorScheme())
         {
             return;
         }
@@ -1072,7 +1077,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // The pair combo boxes stay TwoWay-bound while collapsed; ignore their
         // writes (including the null a ComboBox pushes during teardown) unless
         // the split UI is the active mode.
-        if (!val || !_useSeparateLightColorScheme)
+        if (!val || !UseSeparateLightColorScheme())
         {
             return;
         }
@@ -1086,31 +1091,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::CurrentLightColorScheme(const ColorSchemeViewModel& val)
     {
-        if (!val || !_useSeparateLightColorScheme)
+        if (!val || !UseSeparateLightColorScheme())
         {
             return;
         }
         LightColorSchemeName(val.Name());
-    }
-
-    bool AppearanceViewModel::UseSeparateLightColorScheme() const
-    {
-        return _useSeparateLightColorScheme;
-    }
-
-    void AppearanceViewModel::UseSeparateLightColorScheme(bool value)
-    {
-        if (value == _useSeparateLightColorScheme)
-        {
-            return;
-        }
-        _useSeparateLightColorScheme = value;
-        if (!value)
-        {
-            // Collapse back down to a single scheme for both themes.
-            LightColorSchemeName(DarkColorSchemeName());
-        }
-        _NotifyChanges(L"UseSeparateLightColorScheme");
     }
 
     bool AppearanceViewModel::HasColorScheme() const

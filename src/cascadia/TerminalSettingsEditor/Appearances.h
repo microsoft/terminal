@@ -135,8 +135,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentDarkColorScheme(const Editor::ColorSchemeViewModel& val);
         Editor::ColorSchemeViewModel CurrentLightColorScheme() const;
         void CurrentLightColorScheme(const Editor::ColorSchemeViewModel& val);
-        bool UseSeparateLightColorScheme() const;
-        void UseSeparateLightColorScheme(bool value);
         bool HasColorScheme() const;
 
         Windows::UI::Color ForegroundPreview() const;
@@ -172,6 +170,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(bool, UseSeparateLightColorScheme, _propertyChangedHandlers, false);
 
     private:
         void _invalidateFontFaceDependents() { _fontFaceDependents.reset(); }
@@ -190,7 +189,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
-        bool _useSeparateLightColorScheme{ false };
         std::optional<FontFaceDependentsData> _fontFaceDependents;
     };
 
