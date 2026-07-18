@@ -189,6 +189,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
+        winrt::hstring _lastLightSchemeName;
         std::optional<FontFaceDependentsData> _fontFaceDependents;
     };
 

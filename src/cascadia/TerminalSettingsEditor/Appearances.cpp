@@ -260,12 +260,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"UseSeparateLightColorScheme")
             {
-                // Unchecking collapses back down to a single scheme for both
-                // themes. The divergence guard keeps ClearColorScheme's reset
-                // from writing the inherited name back as an override.
-                if (!UseSeparateLightColorScheme() && DarkColorSchemeName() != LightColorSchemeName())
+                if (!UseSeparateLightColorScheme())
                 {
-                    LightColorSchemeName(DarkColorSchemeName());
+                    // Unchecking collapses back down to a single scheme for
+                    // both themes. The divergence guard keeps ClearColorScheme's
+                    // reset from writing the inherited name back as an override.
+                    if (DarkColorSchemeName() != LightColorSchemeName())
+                    {
+                        _lastLightSchemeName = LightColorSchemeName();
+                        LightColorSchemeName(DarkColorSchemeName());
+                    }
+                }
+                else if (!_lastLightSchemeName.empty() && DarkColorSchemeName() == LightColorSchemeName())
+                {
+                    // Re-checking restores the light scheme that unchecking
+                    // collapsed, mirroring how _lastBgImagePath restores the
+                    // background image path.
+                    LightColorSchemeName(_lastLightSchemeName);
                 }
             }
             else if (viewModelProperty == L"CurrentColorScheme")
