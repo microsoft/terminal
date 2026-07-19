@@ -62,6 +62,7 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(IncompleteFragmentSchemeReferencedByUserWarns);
         TEST_METHOD(BrokenSchemeReferencedByFragmentProfileIsSilent);
+        TEST_METHOD(UserOverrideOfInboxColorSchemeTypoWarns);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -1190,8 +1191,87 @@ namespace SettingsModelUnitTests
 
         // The fragment profiles really did make it into the settings...
         VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
-        // ...and produced no warnings whatsoever.
+        // ...and produced no warnings whatsoever. This is a pure negative control: the
+        // positive control (that a genuinely-unresolvable/user-owned broken reference still
+        // warns) is covered independently by UserOverrideOfInboxColorSchemeTypoWarns, so we
+        // don't dilute this test with a second concern -- `foundUnknownScheme` in
+        // _validateAllSchemesExist() is a single bool accumulated across every profile, so
+        // mixing a real warning into this test would make it indistinguishable from a
+        // regression that lets a fragment-suppressed reference through.
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
+    }
+
+    // GH#11457 regression for the leaf-vs-parent origin bug: an InBox profile sets a valid
+    // colorScheme, and the user's own settings.json overrides the *same* profile (matched by
+    // guid, so SettingsLoader::_addUserProfileParent() makes the InBox profile a parent of
+    // the user's) with a misspelled colorScheme name. The user's own layer -- the leaf --
+    // is the one that actually determines the effective (broken) name, so this must still warn.
+    //
+    // IInheritable's public <NAME>OverrideSource() only walks *parents* and never inspects
+    // the leaf (see IInheritable.h); if _originOfColorSchemeName() trusted a non-null
+    // override source without first checking whether the leaf itself set the value, it
+    // would misattribute this to the InBox parent and silently swallow the user's typo.
+    void ColorSchemeTests::UserOverrideOfInboxColorSchemeTypoWarns()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "Campbell" }
+            ],
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                }
+            ]
+        })" };
+
+        // Guid matches the InBox profile above, so this is layered as a child of it --
+        // not a brand-new, unrelated profile.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "Cambell" }
+            ]
+        })" };
+
+        SettingsLoader loader{ userSettings, inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // Guards against a silent guid-matching regression: if it broke, the user profile
+        // would stop layering onto the InBox one and would show up as a second, unrelated
+        // profile instead, degrading this test into a duplicate of TestInvalidColorSchemeName.
+        VERIFY_ARE_EQUAL(1u, settings->AllProfiles().Size());
+
+        auto foundUnknown = false;
+        for (const auto& warning : settings->Warnings())
+        {
+            if (warning == winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::UnknownColorScheme)
+            {
+                foundUnknown = true;
+            }
+        }
+        VERIFY_IS_TRUE(foundUnknown);
     }
 
 }

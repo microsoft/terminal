@@ -454,13 +454,18 @@ void CascadiaSettings::_validateSettings()
 // into a user-owned child profile, and FinalizeLayering() then stamps that child with
 // OriginTag::User. Origin is a plain WINRT_PROPERTY, so it is not inherited from the
 // fragment parent either. We therefore walk the inheritance graph to find the layer that
-// set the value -- just like AppearanceConfig::ResolveMediaResources() does for icons.
+// set the value. (The media-resource path does the same thing via the private
+// _get<NAME>OverrideSourceAndValueImpl(), which already folds in the leaf check.)
 static Model::OriginTag _originOfColorSchemeName(const Model::IAppearanceConfig& appearance,
-                                                  const Model::IAppearanceConfig& overrideSource)
+                                                 bool hasOwnValue,
+                                                 const Model::IAppearanceConfig& overrideSource)
 {
-    // <NAME>OverrideSource() only walks the *parents*, so a null result means the value
-    // was set directly on `appearance` itself.
-    const Model::IAppearanceConfig layer{ overrideSource ? overrideSource : appearance };
+    // <NAME>OverrideSource() only walks the *parents* and never inspects this layer, so a
+    // non-null override source does NOT mean this layer was silent -- when both set the
+    // value, this layer's value is the one _get<NAME>Impl() returns. Hence hasOwnValue.
+    // When nobody set it at all we also fall back to this layer, so that a broken built-in
+    // default still reports as something the user can act on.
+    const Model::IAppearanceConfig layer{ hasOwnValue ? appearance : (overrideSource ? overrideSource : appearance) };
     if (const auto layerImpl = winrt::get_self<AppearanceConfig>(layer))
     {
         if (const auto sourceProfile = layerImpl->SourceProfile())
@@ -477,9 +482,9 @@ static Model::OriginTag _originOfColorSchemeName(const Model::IAppearanceConfig&
 // fragment sitting in a system folder would produce a warning they could never escape.
 // This mirrors the allow-list in _resolveSingleMediaResource() below.
 void CascadiaSettings::_noteMissingColorScheme(const winrt::hstring& name,
-                                                OriginTag origin,
-                                                bool& foundUnknown,
-                                                bool& foundIncomplete) const
+                                               OriginTag origin,
+                                               bool& foundUnknown,
+                                               bool& foundIncomplete) const
 {
     if (origin != OriginTag::User && origin != OriginTag::ProfilesDefaults)
     {
@@ -530,18 +535,18 @@ void CascadiaSettings::_validateAllSchemesExist()
             if (const auto name = appearance.DarkColorSchemeName(); !colorSchemes.HasKey(name))
             {
                 _noteMissingColorScheme(name,
-                                         _originOfColorSchemeName(appearance, appearanceImpl->DarkColorSchemeNameOverrideSource()),
-                                         foundUnknownScheme,
-                                         foundIncompleteScheme);
+                                        _originOfColorSchemeName(appearance, appearanceImpl->HasDarkColorSchemeName(), appearanceImpl->DarkColorSchemeNameOverrideSource()),
+                                        foundUnknownScheme,
+                                        foundIncompleteScheme);
                 // Clear the user set dark color scheme. We'll just fallback instead.
                 appearance.ClearDarkColorSchemeName();
             }
             if (const auto name = appearance.LightColorSchemeName(); !colorSchemes.HasKey(name))
             {
                 _noteMissingColorScheme(name,
-                                         _originOfColorSchemeName(appearance, appearanceImpl->LightColorSchemeNameOverrideSource()),
-                                         foundUnknownScheme,
-                                         foundIncompleteScheme);
+                                        _originOfColorSchemeName(appearance, appearanceImpl->HasLightColorSchemeName(), appearanceImpl->LightColorSchemeNameOverrideSource()),
+                                        foundUnknownScheme,
+                                        foundIncompleteScheme);
                 // Clear the user set light color scheme. We'll just fallback instead.
                 appearance.ClearLightColorSchemeName();
             }
