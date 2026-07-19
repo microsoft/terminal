@@ -202,16 +202,20 @@
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <local:SettingContainer.CurrentValue>
-                    <StackPanel>
+                    <StackPanel Margin="0,8,0,8">
                         <!--  One scheme, used for both the dark & light app theme.  -->
-                        <ComboBox Padding="4"
+                        <ComboBox MinHeight="42"
+                                  Padding="4"
                                   ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                   ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
                                   SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
                                   Style="{StaticResource ComboBoxSettingStyle}"
                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Appearance.UseSeparateLightColorScheme), Mode=OneWay}" />
-                        <!--  A pair of schemes: one for the dark app theme, one for the light app theme.  -->
-                        <Grid Padding="4"
+                        <!--  A pair of schemes: one for the dark app theme, one for the light app theme.
+                              The MinWidth pins the ComboBox column so it doesn't resize while a
+                              dropdown is open (an open WinUI 2 ComboBox stops rendering its selection
+                              content inline, collapsing its desired size).  -->
+                        <Grid MinWidth="322"
                               ColumnSpacing="8"
                               RowSpacing="8"
                               Visibility="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=OneWay}">
@@ -231,6 +235,8 @@
                                       Grid.Row="0"
                                       Grid.Column="1"
                                       MinWidth="0"
+                                      MinHeight="42"
+                                      HorizontalAlignment="Stretch"
                                       Padding="4"
                                       ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                       ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
@@ -244,6 +250,8 @@
                                       Grid.Row="1"
                                       Grid.Column="1"
                                       MinWidth="0"
+                                      MinHeight="42"
+                                      HorizontalAlignment="Stretch"
                                       Padding="4"
                                       ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                       ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
@@ -251,7 +259,7 @@
                                       Style="{StaticResource ComboBoxSettingStyle}" />
                         </Grid>
                         <CheckBox x:Uid="Profile_ColorSchemeUseSeparateLight"
-                                  Margin="0,4,0,0"
+                                  Margin="0,8,0,0"
                                   IsChecked="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer.CurrentValue>
