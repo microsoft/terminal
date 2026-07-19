@@ -446,6 +446,56 @@ void CascadiaSettings::_validateSettings()
     _validateRegexes();
 }
 
+// Returns the OriginTag of the settings layer that actually specified this appearance's
+// color scheme name.
+//
+// This is deliberately NOT `profile.Origin()`. Profiles contributed by fragments never
+// appear in _allProfiles themselves: SettingsLoader::_addUserProfileParent() merges them
+// into a user-owned child profile, and FinalizeLayering() then stamps that child with
+// OriginTag::User. Origin is a plain WINRT_PROPERTY, so it is not inherited from the
+// fragment parent either. We therefore walk the inheritance graph to find the layer that
+// set the value -- just like AppearanceConfig::ResolveMediaResources() does for icons.
+static Model::OriginTag _originOfColorSchemeName(const Model::IAppearanceConfig& appearance,
+                                                  const Model::IAppearanceConfig& overrideSource)
+{
+    // <NAME>OverrideSource() only walks the *parents*, so a null result means the value
+    // was set directly on `appearance` itself.
+    const Model::IAppearanceConfig layer{ overrideSource ? overrideSource : appearance };
+    if (const auto layerImpl = winrt::get_self<AppearanceConfig>(layer))
+    {
+        if (const auto sourceProfile = layerImpl->SourceProfile())
+        {
+            return winrt::get_self<Profile>(sourceProfile)->Origin();
+        }
+    }
+    return Model::OriginTag::None;
+}
+
+// Records a broken color scheme reference as either "unknown" or "incomplete" -- but only
+// if the user can actually act on it. A reference that came from a fragment, a dynamic
+// profile generator or defaults.json is not something the user can edit, and a broken
+// fragment sitting in a system folder would produce a warning they could never escape.
+// This mirrors the allow-list in _resolveSingleMediaResource() below.
+void CascadiaSettings::_noteMissingColorScheme(const winrt::hstring& name,
+                                                OriginTag origin,
+                                                bool& foundUnknown,
+                                                bool& foundIncomplete) const
+{
+    if (origin != OriginTag::User && origin != OriginTag::ProfilesDefaults)
+    {
+        return;
+    }
+
+    if (_incompleteColorSchemes.contains(name))
+    {
+        foundIncomplete = true;
+    }
+    else
+    {
+        foundUnknown = true;
+    }
+}
+
 // Method Description:
 // - Ensures that every profile has a valid "color scheme" set. If any profile
 //   has a colorScheme set to a value which is _not_ the name of an actual color
@@ -454,9 +504,10 @@ void CascadiaSettings::_validateSettings()
 // - <none>
 // Return Value:
 // - <none>
-// - Appends a SettingsLoadWarnings::UnknownColorScheme if a profile references a
+// - Appends SettingsLoadWarnings::UnknownColorScheme if a profile references a
 //   scheme that doesn't exist, or SettingsLoadWarnings::IncompleteColorScheme
 //   (GH#11457) if the referenced scheme exists but was rejected for missing colors.
+//   Both are suppressed unless the reference came from a layer the user can edit.
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
@@ -469,29 +520,28 @@ void CascadiaSettings::_validateAllSchemesExist()
     {
         for (const auto& appearance : std::array{ profile.DefaultAppearance(), profile.UnfocusedAppearance() })
         {
-            if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
+            if (!appearance)
             {
-                if (_incompleteColorSchemes.contains(appearance.DarkColorSchemeName()))
-                {
-                    foundIncompleteScheme = true;
-                }
-                else
-                {
-                    foundUnknownScheme = true;
-                }
+                continue;
+            }
+
+            const auto appearanceImpl = winrt::get_self<AppearanceConfig>(appearance);
+
+            if (const auto name = appearance.DarkColorSchemeName(); !colorSchemes.HasKey(name))
+            {
+                _noteMissingColorScheme(name,
+                                         _originOfColorSchemeName(appearance, appearanceImpl->DarkColorSchemeNameOverrideSource()),
+                                         foundUnknownScheme,
+                                         foundIncompleteScheme);
                 // Clear the user set dark color scheme. We'll just fallback instead.
                 appearance.ClearDarkColorSchemeName();
             }
-            if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
+            if (const auto name = appearance.LightColorSchemeName(); !colorSchemes.HasKey(name))
             {
-                if (_incompleteColorSchemes.contains(appearance.LightColorSchemeName()))
-                {
-                    foundIncompleteScheme = true;
-                }
-                else
-                {
-                    foundUnknownScheme = true;
-                }
+                _noteMissingColorScheme(name,
+                                         _originOfColorSchemeName(appearance, appearanceImpl->LightColorSchemeNameOverrideSource()),
+                                         foundUnknownScheme,
+                                         foundIncompleteScheme);
                 // Clear the user set light color scheme. We'll just fallback instead.
                 appearance.ClearLightColorSchemeName();
             }

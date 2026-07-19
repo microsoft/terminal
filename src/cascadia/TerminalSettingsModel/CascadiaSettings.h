@@ -219,6 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _validateSettings();
         void _validateAllSchemesExist();
+        void _noteMissingColorScheme(const winrt::hstring& name, OriginTag origin, bool& foundUnknown, bool& foundIncomplete) const;
         void _resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
         void _validateMediaResources();
         void _validateProfileEnvironmentVariables();

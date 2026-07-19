@@ -18,6 +18,35 @@ using namespace WEX::Common;
 
 namespace SettingsModelUnitTests
 {
+    // Shared inbox settings blob used by the GH#11457 fragment-origin tests below.
+    static constexpr std::string_view s_inboxSettings{ R"({
+        "schemes": [
+            {
+                "background": "#0C0C0C",
+                "black": "#0C0C0C",
+                "blue": "#0037DA",
+                "brightBlack": "#767676",
+                "brightBlue": "#3B78FF",
+                "brightCyan": "#61D6D6",
+                "brightGreen": "#16C60C",
+                "brightPurple": "#B4009E",
+                "brightRed": "#E74856",
+                "brightWhite": "#F2F2F2",
+                "brightYellow": "#F9F1A5",
+                "cursorColor": "#FFFFFF",
+                "cyan": "#3A96DD",
+                "foreground": "#CCCCCC",
+                "green": "#13A10E",
+                "name": "Campbell",
+                "purple": "#881798",
+                "red": "#C50F1F",
+                "selectionBackground": "#FFFFFF",
+                "white": "#CCCCCC",
+                "yellow": "#C19C00"
+            }
+        ]
+    })" };
+
     class ColorSchemeTests : public JsonTestClass
     {
         TEST_CLASS(ColorSchemeTests);
@@ -31,7 +60,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionWithFragments);
         TEST_METHOD(LayerColorSchemesWithUserOwnedMultipleCollisions);
 
-        TEST_METHOD(IncompleteColorSchemeInFragmentWarns);
+        TEST_METHOD(IncompleteFragmentSchemeReferencedByUserWarns);
+        TEST_METHOD(BrokenSchemeReferencedByFragmentProfileIsSilent);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -1048,39 +1078,12 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme2->Origin());
     }
 
-    // GH#11457: an incomplete color scheme coming from a *fragment* (missing colors) should
-    // also be reported as incomplete, not unknown. This exercises the fragment parse path,
-    // which is separate from the user-settings path (see DeserializationTests for the latter).
-    void ColorSchemeTests::IncompleteColorSchemeInFragmentWarns()
+    // GH#11457 case (b): a profile in the *user's own* settings.json references a color
+    // scheme that a fragment defined incompletely (missing colors). The user can fix this
+    // by editing their own reference (or their own copy of the scheme), so this must keep
+    // warning -- this is precisely the scenario #11457 was filed about.
+    void ColorSchemeTests::IncompleteFragmentSchemeReferencedByUserWarns()
     {
-        static constexpr std::string_view inboxSettings{ R"({
-            "schemes": [
-                {
-                    "background": "#0C0C0C",
-                    "black": "#0C0C0C",
-                    "blue": "#0037DA",
-                    "brightBlack": "#767676",
-                    "brightBlue": "#3B78FF",
-                    "brightCyan": "#61D6D6",
-                    "brightGreen": "#16C60C",
-                    "brightPurple": "#B4009E",
-                    "brightRed": "#E74856",
-                    "brightWhite": "#F2F2F2",
-                    "brightYellow": "#F9F1A5",
-                    "cursorColor": "#FFFFFF",
-                    "cyan": "#3A96DD",
-                    "foreground": "#CCCCCC",
-                    "green": "#13A10E",
-                    "name": "Campbell",
-                    "purple": "#881798",
-                    "red": "#C50F1F",
-                    "selectionBackground": "#FFFFFF",
-                    "white": "#CCCCCC",
-                    "yellow": "#C19C00"
-                }
-            ]
-        })" };
-
         // This fragment scheme is missing "cyan", so it is incomplete and gets rejected.
         static constexpr std::string_view fragment{ R"({
             "schemes": [
@@ -1116,7 +1119,7 @@ namespace SettingsModelUnitTests
             ]
         })" };
 
-        SettingsLoader loader{ userSettings, inboxSettings };
+        SettingsLoader loader{ userSettings, s_inboxSettings };
         loader.MergeInboxIntoUserSettings();
         loader.MergeFragmentIntoUserSettings(L"TestFragment", {}, fragment);
         loader.FinalizeLayering();
@@ -1140,6 +1143,55 @@ namespace SettingsModelUnitTests
         }
         VERIFY_IS_TRUE(foundIncomplete);
         VERIFY_IS_FALSE(foundUnknown);
+    }
+
+    // GH#11457 cases (c) and (d): a profile contributed BY a fragment references a broken
+    // scheme. The user cannot edit either file, so a warning here would be inescapable
+    // (see DHowett on #20428). We must stay completely silent.
+    //
+    // Note that the fragment profile does not survive into _allProfiles as itself -- it is
+    // merged into a user-owned child that FinalizeLayering() stamps OriginTag::User. This
+    // test is what proves we resolve the origin through the inheritance graph rather than
+    // off the leaf profile.
+    void ColorSchemeTests::BrokenSchemeReferencedByFragmentProfileIsSilent()
+    {
+        // (c) an incomplete scheme (missing "cyan") plus a profile referencing it, and
+        // (d) a second profile referencing a scheme that exists nowhere at all.
+        static constexpr std::string_view fragment{ R"({
+            "schemes": [
+                {
+                    "name": "FragmentIncomplete",
+                    "foreground": "#F2F2F2", "background": "#000000",
+                    "black": "#000000", "red": "#CC0000", "green": "#4E9A06",
+                    "yellow": "#C4A000", "blue": "#3465A4", "purple": "#75507B",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753", "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234", "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF", "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2", "brightWhite": "#EEEEEC"
+                }
+            ],
+            "profiles": [
+                { "name": "fragmentProfileIncomplete", "colorScheme": "FragmentIncomplete" },
+                { "name": "fragmentProfileMissing",    "colorScheme": "DoesNotExistAnywhere" }
+            ]
+        })" };
+
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [ { "name": "profile0" } ]
+        })" };
+
+        SettingsLoader loader{ userSettings, s_inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(L"TestFragment", {}, fragment);
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // The fragment profiles really did make it into the settings...
+        VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
+        // ...and produced no warnings whatsoever.
+        VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
     }
 
 }
