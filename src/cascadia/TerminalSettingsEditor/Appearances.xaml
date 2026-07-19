@@ -203,8 +203,13 @@
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <local:SettingContainer.CurrentValue>
                     <StackPanel Margin="0,8,0,8">
-                        <!--  One scheme, used for both the dark & light app theme.  -->
-                        <ComboBox MinHeight="42"
+                        <!--  One scheme, used for both the dark & light app theme.
+                              The constant Width keeps the closed control's geometry independent
+                              of the open dropdown: a WinUI 2 ComboBox measures the popup as part
+                              of its own desired size, so an auto-sized box grows to the menu's
+                              width while open and shifts the layout.  -->
+                        <ComboBox Width="322"
+                                  MinHeight="42"
                                   Padding="4"
                                   ItemTemplate="{StaticResource ColorSchemeComboBoxItemTemplate}"
                                   ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
@@ -212,10 +217,10 @@
                                   Style="{StaticResource ComboBoxSettingStyle}"
                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Appearance.UseSeparateLightColorScheme), Mode=OneWay}" />
                         <!--  A pair of schemes: one for the dark app theme, one for the light app theme.
-                              The MinWidth pins the ComboBox column so it doesn't resize while a
-                              dropdown is open (an open WinUI 2 ComboBox stops rendering its selection
-                              content inline, collapsing its desired size).  -->
-                        <Grid MinWidth="322"
+                              The constant Width pins the ComboBox column in both directions: an open
+                              WinUI 2 ComboBox stops rendering its selection content inline (shrinking
+                              its desired size) while also measuring the popup (growing it).  -->
+                        <Grid Width="322"
                               ColumnSpacing="8"
                               RowSpacing="8"
                               Visibility="{x:Bind Appearance.UseSeparateLightColorScheme, Mode=OneWay}">
