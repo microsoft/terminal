@@ -19,6 +19,14 @@ namespace TerminalApp
     {
         String ProposedName { get; };
     };
+    [default_interface] runtimeclass OpenWindowRequestedArgs
+    {
+        String Name { get; };
+    };
+    [default_interface] runtimeclass SummonWindowByIdRequestedArgs
+    {
+        UInt64 WindowId { get; };
+    };
     [default_interface] runtimeclass RequestMoveContentArgs
     {
         String Window { get; };
@@ -48,6 +56,20 @@ namespace TerminalApp
     runtimeclass LaunchPositionRequest
     {
         Microsoft.Terminal.Settings.Model.LaunchPosition Position;
+    }
+
+    [default_interface] runtimeclass WindowListEntry
+    {
+        WindowListEntry();
+        UInt64 Id;
+        String Name;
+    }
+
+    // Raised by TerminalPage when it needs the list of open windows.
+    // The handler (AppHost) fills Entries synchronously.
+    [default_interface] runtimeclass WindowListRequest
+    {
+        Windows.Foundation.Collections.IVector<WindowListEntry> Entries { get; };
     }
 
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
@@ -93,6 +115,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SummonWindowByIdRequestedArgs> SummonWindowByIdRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.WindowSizeChangedEventArgs> WindowSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
@@ -103,6 +126,12 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
 
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+        event Windows.Foundation.TypedEventHandler<Object, WindowListRequest> RequestWindowList;
+
+        // Raised when the page wants the monarch to open (or summon) a
+        // named window in-process, restoring its persisted workspace if
+        // one exists. No new wt.exe process is spawned.
+        event Windows.Foundation.TypedEventHandler<Object, OpenWindowRequestedArgs> RequestOpenWindow;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     }

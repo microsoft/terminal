@@ -16,9 +16,7 @@ ConsoleHandleData::ConsoleHandleData(const ACCESS_MASK amAccess,
                                      const ULONG ulShareAccess) :
     _ulHandleType(HandleType::NotReady),
     _amAccess(amAccess),
-    _ulShareAccess(ulShareAccess),
-    _pvClientPointer(nullptr),
-    _pClientInput(nullptr)
+    _ulShareAccess(ulShareAccess)
 {
 }
 

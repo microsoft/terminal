@@ -895,6 +895,16 @@ namespace winrt::TerminalApp::implementation
         RequestNewWindow.raise(*this, request);
     }
 
+    // Ask the WindowEmperor (in-process) to open or summon a named window,
+    // restoring its persisted workspace if one exists. The event bubbles up
+    // through TerminalWindow to AppHost, which calls into the WindowEmperor
+    // directly — no second wt.exe process is launched.
+    void TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
+    {
+        const auto args = winrt::make<implementation::OpenWindowRequestedArgs>(name);
+        RequestOpenWindow.raise(*this, args);
+    }
+
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
@@ -916,7 +926,10 @@ namespace winrt::TerminalApp::implementation
             newContentArgs = NewTerminalArgs{};
         }
 
-        // Manually fill in the evaluated profile
+        // If this is a NewTerminalArgs, resolve its profile up-front so the
+        // spawned window doesn't need to re-resolve it. Other content types
+        // (e.g. scratchpad) don't have profiles to evaluate — they get passed
+        // through as-is.
         if (const auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
             const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
@@ -1015,6 +1028,7 @@ namespace winrt::TerminalApp::implementation
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
         _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutCount = 0;
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
@@ -1590,4 +1604,35 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleOpenWorkspace(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        // Open (or summon) a named window.  We launch a new `wt -w <name>`
+        // process which the monarch will route to the correct live window or
+        // restore from a persisted workspace.
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<OpenWorkspaceArgs>())
+            {
+                const auto name = realArgs.Name();
+                if (!name.empty())
+                {
+                    _OpenWorkspaceWindow(name);
+                }
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleWorkspaces(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (_workspaceFlyout && _workspaceDropdown)
+        {
+            _workspaceFlyout.ShowAt(_workspaceDropdown);
+        }
+        args.Handled(true);
+    }
+
 }

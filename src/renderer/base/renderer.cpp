@@ -58,6 +58,17 @@ void Renderer::EnablePainting()
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
 
+    // _viewport feeds the cursor coordinate (_updateCursorInfo), while the engine's
+    // backing buffer (e.g. AtlasEngine's _p.rows) is sized from viewportCellCount,
+    // which only UpdateViewport() writes. If the viewport grew while painting was
+    // disabled, assigning _viewport here without forcing a resync would let the next
+    // _CheckViewportAndScroll() early-return (srOldViewport == srNewViewport) and skip
+    // UpdateViewport(), leaving the engine viewport - and thus the row buffer - behind
+    // _viewport. The cursor could then be reported as in-viewport at a row past the end
+    // of the buffer (GH#20269). Force the resync so the backing buffer is resized to
+    // match before the next cursor move is painted.
+    _forceUpdateViewport = true;
+
     _enable.SetEvent();
 
     if (const auto guard = _threadMutex.lock_exclusive(); !_thread)

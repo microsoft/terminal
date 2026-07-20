@@ -28,6 +28,16 @@ public:
         WM_MESSAGE_BOX_CLOSED,
         WM_IDENTIFY_ALL_WINDOWS,
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
+        WM_GET_WINDOW_LIST,
+    };
+
+    // Used by WM_GET_WINDOW_LIST.  Callers allocate a vector on their
+    // stack and pass a pointer through LPARAM; the emperor fills it in
+    // synchronously via SendMessage.
+    struct WindowListEntry
+    {
+        uint64_t Id;
+        std::wstring Name;
     };
 
     HWND GetMainWindow() const noexcept;
@@ -37,6 +47,8 @@ public:
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
+    // OpenWindow is used for opening a new window or summoning an existing window by name.
+    void OpenWindow(const winrt::hstring& name);
 
 private:
     struct SummonWindowSelectionArgs
@@ -50,6 +62,7 @@ private:
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
     AppHost* _mostRecentWindow() const noexcept;
+    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args);
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;

@@ -3979,7 +3979,15 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         // with the constructed bit pattern.
         if (ch != AsciiChars::ESC)
         {
-            _fontBuffer->AddSixelData(ch);
+            try
+            {
+                _fontBuffer->AddSixelData(ch);
+            }
+            catch (...)
+            {
+                // Ignore all further content.
+                return false;
+            }
         }
         else if (_fontBuffer->FinalizeSixelData())
         {
