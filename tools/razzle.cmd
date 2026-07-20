@@ -30,7 +30,7 @@ set MSBUILD=
 rem GH#1313: If msbuild is already on the path, we don't need to look for it.
 for %%X in (msbuild.exe) do (set MSBUILD=%%~$PATH:X)
 if defined MSBUILD (
-    echo Using MsBuild at %MSBUILD% which was already on the path.
+    echo Using MSBuild at %MSBUILD% which was already on the path.
     goto :FOUND_MSBUILD
 )
 
@@ -55,12 +55,12 @@ rem but not a still-newer major whose toolset may be incompatible. VS 18 uses ou
 rem v145 PlatformToolset (see src\common.build.pre.props); older VS versions default
 rem to v143.
 rem
-for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -version "[17.0,19.0)" -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+for /f "usebackq tokens=*" %%B in (`"%VSWHERE%" -latest -prerelease -products * -requires Microsoft.Component.MSBuild -version "[17.0,19.0)" -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
     set MSBUILD=%%B
 )
 
 if not defined MSBUILD (
-    echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
+    echo Could not find MSBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
     exit /b 1
 )
 
