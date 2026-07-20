@@ -144,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnOutputStarted = [this] { _terminalOutputStarted(); };
         _terminal->SetOutputStartedCallback(pfnOutputStarted);
-        
+
         auto pfnShowNotification = [this](auto&& PH1, auto&& PH2) { _terminalShowNotification(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetShowNotificationCallback(pfnShowNotification);
 
