@@ -968,7 +968,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0B0 Right triangle solid
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+E0B1 Right triangle line
     {
@@ -978,7 +978,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0B2 Left triangle solid
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_0_1, Pos_1_2 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+E0B3 Left triangle line
     {
@@ -1004,7 +1004,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0B8 Lower left triangle
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_0_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+E0B9 Backslash separator
     {
@@ -1013,7 +1013,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0BA Lower right triangle
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_Min, Pos_Min },
     },
     // U+E0BB Forward slash separator
     {
@@ -1022,7 +1022,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0BC Upper left triangle
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_Min, Pos_Min },
     },
     // U+E0BD Forward slash separator
     {
@@ -1031,7 +1031,7 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     // U+E0BE Upper right triangle
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+E0BF Backslash separator
     {
@@ -1336,33 +1336,33 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB3C '🬼' LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB3D '🬽' LOWER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB3E '🬾' LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB3F '🬿' LOWER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB40 '🭀' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB41 '🭁' LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB42 '🭂' LOWER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
     {
@@ -1373,7 +1373,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB44 '🭄' LOWER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
     {
@@ -1393,33 +1393,33 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB47 '🭇' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB48 '🭈' LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB49 '🭉' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB4A '🭊' LOWER RIGHT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB4B '🭋' LOWER RIGHT BLOCK DIAGONAL LOWER CENTRE TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB4C '🭌' LOWER LEFT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB4D '🭍' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
     {
@@ -1430,7 +1430,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB4F '🭏' LOWER LEFT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
     {
@@ -1451,7 +1451,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB53 '🭓' UPPER RIGHT BLOCK DIAGONAL LOWER MIDDLE LEFT TO LOWER RIGHT
     {
@@ -1462,7 +1462,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB55 '🭕' UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER RIGHT
     {
@@ -1477,27 +1477,27 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB57 '🭗' UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB58 '🭘' UPPER LEFT BLOCK DIAGONAL UPPER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB59 '🭙' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB5A '🭚' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB5B '🭛' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER CENTRE
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB5C '🭜' UPPER LEFT BLOCK DIAGONAL LOWER MIDDLE LEFT TO UPPER MIDDLE RIGHT
     {
@@ -1508,7 +1508,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB5E '🭞' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO LOWER MIDDLE RIGHT
     {
@@ -1519,7 +1519,7 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_1_2, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB60 '🭠' UPPER LEFT BLOCK DIAGONAL LOWER LEFT TO UPPER MIDDLE RIGHT
     {
@@ -1534,27 +1534,27 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB62 '🭢' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB63 '🭣' UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO UPPER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_3_9, Pos_Min, Pos_Min },
     },
     // U+1FB64 '🭤' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB65 '🭥' UPPER RIGHT BLOCK DIAGONAL UPPER LEFT TO LOWER MIDDLE RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_6_9, Pos_Min, Pos_Min },
     },
     // U+1FB66 '🭦' UPPER RIGHT BLOCK DIAGONAL UPPER CENTRE TO LOWER RIGHT
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB67 '🭧' UPPER RIGHT BLOCK DIAGONAL UPPER MIDDLE LEFT TO LOWER MIDDLE RIGHT
     {
@@ -1565,45 +1565,45 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_0_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
     // U+1FB69 '🭩' LEFT AND LOWER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_0_1, Pos_1_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
     // U+1FB6A '🭪' UPPER AND LEFT AND LOWER TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_0_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
     // U+1FB6B '🭫' LEFT AND UPPER AND RIGHT TRIANGULAR THREE QUARTERS BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_0_1, Pos_0_1 },
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
     // U+1FB6C '🭬' LEFT TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_2 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB6D '🭭' UPPER TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_2, Pos_1_2, Pos_Min, Pos_Min },
     },
     // U+1FB6E '🭮' RIGHT TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_2, Pos_1_2 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB6F '🭯' LOWER TRIANGULAR ONE QUARTER BLOCK
     {
         Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_2, Pos_1_2 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled100 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Pos_Min },
     },
     // U+1FB70 '🭰' VERTICAL ONE EIGHTH BLOCK-2
     {
@@ -1782,25 +1782,13 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB9B '🮛' LEFT AND RIGHT TRIANGULAR HALF BLOCK
     {},
     // U+1FB9C '🮜' UPPER LEFT TRIANGULAR MEDIUM SHADE
-    {
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled050 },
-    },
+    { Instruction{ Shape_Custom } },
     // U+1FB9D '🮝' UPPER RIGHT TRIANGULAR MEDIUM SHADE
-    {
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_0_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_1_1, Pos_Min, Shape_Filled050 },
-    },
+    { Instruction{ Shape_Custom } },
     // U+1FB9E '🮞' LOWER RIGHT TRIANGULAR MEDIUM SHADE
-    {
-        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled050 },
-    },
+    { Instruction{ Shape_Custom } },
     // U+1FB9F '🮟' LOWER LEFT TRIANGULAR MEDIUM SHADE
-    {
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
-        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_Min, Shape_Filled050 },
-    },
+    { Instruction{ Shape_Custom } },
 };
 
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
@@ -1902,6 +1890,44 @@ void DrawBuiltinGlyphSlow(ID2D1Factory* factory, ID2D1DeviceContext* renderTarge
         }
         break;
     }
+    case 0x1FB9C:
+    case 0x1FB9D:
+    case 0x1FB9E:
+    case 0x1FB9F:
+    {
+        const auto explode = [](const uint8_t (&corner)[2], const D2D1_RECT_F& rect) -> D2D1_POINT_2F {
+            return {
+                corner[0] ? rect.right : rect.left,
+                corner[1] ? rect.bottom : rect.top,
+            };
+        };
+        static constexpr uint8_t allcorners[4][3][2] = {
+            { { 0, 0 }, { 1, 0 }, { 0, 1 } }, // ...9C
+            { { 0, 0 }, { 1, 0 }, { 1, 1 } }, // ...9D
+            { { 1, 0 }, { 1, 1 }, { 0, 1 } }, // ...9E
+            { { 0, 0 }, { 1, 1 }, { 0, 1 } }, // ...9F
+        };
+        const auto& corners = allcorners[codepoint & 0x3];
+
+        wil::com_ptr<ID2D1PathGeometry> geometry;
+        THROW_IF_FAILED(factory->CreatePathGeometry(geometry.addressof()));
+
+        wil::com_ptr<ID2D1GeometrySink> sink;
+        THROW_IF_FAILED(geometry->Open(sink.addressof()));
+
+        sink->BeginFigure(explode(corners[0], rect), D2D1_FIGURE_BEGIN_FILLED);
+        sink->AddLine(explode(corners[1], rect));
+        sink->AddLine(explode(corners[2], rect));
+        sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+
+        THROW_IF_FAILED(sink->Close());
+
+        D2D1_COLOR_F brushColor = brush->GetColor();
+        brush->SetColor(shadeColorMap[Shape_Filled050]);
+        renderTarget->FillGeometry(geometry.get(), brush, nullptr);
+        brush->SetColor(brushColor);
+        break;
+    }
     default:
         assert(false);
         renderTarget->Clear(nullptr);
@@ -1940,8 +1966,6 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
     const auto cornerRadius = std::min(lightLineWidth * 5.0f, std::min(rectW, rectH) * 0.5f);
     D2D1_POINT_2F geometryPoints[2 * InstructionsPerGlyph];
     size_t geometryPointsCount = 0;
-    bool colorUsed{};
-    D2D1_COLOR_F geometryColor{};
 
     for (size_t i = 0; i < InstructionsPerGlyph; ++i)
     {
@@ -2043,12 +2067,6 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
             {
                 geometryPoints[geometryPointsCount++] = { endXabs, endYabs };
             }
-            else
-            {
-                colorUsed = true;
-                geometryColor = shadeColorMap[instruction.endY];
-                // shading info stored in endY
-            }
             break;
         }
     }
@@ -2071,12 +2089,6 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
 
         THROW_IF_FAILED(sink->Close());
 
-        D2D1_COLOR_F brushColor;
-        if (colorUsed)
-        {
-            brushColor = brush->GetColor();
-            brush->SetColor(geometryColor);
-        }
         if (beginType == D2D1_FIGURE_BEGIN_FILLED)
         {
             renderTarget->FillGeometry(geometry.get(), brush, nullptr);
@@ -2084,10 +2096,6 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         else
         {
             renderTarget->DrawGeometry(geometry.get(), brush, lightLineWidth, nullptr);
-        }
-        if (colorUsed)
-        {
-            brush->SetColor(brushColor);
         }
     }
 }
