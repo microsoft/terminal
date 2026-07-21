@@ -45,6 +45,7 @@ enum Shape : u32
     Shape_EmptyEllipsis, // axis aligned, hollow ellipsis
     Shape_ClosedFilledPath, // filled path, the last segment connects to the first; set endX==Pos_Min to ignore
     Shape_OpenLinePath, // regular line path; Pos_Min positions are ignored
+    Shape_Custom, // drawn manually in BuiltinGlyphs::DrawGlyphSlow
 };
 
 // Pos indicates a fraction between 0 and 1 and is used as a UV coordinate with a cell.
@@ -1763,6 +1764,15 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
         Instruction{ Shape_Invert050, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
         Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
     },
+    // U+1FB95 '🮕' CHECKER BOARD FILL
+    { Instruction{ Shape_Custom } },
+    // U+1FB96 '🮖' INVERSE CHECKER BOARD FILL
+    { Instruction{ Shape_Custom } },
+    // U+1FB97 '🮗' HEAVY HORIZONTAL FILL
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_4, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_3_4, Pos_1_1, Pos_1_1 },
+    },
 };
 
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
@@ -1777,7 +1787,15 @@ constexpr bool Powerline_IsMapped(char32_t codepoint)
 
 constexpr bool LegacyComputing_IsMapped(char32_t codepoint)
 {
-    return codepoint >= LegacyComputing_FirstChar && codepoint < (LegacyComputing_FirstChar + LegacyComputing_CharCount);
+    if (codepoint >= LegacyComputing_FirstChar && codepoint < (LegacyComputing_FirstChar + LegacyComputing_CharCount))
+    {
+        if (LegacyComputing[codepoint - LegacyComputing_FirstChar][0].value == 0) [[unlikely]]
+        {
+            return false;
+        }
+        return true;
+    }
+    return false;
 }
 
 // How should I make this constexpr == inline, if it's an external symbol? Bad compiler!
@@ -1821,6 +1839,48 @@ i32 BuiltinGlyphs::GetBitmapCellIndex(char32_t codepoint) noexcept
     return -1;
 }
 
+void DrawBuiltinGlyphSlow(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[5], const D2D1_RECT_F& rect, char32_t codepoint)
+{
+    UNREFERENCED_PARAMETER(factory);
+    UNREFERENCED_PARAMETER(shadeColorMap);
+    const auto rectX = rect.left;
+    const auto rectY = rect.top;
+    const auto rectW = rect.right - rect.left;
+    const auto rectH = rect.bottom - rect.top;
+    switch (codepoint)
+    {
+    case 0x1FB95:
+    case 0x1FB96:
+    {
+        // #_#_ | 1FB95 (top left corner filled)
+        // _#_# | 1FB96 (top left corner empty)
+        // #_#_ |
+        // _#_# |
+        const auto sqW = rectW / 4.f;
+        const auto sqH = rectH / 4.f;
+        auto y = rectY;
+        D2D1_RECT_F r{};
+        for (int i = 0, s = codepoint & 1; i < 4; ++i, ++s)
+        {
+            r.left = roundf(rectX + (sqW * (~s & 1)));
+            r.right = roundf(r.left + sqW);
+            r.top = roundf(y);
+            r.bottom = roundf(y + sqH);
+            renderTarget->FillRectangle(r, brush);
+            r.left = roundf(r.left + 2.f * sqW);
+            r.right = roundf(r.left + sqW);
+            renderTarget->FillRectangle(r, brush);
+            y += sqH;
+        }
+        break;
+    }
+    default:
+        assert(false);
+        renderTarget->Clear(nullptr);
+        break;
+    }
+}
+
 void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* renderTarget, ID2D1SolidColorBrush* brush, const D2D1_COLOR_F (&shadeColorMap)[5], const D2D1_RECT_F& rect, char32_t codepoint)
 {
     renderTarget->PushAxisAlignedClip(&rect, D2D1_ANTIALIAS_MODE_ALIASED);
@@ -1833,6 +1893,12 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
     {
         assert(false); // If everything in AtlasEngine works correctly, then this function should not get called when !IsBuiltinGlyph(codepoint).
         renderTarget->Clear(nullptr);
+        return;
+    }
+
+    if (instructions[0].shape == Shape_Custom) [[unlikely]]
+    {
+        DrawBuiltinGlyphSlow(factory, renderTarget, brush, shadeColorMap, rect, codepoint);
         return;
     }
 
