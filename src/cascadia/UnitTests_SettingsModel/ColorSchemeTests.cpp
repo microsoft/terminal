@@ -1147,8 +1147,8 @@ namespace SettingsModelUnitTests
     }
 
     // GH#11457 cases (c) and (d): a profile contributed BY a fragment references a broken
-    // scheme. The user cannot edit either file, so a warning here would be inescapable
-    // (see DHowett on #20428). We must stay completely silent.
+    // scheme. The user cannot edit either file, so a warning here would be inescapable.
+    // We must stay completely silent.
     //
     // Note that the fragment profile does not survive into _allProfiles as itself -- it is
     // merged into a user-owned child that FinalizeLayering() stamps OriginTag::User. This
@@ -1208,9 +1208,10 @@ namespace SettingsModelUnitTests
     // is the one that actually determines the effective (broken) name, so this must still warn.
     //
     // IInheritable's public <NAME>OverrideSource() only walks *parents* and never inspects
-    // the leaf (see IInheritable.h); if _originOfColorSchemeName() trusted a non-null
-    // override source without first checking whether the leaf itself set the value, it
-    // would misattribute this to the InBox parent and silently swallow the user's typo.
+    // the leaf (see IInheritable.h); if AppearanceConfig::ColorSchemeNameOrigin() trusted a
+    // non-null override source without first checking whether the leaf itself set the
+    // value, it would misattribute this to the InBox parent and silently swallow the
+    // user's typo.
     void ColorSchemeTests::UserOverrideOfInboxColorSchemeTypoWarns()
     {
         static constexpr std::string_view inboxSettings{ R"({
@@ -1248,7 +1249,7 @@ namespace SettingsModelUnitTests
         // not a brand-new, unrelated profile.
         static constexpr std::string_view userSettings{ R"({
             "profiles": [
-                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "Cambell" }
+                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "NoSuchScheme" }
             ]
         })" };
 

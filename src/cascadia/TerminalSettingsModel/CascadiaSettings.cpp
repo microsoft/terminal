@@ -446,41 +446,19 @@ void CascadiaSettings::_validateSettings()
     _validateRegexes();
 }
 
-// Returns the OriginTag of the settings layer that actually specified this appearance's
-// color scheme name.
-//
-// This is deliberately NOT `profile.Origin()`. Profiles contributed by fragments never
-// appear in _allProfiles themselves: SettingsLoader::_addUserProfileParent() merges them
-// into a user-owned child profile, and FinalizeLayering() then stamps that child with
-// OriginTag::User. Origin is a plain WINRT_PROPERTY, so it is not inherited from the
-// fragment parent either. We therefore walk the inheritance graph to find the layer that
-// set the value. (The media-resource path does the same thing via the private
-// _get<NAME>OverrideSourceAndValueImpl(), which already folds in the leaf check.)
-static Model::OriginTag _originOfColorSchemeName(const Model::IAppearanceConfig& appearance,
-                                                 bool hasOwnValue,
-                                                 const Model::IAppearanceConfig& overrideSource)
-{
-    // <NAME>OverrideSource() only walks the *parents* and never inspects this layer, so a
-    // non-null override source does NOT mean this layer was silent -- when both set the
-    // value, this layer's value is the one _get<NAME>Impl() returns. Hence hasOwnValue.
-    // When nobody set it at all we also fall back to this layer, so that a broken built-in
-    // default still reports as something the user can act on.
-    const Model::IAppearanceConfig layer{ hasOwnValue ? appearance : (overrideSource ? overrideSource : appearance) };
-    if (const auto layerImpl = winrt::get_self<AppearanceConfig>(layer))
-    {
-        if (const auto sourceProfile = layerImpl->SourceProfile())
-        {
-            return winrt::get_self<Profile>(sourceProfile)->Origin();
-        }
-    }
-    return Model::OriginTag::None;
-}
-
 // Records a broken color scheme reference as either "unknown" or "incomplete" -- but only
-// if the user can actually act on it. A reference that came from a fragment, a dynamic
-// profile generator or defaults.json is not something the user can edit, and a broken
-// fragment sitting in a system folder would produce a warning they could never escape.
-// This mirrors the allow-list in _resolveSingleMediaResource() below.
+// if the user can actually act on it. A reference that came from an InBox profile, a
+// fragment, a dynamic profile generator (e.g. WSL), or defaults.json is not something the
+// user can edit, and a broken one sitting in a system folder would produce a warning they
+// could never escape. This mirrors the allow-list in _resolveSingleMediaResource() below.
+//
+// Caveat: OriginTag::ProfilesDefaults is stamped on the baseLayerProfile parsed from BOTH
+// the user's profiles.defaults and the inbox defaults.json (see
+// CascadiaSettingsSerialization.cpp's _parse()), so this allow-list is slightly too broad --
+// a broken colorScheme in the inbox profiles.defaults would also warn. There is currently no
+// real-world defaults.json with such a reference, so this is a latent limitation rather than
+// an active bug; fixing it would require separately tagging the two origins upstream, which
+// is out of scope here.
 void CascadiaSettings::_noteMissingColorScheme(const winrt::hstring& name,
                                                OriginTag origin,
                                                bool& foundUnknown,
@@ -532,10 +510,15 @@ void CascadiaSettings::_validateAllSchemesExist()
 
             const auto appearanceImpl = winrt::get_self<AppearanceConfig>(appearance);
 
+            // ColorSchemeNameOrigin() returns None when no layer -- not even this leaf --
+            // ever set a value. That only happens for the built-in "Campbell" default, which
+            // always exists, but we still attribute it to User so a hypothetically-broken
+            // built-in default remains something the user can act on.
             if (const auto name = appearance.DarkColorSchemeName(); !colorSchemes.HasKey(name))
             {
+                auto origin{ appearanceImpl->ColorSchemeNameOrigin(true) };
                 _noteMissingColorScheme(name,
-                                        _originOfColorSchemeName(appearance, appearanceImpl->HasDarkColorSchemeName(), appearanceImpl->DarkColorSchemeNameOverrideSource()),
+                                        origin == OriginTag::None ? OriginTag::User : origin,
                                         foundUnknownScheme,
                                         foundIncompleteScheme);
                 // Clear the user set dark color scheme. We'll just fallback instead.
@@ -543,8 +526,9 @@ void CascadiaSettings::_validateAllSchemesExist()
             }
             if (const auto name = appearance.LightColorSchemeName(); !colorSchemes.HasKey(name))
             {
+                auto origin{ appearanceImpl->ColorSchemeNameOrigin(false) };
                 _noteMissingColorScheme(name,
-                                        _originOfColorSchemeName(appearance, appearanceImpl->HasLightColorSchemeName(), appearanceImpl->LightColorSchemeNameOverrideSource()),
+                                        origin == OriginTag::None ? OriginTag::User : origin,
                                         foundUnknownScheme,
                                         foundIncompleteScheme);
                 // Clear the user set light color scheme. We'll just fallback instead.
