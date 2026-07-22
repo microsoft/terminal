@@ -1,4 +1,4 @@
-/*++
+    /*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -190,6 +190,31 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
         return EnumMapper::CanConvert(json) || json.isBool();
     }
 
+    using EnumMapper::TypeDescription;
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MicaStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "mica", ValueType::Mica },
+        pair_type{ "micaAlt", ValueType::MicaAlt },
+    };
+
+    // Override mapping parser to add boolean parsing (useMica used to be a bool)
+    ::winrt::Microsoft::Terminal::Settings::Model::MicaStyle FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Mica : ValueType::None;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
     using EnumMapper::TypeDescription;
 };
 

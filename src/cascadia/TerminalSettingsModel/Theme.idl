@@ -26,6 +26,13 @@ namespace Microsoft.Terminal.Settings.Model
         ActiveOnly
     };
 
+    enum MicaStyle
+    {
+        None,
+        Mica,
+        MicaAlt
+    };
+
     [default_interface] runtimeclass ThemePair
     {
         ThemePair();
@@ -60,7 +67,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
-        Boolean UseMica { get; };
+        MicaStyle UseMica { get; };
         Boolean RainbowFrame { get; };
         Boolean ShowWorkspacesButton { get; };
         ThemeColor Frame { get; };
