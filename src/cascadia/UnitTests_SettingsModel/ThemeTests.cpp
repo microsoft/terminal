@@ -68,7 +68,7 @@ namespace SettingsModelUnitTests
 
         VERIFY_IS_NOT_NULL(theme->Window());
         VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
-        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
+        VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::Mica, theme->Window().UseMica());
     }
 
     void ThemeTests::ParseEmptyTheme()
