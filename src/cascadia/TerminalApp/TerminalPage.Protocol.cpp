@@ -3,8 +3,7 @@
 //
 // This file contains the protocol bridge methods for TerminalPage.
 // These methods are called by the TerminalProtocolComServer to query
-// and mutate terminal state. They return typed WinRT structs across
-// the DLL boundary.
+// and mutate terminal state.
 //
 // IMPORTANT: These methods are called from background threads (COM).
 // All access to UI state must be marshaled to the UI thread via Dispatcher().

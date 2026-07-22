@@ -77,53 +77,5 @@ namespace Microsoft.Terminal.Protocol
         UInt64 WindowId;
         UInt32 Pid;
     };
-
-    struct AuthResult
-    {
-        Boolean Authenticated;
-        String ProtocolVersion;
-    };
-
-    // Callback interface — implemented by clients (e.g. wtcli) to receive
-    // push-based event notifications from Terminal.
-    interface IProtocolEventCallback
-    {
-        void OnEvent(String eventJson);
-    }
-
-    // Server interface — implemented by WindowsTerminal.exe, consumed by wtcli.exe.
-    // Activated via CoCreateInstance (CLSCTX_LOCAL_SERVER) with a custom class factory.
-    // Marshaled cross-process via MBM (no proxy/stub DLL needed).
-    interface IProtocolServer
-    {
-        // Meta
-        AuthResult Authenticate(String token);
-        String GetCapabilities();
-
-        // Queries
-        PaneInfo GetActivePane();
-        WindowInfo[] ListWindows();
-        TabInfo[] ListTabs(UInt64 windowIdFilter);
-        PaneInfo[] ListPanes(UInt64 windowIdFilter, UInt32 tabIdFilter);
-        PaneOutput ReadPaneOutput(Guid sessionId, String source, Int32 maxLines);
-        ProcessStatus GetProcessStatus(Guid sessionId);
-        SessionVariable GetSessionVariable(Guid sessionId, String name);
-        String GetSettings();
-
-        // Mutations
-        TabCreationResult CreateTab(UInt64 windowId, String profile, String commandline, String title, String startingDirectory, Boolean suppressAppTitle, Boolean background);
-        TabCreationResult SplitPane(Guid sessionId, String direction, Single size, String profile, String commandline, Boolean background);
-        void ClosePane(Guid sessionId);
-        void SendInput(Guid sessionId, String text);
-        void FocusPane(Guid sessionId);
-        void SetSessionVariable(Guid sessionId, String name, String value);
-
-        // Events — push-based via callback
-        void Subscribe(IProtocolEventCallback callback);
-        void Unsubscribe();
-
-        // Client-originated event publishing (agent → WT → listeners)
-        void SendEvent(String eventJson);
-    }
 }
 

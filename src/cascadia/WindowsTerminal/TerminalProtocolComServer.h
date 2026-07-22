@@ -25,8 +25,7 @@ class WindowEmperor;
 // proxy/stub (NOT WinRT Metadata-Based Marshaling), so activation/marshaling
 // never goes through the combase WinRT activation catalog
 // (CWinRTActivationStoreCatalog) implicated in the 0xc0000005 / 0x80010105
-// failures. Complex results cross the wire as JSON (BSTR); the per-method logic
-// and the UI-thread-marshaled page queries are unchanged from the WinRT server.
+// failures. Complex results cross the wire as JSON (BSTR)
 struct __declspec(uuid(__CLSID_TerminalProtocolServer))
 TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
                                 Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>,
