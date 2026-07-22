@@ -47,7 +47,7 @@ If no existing item describes your issue/feature, great - please file a new issu
 * Found an existing issue that describes yours? Great - upvote and add additional commentary / info / repro-steps / etc.
 
 When you hit "New Issue", select the type of issue closest to what you want to report/ask/request:
-![New issue types](/doc/images/new-issue-template.png)
+![New issue types](./doc/images/new-issue-template.png)
 
 ### Complete the template
 
