@@ -1,9 +1,7 @@
 # wtcli Command Reference
 
-`wtcli` is the CLI client for the Windows Terminal Protocol. It looks up the
-running Terminal via the `WT_COM_CLSID` environment variable, calls
-`CoCreateInstance(CLSCTX_LOCAL_SERVER)` to obtain `ITerminalProtocol`, and
-exposes a tmux-style command surface over its IDL methods.
+`wtcli` is the CLI client for the Windows Terminal Protocol. It calls
+`CoCreateInstance` using the per-brand `CLSID` and exposes a tmux-style command surface over its IDL methods.
 
 - Source: `src/tools/wtcli/main.cpp`
 - IDL: `src/host/proxy/ITerminalProtocol.idl`
