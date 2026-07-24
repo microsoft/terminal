@@ -9,28 +9,10 @@
 
 #pragma hdrstop
 
-constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
-constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
-
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 Settings::Settings() :
-    _wFillAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE), // White (not bright) on black by default
-    _wPopupFillAttribute(FOREGROUND_RED | FOREGROUND_BLUE | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY), // Purple on white (bright) by default
-    _wShowWindow(SW_SHOWNORMAL),
-    // dwScreenBufferSize initialized below
-    // dwWindowSize initialized below
-    // dwWindowOrigin initialized below
-    // dwFontSize initialized below
-    // FaceName initialized below
-    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
-    _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
-    _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
-    // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
-    _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
-    _LaunchFaceName{}
-// window size pixels initialized below
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;

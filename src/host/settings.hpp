@@ -21,8 +21,12 @@ Revision History:
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
+
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
+#include "../buffer/out/cursor.h"
 
 enum class SettingsTextMeasurementMode : DWORD
 {
@@ -192,9 +196,9 @@ private:
 
     DWORD _dwHotKey{ 0 };
     DWORD _dwStartupFlags{ 0 };
-    WORD _wFillAttribute;
-    WORD _wPopupFillAttribute;
-    WORD _wShowWindow; // used when window is created
+    WORD _wFillAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE }; // White (not bright) on black by default
+    WORD _wPopupFillAttribute{ FOREGROUND_RED | FOREGROUND_BLUE | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY }; // Purple on white (bright) by default
+    WORD _wShowWindow{ SW_SHOWNORMAL }; // used when window is created
     WORD _wReserved{ 0 };
     // START - This section filled via memcpy from shortcut properties. Do not rearrange/change.
     COORD _dwScreenBufferSize;
@@ -205,13 +209,13 @@ private:
     UINT _uFontFamily{ 0 };
     UINT _uFontWeight{ 0 };
     WCHAR _FaceName[LF_FACESIZE];
-    UINT _uCursorSize;
+    UINT _uCursorSize{ Cursor::CURSOR_SMALL_SIZE };
     BOOL _bFullScreen{ FALSE }; // deprecated
     BOOL _bQuickEdit{ TRUE };
     BOOL _bInsertMode{ TRUE }; // used by command line editing
     BOOL _bAutoPosition{ TRUE };
-    UINT _uHistoryBufferSize;
-    UINT _uNumberOfHistoryBuffers;
+    UINT _uHistoryBufferSize{ DEFAULT_NUMBER_OF_COMMANDS };
+    UINT _uNumberOfHistoryBuffers{ DEFAULT_NUMBER_OF_BUFFERS };
     BOOL _bHistoryNoDup{ FALSE };
     // END - memcpy
     UINT _uCodePage;
@@ -221,7 +225,7 @@ private:
     bool _bLineSelection{ true };
     bool _bWrapText{ true }; // whether to use text wrapping when resizing the window
     bool _fCtrlKeyShortcutsDisabled{ false }; // disables Ctrl+<something> key intercepts
-    BYTE _bWindowAlpha; // describes the opacity of the window
+    BYTE _bWindowAlpha{ BYTE_MAX }; // describes the opacity of the window. 255 alpha = opaque. 0 = transparent.
 
     bool _fFilterOnPaste{ false }; // should we filter text when the user pastes? (e.g. remove <tab>)
     std::wstring _LaunchFaceName;
