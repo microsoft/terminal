@@ -4355,9 +4355,9 @@ public:
         VERIFY_IS_TRUE(tallRows > shortRows, L"A taller image should occupy more rows than a shorter one.");
     }
 
-    // Regression: a row may already hold an ImageSlice with a DIFFERENT cell size
-    // (e.g. placed by another image protocol such as Kitty graphics). Sixel must
-    // replace it rather than write past its (smaller) buffer with Sixel's cell stride.
+    // Regression: a row may already hold an ImageSlice built with a DIFFERENT cell
+    // size (e.g. the font changed since that image was drawn). Sixel must replace it
+    // rather than write past its (smaller) buffer using Sixel's cell stride.
     TEST_METHOD(SixelReplacesMismatchedCellSizeSlice)
     {
         // Learn the row and cell size a normal Sixel uses.
