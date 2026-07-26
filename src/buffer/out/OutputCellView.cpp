@@ -42,10 +42,67 @@ const std::wstring_view& OutputCellView::Chars() const noexcept
 // Routine Description:
 // - Reports how many columns we expect the Chars() text data to consume
 // Return Value:
-// - Count of column cells on the screen
+// - Count of column cells on the screen (0 for combining marks, 1 for normal, 2 for wide)
 til::CoordType OutputCellView::Columns() const noexcept
 {
-    return DbcsAttr() == DbcsAttribute::Leading ? 2 : 1;
+    if (DbcsAttr() == DbcsAttribute::Leading)
+        return 2;
+
+    // Combining marks (Unicode General Category Mn, Mc, Me) should not advance the
+    // column. They combine with the preceding base character and have zero visual width.
+    // This fixes rendering of Lao, Thai, Devanagari, Arabic, Hebrew, and other complex
+    // scripts where vowels and tone marks were incorrectly occupying their own cells.
+    if (_view.size() == 1)
+    {
+        const auto ch = _view[0];
+        if ((ch >= 0x0300 && ch <= 0x036F) ||   // Combining Diacritical Marks
+            (ch >= 0x0591 && ch <= 0x05C7) ||   // Hebrew
+            (ch >= 0x0610 && ch <= 0x065F) ||   // Arabic
+            (ch == 0x0670) ||
+            (ch >= 0x06D6 && ch <= 0x06ED) ||   // Arabic marks
+            (ch >= 0x0900 && ch <= 0x0903) ||   // Devanagari
+            (ch >= 0x093A && ch <= 0x094F) ||   // Devanagari
+            (ch >= 0x0951 && ch <= 0x0957) ||
+            (ch >= 0x0962 && ch <= 0x0963) ||
+            (ch == 0x0981) || (ch == 0x0982) || (ch == 0x0983) || // Bengali
+            (ch >= 0x09BE && ch <= 0x09CD) ||
+            (ch >= 0x0A01 && ch <= 0x0A03) ||   // Gurmukhi
+            (ch >= 0x0A3C && ch <= 0x0A4D) ||
+            (ch >= 0x0A81 && ch <= 0x0A83) ||   // Gujarati
+            (ch >= 0x0ABC && ch <= 0x0ACD) ||
+            (ch >= 0x0B01 && ch <= 0x0B03) ||   // Oriya
+            (ch >= 0x0B3E && ch <= 0x0B4D) ||
+            (ch >= 0x0B82 && ch <= 0x0B83) ||   // Tamil
+            (ch >= 0x0BBE && ch <= 0x0BCD) ||
+            (ch >= 0x0C00 && ch <= 0x0C04) ||   // Telugu
+            (ch >= 0x0C3E && ch <= 0x0C56) ||
+            (ch >= 0x0C81 && ch <= 0x0C83) ||   // Kannada
+            (ch >= 0x0CBC && ch <= 0x0CCD) ||
+            (ch >= 0x0D01 && ch <= 0x0D03) ||   // Malayalam
+            (ch >= 0x0D3E && ch <= 0x0D4D) ||
+            (ch == 0x0E31) ||                   // Thai Mai Han Akat
+            (ch >= 0x0E34 && ch <= 0x0E3A) ||   // Thai vowels
+            (ch >= 0x0E47 && ch <= 0x0E4E) ||   // Thai tones
+            (ch == 0x0EB1) ||                   // Lao Mai Kan
+            (ch >= 0x0EB4 && ch <= 0x0EB9) ||   // Lao vowels I/U/Y
+            (ch == 0x0EBB) ||                   // Lao Mai Kon
+            (ch >= 0x0EC8 && ch <= 0x0ECD) ||   // Lao tones
+            (ch >= 0x102B && ch <= 0x103E) ||   // Myanmar
+            (ch >= 0x1056 && ch <= 0x1059) ||
+            (ch >= 0x17B4 && ch <= 0x17D3) ||   // Khmer
+            (ch >= 0x200B && ch <= 0x200F) ||   // ZW spaces/marks
+            (ch >= 0x2028 && ch <= 0x202E) ||
+            (ch >= 0x2060 && ch <= 0x2069) ||
+            (ch >= 0x20D0 && ch <= 0x20F0) ||   // Combining marks for symbols
+            (ch >= 0xFE00 && ch <= 0xFE0F) ||   // Variation Selectors
+            (ch >= 0xFE20 && ch <= 0xFE2F) ||   // Combining Half Marks
+            (ch >= 0xFF9E && ch <= 0xFF9F))     // Halfwidth marks
+        {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 // Routine Description:
