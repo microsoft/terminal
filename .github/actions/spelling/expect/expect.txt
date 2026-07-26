@@ -1990,3 +1990,5 @@ ZCtrl
 zero'd
 ZWJs
 ZYXWVUTd
+Akat
+Halfwidth
