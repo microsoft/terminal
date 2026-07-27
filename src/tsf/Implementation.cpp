@@ -224,6 +224,34 @@ bool Implementation::HasActiveComposition() const noexcept
     return _compositions > 0;
 }
 
+// A composition that has just ended doesn't hand its text to the application right
+// away: OnEndComposition() can only request the finalizing edit session with
+// TF_ES_ASYNC, so the text stays in the TSF context until that session gets its turn
+// on the message loop. A text service that ends a composition with a key it doesn't
+// consume - the Korean IME does this for Enter and for the arrow keys - gives that key
+// to the application inside the same message dispatch, so the key would otherwise
+// reach the shell ahead of the text it just finalized. GH#20244
+//
+// Key handling doesn't run inside an edit session, so here, unlike in
+// OnEndComposition(), we can ask for a synchronous one and settle the composition
+// before the caller decides what to do with the key.
+void Implementation::FlushPendingComposition() noexcept
+{
+    // Nothing to settle unless a composition has ended and its edit session is pending.
+    if (_compositions > 0 || !_editSessionCompositionUpdate.referenceCount || !_context)
+    {
+        return;
+    }
+
+    // A separate proxy is needed because the pending asynchronous request still holds
+    // a reference on _editSessionCompositionUpdate. Running _doCompositionUpdate() twice
+    // is harmless: it derives everything from the current state of the context, and by
+    // the time the asynchronous session runs there is nothing left to finalize.
+    HRESULT hr = S_OK;
+    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionFinalize, TF_ES_READWRITE | TF_ES_SYNC, &hr));
+    LOG_IF_FAILED(hr);
+}
+
 #pragma region IUnknown
 
 STDMETHODIMP Implementation::QueryInterface(REFIID riid, void** ppvObj) noexcept
