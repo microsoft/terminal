@@ -1857,12 +1857,12 @@ void IslandWindow::UseMica(const winrt::Microsoft::Terminal::Settings::Model::Mi
     switch (newValue)
     {
     case winrt::Microsoft::Terminal::Settings::Model::MicaStyle::Mica:
-        attribute = DWMSBT_MAINWINDOW;      // "Mica"
+        attribute = DWMSBT_MAINWINDOW; // "Mica"
         break;
     case winrt::Microsoft::Terminal::Settings::Model::MicaStyle::MicaAlt:
-        attribute = DWMSBT_TABBEDWINDOW;    // "Mica Alt"
+        attribute = DWMSBT_TABBEDWINDOW; // "Mica Alt"
         break;
-    default:                                // None
+    default: // None
         attribute = DWMSBT_NONE;
         break;
     }

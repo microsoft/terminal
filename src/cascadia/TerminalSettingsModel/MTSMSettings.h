@@ -157,11 +157,11 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::TabRowTheme, TabRow, "tabRow", nullptr)       \
     X(winrt::Microsoft::Terminal::Settings::Model::TabTheme, Tab, "tab", nullptr)
 
-#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                              \
-    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default) \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
-    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
-    X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
+#define MTSM_THEME_WINDOW_SETTINGS(X)                                                                                                           \
+    X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "applicationTheme", winrt::Windows::UI::Xaml::ElementTheme::Default)              \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                                         \
+    X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                                       \
+    X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                                   \
     X(winrt::Microsoft::Terminal::Settings::Model::MicaStyle, UseMica, "useMica", winrt::Microsoft::Terminal::Settings::Model::MicaStyle::None) \
     X(bool, ShowWorkspacesButton, "showWorkspacesButton", true)
 
