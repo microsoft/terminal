@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <Reference Include="$(MSBuildThisFileDirectory)..\metadata\Microsoft.Terminal.Core.winmd">
+            <WinMDFile>true</WinMDFile>
+            <Implementation>TerminalConnection.dll</Implementation>
+        </Reference>
+        <Reference Include="$(MSBuildThisFileDirectory)..\metadata\Microsoft.Terminal.TerminalConnection.winmd">
+            <WinMDFile>true</WinMDFile>
+            <Implementation>TerminalConnection.dll</Implementation>
+        </Reference>
+        <Reference Include="$(MSBuildThisFileDirectory)..\metadata\Microsoft.Terminal.UI.winmd">
+            <WinMDFile>true</WinMDFile>
+            <Implementation>Microsoft.Terminal.UI.dll</Implementation>
+        </Reference>
+        <Reference Include="$(MSBuildThisFileDirectory)..\metadata\Microsoft.Terminal.Control.winmd">
+            <WinMDFile>true</WinMDFile>
+            <Implementation>Microsoft.Terminal.Control.dll</Implementation>
+        </Reference>
+    </ItemGroup>
+</Project>
