@@ -28,6 +28,7 @@ namespace Microsoft::Console::TSF
         void Focus(IDataProvider* provider);
         void Unfocus(IDataProvider* provider);
         bool HasActiveComposition() const noexcept;
+        void FlushPendingComposition() noexcept;
 
         // IUnknown methods
         STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;
