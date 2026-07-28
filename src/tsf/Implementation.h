@@ -128,9 +128,6 @@ namespace Microsoft::Console::TSF
         TfClientId _clientId = TF_CLIENTID_NULL;
 
         EditSessionProxy<&Implementation::_doCompositionUpdate> _editSessionCompositionUpdate{ this };
-        // Only used by FlushPendingComposition(), which needs to run the session while
-        // the asynchronous request above is still holding a reference on its proxy.
-        EditSessionProxy<&Implementation::_doCompositionUpdate> _editSessionCompositionFinalize{ this };
         int _compositions = 0;
 
         AnsiInputScope _ansiInputScope{ this };

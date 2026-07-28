@@ -224,31 +224,24 @@ bool Implementation::HasActiveComposition() const noexcept
     return _compositions > 0;
 }
 
-// A composition that has just ended doesn't hand its text to the application right
-// away: OnEndComposition() can only request the finalizing edit session with
-// TF_ES_ASYNC, so the text stays in the TSF context until that session gets its turn
-// on the message loop. A text service that ends a composition with a key it doesn't
-// consume - the Korean IME does this for Enter and for the arrow keys - gives that key
-// to the application inside the same message dispatch, so the key would otherwise
-// reach the shell ahead of the text it just finalized. GH#20244
-//
-// Key handling doesn't run inside an edit session, so here, unlike in
-// OnEndComposition(), we can ask for a synchronous one and settle the composition
-// before the caller decides what to do with the key.
+// OnEndComposition() can only request TF_ES_ASYNC, because it runs from within an active
+// edit session. If the composition ended due to a relevant terminal key (arrow keys,
+// Enter, etc.), the terminal will receive and handle that key input synchronously, before
+// we got around to handling the completion asynchronously. This method allows you to
+// synchronously flush it from inside the key handler. GH#20244
 void Implementation::FlushPendingComposition() noexcept
 {
-    // Nothing to settle unless a composition has ended and its edit session is pending.
+    // Nothing to flush unless a composition has ended and its edit session is still pending.
     if (_compositions > 0 || !_editSessionCompositionUpdate.referenceCount || !_context)
     {
         return;
     }
 
-    // A separate proxy is needed because the pending asynchronous request still holds
-    // a reference on _editSessionCompositionUpdate. Running _doCompositionUpdate() twice
-    // is harmless: it derives everything from the current state of the context, and by
-    // the time the asynchronous session runs there is nothing left to finalize.
+    // NOTE: _request() would reject this, because the pending TF_ES_ASYNC request still
+    // references the proxy. Letting that request run afterwards is harmless, because
+    // _doCompositionUpdate() derives everything from the current state of the context.
     HRESULT hr = S_OK;
-    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionFinalize, TF_ES_READWRITE | TF_ES_SYNC, &hr));
+    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionUpdate, TF_ES_READWRITE | TF_ES_SYNC, &hr));
     LOG_IF_FAILED(hr);
 }
 

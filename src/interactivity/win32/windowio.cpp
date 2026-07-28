@@ -130,9 +130,9 @@ void HandleKeyEvent(const HWND hWnd,
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
     const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
 
-    // If a composition just ended, its text is still queued up inside TSF. Write it to
-    // the input buffer now, so that a key the IME passed through to end the composition
-    // can't overtake the text it finalized. GH#20244
+    // If a composition just ended, its text is still queued up inside TSF. Write it to the
+    // input buffer now, so that a key the IME passed on to us can't reach the input buffer
+    // before the text it finalized. GH#20244
     g.tsf.FlushPendingComposition();
 
     // Make sure we retrieve the key info first, or we could chew up
