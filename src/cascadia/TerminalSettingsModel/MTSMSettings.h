@@ -111,7 +111,8 @@ Author(s):
     X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
+    X(Microsoft::Terminal::Control::MiddleClickAction, MiddleClickAction, "experimental.middleClickAction", Microsoft::Terminal::Control::MiddleClickAction::Pan)
 
 // Intentionally omitted Profile settings:
 // * Name
