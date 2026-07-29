@@ -920,11 +920,7 @@ void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)
                 {
                     auto& dstRow = page.Buffer().GetMutableRowByOffset(rowOffset);
                     auto dstSlice = dstRow.GetMutableImageSlice();
-                    // Only reuse an existing slice if it shares our cell size. A slice
-                    // sizes its buffer from the cell size it was constructed with, so
-                    // if the font changed since this row was drawn, writing it with our
-                    // cell stride would run past the end of that buffer. Replace it.
-                    if (!dstSlice || dstSlice->CellSize() != _cellSize)
+                    if (!dstSlice)
                     {
                         dstSlice = dstRow.SetImageSlice(std::make_unique<ImageSlice>(_cellSize));
                         __assume(dstSlice != nullptr);

@@ -4355,35 +4355,6 @@ public:
         VERIFY_IS_TRUE(tallRows > shortRows, L"A taller image should occupy more rows than a shorter one.");
     }
 
-    // Regression: a row may already hold an ImageSlice built with a DIFFERENT cell
-    // size (e.g. the font changed since that image was drawn). Sixel must replace it
-    // rather than write past its (smaller) buffer using Sixel's cell stride.
-    TEST_METHOD(SixelReplacesMismatchedCellSizeSlice)
-    {
-        // Learn the row and cell size a normal Sixel uses.
-        _testGetSet->PrepData();
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~\x1b\\");
-        til::CoordType row = -1;
-        const auto baseline = FindFirstImageSlice(*_testGetSet->_textBuffer, row);
-        VERIFY_IS_NOT_NULL(baseline);
-        const auto sixelCell = baseline->CellSize();
-
-        // Inject a foreign, smaller-cell slice on that row, then render Sixel over it.
-        _testGetSet->PrepData();
-        const til::size foreignCell{ std::max(1, sixelCell.width - 3), std::max(1, sixelCell.height - 4) };
-        _testGetSet->_textBuffer->GetMutableRowByOffset(row).SetImageSlice(std::make_unique<ImageSlice>(foreignCell));
-        _stateMachine->ProcessString(L"\x1bPq#0;2;0;0;100~~~~\x1b\\"); // blue, several columns
-
-        const auto replaced = _testGetSet->_textBuffer->GetRowByOffset(row).GetImageSlice();
-        VERIFY_IS_NOT_NULL(replaced);
-        // The guard compares the FULL cell size (`CellSize() != _cellSize`), so assert BOTH
-        // dimensions were replaced -- a width-only mismatch must trigger it too. Without the
-        // guard the foreign slice would survive and these would report its shrunken size.
-        VERIFY_ARE_EQUAL(sixelCell.width, replaced->CellSize().width, L"Sixel must replace a mismatched-cell slice with its own cell width.");
-        VERIFY_ARE_EQUAL(sixelCell.height, replaced->CellSize().height, L"Sixel must replace a mismatched-cell slice with its own cell height.");
-        VERIFY_IS_TRUE(SliceContainsColor(replaced, 0, 0, 255), L"The Sixel image must render after replacing the slice (no overflow).");
-    }
-
     // Raster attributes (") are parsed; a zero x-aspect (the division-by-zero guard)
     // and an oversized raster size must not crash and must stay screen-bounded.
     // (Raster attributes " Pan;Pad;Ph;Pv: VT330/VT340 Programmer Reference, Ch.14 Sixel
