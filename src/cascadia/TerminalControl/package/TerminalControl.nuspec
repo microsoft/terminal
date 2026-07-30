@@ -17,10 +17,10 @@
     <file src="native/Microsoft.Windows.Terminal.Control.props" target="build/native" />
     <file src="native/Microsoft.Windows.Terminal.Control.targets" target="build/native" />
 
-    <file src="../../../../bin/x64/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.winmd" target="metadata" />
-    <file src="../../../../bin/x64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.winmd" target="metadata" />
-    <file src="../../../../bin/x64/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.winmd" target="metadata" />
-    <file src="../../../../bin/x64/Release/TerminalCore/Microsoft.Terminal.Core.winmd" target="metadata" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/TerminalCore/Microsoft.Terminal.Core.winmd" target="lib\uap10.0" />
 
     <file src="../../../../bin/Win32/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.dll" target="runtimes/win-x86/native" />
     <file src="../../../../bin/Win32/Release/Microsoft.Terminal.Control.Lib/Microsoft.Terminal.Control.pri" target="runtimes/win-x86/native" />
