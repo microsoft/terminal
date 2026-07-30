@@ -88,10 +88,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (const auto target{ Target() })
         {
-            if (const auto inpc{ target.try_as<INotifyPropertyChanged>() })
+            if (const auto observable{ target.try_as<INotifyPropertyChanged>() })
             {
-                _subscribedTarget = inpc;
-                _targetPropertyChangedToken = inpc.PropertyChanged({ get_weak(), &SettingResetButton::_OnTargetPropertyChanged });
+                _subscribedTarget = observable;
+                _targetPropertyChangedToken = observable.PropertyChanged({ get_weak(), &SettingResetButton::_OnTargetPropertyChanged });
             }
         }
     }
