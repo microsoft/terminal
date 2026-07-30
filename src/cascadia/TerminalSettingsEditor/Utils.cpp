@@ -101,6 +101,35 @@ namespace winrt::Microsoft::Terminal::Settings
         return GetLibraryResourceString(fmtKey);
     }
 
+    // Returns the control that should actually receive focus for a resolved
+    // search-navigation target.
+    Controls::Control ResolveFocusTarget(const Controls::Control& element)
+    {
+        if (!element)
+        {
+            return element;
+        }
+
+        winrt::Windows::Foundation::IInspectable content{ nullptr };
+        if (const auto expander = element.try_as<Editor::SettingsExpander>())
+        {
+            content = expander.Content();
+        }
+        else if (const auto card = element.try_as<Editor::SettingsCard>())
+        {
+            content = card.Content();
+        }
+
+        if (content)
+        {
+            if (const auto contentControl = content.try_as<Controls::Control>())
+            {
+                return contentControl;
+            }
+        }
+        return element;
+    }
+
     void ExpandAncestorsAndBringIntoView(const FrameworkElement& root, const Controls::Control& control)
     {
         if (!control)

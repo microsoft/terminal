@@ -58,11 +58,6 @@ $ClassMap = @{
         NavigationParam = "ColorSchemes_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
-    "Microsoft::Terminal::Settings::Editor::Rendering" = @{
-        ResourceName    = "Nav_Rendering/Content"
-        NavigationParam = "Rendering_Nav"
-        SubPage         = "BreadcrumbSubPage::None"
-    }
     "Microsoft::Terminal::Settings::Editor::Compatibility" = @{
         ResourceName    = "Nav_Compatibility/Content"
         NavigationParam = "Compatibility_Nav"
@@ -198,20 +193,40 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
-        # Extract Uid
-        if ($null -eq $settingContainer.Uid)
+        # Determine what to index for this container. A SettingContainer is indexable
+        # either via its own x:Uid (its label comes from the Header, resource suffix
+        # "/Header") OR, when it has none, via a content-labeled child control
+        # (CheckBox/ToggleSwitch/etc.) that carries its own x:Uid (its label comes from
+        # its Content, resource suffix "/Content"). The latter is wrapped in a SettingsCard
+        # that usually has no x:Uid of its own, so without this it would never be indexed.
+        $suffix = "Header"
+        $uid = $settingContainer.Uid
+        $name = $settingContainer.GetAttribute("x:Name")
+
+        if ([string]::IsNullOrEmpty($uid))
         {
-            # SettingsCard/SettingsExpander without x:Uid are not indexable — skip silently
-            continue
+            # No x:Uid on the container itself, look for a child control.
+            $child = $settingContainer.SelectNodes("*") |
+                Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
+                Select-Object -First 1
+            if ($null -ne $child)
+            {
+                $suffix = "Content"
+                $uid = $child.GetAttribute("x:Uid")
+                # Prefer the control's own x:Name; otherwise fall back to the container's.
+                $childName = $child.GetAttribute("x:Name")
+                if (-not [string]::IsNullOrEmpty($childName))
+                {
+                    $name = $childName
+                }
+            }
         }
-        elseif ($ProhibitedUids -contains $settingContainer.Uid)
+
+        if ([string]::IsNullOrEmpty($uid) -or ($ProhibitedUids -contains $uid))
         {
             continue
         }
 
-        # Extract Name via GetAttribute to avoid PowerShell's XML integration
-        # returning the element name (e.g. "local:SettingsCard") when x:Name is absent.
-        $name = $settingContainer.GetAttribute("x:Name")
         if ([string]::IsNullOrEmpty($name))
         {
             $name = ""
@@ -232,7 +247,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         $subPage = $ClassMap[$pageClass].SubPage ?? "BreadcrumbSubPage::None"
         if ($pageClass -match "Editor::NewTabMenu")
         {
-            if ($settingContainer.Uid -match "NewTabMenu_CurrentFolder")
+            if ($uid -match "NewTabMenu_CurrentFolder")
             {
                 $navigationParam = $null # VM param at runtime
                 $subPage = "BreadcrumbSubPage::NewTabMenu_Folder"
@@ -259,7 +274,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         if ($includeInBuildIndex)
         {
             $entries += [pscustomobject]@{
-                ResourceName      = "$($settingContainer.Uid)/Header"
+                ResourceName      = "$uid/$suffix"
                 ParentPage        = $pageClass
                 NavigationParam   = $navigationParam
                 SubPage           = $subPage
@@ -271,7 +286,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         if ($includeInPartialIndex)
         {
             $entries += [pscustomobject]@{
-                ResourceName      = "$($settingContainer.Uid)/Header"
+                ResourceName      = "$uid/$suffix"
                 ParentPage        = $pageClass
                 NavigationParam   = $null # VM param at runtime
                 SubPage           = $pageClass -match "Editor::NewTabMenu" ? "BreadcrumbSubPage::NewTabMenu_Folder" : $subPage
