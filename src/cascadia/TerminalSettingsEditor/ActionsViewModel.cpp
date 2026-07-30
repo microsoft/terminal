@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     // When a command has more than one key chord, the rows stack vertically, so the
-    // command name is top-aligned to line up with the first chord. Otherwise it's centered.
+    // command name is top-aligned to line up with the first chord. Otherwise, it's centered.
     Windows::UI::Xaml::VerticalAlignment CommandViewModel::NameVerticalAlignment() const noexcept
     {
         return _KeyChordList.Size() > 1 ? Windows::UI::Xaml::VerticalAlignment::Top : Windows::UI::Xaml::VerticalAlignment::Center;
