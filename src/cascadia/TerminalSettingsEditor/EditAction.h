@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Editor::CommandViewModel, ViewModel, PropertyChanged.raise, nullptr);
 
         void ShortcutActionBox_GotFocus(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+        void ShortcutActionBox_GettingFocus(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::GettingFocusEventArgs& args);
         void ShortcutActionBox_TextChanged(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs& args);
         void ShortcutActionBox_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs& args);
         void ShortcutActionBox_LostFocus(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
@@ -33,6 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _filteredActions{ nullptr };
         winrt::hstring _lastValidAction;
         winrt::hstring _currentActionFilter;
+        bool _openSuggestionsOnFocus{ false };
+        bool _isPageEntryFocus{ false };
     };
 }
 
