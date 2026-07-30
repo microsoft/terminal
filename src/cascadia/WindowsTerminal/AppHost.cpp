@@ -882,6 +882,20 @@ void AppHost::_WindowActivated(bool activated)
 
 safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindowBehavior args) const
 {
+    // GH#20305: When monitor:"any" (InPlace) and desktop:"toCurrent" are both
+    // specified, MoveWindowToDesktop may reposition the window to the monitor
+    // of the current foreground window. Save the window position beforehand so
+    // we can restore it after the desktop move completes.
+    const auto isInPlace = args && args.ToMonitor() == winrt::TerminalApp::MonitorBehavior::InPlace;
+    const auto shouldRestorePosition = isInPlace && args.MoveToCurrentDesktop();
+
+    HWND hwnd = _window->GetHandle();
+    RECT savedWindowRect{};
+    if (shouldRestorePosition)
+    {
+        ::GetWindowRect(hwnd, &savedWindowRect);
+    }
+
     _window->SummonWindow(args);
 
     if (!args || !args.MoveToCurrentDesktop())
@@ -895,6 +909,10 @@ safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindow
         co_return;
     }
 
+    // Capture the dispatcher on the UI thread before we switch to the
+    // background thread. We'll need it to restore the window position.
+    auto dispatcher = _windowLogic.GetRoot().Dispatcher();
+
     // Just like AppHost::GetVirtualDesktopId:
     // IVirtualDesktopManager is cross-process COM into explorer.exe,
     // and we can't use that on the UI thread.
@@ -904,7 +922,7 @@ safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindow
     // we are, then don't call MoveWindowToDesktop. This is to mitigate
     // MSFT:33035972
     BOOL onCurrentDesktop{ false };
-    if (SUCCEEDED(desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
+    if (SUCCEEDED(desktopManager->IsWindowOnCurrentVirtualDesktop(hwnd, &onCurrentDesktop)) && onCurrentDesktop)
     {
         // If we succeeded, and the window was on the current desktop, then do nothing.
     }
@@ -917,10 +935,27 @@ safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindow
         GUID currentlyActiveDesktop{ 0 };
         if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
         {
-            LOG_IF_FAILED(desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+            LOG_IF_FAILED(desktopManager->MoveWindowToDesktop(hwnd, currentlyActiveDesktop));
         }
         // If GetCurrentVirtualDesktopId failed, then just leave the window
         // where it is. Nothing else to be done :/
+    }
+
+    // GH#20305: MoveWindowToDesktop may have moved our window to the
+    // foreground window's monitor. Restore the window to the monitor
+    // and position it was on before the summon.
+    if (shouldRestorePosition)
+    {
+        co_await wil::resume_foreground(dispatcher);
+
+        RECT currentRect;
+        if (::GetWindowRect(hwnd, &currentRect))
+        {
+            if (currentRect.left != savedWindowRect.left || currentRect.top != savedWindowRect.top)
+            {
+                ::SetWindowPos(hwnd, 0, savedWindowRect.left, savedWindowRect.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+        }
     }
 }
 
