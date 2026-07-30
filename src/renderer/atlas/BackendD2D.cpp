@@ -458,6 +458,7 @@ D2D1_RECT_U BackendD2D::_prepareBuiltinGlyph(const RenderingPayload& p, char32_t
         { 1, 1, 1, 0.50f }, // Shape_Filled050
         { 1, 1, 1, 0.75f }, // Shape_Filled075
         { 1, 1, 1, 1.00f }, // Shape_Filled100
+        { 1, 1, 1, 0.50f }, // Shape_Invert050 (impossible to differentiate)
     };
 
     if (!_builtinGlyphsRenderTargetActive)

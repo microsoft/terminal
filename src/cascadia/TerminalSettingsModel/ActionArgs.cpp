@@ -40,6 +40,7 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "OpenWorkspaceArgs.g.cpp"
 #include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
@@ -793,6 +794,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{ RS_switchable_fmt(L"RenameWindowCommandKey", Name()) };
         }
         return RS_switchable_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring OpenWorkspaceArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    {
+        if (!Name().empty())
+        {
+            return winrt::hstring{ RS_switchable_fmt(L"OpenWorkspaceCommandKey", Name()) };
+        }
+        return RS_switchable_(L"OpenWorkspaceDefaultCommandKey");
     }
 
     winrt::hstring SearchForTextArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
