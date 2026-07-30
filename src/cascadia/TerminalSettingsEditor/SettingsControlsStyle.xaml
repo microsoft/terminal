@@ -639,10 +639,17 @@
                                 <VisualState x:Name="ExpandUp">
                                     <VisualState.Setters>
                                         <Setter Target="ExpanderHeader.CornerRadius" Value="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BottomCornerRadiusFilterConverter}}" />
-                                        <Setter Target="ExpanderContent.Visibility" Value="Visible" />
                                     </VisualState.Setters>
                                     <VisualState.Storyboard>
                                         <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <Visibility>Visible</Visibility>
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
                                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)">
                                                 <DiscreteDoubleKeyFrame KeyTime="0"
@@ -655,11 +662,17 @@
                                     </VisualState.Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="CollapseDown">
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpanderContent.Visibility" Value="Collapsed" />
-                                    </VisualState.Setters>
                                     <VisualState.Storyboard>
                                         <Storyboard>
+                                            <!--  Hiding the content is a key frame at the end of the slide, not a VisualState.Setter: setters apply at state entry, which would hide the content before it could animate out.  -->
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.2">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <Visibility>Collapsed</Visibility>
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
                                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)">
                                                 <DiscreteDoubleKeyFrame KeyTime="0"
@@ -674,10 +687,17 @@
                                 <VisualState x:Name="ExpandDown">
                                     <VisualState.Setters>
                                         <Setter Target="ExpanderHeader.CornerRadius" Value="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TopCornerRadiusFilterConverter}}" />
-                                        <Setter Target="ExpanderContent.Visibility" Value="Visible" />
                                     </VisualState.Setters>
                                     <VisualState.Storyboard>
                                         <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <Visibility>Visible</Visibility>
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
                                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)">
                                                 <DiscreteDoubleKeyFrame KeyTime="0"
@@ -690,11 +710,17 @@
                                     </VisualState.Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="CollapseUp">
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpanderContent.Visibility" Value="Collapsed" />
-                                    </VisualState.Setters>
                                     <VisualState.Storyboard>
                                         <Storyboard>
+                                            <!--  See the CollapseDown note above on why Visibility is a key frame rather than a setter.  -->
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
+                                                                           Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.167">
+                                                    <DiscreteObjectKeyFrame.Value>
+                                                        <Visibility>Collapsed</Visibility>
+                                                    </DiscreteObjectKeyFrame.Value>
+                                                </DiscreteObjectKeyFrame>
+                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
                                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)">
                                                 <DiscreteDoubleKeyFrame KeyTime="0"
