@@ -20,6 +20,7 @@ SOURCES = \
     EnumSetTests.cpp \
     EnvTests.cpp \
     HashTests.cpp \
+    IntervalTreeTests.cpp \
     MathTests.cpp \
     mutex.cpp \
     OperatorTests.cpp \

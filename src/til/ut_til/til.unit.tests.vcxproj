@@ -22,6 +22,7 @@
     <ClCompile Include="FlatSetTests.cpp" />
     <ClCompile Include="GenerationalTests.cpp" />
     <ClCompile Include="HashTests.cpp" />
+    <ClCompile Include="IntervalTreeTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />

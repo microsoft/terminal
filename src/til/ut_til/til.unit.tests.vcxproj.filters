@@ -12,9 +12,11 @@
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="EnumSetTests.cpp" />
     <ClCompile Include="HashTests.cpp" />
+    <ClCompile Include="IntervalTreeTests.cpp" />
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="IntervalTreeTests.cpp" />
     <ClCompile Include="PointTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="ReplaceTests.cpp" />
