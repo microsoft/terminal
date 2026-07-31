@@ -1778,9 +1778,15 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     // U+1FB99 '🮙' UPPER RIGHT TO LOWER LEFT FILL
     {},
     // U+1FB9A '🮚' UPPER AND LOWER TRIANGULAR HALF BLOCK
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_1_1, Pos_1_1, Pos_0_1 },
+    },
     // U+1FB9B '🮛' LEFT AND RIGHT TRIANGULAR HALF BLOCK
-    {},
+    {
+        Instruction{ Shape_ClosedFilledPath, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_1 },
+        Instruction{ Shape_ClosedFilledPath, Pos_1_1, Pos_0_1, Pos_0_1, Pos_1_1 },
+    },
     // U+1FB9C '🮜' UPPER LEFT TRIANGULAR MEDIUM SHADE
     { Instruction{ Shape_Custom } },
     // U+1FB9D '🮝' UPPER RIGHT TRIANGULAR MEDIUM SHADE
@@ -1789,6 +1795,304 @@ static constexpr Instruction LegacyComputing[LegacyComputing_CharCount][Instruct
     { Instruction{ Shape_Custom } },
     // U+1FB9F '🮟' LOWER LEFT TRIANGULAR MEDIUM SHADE
     { Instruction{ Shape_Custom } },
+#if 0
+    // U+1FBA0 🮠
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+    },
+    // U+1FBA1 🮡
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBA2 🮢
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA3 🮣
+    {
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA4 🮤
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA5 🮥
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA6 🮦
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBA7 🮧
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    {},
+    {},
+    // U+1FBAA 🮪
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_2 },
+    },
+    // U+1FBAB 🮫
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBAC 🮬
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBAD 🮭
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBAE 🮮
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+#endif
+    // U+1FBA0 🮠
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+    },
+    // U+1FBA1 🮡
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBA2 🮢
+    {
+        Instruction{ Shape_OpenLinePath, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA3 🮣
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBA4 🮤
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
+    },
+    // U+1FBA5 🮥
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_1_1, Pos_Min, Pos_Min },
+    },
+    // U+1FBA6 🮦
+    {
+        Instruction{ Shape_OpenLinePath, Pos_0_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_OpenLinePath, Pos_1_1, Pos_1_2, Pos_Min, Pos_Min },
+    },
+    // U+1FBA7 🮧
+    {
+        Instruction{ Shape_OpenLinePath, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_OpenLinePath, Pos_1_1, Pos_1_2, Pos_Min, Pos_Min },
+    },
+    {},
+    {},
+    // U+1FBAA 🮪
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_2 },
+    },
+    // U+1FBAB 🮫
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_1_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBAC 🮬
+    {
+        Instruction{ Shape_OpenLinePath, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_OpenLinePath, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBAD 🮭
+    {
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_1_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_OpenLinePath, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBAE 🮮
+    {
+        Instruction{ Shape_OpenLinePath, Pos_0_1, Pos_1_2, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_OpenLinePath, Pos_1_1, Pos_1_2, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBAF '🮯' BOX DRAWINGS LIGHT HORIZONTAL WITH VERTICAL STROKE
+    // U+1FBB0 '🮰' ARROWHEAD-SHAPED POINTER
+    // U+1FBB1 '🮱' INVERSE CHECK MARK
+    // U+1FBB2 '🮲' LEFT HALF RUNNING MAN
+    // U+1FBB3 '🮳' RIGHT HALF RUNNING MAN
+    // U+1FBB4 '🮴' INVERSE DOWNWARDS ARROW WITH TIP LEFTWARDS
+    // U+1FBB5 '🮵' LEFTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+    // U+1FBB6 '🮶' RIGHTWARDS ARROW AND UPPER AND LOWER ONE EIGHTH BLOCK
+    // U+1FBB7 '🮷' DOWNWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+    // U+1FBB8 '🮸' UPWARDS ARROW AND RIGHT ONE EIGHTH BLOCK
+    // U+1FBB9 '🮹' LEFT HALF FOLDER
+    // U+1FBBA '🮺' RIGHT HALF FOLDER
+    // U+1FBBB '🮻' VOIDED GREEK CROSS
+    // U+1FBBC '🮼' RIGHT OPEN SQUARED DOT
+    // U+1FBBD '🮽' NEGATIVE DIAGONAL CROSS
+    // U+1FBBE '🮾' NEGATIVE DIAGONAL MIDDLE RIGHT TO LOWER CENTRE
+    // U+1FBBF '🮿' NEGATIVE DIAGONAL DIAMOND
+    // U+1FBC0 '🯀' WHITE HEAVY SALTIRE WITH ROUNDED CORNERS
+    // U+1FBC1 '🯁' LEFT THIRD WHITE RIGHT POINTING INDEX
+    // U+1FBC2 '🯂' MIDDLE THIRD WHITE RIGHT POINTING INDEX
+    // U+1FBC3 '🯃' RIGHT THIRD WHITE RIGHT POINTING INDEX
+    // U+1FBC4 '🯄' NEGATIVE SQUARED QUESTION MARK
+    // U+1FBC5 '🯅' STICK FIGURE
+    // U+1FBC6 '🯆' STICK FIGURE WITH ARMS RAISED
+    // U+1FBC7 '🯇' STICK FIGURE LEANING LEFT
+    // U+1FBC8 '🯈' STICK FIGURE LEANING RIGHT
+    // U+1FBC9 '🯉' STICK FIGURE WITH DRESS
+    // U+1FBCA '🯊' WHITE UP-POINTING CHEVRON
+    // U+1FBCB '🯋' WHITE CROSS MARK
+    // U+1FBCC '🯌' RAISED SMALL LEFT SQUARE BRACKET
+    // U+1FBCD '🯍' BLACK SMALL UP-POINTING CHEVRON
+    // U+1FBCE '🯎' LEFT TWO THIRDS BLOCK
+    // U+1FBCF '🯏' LEFT ONE THIRD BLOCK
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    // U+1FBD0 🯐
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBD1 🯑
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_1, Pos_0_1 },
+    },
+    // U+1FBD2 🯒
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+    },
+    // U+1FBD3 🯓
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBD4 🯔
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FBD5 🯕
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBD6 🯖
+    {
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_1_1, Pos_0_1 },
+    },
+    // U+1FBD7 🯗
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_1, Pos_1_2, Pos_0_1 },
+    },
+    // U+1FBD8 🯘
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_2, Pos_1_1, Pos_0_1 },
+    },
+    // U+1FBD9 🯙
+    {
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_0_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBDA 🯚
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBDB 🯛
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_2, Pos_0_1, Pos_1_1 },
+    },
+    // U+1FBDC 🯜
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_1_1, Pos_1_1, Pos_0_1 },
+    },
+    // U+1FBDD 🯝
+    {
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_0_1, Pos_0_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_2, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBDE 🯞
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_1_1, Pos_1_2, Pos_0_1 },
+        Instruction{ Shape_LightLine, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FBDF 🯟
+    {
+        Instruction{ Shape_LightLine, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_2 },
+        Instruction{ Shape_LightLine, Pos_1_1, Pos_1_2, Pos_0_1, Pos_1_1 },
+    },
+    // U+1FBE0 '🯠' TOP JUSTIFIED LOWER HALF WHITE CIRCLE
+    // U+1FBE1 '🯡' RIGHT JUSTIFIED LEFT HALF WHITE CIRCLE
+    // U+1FBE2 '🯢' BOTTOM JUSTIFIED UPPER HALF WHITE CIRCLE
+    // U+1FBE3 '🯣' LEFT JUSTIFIED RIGHT HALF WHITE CIRCLE
+    // U+1FBE4 '🯤' UPPER CENTRE ONE QUARTER BLOCK
+    // U+1FBE5 '🯥' LOWER CENTRE ONE QUARTER BLOCK
+    // U+1FBE6 '🯦' MIDDLE LEFT ONE QUARTER BLOCK
+    // U+1FBE7 '🯧' MIDDLE RIGHT ONE QUARTER BLOCK
+    // U+1FBE8 '🯨' TOP JUSTIFIED LOWER HALF BLACK CIRCLE
+    // U+1FBE9 '🯩' RIGHT JUSTIFIED LEFT HALF BLACK CIRCLE
+    // U+1FBEA '🯪' BOTTOM JUSTIFIED UPPER HALF BLACK CIRCLE
+    // U+1FBEB '🯫' LEFT JUSTIFIED RIGHT HALF BLACK CIRCLE
+    // U+1FBEC '🯬' TOP RIGHT JUSTIFIED LOWER LEFT QUARTER BLACK CIRCLE
+    // U+1FBED '🯭' BOTTOM LEFT JUSTIFIED UPPER RIGHT QUARTER BLACK CIRCLE
+    // U+1FBEE '🯮' BOTTOM RIGHT JUSTIFIED UPPER LEFT QUARTER BLACK CIRCLE
+    // U+1FBEF '🯯' TOP LEFT JUSTIFIED LOWER RIGHT QUARTER BLACK CIRCLE
+    // U+1FBF0 '🯰' SEGMENTED DIGIT ZERO
+    // U+1FBF1 '🯱' SEGMENTED DIGIT ONE
+    // U+1FBF2 '🯲' SEGMENTED DIGIT TWO
+    // U+1FBF3 '🯳' SEGMENTED DIGIT THREE
+    // U+1FBF4 '🯴' SEGMENTED DIGIT FOUR
+    // U+1FBF5 '🯵' SEGMENTED DIGIT FIVE
+    // U+1FBF6 '🯶' SEGMENTED DIGIT SIX
+    // U+1FBF7 '🯷' SEGMENTED DIGIT SEVEN
+    // U+1FBF8 '🯸' SEGMENTED DIGIT EIGHT
+    // U+1FBF9 '🯹' SEGMENTED DIGIT NINE
+    // U+1FBFA '🯺' ALARM BELL SYMBOL
 };
 
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
