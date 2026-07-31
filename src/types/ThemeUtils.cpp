@@ -12,8 +12,8 @@ namespace Microsoft::Console::ThemeUtils
     // - S_OK or suitable HRESULT from DWM engines.
     [[nodiscard]] HRESULT SetWindowFrameDarkMode(HWND /* hwnd */, bool /* enabled */) noexcept
     {
-        // TODO:GH #3425 implement the new DWM API and change
-        //  src/interactivity/win32/windowtheme.cpp to use it.
+        // TODO: GH#3425 - Implement the new DWM API here and update
+        // src/interactivity/win32/windowtheme.cpp to use this implementation.
         return S_OK;
     }
 }
