@@ -561,7 +561,7 @@ void InputEngineTest::RoundTripTest()
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
-    // Send known round-trippable VKEYs through the TerminalInput module, then take the char's
+    // Send known round-trip capable VKEYs through the TerminalInput module, then take the char's
     //   from the generated INPUT_RECORDs and put them through the InputEngine.
     // The VKEY sequence it writes out should be the same as the original.
     // Note: We only test VKEYs that generate VT sequences (alphanumerics and space).
