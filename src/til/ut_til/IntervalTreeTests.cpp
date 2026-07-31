@@ -32,10 +32,23 @@ class IntervalTreeTests
         return PointTree{ std::move(intervals) };
     }
 
-    // GH#20486: is_valid() used std::numeric_limits<Scalar> to seed its bounds
-    // accumulators. til::point has no specialization, so both sentinels were
-    // til::point{0,0} and this asserted in Debug builds for any tree with 64 or
-    // more intervals -- i.e. whenever 64+ URLs were autodetected on screen.
+    // GH#20486: is_valid() seeds its bounds accumulators from
+    // std::numeric_limits<Scalar>. Without a specialization the primary template
+    // answers til::point{0,0} for both ends, which is not a usable sentinel.
+    TEST_METHOD(NumericLimitsAreUsableSentinels)
+    {
+        VERIFY_IS_TRUE(std::numeric_limits<til::point>::is_specialized);
+        VERIFY_IS_TRUE(std::numeric_limits<til::point>::min() < til::point{});
+        VERIFY_IS_TRUE(std::numeric_limits<til::point>::max() > til::point{});
+        VERIFY_ARE_EQUAL(std::numeric_limits<til::point>::min(), std::numeric_limits<til::point>::lowest());
+
+        VERIFY_IS_TRUE(std::numeric_limits<til::size>::is_specialized);
+        VERIFY_ARE_EQUAL(til::CoordTypeMax, std::numeric_limits<til::size>::max().width);
+        VERIFY_ARE_EQUAL(til::CoordTypeMin, std::numeric_limits<til::size>::min().height);
+    }
+
+    // Before GH#20486 this asserted in Debug builds for any tree with 64 or more
+    // intervals -- i.e. whenever 64+ URLs were autodetected on screen.
     TEST_METHOD(IsValidWithSubtrees)
     {
         for (const size_t count : { 1u, 63u, 64u, 65u, 512u })

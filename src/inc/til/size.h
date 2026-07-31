@@ -206,6 +206,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 };
 
+// See the equivalent specialization in point.h. Without this, generic code that
+// seeds an accumulator with std::numeric_limits gets til::size{} for both ends.
+template<>
+class std::numeric_limits<til::size>
+{
+public:
+    static constexpr bool is_specialized = true;
+
+    static constexpr til::size min() noexcept
+    {
+        return { til::CoordTypeMin, til::CoordTypeMin };
+    }
+
+    static constexpr til::size max() noexcept
+    {
+        return { til::CoordTypeMax, til::CoordTypeMax };
+    }
+
+    static constexpr til::size lowest() noexcept
+    {
+        return min();
+    }
+};
+
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {

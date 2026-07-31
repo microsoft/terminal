@@ -337,68 +337,43 @@ namespace interval_tree
             const auto minmaxStop = std::minmax_element(intervals.begin(), intervals.end(), IntervalStopCmp());
             const auto minmaxStart = std::minmax_element(intervals.begin(), intervals.end(), IntervalStartCmp());
 
-            // LOCAL DEVIATION FROM UPSTREAM -- see MAINTAINER_README.md.
-            //
-            // result.second is the (minimum start, maximum stop) across this entire subtree.
-            // Upstream seeds those accumulators with std::numeric_limits<Scalar>::max()/min(),
-            // which only works for arithmetic Scalars. We instantiate this tree with
-            // Scalar = til::point, which has no std::numeric_limits specialization, so the
-            // primary template hands back a default-constructed til::point{0,0} for *both*
-            // sentinels -- and the ordering checks below then fail for any non-trivial tree.
-            // Track emptiness explicitly instead so no sentinel value is needed.
-            //
-            // Upstream also accumulates the *maximum* stop with std::min, which silently
-            // reduces the two `center` checks below to no-ops. We use std::max.
-            std::pair<bool, std::pair<Scalar, Scalar>> result = { true, { Scalar{}, Scalar{} } };
-            auto empty = true;
-            const auto merge = [&](const Scalar& start, const Scalar& stop) {
-                if (empty)
-                {
-                    result.second = { start, stop };
-                    empty = false;
-                }
-                else
-                {
-                    result.second.first = std::min(result.second.first, start);
-                    result.second.second = std::max(result.second.second, stop);
-                }
-            };
-
+            std::pair<bool, std::pair<Scalar, Scalar>> result = { true, { std::numeric_limits<Scalar>::max(), std::numeric_limits<Scalar>::min() } };
             if (!intervals.empty())
             {
-                merge(minmaxStart.first->start, minmaxStop.second->stop);
+                result.second.first = std::min(result.second.first, minmaxStart.first->start);
+                result.second.second = std::min(result.second.second, minmaxStop.second->stop);
             }
             if (left)
             {
-                const auto valid = left->is_valid();
-                if (!valid.first)
+                auto valid = left->is_valid();
+                result.first &= valid.first;
+                result.second.first = std::min(result.second.first, valid.second.first);
+                result.second.second = std::min(result.second.second, valid.second.second);
+                if (!result.first)
                 {
-                    result.first = false;
                     return result;
                 }
-                // Every interval in the left subtree must stop before center.
                 if (valid.second.second >= center)
                 {
                     result.first = false;
                     return result;
                 }
-                merge(valid.second.first, valid.second.second);
             }
             if (right)
             {
-                const auto valid = right->is_valid();
-                if (!valid.first)
+                auto valid = right->is_valid();
+                result.first &= valid.first;
+                result.second.first = std::min(result.second.first, valid.second.first);
+                result.second.second = std::min(result.second.second, valid.second.second);
+                if (!result.first)
                 {
-                    result.first = false;
                     return result;
                 }
-                // Every interval in the right subtree must start after center.
                 if (valid.second.first <= center)
                 {
                     result.first = false;
                     return result;
                 }
-                merge(valid.second.first, valid.second.second);
             }
             if (!std::is_sorted(intervals.begin(), intervals.end(), IntervalStartCmp()))
             {

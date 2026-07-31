@@ -374,6 +374,32 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 }
 
+// til::point is ordered (lexicographically, by y then x), so the extremes are
+// well defined. Generic code that needs a "smaller/larger than anything" seed
+// value reaches for std::numeric_limits, and the unspecialized primary template
+// silently answers til::point{} for both max() and min() -- see GH#20486.
+template<>
+class std::numeric_limits<til::point>
+{
+public:
+    static constexpr bool is_specialized = true;
+
+    static constexpr til::point min() noexcept
+    {
+        return { til::CoordTypeMin, til::CoordTypeMin };
+    }
+
+    static constexpr til::point max() noexcept
+    {
+        return { til::CoordTypeMax, til::CoordTypeMax };
+    }
+
+    static constexpr til::point lowest() noexcept
+    {
+        return min();
+    }
+};
+
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {

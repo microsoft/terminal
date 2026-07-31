@@ -30,6 +30,7 @@
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <list>
 #include <map>
 #include <memory_resource>
