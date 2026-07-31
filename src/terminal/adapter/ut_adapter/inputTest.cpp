@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 
+#include "TestHook.h"
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
 #include "../../input/terminalInput.hpp"
 #include "../types/inc/IInputEvent.hpp"
@@ -308,6 +309,30 @@ void InputTest::TerminalInputModifierKeyTests()
     const auto slashVkey = LOBYTE(OneCoreSafeVkKeyScanW(L'/'));
     const auto nullVkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
 
+    uint8_t keyboardState[256] = {};
+    wchar_t unicodeBuf[4] = {};
+    const uint8_t rightAlt = WI_IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED) ? 0x80 : 0;
+    const uint8_t leftAlt = WI_IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) ? 0x80 : 0;
+    const uint8_t rightCtrl = WI_IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED) ? 0x80 : 0;
+    const uint8_t leftCtrl = WI_IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) ? 0x80 : 0;
+    const uint8_t shift = WI_IsFlagSet(uiKeystate, SHIFT_PRESSED) ? 0x80 : 0;
+    const uint8_t capsLock = WI_IsFlagSet(uiKeystate, CAPSLOCK_ON) ? 0x01 : 0;
+    keyboardState[VK_SHIFT] = shift;
+    keyboardState[VK_CONTROL] = leftCtrl | rightCtrl;
+    keyboardState[VK_MENU] = leftAlt | rightAlt;
+    keyboardState[VK_CAPITAL] = capsLock;
+    keyboardState[VK_LSHIFT] = shift;
+    keyboardState[VK_LCONTROL] = leftCtrl;
+    keyboardState[VK_RCONTROL] = rightCtrl;
+    keyboardState[VK_LMENU] = leftAlt;
+    keyboardState[VK_RMENU] = rightAlt;
+
+    const auto anyCtrlPressed = WI_IsAnyFlagSet(uiKeystate, CTRL_PRESSED);
+    const auto bothCtrlPressed = WI_AreAllFlagsSet(uiKeystate, CTRL_PRESSED);
+    const auto anyAltPressed = WI_IsAnyFlagSet(uiKeystate, ALT_PRESSED);
+    const auto bothAltPressed = WI_AreAllFlagsSet(uiKeystate, ALT_PRESSED);
+    const auto shiftPressed = WI_IsFlagSet(uiKeystate, SHIFT_PRESSED);
+
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
@@ -315,9 +340,17 @@ void InputTest::TerminalInputModifierKeyTests()
 
         auto fExpectedKeyHandled = true;
         auto fModifySequence = false;
-        wchar_t ch = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
 
-        if (ControlPressed(uiKeystate))
+        til::at(keyboardState, vkey) = 0x80; // Momentarily pretend as if the key is set
+        const auto unicodeLen = ToUnicodeEx(vkey, 0, &keyboardState[0], &unicodeBuf[0], ARRAYSIZE(unicodeBuf), 0b101, nullptr);
+        til::at(keyboardState, vkey) = 0;
+
+        wchar_t ch = unicodeLen == 1 ? unicodeBuf[0] : 0;
+        const auto altGrPressed = anyAltPressed && anyCtrlPressed && (ch > 0x20 && ch != 0x7f);
+        const auto ctrlPressed = bothCtrlPressed || (anyCtrlPressed && !altGrPressed);
+        const auto altPressed = bothAltPressed || (anyAltPressed && !altGrPressed);
+
+        if (ctrlPressed)
         {
             // For Ctrl-/ see DifferentModifiersTest.
             if (vkey == VK_DIVIDE || vkey == slashVkey)
@@ -472,28 +505,28 @@ void InputTest::TerminalInputModifierKeyTests()
             expected = TerminalInput::MakeOutput({ &ch, 1 });
             break;
         case VK_RETURN:
-            if (AltPressed(uiKeystate))
+            if (altPressed)
             {
-                const auto str = ControlPressed(uiKeystate) ? L"\x1b\n" : L"\x1b\r";
+                const auto str = ctrlPressed ? L"\x1b\n" : L"\x1b\r";
                 expected = TerminalInput::MakeOutput(str);
             }
             else
             {
-                const auto str = ControlPressed(uiKeystate) ? L"\n" : L"\r";
+                const auto str = ctrlPressed ? L"\n" : L"\r";
                 expected = TerminalInput::MakeOutput(str);
             }
             break;
         case VK_TAB:
-            if (AltPressed(uiKeystate))
+            if (altPressed)
             {
                 // Alt+Tab isn't possible - that's reserved by the system.
                 continue;
             }
-            else if (ShiftPressed(uiKeystate))
+            else if (shiftPressed)
             {
                 expected = TerminalInput::MakeOutput(L"\x1b[Z");
             }
-            else if (ControlPressed(uiKeystate))
+            else
             {
                 expected = TerminalInput::MakeOutput(L"\t");
             }
@@ -506,13 +539,19 @@ void InputTest::TerminalInputModifierKeyTests()
         case VK_OEM_102:
             // OEM keys require special case handling when combined with a Ctrl
             // modifier, but otherwise work the same way as regular keys.
-            if (ControlPressed(uiKeystate))
+            if (ctrlPressed)
             {
                 continue;
             }
             [[fallthrough]];
         default:
-            if (ControlPressed(uiKeystate) && (vkey >= '1' && vkey <= '9'))
+            // Map VK_ESCAPE, etc., to their corresponding character value, if needed.
+            if (ch == 0)
+            {
+                ch = LOWORD(OneCoreSafeMapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR));
+            }
+
+            if (ctrlPressed && (vkey >= '1' && vkey <= '9'))
             {
                 // The C-# keys get translated into very specific control
                 // characters that don't play nicely with this test. These keys
@@ -531,7 +570,7 @@ void InputTest::TerminalInputModifierKeyTests()
             // Alt+Key generates [0x1b, Ctrl+key] into the stream
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            if (AltPressed(uiKeystate) && ControlPressed(uiKeystate) && ch > 0x40 && ch <= 0x5A)
+            if (altPressed && ctrlPressed && ch > L'@' && ch <= L'~')
             {
                 const wchar_t buffer[2]{ L'\x1b', gsl::narrow_cast<wchar_t>(ch & 0b11111) };
                 expected = TerminalInput::MakeOutput({ &buffer[0], 2 });
@@ -540,14 +579,22 @@ void InputTest::TerminalInputModifierKeyTests()
             }
 
             // Alt+Key generates [0x1b, key] into the stream
-            if (AltPressed(uiKeystate) && ch != 0)
+            if (altPressed && ch != 0)
             {
                 const wchar_t buffer[2]{ L'\x1b', ch };
                 expected = TerminalInput::MakeOutput({ &buffer[0], 2 });
-                if (ControlPressed(uiKeystate))
+                if (ctrlPressed)
                 {
                     ch = 0;
                 }
+                break;
+            }
+
+            // Ctrl+Key masks the key value.
+            if (ctrlPressed && ch > L'@' && ch <= L'~')
+            {
+                const auto b = gsl::narrow_cast<wchar_t>(ch & 0b11111);
+                expected = TerminalInput::MakeOutput({ &b, 1 });
                 break;
             }
 
@@ -563,11 +610,14 @@ void InputTest::TerminalInputModifierKeyTests()
 
         if (fModifySequence)
         {
-            auto fShift = !!(uiKeystate & SHIFT_PRESSED);
-            auto fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
-            auto fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
+            const auto mod = shiftPressed + (2 * altPressed) + (4 * ctrlPressed);
+            if (mod == 0)
+            {
+                continue;
+            }
+
             auto& str = expected.value();
-            str[str.size() - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
+            str[str.size() - 2] = static_cast<wchar_t>(L'1' + mod);
         }
 
         TestKey(expected, input, uiKeystate, vkey, ch);
@@ -578,13 +628,20 @@ void InputTest::TerminalInputNullKeyTests()
 {
     using namespace std::string_view_literals;
 
+    auto layout = TestHook::SetTerminalInputKeyboardLayout(L"00000409"); // US English
+    if (!layout)
+    {
+        Log::Result(TestResults::Result::Skipped);
+        return;
+    }
+
     unsigned int uiKeystate = LEFT_CTRL_PRESSED;
 
     TerminalInput input;
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
-    BYTE vkey = LOBYTE(OneCoreSafeVkKeyScanW(0));
+    BYTE vkey = LOBYTE(VkKeyScanExW(0, layout));
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
     INPUT_RECORD irTest = { 0 };
@@ -600,7 +657,6 @@ void InputTest::TerminalInputNullKeyTests()
     vkey = VK_SPACE;
     Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
     irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
-    irTest.Event.KeyEvent.uChar.UnicodeChar = vkey;
     VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\0"sv), input.HandleKey(irTest), L"Verify key was handled if it should have been.");
 
     uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
