@@ -561,14 +561,13 @@ void InputEngineTest::RoundTripTest()
     VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
-    // Send known round-trip capable VKEYs through the TerminalInput module, then take the char's
-    //   from the generated INPUT_RECORDs and put them through the InputEngine.
+    // Send known round-trip capable VKEYs through the TerminalInput module, then take the chars
+    // from the generated INPUT_RECORDs and put them through the InputEngine.
     // The VKEY sequence it writes out should be the same as the original.
     // Note: We only test VKEYs that generate VT sequences (alphanumerics and space).
     // Testing all VKEYs fails (GH #4405) because many keys don't generate VT and won't roundtrip.
 
-    auto pfn2 = std::bind(&TestState::RoundtripTerminalInputCallback, &testState, std::placeholders::_1);
-    TerminalInput terminalInput{ pfn2 };
+    TerminalInput terminalInput;
 
     std::vector<BYTE> testKeys;
     testKeys.push_back(VK_SPACE);
@@ -604,8 +603,10 @@ void InputEngineTest::RoundTripTest()
         testState.vExpectedInput.clear();
         testState.vExpectedInput.push_back(irTest);
 
-        auto inputKey = IInputEvent::Create(irTest);
-        terminalInput.HandleKey(inputKey.get());
+        if (const auto str = terminalInput.HandleKey(irTest))
+        {
+            testState._stateMachine->ProcessString(*str);
+        }
     }
 
     VerifyExpectedInputDrained();
