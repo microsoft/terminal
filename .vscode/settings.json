@@ -128,4 +128,5 @@
         "**/packages/**": true,
     },
     "sarif-viewer.connectToGithubCodeScanning": "on",
+    "githubPullRequests.pullRequestDescription": "template",
 }
