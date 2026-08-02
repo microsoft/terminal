@@ -858,14 +858,42 @@ void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord,
 // - <none>
 void AppHost::DispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
-    winrt::TerminalApp::SummonWindowBehavior summonArgs{};
-    summonArgs.MoveToCurrentDesktop(false);
-    summonArgs.DropdownDuration(0);
-    summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
-    // Summon the window whenever we dispatch a commandline to it. This will
-    // make it obvious when a new tab/pane is created in a window.
-    HandleSummon(std::move(summonArgs));
+    // GH#20427:
+    // Commandline dispatches can arrive from cross-process WM_COPYDATA while
+    // this window is still initializing. Summoning inline in that synchronous
+    // send path can pull a partially initialized window visible and can also
+    // block on foreground-window handshakes.
+    //
+    // Only summon after initialization, and enqueue it to the next dispatcher
+    // tick so the WM_COPYDATA sender can return before we start activation work.
+    if (_isWindowInitialized >= WindowInitializedState::Initialized)
+    {
+        auto weakThis{ weak_from_this() };
+        const auto queued = winrt::Windows::System::DispatcherQueue::GetForCurrentThread().TryEnqueue([weakThis]() {
+            if (const auto strongThis = weakThis.lock(); strongThis && strongThis->_window)
+            {
+                winrt::TerminalApp::SummonWindowBehavior summonArgs{};
+                summonArgs.MoveToCurrentDesktop(false);
+                summonArgs.DropdownDuration(0);
+                summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+                summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+                // Summon the window whenever we dispatch a commandline to it.
+                // This makes new tabs/panes obvious to the user.
+                strongThis->HandleSummon(std::move(summonArgs));
+            }
+        });
+
+        // Fallback to the old behavior only if enqueuing unexpectedly fails.
+        if (!queued)
+        {
+            winrt::TerminalApp::SummonWindowBehavior summonArgs{};
+            summonArgs.MoveToCurrentDesktop(false);
+            summonArgs.DropdownDuration(0);
+            summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+            summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+            HandleSummon(std::move(summonArgs));
+        }
+    }
     _windowLogic.ExecuteCommandline(std::move(args));
 }
 
