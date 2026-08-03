@@ -311,11 +311,8 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
             // Suppress modifier key events at all times - they aren't reported in any protocol.
             (key.virtualKey >= VK_SHIFT && key.virtualKey <= VK_MENU) ||
             (key.virtualKey >= VK_LSHIFT && key.virtualKey <= VK_RMENU) ||
-            (_kittyFlags != 0 ?
-                 // If KKP is enabled, we only report repeats if ReportEventTypes is enabled.
-                 WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportEventTypes) :
-                 // Otherwise, it depends on the classic auto-repeat mode setting.
-                 !_inputMode.test(Mode::AutoRepeat)))
+            // Otherwise, it depends on the classic auto-repeat mode setting.
+            !_inputMode.test(Mode::AutoRepeat))
         {
             return _makeNoOutput();
         }
