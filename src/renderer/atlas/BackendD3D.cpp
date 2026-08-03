@@ -1605,7 +1605,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
         static_cast<f32>(rect.y + rect.h),
     };
 
-    if (BuiltinGlyphs::IsSoftFontChar(glyphIndex))
+    if (BuiltinGlyphs::IsSoftFontChar(glyphIndex, p.s->font->softFontCharCount()))
     {
         shadingType = _drawSoftFontGlyph(p, r, glyphIndex);
     }
@@ -1650,10 +1650,10 @@ BackendD3D::ShadingType BackendD3D::_drawSoftFontGlyph(const RenderingPayload& p
 {
     const auto width = static_cast<size_t>(p.s->font->softFontCellSize.width);
     const auto height = static_cast<size_t>(p.s->font->softFontCellSize.height);
-    const auto softFontIndex = glyphIndex - 0xEF20u;
+    const auto softFontIndex = glyphIndex - BuiltinGlyphs::SoftFont_FirstChar;
     const auto data = til::safe_slice_len(p.s->font->softFontPattern, height * softFontIndex, height);
 
-    // This happens if someone wrote a U+EF2x character (by accident), but we don't even have soft fonts enabled yet.
+    // Unreachable: _flushBufferLine() only routes code points that the soft font defines.
     if (data.empty() || data.size() != height)
     {
         return ShadingType::Default;

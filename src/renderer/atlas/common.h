@@ -379,6 +379,12 @@ namespace Microsoft::Console::Render::Atlas
 
         std::vector<uint16_t> softFontPattern;
         til::size softFontCellSize;
+
+        u32 softFontCharCount() const noexcept
+        {
+            const auto height = gsl::narrow_cast<size_t>(softFontCellSize.height);
+            return height ? gsl::narrow_cast<u32>(softFontPattern.size() / height) : 0;
+        }
     };
 
     struct CursorSettings

@@ -23,9 +23,17 @@ namespace Microsoft::Console::Render::Atlas::BuiltinGlyphs
 
     i32 GetBitmapCellIndex(char32_t codepoint) noexcept;
 
+    // DECDLD soft fonts are mapped to U+EF20 and up. Only the code points the active
+    // soft font actually defines belong to us; the rest go through regular font fallback.
+    //
     // This is just an extra. It's not actually implemented as part of BuiltinGlyphs.cpp.
-    constexpr bool IsSoftFontChar(char32_t ch) noexcept
+    inline constexpr char32_t SoftFont_FirstChar = 0xEF20;
+
+    constexpr bool IsSoftFontChar(char32_t ch, u32 softFontCharCount) noexcept
     {
-        return ch >= 0xEF20 && ch < 0xEF80;
+        return ch >= SoftFont_FirstChar && ch < (SoftFont_FirstChar + softFontCharCount);
     }
+
+    static_assert(!IsSoftFontChar(SoftFont_FirstChar, 0));
+    static_assert(IsSoftFontChar(SoftFont_FirstChar + 0x0F, 0x10) && !IsSoftFontChar(SoftFont_FirstChar + 0x10, 0x10));
 }
