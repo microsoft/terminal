@@ -1046,4 +1046,5 @@
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
+  <StartupProject Path="src/cascadia/CascadiaPackage/CascadiaPackage.wapproj" />
 </Solution>
