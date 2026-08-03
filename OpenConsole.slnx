@@ -10,7 +10,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Terminal/">
-    <Project Path="src/cascadia/CascadiaPackage/CascadiaPackage.wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5">
+    <Project Path="src/cascadia/CascadiaPackage/CascadiaPackage.wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5" DefaultStartup="true">
       <BuildDependency Project="src/cascadia/ShellExtension/WindowsTerminalShellExt.vcxproj" />
       <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
       <BuildType Solution="AuditMode|ARM64" Project="Release" />
@@ -1046,5 +1046,4 @@
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
-  <StartupProject Path="src/cascadia/CascadiaPackage/CascadiaPackage.wapproj" />
 </Solution>
