@@ -651,6 +651,13 @@ bool SettingsLoader::FixupUserSettings()
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
     fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
 
+    // Terminal 1.26: "Ottosson" was replaced by "Ottosson Dark" and "Ottosson Light".
+    // If the user kept a scheme of their own under the old name, it still resolves and we leave it alone.
+    if (const hstring ottosson{ L"Ottosson" }; !userSettings.colorSchemes.contains(ottosson))
+    {
+        userSettings.colorSchemeRemappings.emplace(ottosson, hstring{ L"Ottosson Dark" });
+    }
+
     fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
     {
