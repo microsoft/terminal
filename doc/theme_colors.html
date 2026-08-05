@@ -308,13 +308,6 @@
     <div id="toast"></div>
 
     <script>(() => {
-            const KEYS = [
-                "black", "red", "green", "yellow", "blue", "purple", "cyan", "white",
-                "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightPurple", "brightCyan", "brightWhite",
-            ];
-            // "brightBlack" reads as "Bright Black".
-            const LABELS = KEYS.map(k => k.replace(/[A-Z]/g, c => ` ${c}`).replace(/^./, c => c.toUpperCase()));
-
             const grey = l => new Color("oklch", [l, 0, 0]);
             const maxChroma = (l, h) => {
                 let lo = 0;
@@ -330,21 +323,7 @@
                 }
                 return lo;
             };
-
-            const ottossonDark = (() => {
-                // Bright rides the sRGB gamut boundary and gets calculated first.
-                // * Blue is the darkest color, so it sets an implicit upper bound
-                //   to the lightness of red, the darkest color out of red<>green.
-                // * Red provides the target chroma (0.227), because it's
-                //   the least bright out of red<>green & widely used.
-                // * Yellow is the brightest (red + green), so it
-                //   provides the max. target lightness (0.86).
-                // * Green gets interpolated halfway.
-                // * Otherwise, lightness values were picked subjectively.
-
-                const dimming = 0.75;
-                const min = 0.66;
-                const max = 0.86;
+            const ottosson = (min, max, dimming, grays, selectionBackground) => {
                 const mid = (min + max) / 2;
 
                 const bright = [ //           cusp
@@ -357,52 +336,66 @@
                 ].map(([l, h]) => new Color("oklch", [l, maxChroma(l, h), h]));
                 const dark = bright.map(c => new Color("oklch", [c.l * dimming, c.c * dimming, c.h]));
                 const colors = [
-                    grey(0), ...dark, grey(max),
-                    grey(max * dimming), ...bright, grey(1),
+                    grey(grays[0]), ...dark, grey(grays[1]),
+                    grey(grays[2]), ...bright, grey(grays[3]),
                 ];
 
                 return {
                     colors,
                     background: colors[0],
                     foreground: colors[7],
-                    // 0.46 follows the chain of 0.86 -> 0.66
-                    // 0.068 is half the chroma of dark blue
-                    // 240 is between cyan and blue
-                    selectionBackground: new Color("oklch(0.46 0.068 240)"),
+                    selectionBackground,
                 };
-            })();
+            };
 
-            const ottossonLight = (() => {
-                const colors = new Array(16);
-
-                // Darken all colors by 10% lightness (absolute).
-                for (const i in ottossonDark.colors) {
-                    const c = ottossonDark.colors[i];
-                    colors[i] = new Color("oklch", [c.l - 0.1, c.c, c.h]);
-                }
-
-                // ...except for grays, which are inverted.
-                for (const i of [0, 7, 8, 15]) {
-                    const c = ottossonDark.colors[i];
-                    colors[i] = new Color("oklch", [1 - c.l, c.c, c.h]);
-                }
-
-                return {
-                    colors,
-                    background: colors[0],
-                    foreground: colors[7],
-                    // l=0.86 at 240deg is already close to the gamut boundary.
-                    // I wanted to brighten it further such that it looks lighter than any regular color (= distinct).
-                    // To get it in-gamut at 0.93 (in between 0.86 and 1), I reduced the chroma by half.
-                    selectionBackground: new Color("oklch(0.93 0.04 240)"),
-                };
-            })();
+            const ottossonDark = ottosson(
+                // Bright rides the sRGB gamut boundary and gets calculated first.
+                // * Blue is the darkest color, so it sets an implicit upper bound
+                //   to the lightness of red, the darkest color out of red<>green.
+                // * Red provides the target chroma (0.227), because it's
+                //   the least bright out of red<>green & widely used.
+                // * Yellow is the brightest (red + green), so it
+                //   provides the max. target lightness (0.86).
+                // * Green gets interpolated halfway.
+                // * The other 3 colors follow these.
+                0.66, 0.86,
+                // Dark colors are dimmed to 75% in both lightness and chroma.
+                0.75,
+                // Grays match the lightness of the lightest of bright/dark colors respectively.
+                [0, 0.86, 0.86 * 0.75, 1],
+                // 0.46 follows the chain of 0.86 -> 0.66
+                // 0.068 is half the chroma of dark blue
+                // 240 is between cyan and blue
+                new Color("oklch(0.46 0.068 240)"),
+            );
+            const ottossonLight = ottosson(
+                // Same as the dark theme but -10% lightness to give colors
+                // a slightly better contrast against the light background.
+                0.56, 0.76,
+                0.75,
+                // Generally speaking, grays are inverted relative to the dark theme.
+                // However, this results in a problem: Brightness is subjectively highly non-linear.
+                // While l=0.86 gray can be distinguished from white at closer inspection,
+                // l=0.14 as the foreground color is effectively indistinguishable from black.
+                // As such we give +20% here.
+                [1, 1 - 0.86 + 0.2, 1 - 0.86 * 0.75 + 0.2, 0],
+                // l=0.86 at 240deg is already close to the gamut boundary.
+                // I wanted to brighten it further such that it looks lighter than any regular color (= distinct).
+                // To get it in-gamut at 0.93 (in between 0.86 and 1), I reduced the chroma by half.
+                new Color("oklch(0.93 0.04 240)"),
+            );
 
             const schemes = {
                 "Ottosson Dark": ottossonDark,
                 "Ottosson Light": ottossonLight,
             };
 
+            const KEYS = [
+                "black", "red", "green", "yellow", "blue", "purple", "cyan", "white",
+                "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightPurple", "brightCyan", "brightWhite",
+            ];
+            // "brightBlack" reads as "Bright Black".
+            const LABELS = KEYS.map(k => k.replace(/[A-Z]/g, c => ` ${c}`).replace(/^./, c => c.toUpperCase()));
             // Every maximally saturated sRGB color lies on the hexagon spanned by the
             // primaries and secondaries, so walking it yields the peak chroma per hue.
             const GAMUT = (() => {
@@ -517,7 +510,7 @@
 
             const preview = ({ hex, bg, fg, sel }) => `<pre class="preview" style="background:${bg};color:${fg};--sel:${sel}"><span style="color:${hex[10]}">user</span>@<span style="color:${hex[2]}">host</span> <span style="color:${hex[12]}">~/projects/terminal</span> <span style="color:${hex[13]}">main*</span>
 <span style="color:${hex[6]}">&gt;</span> cargo build --release
-<span style="color:${hex[11]}">warning</span>: unused variable <span style="color:${hex[15]}">'x'</span>
+<span style="color:${hex[11]}">warning</span>: unused variable <span style="color:${hex[15]}">'foobar'</span>
 <span style="color:${hex[9]}">error[E0308]</span>: mismatched types
 <span style="color:${hex[8]}">// 1 warning, 1 error</span>
 <span style="color:${hex[1]}">&#x2588;</span><span style="color:${hex[3]}">&#x2588;</span><span style="color:${hex[5]}">&#x2588;</span><span style="color:${hex[4]}">&#x2588;</span><span style="color:${hex[14]}">&#x2588;</span><span style="color:${hex[15]}">&#x2588;</span> <span style="color:${hex[8]}">&#x2591;&#x2592;&#x2593;&#x2588;</span></pre>`;
