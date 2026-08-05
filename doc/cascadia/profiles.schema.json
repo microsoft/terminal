@@ -2052,6 +2052,12 @@
           "type": "boolean",
           "default": false
         },
+        "useMicaVariant": {
+          "description": "Optional. Variant of Mica to use. Valid values: \"mica\" (standard Mica) or \"micaAlt\" (tabbed Mica). Ignored on unsupported OS versions.",
+          "type": "string",
+          "enum": ["mica", "micaAlt"],
+          "default": "mica"
+        },
         "experimental.rainbowFrame": {
           "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
           "type": "boolean",

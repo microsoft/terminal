@@ -61,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
     runtimeclass WindowTheme {
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
         Boolean UseMica { get; };
+        String UseMicaVariant { get; };
         Boolean RainbowFrame { get; };
         Boolean ShowWorkspacesButton { get; };
         ThemeColor Frame { get; };

@@ -163,6 +163,7 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
     X(bool, UseMica, "useMica", false)                                                                                             \
+    X(winrt::hstring, UseMicaVariant, "useMicaVariant", L"")                                                                       \
     X(bool, ShowWorkspacesButton, "showWorkspacesButton", true)
 
 #define MTSM_THEME_SETTINGS_SETTINGS(X) \

@@ -9,6 +9,8 @@
 #include <dwmapi.h>
 #include <TerminalThemeHelpers.h>
 #include <CoreWindow.h>
+#include <algorithm>
+#include <cwctype>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -1853,8 +1855,36 @@ void IslandWindow::UseMica(const bool newValue, const double /*titlebarOpacity*/
     // This API was only publicly supported as of Windows 11 SV2, 22621. Before
     // that version, this API will just return an error and do nothing silently.
 
-    const int attribute = newValue ? DWMSBT_MAINWINDOW : DWMSBT_NONE;
+    int attribute = DWMSBT_NONE;
+    if (newValue)
+    {
+        // If a specific variant (e.g. "micaAlt") was requested, prefer that.
+        if (!_micaVariant.empty())
+        {
+            // compare case-insensitive to allow "micaAlt"/"micaalt"
+            std::wstring variantW{ _micaVariant.c_str() };
+            std::transform(variantW.begin(), variantW.end(), variantW.begin(), towlower);
+            if (variantW == L"micaalt" || variantW == L"mica-alt")
+            {
+                attribute = DWMSBT_TABBEDWINDOW;
+            }
+            else
+            {
+                attribute = DWMSBT_MAINWINDOW;
+            }
+        }
+        else
+        {
+            attribute = DWMSBT_MAINWINDOW;
+        }
+    }
+
     std::ignore = DwmSetWindowAttribute(GetHandle(), DWMWA_SYSTEMBACKDROP_TYPE, &attribute, sizeof(attribute));
+}
+
+void IslandWindow::SetMicaVariant(const winrt::hstring& variant)
+{
+    _micaVariant = variant;
 }
 
 // Method Description:

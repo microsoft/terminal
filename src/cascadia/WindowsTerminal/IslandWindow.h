@@ -71,6 +71,7 @@ public:
 
     void UseDarkTheme(const bool v);
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
+    void SetMicaVariant(const winrt::hstring& variant);
 
     til::event<winrt::delegate<>> DragRegionClicked;
     til::event<winrt::delegate<>> WindowCloseButtonClicked;
@@ -154,6 +155,8 @@ protected:
     void _resetSystemMenu();
 
 private:
+    // Mica variant requested by settings (e.g. "micaAlt"). Empty == default behavior (main Mica)
+    winrt::hstring _micaVariant{ L"" };
     // This minimum width allows for width the tabs fit
     static constexpr float minimumWidth = 460;
 
