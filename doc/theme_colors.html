@@ -348,6 +348,9 @@
                 };
             };
 
+            const min = 0.66;
+            const max = 0.86;
+            const dimming = 0.8;
             const ottossonDark = ottosson(
                 // Bright rides the sRGB gamut boundary and gets calculated first.
                 // * Blue is the darkest color, so it sets an implicit upper bound
@@ -358,11 +361,11 @@
                 //   provides the max. target lightness (0.86).
                 // * Green gets interpolated halfway.
                 // * The other 3 colors follow these.
-                0.66, 0.86,
-                // Dark colors are dimmed to 75% in both lightness and chroma.
-                0.75,
+                min, max,
+                // Dark colors are dimmed to 80% in both lightness and chroma.
+                dimming,
                 // Grays match the lightness of the lightest of bright/dark colors respectively.
-                [0, 0.86, 0.86 * 0.75, 1],
+                [0, max, max * dimming, 1],
                 // 0.46 follows the chain of 0.86 -> 0.66
                 // 0.068 is half the chroma of dark blue
                 // 240 is between cyan and blue
@@ -371,14 +374,14 @@
             const ottossonLight = ottosson(
                 // Same as the dark theme but -10% lightness to give colors
                 // a slightly better contrast against the light background.
-                0.56, 0.76,
-                0.75,
+                min - 0.1, max - 0.1,
+                dimming,
                 // Generally speaking, grays are inverted relative to the dark theme.
                 // However, this results in a problem: Brightness is subjectively highly non-linear.
                 // While l=0.86 gray can be distinguished from white at closer inspection,
                 // l=0.14 as the foreground color is effectively indistinguishable from black.
                 // As such we give +20% here.
-                [1, 1 - 0.86 + 0.2, 1 - 0.86 * 0.75 + 0.2, 0],
+                [1, 1 - max + 0.2, 1 - max * dimming + 0.2, 0],
                 // l=0.86 at 240deg is already close to the gamut boundary.
                 // I wanted to brighten it further such that it looks lighter than any regular color (= distinct).
                 // To get it in-gamut at 0.93 (in between 0.86 and 1), I reduced the chroma by half.
