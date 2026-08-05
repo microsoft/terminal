@@ -605,7 +605,7 @@ bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader
         {
             if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
             {
-                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                if (auto found{ colorSchemeRemappings.find(schemeName) }; found != colorSchemeRemappings.end())
                 {
                     appearance.LightColorSchemeName(found->second);
                     modified = true;
@@ -614,7 +614,7 @@ bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader
 
             if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
             {
-                if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
+                if (auto found{ colorSchemeRemappings.find(schemeName) }; found != colorSchemeRemappings.end())
                 {
                     appearance.DarkColorSchemeName(found->second);
                     modified = true;
@@ -648,15 +648,17 @@ bool SettingsLoader::FixupUserSettings()
         std::wstring_view{ L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png" },
     };
 
+    // Terminal 1.26: "Ottosson" was replaced by "Ottosson Dark" and "Ottosson Light".
+    // Can be removed in ~1.28.
+    static winrt::param::hstring ottosson{ L"Ottosson" };
+    static winrt::param::hstring ottossonDark{ L"Ottosson Dark" };
+    if (!userSettings.colorSchemes.contains(ottosson))
+    {
+        colorSchemeRemappings.emplace(ottosson, ottossonDark);
+    }
+
     auto fixedUp = userSettings.fixupsAppliedDuringLoad;
     fixedUp = userSettings.globals->FixupsAppliedDuringLoad() || fixedUp;
-
-    // Terminal 1.26: "Ottosson" was replaced by "Ottosson Dark" and "Ottosson Light".
-    // If the user kept a scheme of their own under the old name, it still resolves and we leave it alone.
-    if (const hstring ottosson{ L"Ottosson" }; !userSettings.colorSchemes.contains(ottosson))
-    {
-        userSettings.colorSchemeRemappings.emplace(ottosson, hstring{ L"Ottosson Dark" });
-    }
 
     fixedUp = RemapColorSchemeForProfile(userSettings.baseLayerProfile) || fixedUp;
     for (const auto& profile : userSettings.profiles)
@@ -1161,7 +1163,7 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
                 }
                 // Rename the user's scheme.
                 existingScheme->Name(newName);
-                userSettings.colorSchemeRemappings.emplace(newScheme->Name(), newName);
+                colorSchemeRemappings.emplace(newScheme->Name(), newName);
                 // And re-add it to the end.
                 userSettings.colorSchemes.emplace(newName, std::move(existingScheme));
                 return true;

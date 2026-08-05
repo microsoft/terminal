@@ -372,13 +372,18 @@
                 };
             })();
 
-            // Ideally, for the light theme we would darken all colors to give more contrast against the light background,
-            // but bright yellow with anything less than 0.86 lightness simply looks like shit.
             const ottossonLight = (() => {
-                const colors = ottossonDark.colors.slice();
+                const colors = new Array(16);
 
+                // Darken all colors by 10% lightness (absolute).
+                for (const i in ottossonDark.colors) {
+                    const c = ottossonDark.colors[i];
+                    colors[i] = new Color("oklch", [c.l - 0.1, c.c, c.h]);
+                }
+
+                // ...except for grays, which are inverted.
                 for (const i of [0, 7, 8, 15]) {
-                    const c = colors[i];
+                    const c = ottossonDark.colors[i];
                     colors[i] = new Color("oklch", [1 - c.l, c.c, c.h]);
                 }
 
@@ -386,8 +391,10 @@
                     colors,
                     background: colors[0],
                     foreground: colors[7],
-                    // 0.93 is in between the lightest color (0.86) and the background (1)
-                    selectionBackground: new Color("oklch(0.93 0.068 240)"),
+                    // l=0.86 at 240deg is already close to the gamut boundary.
+                    // I wanted to brighten it further such that it looks lighter than any regular color (= distinct).
+                    // To get it in-gamut at 0.93 (in between 0.86 and 1), I reduced the chroma by half.
+                    selectionBackground: new Color("oklch(0.93 0.04 240)"),
                 };
             })();
 
