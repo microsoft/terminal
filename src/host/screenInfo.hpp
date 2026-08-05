@@ -219,7 +219,9 @@ private:
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     til::CoordType _virtualBottom = 0;
     std::optional<til::size> _deferredPtyResize;
-    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
+    // The LSB indicates whether the cursor position may be wrong. 0 = correct, 1 = may be wrong.
+    // The other 31 bit are a generation count to avoid TOCTOU issues in WaitForConptyCursorPositionToBeSynchronized.
+    std::atomic<uint32_t> _conptyCursorPositionGeneration{ 0 };
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

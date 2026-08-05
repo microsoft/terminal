@@ -1416,7 +1416,7 @@ NT_CATCH_RETURN()
 // This fixes some of the most glaring out of sync issues. See GH#18725.
 bool SCREEN_INFORMATION::ConptyCursorPositionMayBeWrong() const noexcept
 {
-    return _conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed);
+    return (_conptyCursorPositionGeneration.load(std::memory_order_relaxed) & 1) != 0;
 }
 
 // This should be called whenever we do something that may desynchronize
@@ -1429,7 +1429,11 @@ void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
 
     if (gci.IsInVtIoMode())
     {
-        _conptyCursorPositionMayBeWrong.store(true, std::memory_order_relaxed);
+        // OR in the dirty flag and also increment the generation count.
+        auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        while (!_conptyCursorPositionGeneration.compare_exchange_weak(gen, (gen | 1) + 2, std::memory_order_relaxed))
+        {
+        }
     }
 }
 
@@ -1437,8 +1441,12 @@ void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
 // See ConptyCursorPositionMayBeWrong().
 void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
 {
-    _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
-    til::atomic_notify_all(_conptyCursorPositionMayBeWrong);
+    // Clear the dirty flag if it's set. This implicitly results in a generation increment.
+    auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((gen & 1) != 0 && _conptyCursorPositionGeneration.compare_exchange_strong(gen, gen + 1, std::memory_order_relaxed))
+    {
+        til::atomic_notify_all(_conptyCursorPositionGeneration);
+    }
 }
 
 // Call this to synchronously wait until the ConPTY cursor position
@@ -1447,7 +1455,8 @@ void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
 // See ConptyCursorPositionMayBeWrong().
 void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
 {
-    if (!_conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed))
+    auto initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((initialGen & 1) == 0)
     {
         return;
     }
@@ -1457,11 +1466,19 @@ void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
     {
         gci.LockConsole();
         const auto exit = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        // Double-check, now that we got the lock (= delay = possibly already handled).
+        initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        if ((initialGen & 1) == 0)
+        {
+            return;
+        }
+
         auto writer = gci.GetVtWriterForBuffer(this);
 
         if (!writer || !writer.WriteDSRCPR())
         {
-            _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+            ResetConptyCursorPositionMayBeWrong();
             return;
         }
 
@@ -1474,16 +1491,25 @@ void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
 
     for (;;)
     {
-        if (!_conptyCursorPositionMayBeWrong.load(std::memory_order::relaxed))
+        // dirty flag is clear --> exit.
+        const auto currentGen = _conptyCursorPositionGeneration.load(std::memory_order::relaxed);
+        if ((currentGen & 1) == 0)
         {
             break;
         }
 
         // atomic_wait() returns false when the timeout expires.
-        // Technically we should decrement the timeout with each iteration,
-        // but I suspect infinite spurious wake-ups are a theoretical problem.
-        if (!til::atomic_wait(_conptyCursorPositionMayBeWrong, true, 500))
+        // To keep the total wait time at ~500ms, we should technically decrement the timeout with
+        // each iteration, but I suspect infinite spurious wake-ups are a theoretical problem.
+        if (!til::atomic_wait(_conptyCursorPositionGeneration, currentGen, 500))
         {
+            // Essentially ResetConptyCursorPositionMayBeWrong(), but here we explicitly use our initial generation
+            // value to avoid TOCTOU issues (clearing the dirty flag when another thread concurrently set it again).
+            // NOTE: initialGen refers to the current value afterwards and cannot be reused.
+            if (_conptyCursorPositionGeneration.compare_exchange_strong(initialGen, initialGen + 1, std::memory_order_relaxed))
+            {
+                til::atomic_notify_all(_conptyCursorPositionGeneration);
+            }
             break;
         }
     }
