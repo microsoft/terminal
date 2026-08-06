@@ -1,0 +1,24 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+import "FilteredCommand.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass MarkdownPaneContent : Windows.UI.Xaml.Controls.UserControl,
+                                                           IPaneContent,
+                                                           Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        MarkdownPaneContent();
+        MarkdownPaneContent(String originalPath);
+        void SetLastActiveControl(Microsoft.Terminal.Control.TermControl control);
+
+        Boolean Editing;
+        String FileContents;
+
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.ActionAndArgs> DispatchActionRequested;
+
+    }
+
+}

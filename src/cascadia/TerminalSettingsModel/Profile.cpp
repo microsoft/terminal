@@ -12,6 +12,8 @@
 
 #include "Profile.g.cpp"
 
+#include <shellapi.h>
+
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -30,6 +32,10 @@ static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
+
+static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMarkPrompts" };
+static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
+static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
 
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
@@ -97,6 +103,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
     profile->_Deleted = _Deleted;
+    profile->_Orphaned = _Orphaned;
     profile->_Updates = _Updates;
     profile->_Guid = _Guid;
     profile->_Name = _Name;
@@ -113,6 +120,12 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_##name = _##name;
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
+
+    if (_BellSound)
+    {
+        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
+        profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
+    }
 
     if (_UnfocusedAppearance)
     {
@@ -168,17 +181,29 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+
+    // Make sure Source is before Hidden! We use that to exclude false positives from the settings logger!
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+    _logSettingIfSet(PaddingKey, _Padding.has_value());
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    _logSettingIfSet(TabColorKey, _TabColor.has_value());
+
+    // Try to load some legacy keys, to migrate them.
+    // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
+    JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
+    JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
+    JsonUtils::GetValueForKey(json, LegacyRightClickContextMenuKey, _RightClickContextMenu);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
+    _logSettingIfSet(jsonKey, _##name.has_value());
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
@@ -195,6 +220,8 @@ void Profile::LayerJson(const Json::Value& json)
 
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
+
+        _logSettingSet(UnfocusedAppearanceKey);
     }
 }
 
@@ -272,7 +299,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Function Description:
-// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// - Generates a unique guid for a profile, given the name. For a given name, will always return the same GUID.
 // Arguments:
 // - name: The name to generate a unique GUID from
 // Return Value:
@@ -283,12 +310,12 @@ winrt::guid Profile::_GenerateGuidForProfile(const std::wstring_view& name, cons
     // our source to build the namespace guid, instead of using the default GUID.
 
     const auto namespaceGuid = !source.empty() ?
-                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source))) :
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ source })) :
                                    RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
     // Always use the name to generate the temporary GUID. That way, across
     // reloads, we'll generate the same static GUID.
-    return { Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name))) };
+    return { Utils::CreateV5Uuid(namespaceGuid, std::as_bytes(std::span{ name })) };
 }
 
 // Method Description:
@@ -324,11 +351,9 @@ Json::Value Profile::ToJson() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 
-    // Font settings
-    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
-    if (fontInfoImpl->HasAnyOptionSet())
+    if (auto fontJSON = winrt::get_self<FontConfig>(_FontInfo)->ToJson(); !fontJSON.empty())
     {
-        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+        json[JsonKey(FontInfoKey)] = std::move(fontJSON);
     }
 
     if (_UnfocusedAppearance)
@@ -337,4 +362,227 @@ Json::Value Profile::ToJson() const
     }
 
     return json;
+}
+
+// Given a commandLine like the following:
+// * "C:\WINDOWS\System32\cmd.exe"
+// * "pwsh -WorkingDirectory ~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+//
+// This function returns:
+// * "C:\Windows\System32\cmd.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+// * "C:\Program Files\PowerShell\7\pwsh.exe"
+// * "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+//
+// The resulting strings are then used for comparisons in _getProfileForCommandLine().
+// For instance a resulting string of
+//   "C:\Program Files\PowerShell\7\pwsh.exe"
+// is considered a compatible profile with
+//   "C:\Program Files\PowerShell\7\pwsh.exe -WorkingDirectory ~"
+// as it shares the same (normalized) prefix.
+std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
+{
+    // Turn "%SystemRoot%\System32\cmd.exe" into "C:\WINDOWS\System32\cmd.exe".
+    // We do this early, as environment variables might occur anywhere in the commandLine.
+    std::wstring normalized;
+    THROW_IF_FAILED(wil::ExpandEnvironmentStringsW(commandLine, normalized));
+
+    // One of the most important things this function does is to strip quotes.
+    // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
+    // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
+    auto argc = 0;
+    wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
+    THROW_LAST_ERROR_IF(!argc);
+
+    // The index of the first argument in argv for our executable in argv[0].
+    // Given {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"} this will be 1.
+    auto startOfArguments = 1;
+
+    // The given commandLine should start with an executable name or path.
+    // For instance given the following argv arrays:
+    // * {"C:\WINDOWS\System32\cmd.exe"}
+    // * {"pwsh", "-WorkingDirectory", "~"}
+    // * {"C:\Program", "Files\PowerShell\7\pwsh.exe"}
+    //               ^^^^
+    //   Notice how there used to be a space in the path, which was split by ExpandEnvironmentStringsW().
+    //   CreateProcessW() supports such atrocities, so we got to do the same.
+    // * {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"}
+    //
+    // This loop tries to resolve relative paths, as well as executable names in %PATH%
+    // into absolute paths and normalizes them. The results for the above would be:
+    // * "C:\Windows\System32\cmd.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    // * "C:\Program Files\PowerShell\7\pwsh.exe"
+    for (;;)
+    {
+        // CreateProcessW uses RtlGetExePath to get the lpPath for SearchPathW.
+        // The difference between the behavior of SearchPathW if lpPath is nullptr and what RtlGetExePath returns
+        // seems to be mostly whether SafeProcessSearchMode is respected and the support for relative paths.
+        // Windows Terminal makes the use of relative paths rather impractical which is why we simply dropped the call to RtlGetExePath.
+        const auto status = wil::SearchPathW(nullptr, argv[0], L".exe", normalized);
+
+        if (status == S_OK)
+        {
+            const auto attributes = GetFileAttributesW(normalized.c_str());
+
+            if (attributes != INVALID_FILE_ATTRIBUTES && WI_IsFlagClear(attributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                std::filesystem::path path{ std::move(normalized) };
+
+                // canonical() will resolve symlinks, etc. for us.
+                {
+                    std::error_code ec;
+                    auto canonicalPath = std::filesystem::canonical(path, ec);
+                    if (!ec)
+                    {
+                        path = std::move(canonicalPath);
+                    }
+                }
+
+                // std::filesystem::path has no way to extract the internal path.
+                // So about that.... I own you, computer. Give me that path.
+                normalized = std::move(const_cast<std::wstring&>(path.native()));
+                break;
+            }
+        }
+        // All other error types aren't handled at the moment.
+        else if (status != HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
+        {
+            break;
+        }
+        // If the file path couldn't be found by SearchPathW this could be the result of us being given a commandLine
+        // like "C:\foo bar\baz.exe -arg" which is resolved to the argv array {"C:\foo", "bar\baz.exe", "-arg"},
+        // or we were erroneously given a directory to execute (e.g. someone ran `wt .`).
+        // Just like CreateProcessW() we thus try to concatenate arguments until we successfully resolve a valid path.
+        // Of course we can only do that if we have at least 2 remaining arguments in argv.
+        if ((argc - startOfArguments) < 2)
+        {
+            break;
+        }
+
+        // As described in the comment right above, we concatenate arguments in an attempt to resolve a valid path.
+        // The code below turns argv from {"C:\foo", "bar\baz.exe", "-arg"} into {"C:\foo bar\baz.exe", "-arg"}.
+        // The code abuses the fact that CommandLineToArgvW allocates all arguments back-to-back on the heap separated by '\0'.
+        argv[startOfArguments][-1] = L' ';
+        ++startOfArguments;
+    }
+
+    // We've (hopefully) finished resolving the path to the executable.
+    // We're now going to append all remaining arguments to the resulting string.
+    // If argv is {"C:\Program Files\PowerShell\7\pwsh.exe", "-WorkingDirectory", "~"},
+    // then we'll get "C:\Program Files\PowerShell\7\pwsh.exe\0-WorkingDirectory\0~"
+    if (startOfArguments < argc)
+    {
+        // normalized contains a canonical form of argv[0] at this point.
+        // -1 allows us to include the \0 between argv[0] and argv[1] in the call to append().
+        const auto beg = argv[startOfArguments] - 1;
+        const auto lastArg = argv[argc - 1];
+        const auto end = lastArg + wcslen(lastArg);
+        normalized.append(beg, end);
+    }
+
+    return normalized;
+}
+
+void Profile::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        // make sure this matches defaults.json.
+        static constexpr winrt::guid DEFAULT_WINDOWS_POWERSHELL_GUID{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } };
+        static constexpr winrt::guid DEFAULT_COMMAND_PROMPT_GUID{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } };
+
+        // Exclude some false positives from userDefaults.json
+        // NOTE: we can't use the OriginTag here because it hasn't been set yet!
+        const bool isWinPow = _Guid.has_value() && *_Guid == DEFAULT_WINDOWS_POWERSHELL_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Windows PowerShell");
+        const bool isCmd = _Guid.has_value() && *_Guid == DEFAULT_COMMAND_PROMPT_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Command Prompt");
+        const bool isACS = _Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Azure Cloud Shell");
+        const bool isWTDynamicProfile = _Source.has_value() && til::starts_with(*_Source, L"Windows.Terminal");
+        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && _Hidden.has_value() && _Hidden == false;
+        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
+        // clang-format off
+        if (!(isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
+            && !(isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
+            && !(isACS && settingHiddenToFalse)
+            && !(isWTDynamicProfile && settingHiddenToFalse))
+        {
+            // clang-format on
+            _logSettingSet(setting);
+        }
+    }
+}
+
+void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto icon{ _getIconImpl() }; icon && *icon)
+    {
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
+
+        // If the icon was specified at any layer, but fails resolution *or* contains the empty string,
+        // fall back to the normalized command line at or above this layer.
+        if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
+        {
+            // We want to resolve the icon to the commandline, but we risk that the icon was already
+            // resolved. We don't want to do that (as MediaResource asserts that it was only resolved
+            // one time). However, we can't just make a new empty resource and resolve it -- that
+            // might replace the value in the user's settings when we serialize it again...
+            // So instead, make a new one derived from the icon we started with, then resolve it
+            // ourselves.
+            auto newIcon{ MediaResource::FromString(icon->Path()) };
+            const std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
+            newIcon.Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+            iconSource->_Icon = std::move(newIcon);
+        }
+    }
+
+    if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto [bellSoundSource, bellSounds]{ _getBellSoundOverrideSourceAndValueImpl() };
+        bellSoundSource && bellSounds && *bellSounds && bellSounds->Size() > 0)
+    {
+        for (const auto& bellSound : *bellSounds)
+        {
+            ResolveMediaResource(bellSoundSource->_Origin, bellSoundSource->SourceBasePath, bellSound, resolver);
+        }
+        // It's important that we keep the invalid bell sounds in the list, because we may want to write it back out to disk
+    }
+}
+
+void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
+
+    std::string fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
+    winrt::get_self<implementation::FontConfig>(_FontInfo)->LogSettingChanges(changes, fontContext);
+
+    // We don't want to distinguish between "profile.defaultAppearance.*" and "profile.unfocusedAppearance.*" settings,
+    //   but we still want to aggregate all of the appearance settings from both appearances.
+    // Log them as "profile.appearance.*"
+    std::string appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
+    winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->LogSettingChanges(changes, appContext);
+    if (_UnfocusedAppearance)
+    {
+        winrt::get_self<implementation::AppearanceConfig>(*_UnfocusedAppearance)->LogSettingChanges(changes, appContext);
+    }
 }

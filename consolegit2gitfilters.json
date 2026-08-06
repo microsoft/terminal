@@ -24,11 +24,14 @@
     "/doc/specs/",
     "/doc/cascadia/",
     "/doc/user-docs/",
-    "/src/tools/MonarchPeasantSample/",
-    "/src/tools/MonarchPeasantPackage/",
     "/src/tools/ansi-color/",
     "/src/tools/ColorTool/",
+    "/src/tools/scratch/",
+    "/src/tools/ConsoleBench/",
+    "/src/tools/schemes-fragment/",
     "/scratch/",
+    "/tools/ReleaseEngineering/",
+    "/policies/",
     "Scratch.sln",
   ],
   "SuffixFilters": [
@@ -46,6 +49,11 @@
     ".rec",
     ".err",
     "XamlStyler.json",
-    ".xlsx"
+    ".xlsx",
+    ".vcxproj",
+    ".vcxproj.filters",
+    ".Build.props",
+    ".Build.targets",
+    "OpenConsole.slnx"
   ]
 }

@@ -24,37 +24,20 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
-// Routine Description:
-// - Handles the print action from the state machine
-// Arguments:
-// - string - The string to be printed.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::PrintString(const std::wstring_view string)
+void ConhostInternalGetSet::UnknownSequence() noexcept
 {
-    auto dwNumBytes = string.size() * sizeof(wchar_t);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    auto& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    if (!cursor.IsOn())
+    // VT sequences unknown to us may cause the cursor position to change in a way that
+    // we don't know about. In this case, we need to mark the cursor position as "dirty".
+    //
+    // The worst offender is likely PowerShell. It uses VT sequences but also calls
+    // GetConsoleScreenBufferInfoEx for *every single line of output* (!!!). This prevents
+    // us from using a more conservative solution (e.g. always fetching the cursor position).
+    if (gci.IsInVtIoMode())
     {
-        cursor.SetIsOn(true);
+        gci.GetActiveOutputBuffer().GetActiveBuffer().SetConptyCursorPositionMayBeWrong();
     }
-
-    // Defer the cursor drawing while we are iterating the string, for a better performance.
-    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
-    cursor.StartDeferDrawing();
-    const auto ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
-                                           string.data(),
-                                           string.data(),
-                                           string.data(),
-                                           &dwNumBytes,
-                                           nullptr,
-                                           _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
-                                           WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
-                                           nullptr);
-    cursor.EndDeferDrawing();
-
-    THROW_IF_NTSTATUS_FAILED(ntstatus);
 }
 
 // - Sends a string response to the input stream of the console.
@@ -66,25 +49,25 @@ void ConhostInternalGetSet::PrintString(const std::wstring_view string)
 // - <none>
 void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
 {
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // generate a paired key down and key up event for every
-    // character to be sent into the console's input buffer
-    for (const auto& wch : response)
+    // ConPTY should not respond to requests. That's the job of the terminal.
+    if (gci.IsInVtIoMode())
     {
-        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, wch, 0 };
-
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-        keyEvent.SetKeyDown(false);
-        inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        return;
     }
 
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with each other.
-    _io.GetActiveInputBuffer()->Write(inEvents);
+    _io.GetActiveInputBuffer()->WriteString(response);
+}
+
+bool ConhostInternalGetSet::IsConPTY() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsInVtIoMode();
 }
 
 // Routine Description:
@@ -99,25 +82,16 @@ StateMachine& ConhostInternalGetSet::GetStateMachine()
 }
 
 // Routine Description:
-// - Retrieves the text buffer for the active output buffer.
+// - Retrieves the text buffer and virtual viewport for the active output
+//   buffer. Also returns a flag indicating whether it's the main buffer.
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to the TextBuffer instance.
-TextBuffer& ConhostInternalGetSet::GetTextBuffer()
+// - a tuple with the buffer reference, viewport, and main buffer flag.
+ITerminalApi::BufferState ConhostInternalGetSet::GetBufferAndViewport()
 {
-    return _io.GetActiveOutputBuffer().GetTextBuffer();
-}
-
-// Routine Description:
-// - Retrieves the virtual viewport of the active output buffer.
-// Arguments:
-// - <none>
-// Return Value:
-// - the exclusive coordinates of the viewport.
-til::rect ConhostInternalGetSet::GetViewport() const
-{
-    return _io.GetActiveOutputBuffer().GetVirtualViewport().ToExclusive();
+    auto& info = _io.GetActiveOutputBuffer();
+    return { info.GetTextBuffer(), info.GetVirtualViewport().ToExclusive(), info.Next == nullptr };
 }
 
 // Routine Description:
@@ -129,98 +103,67 @@ til::rect ConhostInternalGetSet::GetViewport() const
 void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 {
     auto& info = _io.GetActiveOutputBuffer();
-    const auto dimensions = info.GetViewport().Dimensions();
-    const auto windowRect = til::rect{ position, dimensions }.to_inclusive_rect();
-    THROW_IF_FAILED(ServiceLocator::LocateGlobals().api->SetConsoleWindowInfoImpl(info, true, windowRect));
-}
-
-// Method Description:
-// - Sets the current TextAttribute of the active screen buffer. Text
-//   written to this buffer will be written with these attributes.
-// Arguments:
-// - attrs: The new TextAttribute to use
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::SetTextAttributes(const TextAttribute& attrs)
-{
-    _io.GetActiveOutputBuffer().SetAttributes(attrs);
+    THROW_IF_FAILED(info.SetViewportOrigin(true, position, true));
+    // SetViewportOrigin() only updates the virtual bottom (the bottom coordinate of the area
+    // in the text buffer a VT client writes its output into) when it's moving downwards.
+    // But this function is meant to truly move the viewport no matter what. Otherwise, `tput reset` breaks.
+    info.UpdateBottom();
 }
 
 // Routine Description:
-// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
-//     to the beginning of the next row when it reaches the end of the current row.
+// - Sets the state of one of the system modes.
 // Arguments:
-// - wrapAtEOL - set to true to wrap, false to overwrite the last character.
+// - mode - The mode being updated.
+// - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetAutoWrapMode(const bool wrapAtEOL)
+void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
 {
-    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
-    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
+        break;
+    case Mode::LineFeed:
+        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        break;
+    case Mode::BracketedPaste:
+        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
 // Routine Description:
-// - Sets the top and bottom scrolling margins for the current page. This creates
-//     a subsection of the screen that scrolls when input reaches the end of the
-//     region, leaving the rest of the screen untouched.
+// - Retrieves the current state of one of the system modes.
 // Arguments:
-// - scrollMargins - A rect who's Top and Bottom members will be used to set
-//     the new values of the top and bottom margins. If (0,0), then the margins
-//     will be disabled. NOTE: This is a rect in the case that we'll need the
-//     left and right margins in the future.
+// - mode - The mode being queried.
 // Return Value:
-// - <none>
-void ConhostInternalGetSet::SetScrollingRegion(const til::inclusive_rect& scrollMargins)
+// - true if the mode is enabled. false otherwise.
+bool ConhostInternalGetSet::GetSystemMode(const Mode mode) const
 {
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-    srScrollMargins.Top = scrollMargins.Top;
-    srScrollMargins.Bottom = scrollMargins.Bottom;
-    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
+    switch (mode)
+    {
+    case Mode::AutoWrap:
+        return WI_IsFlagSet(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
+    case Mode::LineFeed:
+        return WI_IsFlagClear(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    case Mode::BracketedPaste:
+        return ServiceLocator::LocateGlobals().getConsoleInformation().GetBracketedPasteMode();
+    default:
+        THROW_HR(E_INVALIDARG);
+    }
 }
 
-// Method Description:
-// - Retrieves the current Line Feed/New Line (LNM) mode.
-// Arguments:
-// - None
+// Routine Description:
+// - Sends the configured answerback message in response to an ENQ query.
 // Return Value:
-// - true if a line feed also produces a carriage return. false otherwise.
-bool ConhostInternalGetSet::GetLineFeedMode() const
+// - <none>
+void ConhostInternalGetSet::ReturnAnswerback()
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsReturnOnNewlineAutomatic();
-}
-
-// Routine Description:
-// - Performs a line feed, possibly preceded by carriage return.
-// Arguments:
-// - withReturn - Set to true if a carriage return should be performed as well.
-// Return Value:
-// - <none>
-void ConhostInternalGetSet::LineFeed(const bool withReturn)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    auto& textBuffer = screenInfo.GetTextBuffer();
-    auto cursorPosition = textBuffer.GetCursor().GetPosition();
-
-    // We turn the cursor on before an operation that might scroll the viewport, otherwise
-    // that can result in an old copy of the cursor being left behind on the screen.
-    textBuffer.GetCursor().SetIsOn(true);
-
-    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
-
-    cursorPosition.Y += 1;
-    if (withReturn)
-    {
-        cursorPosition.X = 0;
-    }
-    else
-    {
-        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
-    }
-
-    THROW_IF_NTSTATUS_FAILED(AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr));
+    ReturnResponse(gci.GetAnswerbackMessage());
 }
 
 // Routine Description:
@@ -235,23 +178,26 @@ void ConhostInternalGetSet::WarningBell()
 // Routine Description:
 // - Sets the title of the console window.
 // Arguments:
-// - title - The null-terminated string to set as the window title
+// - title - The string to set as the window title
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTitle(title.empty() ? gci.GetOriginalTitle() : title);
 }
 
 // Routine Description:
 // - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
+// Arguments:
+// - attrs - the attributes for initializing the buffer.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::UseAlternateScreenBuffer()
+void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
 {
-    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
+    THROW_IF_NTSTATUS_FAILED(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer(attrs));
 }
 
 // Routine Description:
@@ -284,8 +230,14 @@ CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 // - <none>
 void ConhostInternalGetSet::ShowWindow(bool showOrHide)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto hwnd = gci.IsInVtIoMode() ? ServiceLocator::LocatePseudoWindow() : ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    // ConPTY is supposed to be "transparent" to the VT application. Any VT it processes is given to the terminal.
+    // As such, it must not react to this "CSI 1 t" or "CSI 2 t" sequence. That's the job of the terminal.
+    // If the terminal encounters such a sequence, it can show/hide itself and let ConPTY know via its signal API.
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
 
     // GH#13301 - When we send this ShowWindow message, if we send it to the
     // conhost HWND, it's going to need to get processed by the window message
@@ -293,41 +245,55 @@ void ConhostInternalGetSet::ShowWindow(bool showOrHide)
     // However, ShowWindowAsync doesn't have this problem. It'll post the
     // message to the window thread, then immediately return, so we don't have
     // to worry about deadlocking.
+    const auto hwnd = window->GetWindowHandle();
     ::ShowWindowAsync(hwnd, showOrHide ? SW_SHOWNOACTIVATE : SW_MINIMIZE);
 }
 
 // Routine Description:
-// - Connects the SetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// - Set the code page used for translating text when calling A versions of I/O functions.
 // Arguments:
-// - codepage - the new output codepage of the console.
+// - codepage - the new code page of the console.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
+void ConhostInternalGetSet::SetCodePage(const unsigned int codepage)
 {
-    THROW_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
 }
 
 // Routine Description:
-// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
+// - Reset the code pages to their default values.
 // Arguments:
 // - <none>
 // Return Value:
-// - the outputCP of the console.
-unsigned int ConhostInternalGetSet::GetConsoleOutputCP() const
+// - <none>
+void ConhostInternalGetSet::ResetCodePage()
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    LOG_IF_FAILED(DoSrvSetConsoleOutputCodePage(gci.DefaultOutputCP));
+    LOG_IF_FAILED(DoSrvSetConsoleInputCodePage(gci.DefaultCP));
+}
+
+// Routine Description:
+// - Gets the code page used for translating text when calling A versions of output functions.
+// Arguments:
+// - <none>
+// Return Value:
+// - the output code page of the console.
+unsigned int ConhostInternalGetSet::GetOutputCodePage() const
 {
     return ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
 }
 
 // Routine Description:
-// - Sets the XTerm bracketed paste mode. This controls whether pasted content is
-//     bracketed with control sequences to differentiate it from typed text.
+// - Gets the code page used for translating text when calling A versions of input functions.
 // Arguments:
-// - enable - set to true to enable bracketing, false to disable.
-// Return Value:
 // - <none>
-void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/)
+// Return Value:
+// - the input code page of the console.
+unsigned int ConhostInternalGetSet::GetInputCodePage() const
 {
-    // TODO
+    return ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 }
 
 // Routine Description:
@@ -336,9 +302,15 @@ void ConhostInternalGetSet::EnableXtermBracketedPasteMode(const bool /*enabled*/
 // - content - the text to be copied.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::CopyToClipboard(const std::wstring_view /*content*/)
+void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
-    // TODO
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Only allow VT clipboard writes when the console has focus
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    {
+        gci.CopyTextToClipboard(content);
+    }
 }
 
 // Routine Description:
@@ -373,11 +345,17 @@ void ConhostInternalGetSet::SetWorkingDirectory(const std::wstring_view /*uri*/)
 // - true if successful. false otherwise.
 void ConhostInternalGetSet::PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
 {
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+
     // Unlock the console, so the UI doesn't hang while we're busy.
     UnlockConsole();
 
     // This call will block for the duration, unless shutdown early.
-    const auto windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    const auto windowHandle = window->GetWindowHandle();
     auto& midiAudio = ServiceLocator::LocateGlobals().getConsoleInformation().GetMidiAudio();
     midiAudio.PlayNote(windowHandle, noteNumber, velocity, std::chrono::duration_cast<std::chrono::milliseconds>(duration));
 
@@ -402,12 +380,20 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     auto api = ServiceLocator::LocateGlobals().api;
     auto& screenInfo = _io.GetActiveOutputBuffer();
 
+    // We need to save the attributes separately, since the wAttributes field in
+    // CONSOLE_SCREEN_BUFFER_INFOEX is not capable of representing the extended
+    // attribute values, and can end up corrupting that data when restored.
+    const auto attributes = screenInfo.GetTextBuffer().GetCurrentAttributes();
+    const auto restoreAttributes = wil::scope_exit([&] {
+        screenInfo.GetTextBuffer().SetCurrentAttributes(attributes);
+    });
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     api->GetConsoleScreenBufferInfoExImpl(screenInfo, csbiex);
 
     const auto oldViewport = screenInfo.GetVirtualViewport();
-    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), sColumns, sRows);
+    auto newViewport = Viewport::FromDimensions(oldViewport.Origin(), { sColumns, sRows });
     // Always resize the width of the console
     csbiex.dwSize.X = gsl::narrow_cast<short>(sColumns);
     // Only set the screen buffer's height if it's currently less than
@@ -418,11 +404,9 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
     }
 
     // If the cursor row is now past the bottom of the viewport, we'll have to
-    // move the viewport down to bring it back into view. However, we don't want
-    // to do this in pty mode, because the conpty resize operation is dependent
-    // on the viewport *not* being adjusted.
+    // move the viewport down to bring it back into view.
     const auto cursorOverflow = csbiex.dwCursorPosition.Y - newViewport.BottomInclusive();
-    if (cursorOverflow > 0 && !IsConsolePty())
+    if (cursorOverflow > 0)
     {
         newViewport = Viewport::Offset(newViewport, { 0, cursorOverflow });
     }
@@ -440,17 +424,6 @@ bool ConhostInternalGetSet::ResizeWindow(const til::CoordType sColumns, const ti
 }
 
 // Routine Description:
-// - Checks if the console host is acting as a pty.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if we're in pty mode.
-bool ConhostInternalGetSet::IsConsolePty() const
-{
-    return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
-}
-
-// Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly
 //   IsVtInputEnabled is an internal-only "API" call that the vt commands can execute,
 //    but it is not represented as a function call on our public API surface.
@@ -464,25 +437,29 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - Lets accessibility apps know when an area of the screen has changed.
+// - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:
-// - changedRect - the area that has changed.
+// - delta - the number of cycles that the buffer has rotated.
 // Return value:
 // - <none>
-void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
+void ConhostInternalGetSet::NotifyBufferRotation(const int)
 {
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing())
-    {
-        screenInfo.NotifyAccessibilityEventing(
-            changedRect.left,
-            changedRect.top,
-            changedRect.right - 1,
-            changedRect.bottom - 1);
-    }
 }
 
-void ConhostInternalGetSet::AddMark(const Microsoft::Console::VirtualTerminal::DispatchTypes::ScrollMark& /*mark*/)
+void ConhostInternalGetSet::NotifyShellIntegrationMark()
+{
+    // Not implemented for conhost - shell integration marks are a Terminal app feature.
+}
+
+void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingCommand*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::ShowNotification(std::wstring_view /*title*/, std::wstring_view /*body*/)
 {
     // Not implemented for conhost.
 }

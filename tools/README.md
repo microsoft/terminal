@@ -30,7 +30,7 @@ the `%DEFAULT_CONFIGURATION%` configuration, which is `Debug` if you use `razzle
 ## opencon (and openbash, openps)
 
 `opencon` can be used to launch the **last built** OpenConsole binary. If given an
-argument, it will try and run that program in the launched window. Otherwise it
+argument, it will try and run that program in the launched window. Otherwise, it
 will default to cmd.exe.
 
 `openbash` is similar, it immediately launches bash.exe (the Windows Subsystem

@@ -13,7 +13,7 @@ Licensed under the MIT license.
 #define NOHELP
 #define NOCOMM
 
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <ShObjIdl.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
@@ -29,7 +29,7 @@ Licensed under the MIT license.
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 
 #include <WexTestClass.h>
@@ -46,6 +46,8 @@ Licensed under the MIT license.
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/mutex.h>
+#include <til/winrt.h>
 
 #include "ThrottledFunc.h"
 

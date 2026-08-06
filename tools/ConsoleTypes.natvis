@@ -10,21 +10,13 @@
     </Type>
 
     <Type Name="TextAttribute">
-        <!-- You can't do too much trickiness inside the DisplayString format
-                string, so we'd have to add entries for each flag if we really
-                wanted them to show up like that. -->
-        <DisplayString>{{FG: {_foreground}, BG: {_background}, Legacy: {_wAttrLegacy}, {_extendedAttrs}}</DisplayString>
-        <Expand>
-            <Item Name="Legacy">_wAttrLegacy</Item>
-            <Item Name="FG">_foreground</Item>
-            <Item Name="BG">_background</Item>
-            <Item Name="Extended">_extendedAttrs</Item>
-        </Expand>
+        <DisplayString Condition="_hyperlinkId == 0">{{FG: {_foreground}, BG: {_background}, Attr: {_attrs}}</DisplayString>
+        <DisplayString Condition="_hyperlinkId != 0">{{FG: {_foreground}, BG: {_background}, Attr: {_attrs}, Hyperlink: {_hyperlinkId}}</DisplayString>
     </Type>
 
     <Type Name="Microsoft::Console::Types::Viewport">
         <!-- Can't call functions in here -->
-        <DisplayString>{{LT({_sr.Left}, {_sr.Top}) RB({_sr.Right}, {_sr.Bottom}) [{_sr.Right-_sr.Left+1} x { _sr.Bottom-_sr.Top+1}]}}</DisplayString>
+        <DisplayString>{{LT({_sr.left}, {_sr.top}) RB({_sr.right}, {_sr.bottom}) [{_sr.right-_sr.left+1} x { _sr.bottom-_sr.top+1}]}}</DisplayString>
         <Expand>
             <ExpandedItem>_sr</ExpandedItem>
         </Expand>
@@ -38,31 +30,12 @@
         <DisplayString>{{LT({Left}, {Top}) RB({Right}, {Bottom}) In:[{Right-Left+1} x {Bottom-Top+1}] Ex:[{Right-Left} x {Bottom-Top}]}}</DisplayString>
     </Type>
 
-    <Type Name="CharRowCell">
-        <DisplayString Condition="_attr._glyphStored">Stored Glyph, go to UnicodeStorage.</DisplayString>
-        <DisplayString Condition="_attr._attribute == 0">{_wch,X} Single</DisplayString>
-        <DisplayString Condition="_attr._attribute == 1">{_wch,X} Lead</DisplayString>
-        <DisplayString Condition="_attr._attribute == 2">{_wch,X} Trail</DisplayString>
-    </Type>
-
-    <Type Name="ATTR_ROW">
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
-    <Type Name="CharRow">
-        <DisplayString>{{ wrap={_wrapForced} padded={_doubleBytePadded} }}</DisplayString>
-        <Expand>
-            <ExpandedItem>_data</ExpandedItem>
-        </Expand>
-    </Type>
-
     <Type Name="ROW">
-        <DisplayString>{{ id={_id} width={_rowWidth} }}</DisplayString>
+        <DisplayString>{_chars.data(),[_charOffsets[_columnCount]]}</DisplayString>
+        <StringView>_chars.data(),[_charOffsets[_columnCount]]</StringView>
         <Expand>
-            <Item Name="_charRow">_charRow</Item>
-            <Item Name="_attrRow">_attrRow</Item>
+            <Item Name="_chars">_chars.data(),[_charOffsets[_columnCount]]</Item>
+            <Item Name="_charOffsets">_charOffsets.data(),[_charOffsets.size()]</Item>
         </Expand>
     </Type>
 
@@ -72,21 +45,40 @@
         </Expand>
     </Type>
 
-    <Type Name="KeyEvent">
-        <DisplayString Condition="_keyDown">{{↓ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
-        <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+    <Type Name="_KEY_EVENT_RECORD">
+        <DisplayString Condition="bKeyDown != 0">↓ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+        <DisplayString Condition="bKeyDown == 0">↑ rep:{wRepeatCount} vk:{wVirtualKeyCode} sc:{wVirtualScanCode} ch:{uChar.UnicodeChar} ctrl:{(unsigned short)dwControlKeyState,x}</DisplayString>
+    </Type>
+    <Type Name="_MOUSE_EVENT_RECORD">
+        <DisplayString>pos:{dwMousePosition.X},{dwMousePosition.Y} state:{dwButtonState,x} ctrl:{(unsigned short)dwControlKeyState,x} flags:{(unsigned short)dwEventFlags,x}</DisplayString>
+    </Type>
+    <Type Name="_WINDOW_BUFFER_SIZE_RECORD">
+        <DisplayString>size:{dwSize.X},{dwSize.Y}</DisplayString>
+    </Type>
+    <Type Name="_MENU_EVENT_RECORD">
+        <DisplayString>id:{dwCommandId}</DisplayString>
+    </Type>
+    <Type Name="_FOCUS_EVENT_RECORD">
+        <DisplayString>focus:{bSetFocus}</DisplayString>
+    </Type>
+    <Type Name="_INPUT_RECORD">
+        <DisplayString Condition="EventType == 0x0001">Key {Event.KeyEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0002">Mouse {Event.MouseEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0004">WindowBufferSize {Event.WindowBufferSizeEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0008">Menu {Event.MenuEvent}</DisplayString>
+        <DisplayString Condition="EventType == 0x0010">Focus {Event.FocusEvent}</DisplayString>
     </Type>
 
     <Type Name="til::size">
-        <DisplayString>{{W: {_width,d} x H: {_height,d} -> A: {_width * _height, d}}}</DisplayString>
+        <DisplayString>{{W: {width} x H: {height} -> A: {width * height}}}</DisplayString>
     </Type>
 
     <Type Name="til::point">
-        <DisplayString>{{X: {_x,d}, Y: {_y,d}}}</DisplayString>
+        <DisplayString>{{X: {x}, Y: {y}}}</DisplayString>
     </Type>
 
     <Type Name="til::rect">
-        <DisplayString>{{L: {_topLeft._x}, T: {_topLeft._y}, R: {_bottomRight._x} B: {_bottomRight._y}   [W: {_bottomRight._x - _topLeft._x} x H: {_bottomRight._y - _topLeft._y} -> A: {(_bottomRight._x - _topLeft._x) * (_bottomRight._y - _topLeft._y)}]}}</DisplayString>
+        <DisplayString>{{L: {left}, T: {top}, R: {right} B: {bottom}   [W: {right - left} x H: {bottom - top} -> A: {(right - left) * (bottom - top)}]}}</DisplayString>
     </Type>
 
     <Type Name="til::color">
@@ -122,6 +114,65 @@
         <SmartPointer Usage="Indexable">_ptr,na</SmartPointer>
         <Expand>
             <Item Name="[ptr]">_ptr</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="til::generational&lt;*&gt;">
+        <AlternativeType Name="$T1" />
+        <SmartPointer Usage="Minimal">&amp;_value</SmartPointer>
+        <DisplayString>{{ generation={_generation._value} }}</DisplayString>
+    </Type>
+
+    <Type Name="til::linear_flat_set&lt;*,*&gt;">
+        <DisplayString>{{ size={_load / $T3} }}</DisplayString>
+        <Expand>
+            <ArrayItems>
+                <Size>_capacity</Size>
+                <ValuePointer>_map._Mypair._Myval2</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="TextBuffer">
+        <DisplayString>{{ width={_width}, height={_height} }}</DisplayString>
+        <Expand>
+            <Item Name="_firstRow">_firstRow</Item>
+            <Item Name="scratchpad">*(ROW*)_buffer.__ptr_.__value_</Item>
+            <IndexListItems>
+                <Size>(_commitWatermark - _buffer.__ptr_.__value_ - 1) / _bufferRowStride</Size>
+                <ValueNode>*(ROW*)(_buffer.__ptr_.__value_ + _bufferRowStride * ($i + 1))</ValueNode>
+            </IndexListItems>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::Buffer&lt;*&gt;">
+        <DisplayString>{{ size={_size} }}</DisplayString>
+        <Expand>
+            <Item Name="[size]" ExcludeView="simple">_size</Item>
+            <ArrayItems>
+                <Size>_size</Size>
+                <ValuePointer>_data</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::ShapedRow">
+        <DisplayString>{{ dirtyTop={dirtyTop}, dirtyBottom={dirtyBottom} }}</DisplayString>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasGlyphEntry">
+        <DisplayString Condition="occupied == 0">(empty)</DisplayString>
+        <DisplayString Condition="occupied != 0">{glyphIndex}</DisplayString>
+    </Type>
+
+    <Type Name="Microsoft::Console::Render::Atlas::BackendD3D::AtlasFontFaceEntry">
+        <DisplayString Condition="!fontFace.m_ptr">(empty)</DisplayString>
+        <DisplayString Condition="fontFace.m_ptr">{*fontFace.m_ptr}</DisplayString>
+        <Expand>
+            <Item Name="Single Width" ExcludeView="simple">glyphs[0]</Item>
+            <Item Name="Double Width" ExcludeView="simple">glyphs[1]</Item>
+            <Item Name="Double Height Top" ExcludeView="simple">glyphs[2]</Item>
+            <Item Name="Double Height Bottom" ExcludeView="simple">glyphs[3]</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

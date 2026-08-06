@@ -129,6 +129,7 @@ Revision History:
 #define IDD_OPACITY_VALUE           514
 #define IDD_INTERCEPT_COPY_PASTE    515
 #define IDD_HELP_LEGACY_LINK        516
+#define IDD_HELP_LEGACY_LINK_MISSING 517
 
 
 #define DID_TERMINAL                        600

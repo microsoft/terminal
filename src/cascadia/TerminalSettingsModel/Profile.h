@@ -50,11 +50,12 @@ Author(s):
 
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "MediaResourceSupport.h"
 #include "AppearanceConfig.h"
 #include "FontConfig.h"
 
 // fwdecl unittest classes
-namespace SettingsModelLocalTests
+namespace SettingsModelUnitTests
 {
     class DeserializationTests;
     class ProfileTests;
@@ -67,13 +68,15 @@ namespace TerminalAppUnitTests
     class JsonTests;
 };
 
+using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
+
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
 // GUID specified manually.
 constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 0x4499, { 0x8a, 0x50, 0x40, 0x31, 0x3c, 0xaf, 0x51, 0x0a } };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct Profile : ProfileT<Profile>, IInheritable<Profile>
+    struct Profile : ProfileT<Profile, IMediaResourceContainer>, IInheritable<Profile>
     {
     public:
         Profile() noexcept = default;
@@ -100,10 +103,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
 
+        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
+
         void _FinalizeInheritance() override;
 
-        // Special fields
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
+        void Icon(const winrt::hstring& path)
+        {
+            // Internal Helper (overload version)
+            Icon(MediaResource::FromString(path));
+        }
+
         WINRT_PROPERTY(bool, Deleted, false);
+        WINRT_PROPERTY(bool, Orphaned, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
 
@@ -118,22 +133,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
+        winrt::hstring SourceBasePath;
+
+    public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
+
+        std::set<std::string> _changeLog;
+
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
-        friend class SettingsModelLocalTests::DeserializationTests;
-        friend class SettingsModelLocalTests::ProfileTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
-        friend class SettingsModelLocalTests::KeyBindingsTests;
+        void _logSettingSet(const std::string_view& setting);
+        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+
+        friend class SettingsModelUnitTests::DeserializationTests;
+        friend class SettingsModelUnitTests::ProfileTests;
+        friend class SettingsModelUnitTests::ColorSchemeTests;
+        friend class SettingsModelUnitTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
     };

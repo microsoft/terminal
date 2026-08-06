@@ -21,7 +21,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
-        winrt::fire_and_forget Start()
+        safe_void_coroutine Start()
         {
             // GH#11282: It's possible that we're about to be started, _before_
             // our paired connection is started. Both will get Start()'ed when
@@ -34,15 +34,21 @@ namespace winrt::Microsoft::TerminalApp::implementation
             // before actually starting the connection to the client app. This
             // will ensure both controls are initialized before the client app
             // is.
+            const auto weak = get_weak();
             co_await winrt::resume_background();
-            _pairedTap->_start.wait();
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
 
+            _pairedTap->_start.wait();
             _wrappedConnection.Start();
         }
-        void WriteInput(const hstring& data)
+        void WriteInput(const winrt::array_view<const char16_t> buffer)
         {
-            _pairedTap->_PrintInput(data);
-            _wrappedConnection.WriteInput(data);
+            _pairedTap->_PrintInput(winrt_array_to_wstring_view(buffer));
+            _wrappedConnection.WriteInput(buffer);
         }
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
         void Close() { _wrappedConnection.Close(); }
@@ -50,6 +56,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void TerminalOutput(const winrt::event_token& token) noexcept { _wrappedConnection.TerminalOutput(token); };
         winrt::event_token StateChanged(const TypedEventHandler<ITerminalConnection, IInspectable>& handler) { return _wrappedConnection.StateChanged(handler); };
         void StateChanged(const winrt::event_token& token) noexcept { _wrappedConnection.StateChanged(token); };
+        winrt::guid SessionId() const noexcept { return {}; }
         ConnectionState State() const noexcept { return _wrappedConnection.State(); }
 
     private:
@@ -59,9 +66,12 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     DebugTapConnection::DebugTapConnection(ITerminalConnection wrappedConnection)
     {
-        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { this, &DebugTapConnection::_OutputHandler });
-        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*e*/) {
-            _StateChangedHandlers(*this, nullptr);
+        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { get_weak(), &DebugTapConnection::_OutputHandler });
+        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [weak = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto self = weak.get())
+            {
+                self->StateChanged.raise(*self, nullptr);
+            }
         });
         _wrappedConnection = wrappedConnection;
     }
@@ -76,13 +86,13 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _start.count_down();
     }
 
-    void DebugTapConnection::WriteInput(const hstring& data)
+    void DebugTapConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
         // If the user types into the tap side, forward it to the input side
         if (auto strongInput{ _inputSide.get() })
         {
             auto inputAsTap{ winrt::get_self<DebugInputTapConnection>(strongInput) };
-            inputAsTap->WriteInput(data);
+            inputAsTap->WriteInput(buffer);
         }
     }
 
@@ -98,6 +108,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _wrappedConnection = nullptr;
     }
 
+    guid DebugTapConnection::SessionId() const noexcept
+    {
+        if (const auto c = _wrappedConnection.get())
+        {
+            return c.SessionId();
+        }
+        return {};
+    }
+
     ConnectionState DebugTapConnection::State() const noexcept
     {
         if (auto strongConnection{ _wrappedConnection.get() })
@@ -107,9 +126,9 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const hstring str)
+    void DebugTapConnection::_OutputHandler(const winrt::array_view<const char16_t> str)
     {
-        auto output = til::visualize_control_codes(str);
+        auto output = til::visualize_control_codes(winrt_array_to_wstring_view(str));
         // To make the output easier to read, we introduce a line break whenever
         // an LF control is encountered. But at this point, the LF would have
         // been converted to U+240A (␊), so that's what we need to search for.
@@ -117,15 +136,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
             output.insert(++lfPos, L"\r\n");
         }
-        _TerminalOutputHandlers(output);
+        TerminalOutput.raise(winrt_wstring_to_array_view(output));
     }
 
     // Called by the DebugInputTapConnection to print user input
-    void DebugTapConnection::_PrintInput(const hstring& str)
+    void DebugTapConnection::_PrintInput(const std::wstring_view str)
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        _TerminalOutputHandlers(formatted);
+        TerminalOutput.raise(winrt_wstring_to_array_view(formatted));
     }
 
     // Wire us up so that we can forward input through

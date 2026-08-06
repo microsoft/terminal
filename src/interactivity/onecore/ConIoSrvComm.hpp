@@ -33,26 +33,26 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         static ConIoSrvComm* GetConIoSrvComm();
 
-        [[nodiscard]] NTSTATUS Connect();
+        [[nodiscard]] NTSTATUS Connect() noexcept;
         VOID ServiceInputPipe();
 
-        [[nodiscard]] NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
-        [[nodiscard]] NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
-        [[nodiscard]] NTSTATUS RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
-        [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ til::CoordType RowIndex) const;
+        [[nodiscard]] NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const noexcept;
+        [[nodiscard]] NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const noexcept;
+        [[nodiscard]] NTSTATUS RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const noexcept;
+        [[nodiscard]] NTSTATUS RequestUpdateDisplay(_In_ til::CoordType RowIndex) const noexcept;
 
-        [[nodiscard]] NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue);
-        [[nodiscard]] NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue);
-        [[nodiscard]] NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue);
+        [[nodiscard]] NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue) noexcept;
+        [[nodiscard]] NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue) noexcept;
+        [[nodiscard]] NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue) noexcept;
         [[nodiscard]] USHORT GetDisplayMode() const noexcept;
 
         PVOID GetSharedViewBase() const noexcept;
 
         VOID CleanupForHeadless(const NTSTATUS status);
 
-        UINT ConIoMapVirtualKeyW(UINT uCode, UINT uMapType);
-        SHORT ConIoVkKeyScanW(WCHAR ch);
-        SHORT ConIoGetKeyState(int nVirtKey);
+        UINT ConIoMapVirtualKeyW(UINT uCode, UINT uMapType) noexcept;
+        SHORT ConIoVkKeyScanW(WCHAR ch) noexcept;
+        SHORT ConIoGetKeyState(int nVirtKey) noexcept;
 
         [[nodiscard]] NTSTATUS InitializeBgfx();
         [[nodiscard]] NTSTATUS InitializeWddmCon();
@@ -60,8 +60,8 @@ namespace Microsoft::Console::Interactivity::OneCore
         Render::WddmConEngine* pWddmConEngine = nullptr;
 
     private:
-        [[nodiscard]] NTSTATUS EnsureConnection();
-        [[nodiscard]] NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
+        [[nodiscard]] NTSTATUS EnsureConnection() noexcept;
+        [[nodiscard]] NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const noexcept;
 
         VOID HandleFocusEvent(const CIS_EVENT* const FocusEvent);
 

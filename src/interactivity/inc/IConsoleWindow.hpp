@@ -25,13 +25,6 @@ namespace Microsoft::Console::Types
     public:
         virtual ~IConsoleWindow() = default;
 
-        virtual BOOL EnableBothScrollBars() = 0;
-        virtual int UpdateScrollBar(_In_ bool isVertical,
-                                    _In_ bool isAltBuffer,
-                                    _In_ UINT pageSize,
-                                    _In_ int maxSize,
-                                    _In_ int viewportPosition) = 0;
-
         virtual bool IsInFullscreen() const = 0;
 
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
@@ -65,7 +58,6 @@ namespace Microsoft::Console::Types
         virtual void VerticalScroll(const WORD wScrollCommand,
                                     const WORD wAbsoluteChange) = 0;
 
-        [[nodiscard]] virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
         virtual til::rect GetWindowRect() const noexcept = 0;
     };

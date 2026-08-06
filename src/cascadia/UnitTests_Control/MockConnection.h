@@ -14,18 +14,19 @@ namespace ControlUnitTests
     public:
         MockConnection() noexcept = default;
 
-        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/){};
+        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/) {};
         void Start() noexcept {};
-        void WriteInput(const winrt::hstring& data)
+        void WriteInput(const winrt::array_view<const char16_t> data)
         {
-            _TerminalOutputHandlers(data);
+            TerminalOutput.raise(data);
         }
         void Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept {}
         void Close() noexcept {}
 
+        winrt::guid SessionId() const noexcept { return {}; }
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept { return winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Connected; }
 
-        WINRT_CALLBACK(TerminalOutput, winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler);
-        TYPED_EVENT(StateChanged, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable);
+        til::event<winrt::Microsoft::Terminal::TerminalConnection::TerminalOutputHandler> TerminalOutput;
+        til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, IInspectable> StateChanged;
     };
 }

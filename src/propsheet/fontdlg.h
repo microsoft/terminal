@@ -52,7 +52,7 @@ Revision History:
     SendMessage(hWnd, bLB ? LB_GETTEXT : CB_GETLBTEXT, w, 0L)
 
 #define lcbFINDSTRINGEXACT(hWnd, bLB, pwsz) \
-    (LONG) SendMessage(hWnd, bLB ? LB_FINDSTRINGEXACT : CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)pwsz)
+    (LONG) SendMessage(hWnd, bLB ? LB_FINDSTRINGEXACT : CB_FINDSTRINGEXACT, (WPARAM) - 1, (LPARAM)pwsz)
 
 #define lcbADDSTRING(hWnd, bLB, pwsz) \
     (LONG) SendMessage(hWnd, bLB ? LB_ADDSTRING : CB_ADDSTRING, 0, (LPARAM)pwsz)

@@ -48,7 +48,7 @@ using namespace Microsoft::Console::Interactivity;
     HMODULE hModule = nullptr;
 
     status = TryLoadWellKnownLibrary(lpApiHost, &hModule);
-    if (NT_SUCCESS(status) && lpProcedure)
+    if (SUCCEEDED_NTSTATUS(status) && lpProcedure)
     {
         status = TryLocateProcedure(hModule, lpProcedure);
     }
@@ -96,7 +96,7 @@ using namespace Microsoft::Console::Interactivity;
     //       versioning API's behave sanely.
 
     status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER, phModule);
-    if (!NT_SUCCESS(status) && GetLastError() == ERROR_INVALID_PARAMETER)
+    if (FAILED_NTSTATUS(status) && GetLastError() == ERROR_INVALID_PARAMETER)
     {
         status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32, phModule);
     }
@@ -141,7 +141,7 @@ using namespace Microsoft::Console::Interactivity;
 
 void ApiDetector::SetLevelAndFreeIfNecessary(_In_ NTSTATUS status, _In_ HMODULE hModule, _Out_ ApiLevel* level)
 {
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         *level = ApiLevel::Win32;
     }

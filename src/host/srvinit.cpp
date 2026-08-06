@@ -2,33 +2,19 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "srvinit.h"
 
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
-
-#include "ApiRoutines.h"
-
-#include "../types/inc/GlyphWidth.hpp"
-
-#include "../server/DeviceHandle.h"
-#include "../server/Entrypoints.h"
-#include "../server/IoSorter.h"
-
-#include "../interactivity/inc/ISystemConfigurationProvider.hpp"
-#include "../interactivity/inc/ServiceLocator.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
-
-#include "renderData.hpp"
-#include "../renderer/base/renderer.hpp"
-
-#include "../inc/conint.h"
-
-#include "tracing.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/ConDrvDeviceComm.h"
+#include "../server/DeviceHandle.h"
+#include "../server/IoSorter.h"
+#include "../types/inc/CodepointWidthDetector.hpp"
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
@@ -64,7 +50,7 @@ try
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
-    if (Globals.delegationPair.IsUndecided() && Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy())
+    if (Globals.delegationPair.IsUndecided())
     {
         Globals.delegationPair = DelegationConfig::s_GetDelegationPair();
 
@@ -82,21 +68,10 @@ try
     // If we looked up the registered defterm pair, and it was left as the default (missing or {0}),
     // AND velocity is enabled for DxD, then we switch the delegation pair to Terminal and
     // mark that we should check that class for the marker interface later.
-    if (Globals.delegationPair.IsDefault() && Microsoft::Console::Internal::DefaultApp::CheckShouldTerminalBeDefault())
+    if (Globals.delegationPair.IsDefault())
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
-    }
-
-    // Create the accessibility notifier early in the startup process.
-    // Only create if we're not in PTY mode.
-    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
-    // for the terminal user interface, so we should set ourselves up to skip all
-    // those notifications and the mathematical calculations required to send those events
-    // for performance reasons.
-    if (!args->InConptyMode())
-    {
-        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
     }
 
     // Removed allocation of scroll buffer here.
@@ -116,7 +91,7 @@ static bool s_IsOnDesktop()
         const auto status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
         LOG_IF_NTSTATUS_FAILED(status);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             switch (level)
             {
@@ -151,7 +126,7 @@ static bool s_IsOnDesktop()
     // 4. Hardcoded default settings
     // To establish this hierarchy, we will need to load the settings and apply them in reverse order.
 
-    // 4. Initializing Settings will establish hardcoded defaults.
+    // 4. Initializing Settings will establish hard-coded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     auto& settings = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& launchArgs = ServiceLocator::LocateGlobals().launchArgs;
@@ -198,7 +173,7 @@ static bool s_IsOnDesktop()
         // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
-        settings.SetVirtTermLevel(1);
+        settings.SetDefaultVirtTermLevel(1);
 
         // GH#9458 - In the case of a DefTerm handoff, the OriginalTitle might
         // be stashed in the lnk. We want to crack that lnk open, so we can get
@@ -255,7 +230,7 @@ static bool s_IsOnDesktop()
     // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
     // for the settings we just set.
     auto Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -297,7 +272,7 @@ void ConsoleCheckDebug()
     wil::unique_hkey hConsole;
     auto status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
-    if (NT_SUCCESS(status))
+    if (SUCCEEDED_NTSTATUS(status))
     {
         DWORD dwData = 0;
         status = RegistrySerialization::s_QueryValue(hConsole.get(),
@@ -307,7 +282,7 @@ void ConsoleCheckDebug()
                                                      (BYTE*)&dwData,
                                                      nullptr);
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             if (dwData != 0)
             {
@@ -385,7 +360,10 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
     heapConnectMessage.release();
 
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(hThread, L"Console Driver Message IO Thread"));
+    }
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626
@@ -396,7 +374,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     //      can start, so they're started below, in ConsoleAllocateConsole
     auto& gci = g.getConsoleInformation();
     RETURN_IF_FAILED(gci.GetVtIo()->Initialize(args));
-    RETURN_IF_FAILED(gci.GetVtIo()->CreateAndStartSignalThread());
 
     return S_OK;
 }
@@ -418,7 +395,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //    all necessary callback information for all subsequent API calls.
 // Return Value:
 // - COM errors, registry errors, pipe errors, handle manipulation errors,
-//   errors from the creating the thread for the
+//   errors from creating the thread for the
 //   standard IO thread loop for the server to process messages
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
@@ -428,11 +405,6 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
-    // Create a telemetry instance here - this singleton is responsible for
-    // setting up the g_hConhostV2EventTraceProvider, which is otherwise not
-    // initialized in the defterm handoff at this point.
-    (void)Telemetry::Instance();
-
 #if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_Disabled",
@@ -477,25 +449,14 @@ try
 
     wil::unique_handle signalPipeTheirSide;
     wil::unique_handle signalPipeOurSide;
-
-    wil::unique_handle inPipeTheirSide;
-    wil::unique_handle inPipeOurSide;
-
-    wil::unique_handle outPipeTheirSide;
-    wil::unique_handle outPipeOurSide;
-
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_ReceiveHandoff_OpenedPipes",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
@@ -511,7 +472,7 @@ try
 
     const auto serverProcess = GetCurrentProcess();
 
-    ::Microsoft::WRL::ComPtr<ITerminalHandoff2> handoff;
+    ::Microsoft::WRL::ComPtr<ITerminalHandoff3> handoff;
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_PrepareToCreateDelegationTerminal",
@@ -586,28 +547,26 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
-    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
-                                                  outPipeTheirSide.get(),
+    wil::unique_handle inPipeOurSide;
+    wil::unique_handle outPipeOurSide;
+    RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeOurSide.addressof(),
+                                                  outPipeOurSide.addressof(),
                                                   signalPipeTheirSide.get(),
                                                   refHandle.get(),
                                                   serverProcess,
                                                   clientProcess.get(),
-                                                  myStartupInfo));
+                                                  &myStartupInfo));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
                       "SrvInit_DelegateToTerminalSucceeded",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    inPipeTheirSide.reset();
-    outPipeTheirSide.reset();
     signalPipeTheirSide.reset();
 
-    // GH#13211 - Make sure we request win32input mode and that the terminal
-    // obeys the resizing quirk. Otherwise, defterm connections to the Terminal
-    // are going to have weird resizing, and aren't going to send full fidelity
-    // input messages.
-    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --resizeQuirk --win32input --signal {:#x}"),
+    // GH#13211 - Make sure the terminal obeys the resizing quirk. Otherwise,
+    // defterm connections to the Terminal are going to have weird resizing.
+    const auto commandLine = fmt::format(FMT_COMPILE(L" --headless --signal {:#x}"),
                                          (int64_t)signalPipeOurSide.release());
 
     ConsoleArguments consoleArgs(commandLine, inPipeOurSide.release(), outPipeOurSide.release());
@@ -810,7 +769,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
     auto Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
@@ -867,8 +826,6 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 [[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-
     auto& g = ServiceLocator::LocateGlobals();
 
     auto& gci = g.getConsoleInformation();
@@ -876,23 +833,16 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // No matter what, create a renderer.
     try
     {
-        g.pRender = nullptr;
+        if (!gci.IsInVtIoMode())
+        {
+            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData);
 
-        auto renderThread = std::make_unique<RenderThread>();
-        // stash a local pointer to the thread here -
-        // We're going to give ownership of the thread to the Renderer,
-        //      but the thread also need to be told who its renderer is,
-        //      and we can't do that until the renderer is constructed.
-        auto* const localPointerToThread = renderThread.get();
-
-        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
-
-        THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
-
-        // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out its width another way.
-        auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
-        SetGlyphWidthFallback(pfn);
+            // Set up the renderer to be used to calculate the width of a glyph,
+            //      should we be unable to figure out its width another way.
+            CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
+                return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
+            });
+        }
     }
     catch (...)
     {
@@ -904,16 +854,20 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // CreateInstance method), and the TextBuffer needs to be constructed with
     // a reference to the renderer, so the renderer must be created first.
     auto Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return Status;
     }
 
-    // Allow the renderer to paint once the rest of the console is hooked up.
-    g.pRender->EnablePainting();
-
-    if (NT_SUCCESS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
+    if (ConsoleConnectionDeservesVisibleWindow(p))
     {
+        // Allow the renderer to paint once the rest of the console is hooked up,
+        // but only if there's actually something to paint on.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
+
         HANDLE Thread = nullptr;
 
         IConsoleInputThread* pNewThread = nullptr;
@@ -940,7 +894,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
             CloseHandle(Thread); // This doesn't stop the thread from running.
 
-            if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
+            if (FAILED_NTSTATUS(g.ntstatusConsoleInputInitStatus))
             {
                 Status = g.ntstatusConsoleInputInitStatus;
             }
@@ -973,29 +927,13 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // Potentially start the VT IO (if needed)
     // Make sure to do this after the i/o buffers have been created.
     // We'll need the size of the screen buffer in the vt i/o initialization
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
-        auto hr = gci.GetVtIo()->CreateIoHandlers();
-        if (hr == S_FALSE)
-        {
-            // We're not in VT I/O mode, this is fine.
-        }
-        else if (SUCCEEDED(hr))
-        {
-            // Actually start the VT I/O threads
-            hr = gci.GetVtIo()->StartIfNeeded();
-            // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
-            //      is treated as an error
-            if (hr != S_FALSE)
-            {
-                Status = NTSTATUS_FROM_HRESULT(hr);
-            }
-            else
-            {
-                Status = ERROR_SUCCESS;
-            }
-        }
-        else
+        // Actually start the VT I/O threads
+        auto hr = gci.GetVtIo()->StartIfNeeded();
+        // Don't convert S_FALSE to an NTSTATUS - the equivalent NTSTATUS
+        //      is treated as an error
+        if (FAILED(hr))
         {
             Status = NTSTATUS_FROM_HRESULT(hr);
         }
@@ -1038,7 +976,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     {
         if (ReplyMsg != nullptr)
         {
-            LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
@@ -1052,7 +990,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
                 // This will not return. Terminate immediately when disconnected.
                 ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
+            LOG_HR_MSG(hr, "DeviceIoControl failed");
             ReplyMsg = nullptr;
             continue;
         }

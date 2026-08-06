@@ -3,24 +3,13 @@
 
 #pragma once
 
-namespace Microsoft::Console::Render
+#include "common.h"
+
+namespace Microsoft::Console::Render::Atlas
 {
-    struct TextAnalysisSinkResult
-    {
-        uint32_t textPosition = 0;
-        uint32_t textLength = 0;
-
-        // These 2 fields represent DWRITE_SCRIPT_ANALYSIS.
-        // Not using DWRITE_SCRIPT_ANALYSIS drops the struct size from 20 down to 12 bytes.
-        uint16_t script = 0;
-        uint8_t shapes = 0;
-
-        uint8_t bidiLevel = 0;
-    };
-
     struct TextAnalysisSource final : IDWriteTextAnalysisSource
     {
-        TextAnalysisSource(const wchar_t* _text, const UINT32 _textLength) noexcept;
+        TextAnalysisSource(const wchar_t* locale, const wchar_t* text, const UINT32 textLength) noexcept;
 #ifndef NDEBUG
         ~TextAnalysisSource();
 #endif
@@ -35,6 +24,7 @@ namespace Microsoft::Console::Render
         HRESULT __stdcall GetNumberSubstitution(UINT32 textPosition, UINT32* textLength, IDWriteNumberSubstitution** numberSubstitution) noexcept override;
 
     private:
+        const wchar_t* _locale;
         const wchar_t* _text;
         const UINT32 _textLength;
 #ifndef NDEBUG

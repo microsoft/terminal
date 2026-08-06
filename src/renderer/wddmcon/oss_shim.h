@@ -3,8 +3,6 @@
 
 #pragma once
 
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-
 #include "../host/conddkrefs.h"
 #include <condrv.h>
 

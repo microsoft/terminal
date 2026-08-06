@@ -9,6 +9,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              MinHeight="16"
              mc:Ignorable="d">
@@ -43,6 +44,18 @@
                   FontSize="12"
                   Glyph="&#xE72E;"
                   Visibility="{x:Bind TabStatus.IsReadOnlyActive, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderClosedIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEA39;"
+                  Visibility="{x:Bind TabStatus.IsConnectionClosed, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderBroadcastIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Glyph="&#xEC05;"
+                  Visibility="{x:Bind TabStatus.IsInputBroadcastActive, Mode=OneWay}" />
         <TextBlock x:Name="HeaderTextBlock"
                    Text="{x:Bind Title, Mode=OneWay}"
                    Visibility="Visible" />
@@ -55,6 +68,10 @@
                  IsSpellCheckEnabled="False"
                  LostFocus="RenameBoxLostFocusHandler"
                  MaxLength="1024"
-                 Visibility="Collapsed" />
+                 Visibility="Collapsed">
+            <TextBox.ContextFlyout>
+                <mtu:TextMenuFlyout />
+            </TextBox.ContextFlyout>
+        </TextBox>
     </StackPanel>
 </UserControl>

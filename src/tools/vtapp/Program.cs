@@ -37,7 +37,7 @@ namespace VTApp
                         keyInfo = Console.ReadKey(true);
 
                         // 40-7E are the "dispatch" characters meaning the sequence is done.
-                        // 0x5B '[' is expected after the escape. So ignore that. We don't know a of a sequence terminated with it, so it also continues the loop.
+                        // 0x5B '[' is expected after the escape. So ignore that. We don't know of a sequence terminated with it, so it also continues the loop.
                         // keep collecting characters as the "reply" until then
                         while (keyInfo.KeyChar < 0x40 || keyInfo.KeyChar > 0x7E || keyInfo.KeyChar == '[')
                         {
@@ -287,15 +287,7 @@ namespace VTApp
 
                             if (Pinvoke.GetConsoleMode(hCon, out mode))
                             {
-                                if ((mode & Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0)
-                                {
-                                    mode &= ~Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                                }
-                                else
-                                {
-                                    mode |= Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                                }
-
+                                mode ^= Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
                                 Pinvoke.SetConsoleMode(hCon, mode);
                             }
                             break;
@@ -307,14 +299,7 @@ namespace VTApp
                             int mode;
                             if (Pinvoke.GetConsoleMode(hCon, out mode))
                             {
-                                if ((mode & Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT) != 0)
-                                {
-                                    mode &= ~Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
-                                }
-                                else
-                                {
-                                    mode |= Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
-                                }
+                                mode ^=  Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
                                 mode &= ~Pinvoke.ENABLE_PROCESSED_INPUT;
                                 Pinvoke.SetConsoleMode(hCon, mode);
                             }

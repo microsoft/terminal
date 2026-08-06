@@ -1,3 +1,6 @@
+!include $(PROJECT_ROOT)\core\console\vcpkg\consume.inc
+
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL=/W4 /WX
 
 
@@ -18,12 +21,12 @@ USE_NATIVE_EH           = 1
 C_DEFINES=-DUNICODE -D__INSIDE_WINDOWS
 
 TARGETLIBS=\
+    $(TARGETLIBS) \
     $(MINWIN_EXTERNAL_SDK_LIB_PATH_L)\ntdll.lib \
-    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 SOURCES=main.cpp  \
-        VtConsole.cpp \
-        res.rc \
 
 TARGET_DESTINATION=retail
 

@@ -5,10 +5,10 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include "ActionAndArgs.h"
+#include <til/replace.h>
+#include <ScopedResourceLoader.h>
+
 #include "KeyChordSerialization.h"
-#include <LibraryResources.h>
-#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
@@ -20,30 +20,94 @@ namespace winrt
     namespace WUX = Windows::UI::Xaml;
 }
 
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view ActionKey{ "command" };
-static constexpr std::string_view ArgsKey{ "args" };
-static constexpr std::string_view IterateOnKey{ "iterateOn" };
-static constexpr std::string_view CommandsKey{ "commands" };
-static constexpr std::string_view KeysKey{ "keys" };
-
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
+
+template<>
+struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource>
+{
+    winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource FromJson(const Json::Value& json)
+    {
+        if (json.isObject())
+        {
+            if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, "key") })
+            {
+                if (HasLibraryResourceWithName(*resourceKey))
+                {
+                    return { .resource = *resourceKey };
+                }
+            }
+        }
+        else if (json.isString())
+        {
+            return { .name = JsonUtils::GetValue<std::wstring>(json) };
+        }
+        return {};
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (json.isObject())
+        {
+            if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, "key") })
+            {
+                return HasLibraryResourceWithName(*resourceKey);
+            }
+        }
+        return json.isString() || json.isNull();
+    }
+
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::implementation::Command::CommandNameOrResource& val)
+    {
+        if (!val.resource.empty())
+        {
+            Json::Value json{ Json::objectValue };
+            SetValueForKey(json, "key", val.resource);
+            return json;
+        }
+        else if (!val.name.empty())
+        {
+            return til::u16u8(val.name);
+        }
+        return Json::Value::nullSingleton();
+    }
+
+    std::string TypeDescription() const
+    {
+        return "string or valid resource";
+    }
+};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command() = default;
 
+    Model::Command Command::NewUserCommand()
+    {
+        auto newCmd{ winrt::make_self<Command>() };
+        newCmd->_Origin = OriginTag::User;
+        return *newCmd;
+    }
+
+    Model::Command Command::CopyAsUserCommand(const Model::Command& originalCmd)
+    {
+        auto command{ winrt::get_self<Command>(originalCmd) };
+        auto copy{ command->Copy() };
+        copy->_Origin = OriginTag::User;
+        return *copy;
+    }
+
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };
         command->_name = _name;
+        command->_Origin = _Origin;
+        command->_ID = _ID;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
-        command->_keyMappings = _keyMappings;
-        command->_iconPath = _iconPath;
+        command->_icon = _icon;
         command->_IterateOn = _IterateOn;
+        command->_Description = _Description;
 
         command->_originalJson = _originalJson;
         command->_nestedCommand = _nestedCommand;
@@ -62,6 +126,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     IMapView<winrt::hstring, Model::Command> Command::NestedCommands() const
     {
         return _subcommands ? _subcommands.GetView() : nullptr;
+    }
+
+    void Command::NestedCommands(const Windows::Foundation::Collections::IVectorView<Model::Command>& nested)
+    {
+        _subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+
+        for (const auto& n : nested)
+        {
+            _subcommands.Insert(n.Name(), n);
+        }
     }
 
     // Function Description:
@@ -89,8 +163,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (_name.has_value())
         {
+            if (!_name->resource.empty())
+            {
+                // Resource key overrides name
+                return GetLibraryResourceString(_name->resource);
+            }
+
             // name was explicitly set, return that value.
-            return hstring{ _name.value() };
+            return hstring{ _name->name };
         }
         else if (_ActionAndArgs)
         {
@@ -104,132 +184,79 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
-    void Command::Name(const hstring& value)
+    hstring Command::LanguageNeutralName() const noexcept
     {
-        if (!_name.has_value() || _name.value() != value)
+        if (_name.has_value())
         {
-            _name = value;
+            // User-specified names **only matter** if they are resource keys (and therefore have a language-neutral version)
+            if (!_name->resource.empty())
+            {
+                // Resource key overrides name
+                return EnglishOnlyResourceLoader().GetLocalizedString(_name->resource);
+            }
+            // ...if there was no resource, then, return nothing.
         }
-    }
-
-    std::vector<Control::KeyChord> Command::KeyMappings() const noexcept
-    {
-        return _keyMappings;
-    }
-
-    // Function Description:
-    // - Add the key chord to the command's list of key mappings.
-    // - If the key chord was already registered, move it to the back
-    //   of the line, and dispatch a notification that Command::Keys changed.
-    // Arguments:
-    // - keys: the new key chord that we are registering this command to
-    // Return Value:
-    // - <none>
-    void Command::RegisterKey(const Control::KeyChord& keys)
-    {
-        if (!keys)
+        else if (_ActionAndArgs)
         {
-            return;
+            // generate a name from our action
+            return get_self<implementation::ActionAndArgs>(_ActionAndArgs)->GenerateName(EnglishOnlyResourceLoader().ResourceContext());
         }
 
-        // Remove the KeyChord and add it to the back of the line.
-        // This makes it so that the main key chord associated with this
-        // command is updated.
-        EraseKey(keys);
-        _keyMappings.push_back(keys);
-    }
-
-    // Function Description:
-    // - Remove the key chord from the command's list of key mappings.
-    // Arguments:
-    // - keys: the key chord that we are unregistering
-    // Return Value:
-    // - <none>
-    void Command::EraseKey(const Control::KeyChord& keys)
-    {
-        _keyMappings.erase(std::remove_if(_keyMappings.begin(), _keyMappings.end(), [&keys](const Control::KeyChord& iterKey) {
-                               return keys.Modifiers() == iterKey.Modifiers() && keys.Vkey() == iterKey.Vkey();
-                           }),
-                           _keyMappings.end());
-    }
-
-    // Function Description:
-    // - Keys is the Command's identifying KeyChord. The command may have multiple keys associated
-    //   with it, but we'll only ever display the most recently added one externally. To do this,
-    //   _keyMappings stores all of the associated key chords, but ensures that the last entry
-    //   is the most recently added one.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the primary key chord associated with this Command
-    Control::KeyChord Command::Keys() const noexcept
-    {
-        if (_keyMappings.empty())
-        {
-            return nullptr;
-        }
-        return _keyMappings.back();
-    }
-
-    hstring Command::KeyChordText() const noexcept
-    {
-        return KeyChordSerialization::ToString(Keys());
-    }
-
-    hstring Command::IconPath() const noexcept
-    {
-        if (_iconPath.has_value())
-        {
-            return hstring{ *_iconPath };
-        }
+        // we have no neutral name
         return {};
     }
 
-    void Command::IconPath(const hstring& val)
+    hstring Command::ID() const noexcept
     {
-        if (!_iconPath.has_value() || _iconPath.value() != val)
+        return hstring{ _ID };
+    }
+
+    void Command::ID(const hstring& ID) noexcept
+    {
+        _ID = ID;
+    }
+
+    void Command::GenerateID()
+    {
+        if (_ActionAndArgs)
         {
-            _iconPath = val;
+            auto actionAndArgsImpl{ winrt::get_self<implementation::ActionAndArgs>(_ActionAndArgs) };
+            if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
+            {
+                _IDWasGenerated = true;
+                ID(generatedID);
+            }
         }
     }
 
-    // Function Description:
-    // - attempt to get the name of this command from the provided json object.
-    //   * If the "name" property is a string, return that value.
-    //   * If the "name" property is an object, attempt to lookup the string
-    //     resource specified by the "key" property, to support localizable
-    //     command names.
-    // Arguments:
-    // - json: The Json::Value representing the command object we should get the name for.
-    // Return Value:
-    // - the empty string if we couldn't find a name, otherwise the command's name.
-    static std::optional<std::wstring> _nameFromJson(const Json::Value& json)
+    bool Command::IDWasGenerated()
     {
-        if (const auto name{ json[JsonKey(NameKey)] })
-        {
-            if (name.isObject())
-            {
-                if (const auto resourceKey{ JsonUtils::GetValueForKey<std::optional<std::wstring>>(name, "key") })
-                {
-                    if (HasLibraryResourceWithName(*resourceKey))
-                    {
-                        return std::wstring{ GetLibraryResourceString(*resourceKey) };
-                    }
-                }
-            }
-            else if (name.isString())
-            {
-                return JsonUtils::GetValue<std::wstring>(name);
-            }
-        }
-        else if (json.isMember(JsonKey(NameKey)))
-        {
-            // { "name": null, "command": "copy" } will land in this case, which
-            // should also be used for unbinding.
-            return std::wstring{};
-        }
+        return _IDWasGenerated;
+    }
 
-        return std::nullopt;
+    void Command::Name(const hstring& value)
+    {
+        if (!_name.has_value() || _name->name != value)
+        {
+            if (value.empty())
+            {
+                _name.reset();
+            }
+            else
+            {
+                _name = CommandNameOrResource{ .name = std::wstring{ value } };
+            }
+        }
+    }
+
+    IMediaResource Command::Icon() const noexcept
+    {
+        return (_icon && *_icon) ? *_icon : MediaResource::Empty();
+    }
+
+    void Command::Icon(const IMediaResource& val)
+    {
+        _icon = val;
     }
 
     // Method Description:
@@ -248,12 +275,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<SettingsLoadWarnings>& warnings)
+                                              std::vector<SettingsLoadWarnings>& warnings,
+                                              const OriginTag origin)
     {
         auto result = winrt::make_self<Command>();
+        result->_Origin = origin;
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
 
         auto nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
@@ -263,7 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Initialize our list of subcommands.
             result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             result->_nestedCommand = true;
-            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
+            auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson, origin);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
 
@@ -285,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             result->_nestedCommand = true;
         }
 
-        JsonUtils::GetValueForKey(json, IconKey, result->_iconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -302,23 +333,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 // create an "invalid" ActionAndArgs
                 result->_ActionAndArgs = make<implementation::ActionAndArgs>();
             }
-
-            // GH#4239 - If the user provided more than one key
-            // chord to a "keys" array, warn the user here.
-            // TODO: GH#1334 - remove this check.
-            const auto keysJson{ json[JsonKey(KeysKey)] };
-            if (keysJson.isArray() && keysJson.size() > 1)
-            {
-                warnings.push_back(SettingsLoadWarnings::TooManyKeysForChord);
-            }
-            else
-            {
-                Control::KeyChord keys{ nullptr };
-                if (JsonUtils::GetValueForKey(json, KeysKey, keys))
-                {
-                    result->RegisterKey(keys);
-                }
-            }
         }
 
         // If an iterable command doesn't have a name set, we'll still just
@@ -326,12 +340,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // currently have. It'll probably generate something like "New tab,
         // profile: ${profile.name}". This string will only be temporarily
         // used internally, so there's no problem.
-        result->_name = _nameFromJson(json);
+        JsonUtils::GetValueForKey(json, NameKey, result->_name);
 
         // Stash the original json value in this object. If the command is
         // iterable, we'll need to re-parse it later, once we know what all the
         // values we can iterate on are.
         result->_originalJson = json;
+
+        return result;
+    }
+
+    // This is substantially simpler than the normal FromJson. We just want to take something that looks like:
+    // {
+    //     "input": "bx",
+    //     "name": "Build project",
+    //     "description": "Build the project in the CWD"
+    // },
+    //
+    // and turn it into a sendInput action. No need to figure out what kind of
+    // action parser, or deal with nesting, or iterable commands or anything.
+    winrt::com_ptr<Command> Command::FromSnippetJson(const Json::Value& json)
+    {
+        auto result = winrt::make_self<Command>();
+        result->_Origin = OriginTag::Generated;
+
+        JsonUtils::GetValueForKey(json, IDKey, result->_ID);
+        JsonUtils::GetValueForKey(json, DescriptionKey, result->_Description);
+        JsonUtils::GetValueForKey(json, IconKey, result->_icon);
+        JsonUtils::GetValueForKey(json, NameKey, result->_name);
+
+        const auto action{ ShortcutAction::SendInput };
+        IActionArgs args{ nullptr };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> parseWarnings;
+        std::tie(args, parseWarnings) = SendInputArgs::FromJson(json);
+        result->_ActionAndArgs = winrt::make<implementation::ActionAndArgs>(action, args);
 
         return result;
     }
@@ -348,7 +390,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A vector containing any warnings detected while parsing
     std::vector<SettingsLoadWarnings> Command::LayerJson(IMap<winrt::hstring, Model::Command>& commands,
-                                                         const Json::Value& json)
+                                                         const Json::Value& json,
+                                                         const OriginTag origin)
     {
         std::vector<SettingsLoadWarnings> warnings;
 
@@ -358,16 +401,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 try
                 {
-                    const auto result = Command::FromJson(value, warnings);
+                    const auto result = Command::FromJson(value, warnings, origin);
                     if (result->ActionAndArgs().Action() == ShortcutAction::Invalid && !result->HasNestedCommands())
                     {
                         // If there wasn't a parsed command, then try to get the
-                        // name from the json blob. If that name currently
+                        // name that *was* parsed. If that name currently
                         // exists in our list of commands, we should remove it.
-                        const auto name = _nameFromJson(value);
-                        if (name.has_value() && !name->empty())
+                        const auto name = result->Name();
+                        if (!name.empty())
                         {
-                            commands.Remove(*name);
+                            commands.Remove(name);
                         }
                     }
                     else
@@ -383,14 +426,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Function Description:
-    // - Serialize the Command into an array of json actions
+    // - Serialize the Command into a json value
     // Arguments:
     // - <none>
     // Return Value:
-    // - an array of serialized actions
+    // - a serialized command
     Json::Value Command::ToJson() const
     {
-        Json::Value cmdList{ Json::ValueType::arrayValue };
+        Json::Value cmdJson{ Json::ValueType::objectValue };
 
         if (_nestedCommand || _IterateOn != ExpandCommandType::None)
         {
@@ -398,47 +441,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // For these, we can trust _originalJson to be correct.
             // In fact, we _need_ to use it here because we don't actually deserialize `iterateOn`
             //   until we expand the command.
-            cmdList.append(_originalJson);
+            cmdJson = _originalJson;
         }
-        else if (_keyMappings.empty())
+        else
         {
-            // only write out one command
-            Json::Value cmdJson{ Json::ValueType::objectValue };
-            JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
+            JsonUtils::SetValueForKey(cmdJson, IconKey, _icon);
             JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
+            if (!_Description.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, DescriptionKey, _Description);
+            }
+            if (!_ID.empty())
+            {
+                JsonUtils::SetValueForKey(cmdJson, IDKey, _ID);
+            }
 
             if (_ActionAndArgs)
             {
                 cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
             }
-
-            cmdList.append(cmdJson);
-        }
-        else
-        {
-            // we'll write out one command per key mapping
-            for (auto keys{ _keyMappings.begin() }; keys != _keyMappings.end(); ++keys)
-            {
-                Json::Value cmdJson{ Json::ValueType::objectValue };
-
-                if (keys == _keyMappings.begin())
-                {
-                    // First iteration also writes icon and name
-                    JsonUtils::SetValueForKey(cmdJson, IconKey, _iconPath);
-                    JsonUtils::SetValueForKey(cmdJson, NameKey, _name);
-                }
-
-                if (_ActionAndArgs)
-                {
-                    cmdJson[JsonKey(ActionKey)] = ActionAndArgs::ToJson(_ActionAndArgs);
-                }
-
-                JsonUtils::SetValueForKey(cmdJson, KeysKey, *keys);
-                cmdList.append(cmdJson);
-            }
         }
 
-        return cmdList;
+        return cmdJson;
     }
 
     // Function Description:
@@ -478,23 +502,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   appended to this vector.
     // Return Value:
     // - <none>
-    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command> commands,
+    void Command::ExpandCommands(IMap<winrt::hstring, Model::Command>& commands,
                                  IVectorView<Model::Profile> profiles,
-                                 IVectorView<Model::ColorScheme> schemes,
-                                 IVector<SettingsLoadWarnings> warnings)
+                                 IVectorView<Model::ColorScheme> schemes)
     {
         std::vector<winrt::hstring> commandsToRemove;
         std::vector<Model::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
-        for (const auto& nameAndCmd : commands)
+        for (const auto& [name, command] : commands)
         {
-            auto cmd{ get_self<implementation::Command>(nameAndCmd.Value()) };
+            auto cmd{ get_self<implementation::Command>(command) };
 
-            auto newCommands = _expandCommand(cmd, profiles, schemes, warnings);
+            auto newCommands = _expandCommand(cmd, profiles, schemes);
             if (newCommands.size() > 0)
             {
-                commandsToRemove.push_back(nameAndCmd.Key());
+                commandsToRemove.push_back(name);
                 commandsToAdd.insert(commandsToAdd.end(), newCommands.begin(), newCommands.end());
             }
         }
@@ -529,21 +552,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - expandable: the Command to potentially turn into more commands
     // - profiles: A list of all the profiles that this command should be expanded on.
-    // - warnings: If there were any warnings during parsing, they'll be
-    //   appended to this vector.
     // Return Value:
-    // - and empty vector if the command wasn't expandable, otherwise a list of
+    // - and empty vector if the command wasn't expandable; otherwise, a list of
     //   the newly-created commands.
     std::vector<Model::Command> Command::_expandCommand(Command* const expandable,
                                                         IVectorView<Model::Profile> profiles,
-                                                        IVectorView<Model::ColorScheme> schemes,
-                                                        IVector<SettingsLoadWarnings>& warnings)
+                                                        IVectorView<Model::ColorScheme> schemes)
     {
         std::vector<Model::Command> newCommands;
 
         if (expandable->HasNestedCommands())
         {
-            ExpandCommands(expandable->_subcommands, profiles, schemes, warnings);
+            ExpandCommands(expandable->_subcommands, profiles, schemes);
         }
 
         if (expandable->_IterateOn == ExpandCommandType::None)
@@ -552,7 +572,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         std::string errs; // This string will receive any error text from failing to parse.
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
 
         // First, get a string for the original Json::Value
         auto oldJsonString = expandable->_originalJson.toStyledString();
@@ -564,18 +584,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto actualDataEnd = newJsonString.data() + newJsonString.size();
             if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
             {
-                warnings.Append(SettingsLoadWarnings::FailedToParseCommandJson);
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
                 return false;
             }
 
             // Pass the new json back though FromJson, to get the new expanded value.
-            std::vector<SettingsLoadWarnings> newWarnings;
-            if (auto newCmd{ Command::FromJson(newJsonValue, newWarnings) })
+            // FromJson requires that we pass in a vector to hang on to the
+            // warnings, but ultimately, we don't care about warnings during
+            // expansion.
+            std::vector<SettingsLoadWarnings> unused;
+            if (auto newCmd{ Command::FromJson(newJsonValue, unused, expandable->_Origin) })
             {
                 newCommands.push_back(*newCmd);
             }
-            std::for_each(newWarnings.begin(), newWarnings.end(), [warnings](auto& warn) { warnings.Append(warn); });
             return true;
         };
 
@@ -595,7 +616,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
+                // Use the fully resolved icon here so it doesn't have to go around the resolver again
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon().Resolved()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);
@@ -634,5 +656,210 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return newCommands;
+    }
+
+    void Command::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon && *_icon)
+        {
+            ResolveIconMediaResource(_Origin, basePath, *_icon, resolver);
+        }
+    }
+
+    winrt::Windows::Foundation::Collections::IVector<Model::Command> Command::ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength)
+    {
+        if (json.empty())
+        {
+            return nullptr;
+        }
+        auto data = winrt::to_string(json);
+
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        std::vector<Model::Command> result;
+
+        const auto parseElement = [&](const auto& element) {
+            std::wstring completionText;
+            std::wstring listText;
+            std::wstring tooltipText;
+            JsonUtils::GetValueForKey(element, "CompletionText", completionText);
+            JsonUtils::GetValueForKey(element, "ListItemText", listText);
+            JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
+
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{:\x7f^{}}{}"), L"", replaceLength, completionText));
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto c = winrt::make_self<Command>();
+            c->_name = CommandNameOrResource{ .name = listText };
+            c->_Description = tooltipText;
+            c->_ActionAndArgs = actionAndArgs;
+            // Try to assign a sensible icon based on the result type. These are
+            // roughly chosen to align with the icons in
+            // https://github.com/PowerShell/PowerShellEditorServices/pull/1738
+            // as best as possible.
+            if (const auto resultType{ JsonUtils::GetValueForKey<int>(element, "ResultType") })
+            {
+                // PowerShell completion result -> Segoe Fluent icon value & name
+                switch (resultType)
+                {
+                case 1: // History          -> 0xe81c History
+                    c->_icon = MediaResource::FromString(L"\ue81c");
+                    break;
+                case 2: // Command          -> 0xecaa AppIconDefault
+                    c->_icon = MediaResource::FromString(L"\uecaa");
+                    break;
+                case 3: // ProviderItem     -> 0xe8e4 AlignLeft
+                    c->_icon = MediaResource::FromString(L"\ue8e4");
+                    break;
+                case 4: // ProviderContainer  -> 0xe838 FolderOpen
+                    c->_icon = MediaResource::FromString(L"\ue838");
+                    break;
+                case 5: // Property         -> 0xe7c1 Flag
+                    c->_icon = MediaResource::FromString(L"\ue7c1");
+                    break;
+                case 6: // Method           -> 0xecaa AppIconDefault
+                    c->_icon = MediaResource::FromString(L"\uecaa");
+                    break;
+                case 7: // ParameterName    -> 0xe7c1 Flag
+                    c->_icon = MediaResource::FromString(L"\ue7c1");
+                    break;
+                case 8: // ParameterValue   -> 0xf000 KnowledgeArticle
+                    c->_icon = MediaResource::FromString(L"\uf000");
+                    break;
+                case 10: // Namespace       -> 0xe943 Code
+                    c->_icon = MediaResource::FromString(L"\ue943");
+                    break;
+                case 13: // DynamicKeyword  -> 0xe945 LightningBolt
+                    c->_icon = MediaResource::FromString(L"\ue945");
+                    break;
+                }
+            }
+
+            result.push_back(*c);
+        };
+
+        if (root.isArray())
+        {
+            // If we got a whole array of suggestions, parse each one.
+            for (const auto& element : root)
+            {
+                parseElement(element);
+            }
+        }
+        else if (root.isObject())
+        {
+            // If we instead only got a single element back, just parse the root element.
+            parseElement(root);
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
+
+    // Method description:
+    // * Convert the list of recent commands into a list of sendInput actions to
+    //   send those commands.
+    // * We'll give each command a "history" icon.
+    // * If directories is true, we'll prepend "cd " to each command, so that
+    //   the command will be run as a directory change instead.
+    IVector<Model::Command> Command::HistoryToCommands(IVector<winrt::hstring> history,
+                                                       winrt::hstring currentCommandline,
+                                                       bool directories,
+                                                       winrt::hstring iconPath)
+    {
+        std::wstring cdText = directories ? L"cd " : L"";
+        auto result = std::vector<Model::Command>();
+
+        // Use this map to discard duplicates.
+        std::unordered_map<std::wstring_view, bool> foundCommands{};
+
+        auto backspaces = std::wstring(currentCommandline.size(), L'\x7f');
+
+        // Iterate in reverse over the history, so that most recent commands are first
+        for (auto i = history.Size(); i > 0; i--)
+        {
+            const auto& element{ history.GetAt(i - 1) };
+            std::wstring_view line{ element };
+
+            if (line.empty())
+            {
+                continue;
+            }
+            if (foundCommands.contains(line))
+            {
+                continue;
+            }
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{}{}{}"), cdText, backspaces, line));
+
+            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
+
+            auto command = winrt::make_self<Command>();
+            command->_ActionAndArgs = actionAndArgs;
+            command->_name = CommandNameOrResource{ .name = std::wstring{ line } };
+            command->_icon = MediaResource::FromString(iconPath);
+            result.push_back(*command);
+            foundCommands[line] = true;
+        }
+
+        return winrt::single_threaded_vector<Model::Command>(std::move(result));
+    }
+
+    void Command::LogSettingChanges(std::set<std::string>& changes)
+    {
+        if (_IterateOn != ExpandCommandType::None)
+        {
+            switch (_IterateOn)
+            {
+            case ExpandCommandType::Profiles:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "profiles"));
+                break;
+            case ExpandCommandType::ColorSchemes:
+                changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), IterateOnKey, "schemes"));
+                break;
+            }
+        }
+
+        if (!_Description.empty())
+        {
+            changes.emplace(DescriptionKey);
+        }
+
+        if (IsNestedCommand())
+        {
+            changes.emplace(CommandsKey);
+        }
+        else
+        {
+            const auto json{ ActionAndArgs::ToJson(ActionAndArgs()) };
+            if (json.isString())
+            {
+                // covers actions w/out args
+                // - "command": "unbound" --> "unbound"
+                // - "command": "copy"    --> "copy"
+                changes.emplace(json.asString());
+            }
+            else
+            {
+                // covers actions w/ args
+                // - "command": { "action": "copy", "singleLine": true }                           --> "copy.singleLine"
+                // - "command": { "action": "copy", "singleLine": true, "dismissSelection": true } --> "copy.singleLine", "copy.dismissSelection"
+
+                const std::string shortcutActionName{ json[JsonKey("action")].asString() };
+
+                auto members = json.getMemberNames();
+                members.erase(std::remove_if(members.begin(), members.end(), [](const auto& member) { return member == "action"; }), members.end());
+
+                for (const auto& actionArg : members)
+                {
+                    changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), shortcutActionName, actionArg));
+                }
+            }
+        }
     }
 }

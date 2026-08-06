@@ -14,8 +14,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Editor::InteractionViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(Editor::InteractionViewModel, ViewModel, PropertyChanged.raise, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(WarnAboutMultiLinePaste, winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste, ViewModel().WarnAboutMultiLinePaste);
     };
 }
 

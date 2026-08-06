@@ -24,6 +24,7 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
+    ..\CSSLengthPercentage.cpp \
     ..\FontInfo.cpp \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \
@@ -31,7 +32,6 @@ SOURCES = \
     ..\RenderEngineBase.cpp \
     ..\RenderSettings.cpp \
     ..\renderer.cpp \
-    ..\thread.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

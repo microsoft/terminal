@@ -10,12 +10,12 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::WRL;
 
 // degenerate range constructor.
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const Cursor& cursor,
                                                         const std::wstring_view wordDelimiters) noexcept
@@ -23,7 +23,7 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, cursor, wordDelimiters);
 }
 
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const til::point start,
                                                         const til::point end,
@@ -35,7 +35,7 @@ HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 
 // returns a degenerate text range of the start of the row closest to the y value of point
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT TermControlUiaTextRange::RuntimeClassInitialize(_In_ Console::Render::IRenderData* pData,
                                                         _In_ IRawElementProviderSimple* const pProvider,
                                                         const UiaPoint point,
                                                         const std::wstring_view wordDelimiters)
@@ -73,31 +73,12 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
 //                (0,0) is the top-left of the app window
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) const
+void TermControlUiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
-
-    const auto includeOffsets = [](long clientPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(padding);
-        // only the padding is in DIPs now
-        result *= scaleFactor;
-        result += clientPos;
-        result += termControlPos;
-        return result;
-    };
-
-    // update based on TermControl location (important for Panes)
-    UiaRect boundingRect;
-    THROW_IF_FAILED(provider->get_BoundingRectangle(&boundingRect));
-
-    // update based on TermControl padding
-    const auto padding = provider->GetPadding();
-
-    // Get scale factor for display
-    const auto scaleFactor = provider->GetScaleFactor();
-
-    clientPoint->x = includeOffsets(clientPoint->x, boundingRect.left, padding.left, scaleFactor);
-    clientPoint->y = includeOffsets(clientPoint->y, boundingRect.top, padding.top, scaleFactor);
+    const auto point = provider->GetContentOrigin();
+    clientPoint.x += point.x;
+    clientPoint.y += point.y;
 }
 
 // Method Description:
@@ -107,31 +88,12 @@ void TermControlUiaTextRange::_TranslatePointToScreen(til::point* clientPoint) c
 //                (0,0) is the top-left of the screen
 // Return Value:
 // - <none>
-void TermControlUiaTextRange::_TranslatePointFromScreen(til::point* screenPoint) const
+void TermControlUiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
     const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
-
-    const auto includeOffsets = [](long screenPos, double termControlPos, double padding, double scaleFactor) {
-        auto result = base::ClampedNumeric<double>(padding);
-        // only the padding is in DIPs now
-        result /= scaleFactor;
-        result -= screenPos;
-        result -= termControlPos;
-        return result;
-    };
-
-    // update based on TermControl location (important for Panes)
-    UiaRect boundingRect;
-    THROW_IF_FAILED(provider->get_BoundingRectangle(&boundingRect));
-
-    // update based on TermControl padding
-    const auto padding = provider->GetPadding();
-
-    // Get scale factor for display
-    const auto scaleFactor = provider->GetScaleFactor();
-
-    screenPoint->x = includeOffsets(screenPoint->x, boundingRect.left, padding.left, scaleFactor);
-    screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
+    const auto point = provider->GetContentOrigin();
+    screenPoint.x -= point.x;
+    screenPoint.y -= point.y;
 }
 
 til::size TermControlUiaTextRange::_getScreenFontSize() const noexcept

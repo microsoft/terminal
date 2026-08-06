@@ -14,10 +14,11 @@
     <ClCompile Include="..\adaptDispatch.cpp" />
     <ClCompile Include="..\FontBuffer.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
+    <ClCompile Include="..\MacroBuffer.cpp" />
+    <ClCompile Include="..\PageManager.cpp" />
+    <ClCompile Include="..\SixelParser.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
-    <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
-    <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -29,13 +30,14 @@
     <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\ITerminalApi.hpp" />
+    <ClInclude Include="..\MacroBuffer.hpp" />
+    <ClInclude Include="..\PageManager.hpp" />
+    <ClInclude Include="..\SixelParser.hpp" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
     <ClInclude Include="..\ITermDispatch.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
     <ClInclude Include="..\IInteractDispatch.hpp" />
-    <ClInclude Include="..\tracing.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">

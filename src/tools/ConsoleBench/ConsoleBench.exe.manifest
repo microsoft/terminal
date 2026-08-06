@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly
+	xmlns="urn:schemas-microsoft-com:asm.v1"
+	xmlns:asm3="urn:schemas-microsoft-com:asm.v3"
+	xmlns:cv1="urn:schemas-microsoft-com:compatibility.v1"
+	xmlns:ws="http://schemas.microsoft.com/SMI/2005/WindowsSettings"
+	xmlns:ws2="http://schemas.microsoft.com/SMI/2016/WindowsSettings"
+	xmlns:ws3="http://schemas.microsoft.com/SMI/2019/WindowsSettings"
+	manifestVersion="1.0">
+	<asm3:application>
+		<windowsSettings>
+			<ws2:longPathAware>true</ws2:longPathAware>
+			<ws3:activeCodePage>UTF-8</ws3:activeCodePage>
+		</windowsSettings>
+	</asm3:application>
+	<cv1:compatibility>
+		<application>
+			<supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+		</application>
+	</cv1:compatibility>
+	<dependency>
+		<dependentAssembly>
+			<assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" />
+		</dependentAssembly>
+	</dependency>
+</assembly>

@@ -9,7 +9,7 @@
 using namespace Microsoft::Console::Types;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(gsl::span<const int> data)
+SAFEARRAY* BuildIntSafeArray(std::span<const int> data)
 {
     auto psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
@@ -31,7 +31,7 @@ SAFEARRAY* BuildIntSafeArray(gsl::span<const int> data)
 }
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters) noexcept
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -42,29 +42,6 @@ try
     return S_OK;
 }
 CATCH_RETURN();
-
-[[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID eventId)
-{
-    auto hr = S_OK;
-    // check to see if we're already firing this particular event
-    if (_signalFiringMapping.find(eventId) != _signalFiringMapping.end() &&
-        _signalFiringMapping[eventId] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalFiringMapping[eventId] = true;
-    }
-    CATCH_RETURN();
-
-    IRawElementProviderSimple* pProvider = this;
-    hr = UiaRaiseAutomationEvent(pProvider, eventId);
-    _signalFiringMapping[eventId] = false;
-
-    return hr;
-}
 
 #pragma region IRawElementProviderSimple
 
@@ -191,7 +168,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
     const std::array<int, 2> rId{ UiaAppendRuntimeId, -1 };
 
-    const gsl::span<const int> span{ rId.data(), rId.size() };
+    const std::span<const int> span{ rId.data(), rId.size() };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
     *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);
@@ -208,10 +185,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_resul
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
+IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus() noexcept
 {
     UiaTracing::TextProvider::SetFocus(*this);
-    return Signal(UIA_AutomationFocusChangedEventId);
+    return S_OK;
 }
 
 #pragma endregion
@@ -257,7 +234,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     UiaTracing::TextProvider::GetSelection(*this, *range.Get());
 
     LONG currentIndex = 0;
-    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Get());
     if (FAILED(hr))
     {
         SafeArrayDestroy(*ppRetVal);
@@ -301,7 +278,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
 
     LONG currentIndex = 0;
-    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Get());
     if (FAILED(hr))
     {
         SafeArrayDestroy(*ppRetVal);

@@ -21,7 +21,7 @@ namespace Microsoft::Console::Render
     class FontResource
     {
     public:
-        FontResource(const gsl::span<const uint16_t> bitPattern,
+        FontResource(const std::span<const uint16_t> bitPattern,
                      const til::size sourceSize,
                      const til::size targetSize,
                      const size_t centeringHint);
@@ -33,7 +33,7 @@ namespace Microsoft::Console::Render
 
     private:
         void _regenerateFont();
-        void _resizeBitPattern(gsl::span<byte> targetBuffer);
+        void _resizeBitPattern(std::span<byte> targetBuffer);
 
         std::vector<uint16_t> _bitPattern;
         til::size _sourceSize;

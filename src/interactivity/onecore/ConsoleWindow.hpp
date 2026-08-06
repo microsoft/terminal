@@ -24,9 +24,6 @@ namespace Microsoft::Console::Interactivity::OneCore
     {
     public:
         // Inherited via IConsoleWindow
-        BOOL EnableBothScrollBars() noexcept override;
-        int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition) noexcept override;
-
         bool IsInFullscreen() const noexcept override;
         void SetIsFullscreen(const bool fFullscreenEnabled) noexcept override;
         void ChangeViewport(const til::inclusive_rect& NewWindow) override;
@@ -54,7 +51,6 @@ namespace Microsoft::Console::Interactivity::OneCore
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
         void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) noexcept override;
         [[nodiscard]] HRESULT UiaSetTextAreaFocus() noexcept override;
         til::rect GetWindowRect() const noexcept override;
     };

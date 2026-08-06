@@ -5,8 +5,6 @@
 #include "EditColorScheme.h"
 #include "EditColorScheme.g.cpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
@@ -34,22 +32,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ToolTipService::SetToolTip(NameBox(), box_value(RS_(L"ColorScheme_Name/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
         Automation::AutomationProperties::SetName(RenameAcceptButton(), RS_(L"RenameAccept/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetName(RenameCancelButton(), RS_(L"RenameCancel/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(SetAsDefaultButton(), RS_(L"ColorScheme_SetAsDefault/Header"));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"ColorScheme_DeleteButton/Text"));
     }
 
     void EditColorScheme::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ColorSchemeViewModel>();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
-        // Set the text disclaimer for the text box
-        hstring disclaimer{};
-        if (_ViewModel.IsInBoxScheme())
-        {
-            // load disclaimer for in-box profiles
-            disclaimer = RS_(L"ColorScheme_RenameDisclaimerInBox");
-        }
-        RenameContainer().HelpText(disclaimer);
+        const auto schemeName = _ViewModel.Name();
+        NameBox().Text(schemeName);
 
-        NameBox().Text(_ViewModel.Name());
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("colorSchemes.editColorScheme", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(schemeName.data(), "SchemeName", "The name of the color scheme that's being edited"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void EditColorScheme::ColorPickerChanged(const IInspectable& sender,

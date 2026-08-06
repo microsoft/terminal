@@ -5,6 +5,7 @@
 
 #include "App.g.h"
 #include "App.base.h"
+#include <winrt/Windows.UI.Xaml.Hosting.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -13,11 +14,21 @@ namespace winrt::TerminalApp::implementation
     public:
         App();
         void OnLaunched(const Windows::ApplicationModel::Activation::LaunchActivatedEventArgs&);
+        void Initialize();
 
         TerminalApp::AppLogic Logic();
 
+        void PrepareForSettingsUI();
+
+        bool IsDisposed() const
+        {
+            return _bIsClosed;
+        }
+
     private:
-        bool _isUwp = false;
+        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager = nullptr;
+        bool _bIsClosed = false;
+        bool _preparedForSettingsUI{ false };
     };
 }
 

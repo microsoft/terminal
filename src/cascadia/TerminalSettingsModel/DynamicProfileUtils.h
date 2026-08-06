@@ -21,6 +21,6 @@ Author(s):
 // will become disconnected from user settings.
 // {2bde4a90-d05f-401c-9492-e40884ead1d8}
 // uuidv5 properties: name format is UTF-16LE bytes
-static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+inline constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
 winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile> CreateDynamicProfile(const std::wstring_view& name);

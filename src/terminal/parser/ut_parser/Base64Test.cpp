@@ -5,6 +5,7 @@
 #include "WexTestClass.h"
 
 #include <til/rand.h>
+#include <pcg_random.hpp>
 #include <wincrypt.h>
 
 #include "base64.hpp"

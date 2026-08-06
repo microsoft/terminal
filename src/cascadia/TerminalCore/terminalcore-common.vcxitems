@@ -15,6 +15,7 @@
     <ClInclude Include="..\ControlKeyStates.hpp" />
     <ClInclude Include="..\pch.h" />
     <ClInclude Include="..\Terminal.hpp" />
+    <ClInclude Include="..\tracing.hpp" />
   </ItemGroup>
 
 </Project>

@@ -26,7 +26,7 @@ HostSignalInputThread::HostSignalInputThread(wil::unique_hfile&& hPipe) :
 
 HostSignalInputThread::~HostSignalInputThread()
 {
-    // Manually terminate our thread during unittesting. Otherwise, the test
+    // Manually terminate our thread during unit testing. Otherwise, the test
     //      will finish, but TAEF will not manually kill the test.
 #ifdef UNIT_TESTING
     TerminateThread(_hThread.get(), 0);
@@ -56,7 +56,7 @@ template<typename T>
 T HostSignalInputThread::_ReceiveTypedPacket()
 {
     T msg = { 0 };
-    THROW_HR_IF(E_ABORT, !_GetData(gsl::as_writable_bytes(gsl::span{ &msg, 1 })));
+    THROW_HR_IF(E_ABORT, !_GetData(std::as_writable_bytes(std::span{ &msg, 1 })));
 
     // If the message is smaller than what we expected
     // then it was malformed and we need to throw.
@@ -80,16 +80,14 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 {
     HostSignals signalId;
 
-    while (_GetData(gsl::as_writable_bytes(gsl::span{ &signalId, 1 })))
+    while (_GetData(std::as_writable_bytes(std::span{ &signalId, 1 })))
     {
         switch (signalId)
         {
         case HostSignals::NotifyApp:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
+            ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId);
             break;
         }
         case HostSignals::SetForeground:
@@ -104,10 +102,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         }
         case HostSignals::EndTask:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
+            ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags);
             break;
         }
         default:
@@ -128,7 +124,7 @@ T HostSignalInputThread::_ReceiveTypedPacket()
 // - True if we could skip forward successfully. False otherwise.
 bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 {
-    std::array<gsl::byte, 256> buffer;
+    std::array<std::byte, 256> buffer;
 
     while (byteCount > 0)
     {
@@ -152,7 +148,7 @@ bool HostSignalInputThread::_AdvanceReader(DWORD byteCount)
 // - buffer - Buffer to fill with data.
 // Return Value:
 // - True if data was retrieved successfully. False otherwise.
-bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
+bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
 {
     DWORD bytesRead = 0;
     // If we failed to read because the terminal broke our pipe (usually due
@@ -193,7 +189,10 @@ bool HostSignalInputThread::_GetData(gsl::span<gsl::byte> buffer)
                                 &_dwThreadId));
 
     RETURN_LAST_ERROR_IF_NULL(_hThread.get());
-    LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(_hThread.get(), L"Host Signal Handler Thread"));
+    }
 
     return S_OK;
 }

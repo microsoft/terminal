@@ -80,7 +80,6 @@ class TextBufferIteratorTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         return true;
@@ -89,7 +88,6 @@ class TextBufferIteratorTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         delete m_state;
 
@@ -144,7 +142,7 @@ class TextBufferIteratorTests
         const auto it = GetIterator<T>();
 
         auto oneOff = it._pos;
-        oneOff.X++;
+        oneOff.x++;
         const auto it2 = GetIteratorAt<T>(oneOff);
 
         VERIFY_ARE_NOT_EQUAL(it, it2);
@@ -160,7 +158,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         auto expectedPos = it._pos;
-        expectedPos.X += gsl::narrow<til::CoordType>(diffUnit);
+        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         it += diffUnit;
@@ -178,7 +176,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         til::point pos = itExpected._pos;
-        pos.X += gsl::narrow<til::CoordType>(diffUnit);
+        pos.x += gsl::narrow<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         itOffset -= diffUnit;
@@ -195,7 +193,7 @@ class TextBufferIteratorTests
         auto itActual = GetIterator<T>();
 
         til::point expectedPos = itActual._pos;
-        expectedPos.X++;
+        expectedPos.x++;
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++itActual;
@@ -212,7 +210,7 @@ class TextBufferIteratorTests
         const auto itExpected = GetIteratorWithAdvance<T>();
 
         til::point pos = itExpected._pos;
-        pos.X++;
+        pos.x++;
         auto itActual = GetIteratorAt<T>(pos);
 
         --itActual;
@@ -229,7 +227,7 @@ class TextBufferIteratorTests
         auto it = GetIterator<T>();
 
         auto expectedPos = it._pos;
-        expectedPos.X++;
+        expectedPos.x++;
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         ++it;
@@ -246,7 +244,7 @@ class TextBufferIteratorTests
         const auto itExpected = GetIteratorWithAdvance<T>();
 
         til::point pos = itExpected._pos;
-        pos.X++;
+        pos.x++;
         auto itActual = GetIteratorAt<T>(pos);
 
         itActual--;
@@ -264,7 +262,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         auto expectedPos = it._pos;
-        expectedPos.X += gsl::narrow<til::CoordType>(diffUnit);
+        expectedPos.x += gsl::narrow<til::CoordType>(diffUnit);
         const auto itExpected = GetIteratorAt<T>(expectedPos);
 
         const auto itActual = it + diffUnit;
@@ -282,7 +280,7 @@ class TextBufferIteratorTests
 
         ptrdiff_t diffUnit = 3;
         til::point pos = itExpected._pos;
-        pos.X += gsl::narrow<til::CoordType>(diffUnit);
+        pos.x += gsl::narrow<til::CoordType>(diffUnit);
         auto itOffset = GetIteratorAt<T>(pos);
 
         const auto itActual = itOffset - diffUnit;
@@ -328,7 +326,7 @@ void TextBufferIteratorTests::BoolOperatorCell()
     Log::Comment(L"For cells, also check incrementing past the end.");
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     const auto size = outputBuffer.GetBufferSize().Dimensions();
-    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.X - 1, size.Y - 1 });
+    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.width - 1, size.height - 1 });
     VERIFY_IS_TRUE(it);
     it++;
     VERIFY_IS_FALSE(it);
@@ -452,10 +450,10 @@ void TextBufferIteratorTests::AsCharInfoCell()
 
     const auto& outputBuffer = gci.GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto wcharExpected = *row.GlyphAt(it._pos.X).begin();
-    const auto attrExpected = row.GetAttrByColumn(it._pos.X);
+    const auto wcharExpected = *row.GlyphAt(it._pos.x).begin();
+    const auto attrExpected = row.GetAttrByColumn(it._pos.x);
 
     const auto cellActual = gci.AsCharInfo(*it);
     const auto wcharActual = cellActual.Char.UnicodeChar;
@@ -472,9 +470,9 @@ void TextBufferIteratorTests::DereferenceOperatorText()
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto wcharExpected = row.GlyphAt(it._pos.X);
+    const auto wcharExpected = row.GlyphAt(it._pos.x);
     const auto wcharActual = *it;
 
     VERIFY_ARE_EQUAL(*wcharExpected.begin(), *wcharActual.begin());
@@ -487,11 +485,11 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
 
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
 
-    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
+    const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.y);
 
-    const auto textExpected = (std::wstring_view)row.GlyphAt(it._pos.X);
-    const auto dbcsExpected = row.DbcsAttrAt(it._pos.X);
-    const auto attrExpected = row.GetAttrByColumn(it._pos.X);
+    const auto textExpected = (std::wstring_view)row.GlyphAt(it._pos.x);
+    const auto dbcsExpected = row.DbcsAttrAt(it._pos.x);
+    const auto attrExpected = row.GetAttrByColumn(it._pos.x);
 
     const auto cellActual = *it;
     const auto textActual = cellActual.Chars();
@@ -540,15 +538,15 @@ void TextBufferIteratorTests::ConstructedLimits()
     const auto& textBuffer = outputBuffer.GetTextBuffer();
 
     til::inclusive_rect limits;
-    limits.Top = 1;
-    limits.Bottom = 1;
-    limits.Left = 3;
-    limits.Right = 5;
+    limits.top = 1;
+    limits.bottom = 1;
+    limits.left = 3;
+    limits.right = 5;
     const auto viewport = Microsoft::Console::Types::Viewport::FromInclusive(limits);
 
     til::point pos;
-    pos.X = limits.Left;
-    pos.Y = limits.Top;
+    pos.x = limits.left;
+    pos.y = limits.top;
 
     TextBufferCellIterator it(textBuffer, pos, viewport);
 

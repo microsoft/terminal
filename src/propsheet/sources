@@ -78,13 +78,13 @@ INCLUDES = \
     ..\host; \
 
 TARGETLIBS = \
+    $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecoreuap.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
-    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
@@ -109,7 +109,6 @@ TARGETLIBS = \
 
 DELAYLOAD = \
     ext-ms-win-dwmapi-ext-l1.dll; \
-    ext-ms-win-edputil-policy-l1.dll; \
     ext-ms-win-uxtheme-themes-l1.dll; \
     ext-ms-win-shell32-shellfolders-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \

@@ -94,7 +94,7 @@ configurations:
 
 - `"useExisting"`: always glom to the most recent window, regardless of desktop.
 - `"useExistingOnSameDesktop"`: Only glom if there's an existing window on this
-  virtual desktop, otherwise create a new window. This will be the new default
+  virtual desktop; otherwise, create a new window. This will be the new default
   value.
 - `"useNew"`: Never glom, always create a new window. This is technically the
   current behavior of the Terminal.
@@ -469,7 +469,7 @@ This is a list of actionable tasks generated as described by this spec:
   commandline
 * [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
   for the window.
-* [ ] Add an action that will cause all windows to briefly display a overlay
+* [ ] Add an action that will cause all windows to briefly display an overlay
   with the current window ID and name. This would be something like the
   "identify" feature of the Windows "Display" settings.
 
@@ -559,4 +559,4 @@ runtime.
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md
+[Process Model 2.0 Spec]: ./doc/specs/%235000%20-%20Process%20Model%202.0/%235000%20-%20Process%20Model%202.0.md

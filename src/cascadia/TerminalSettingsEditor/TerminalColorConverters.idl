@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        ColorToBrushConverter();
+    }
+
+    runtimeclass ColorToStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        ColorToStringConverter();
+    }
+}

@@ -20,6 +20,7 @@
         UI Variable, GH #12452 -->
         <maxversiontested Id="10.0.22000.0"/>
         <maxversiontested Id="10.0.22621.0"/>
+        <maxversiontested Id="10.0.26100.0"/>
         <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
     </application>
   </compatibility>

@@ -20,8 +20,8 @@ Author(s):
 
 #include "IFontDefaultList.hpp"
 
-static constexpr wchar_t DEFAULT_TT_FONT_FACENAME[]{ L"__DefaultTTFont__" };
-static constexpr wchar_t DEFAULT_RASTER_FONT_FACENAME[]{ L"Terminal" };
+inline constexpr wchar_t DEFAULT_TT_FONT_FACENAME[]{ L"__DefaultTTFont__" };
+inline constexpr wchar_t DEFAULT_RASTER_FONT_FACENAME[]{ L"Terminal" };
 
 class FontInfoBase
 {

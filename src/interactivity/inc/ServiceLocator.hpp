@@ -39,9 +39,6 @@ namespace Microsoft::Console::Interactivity
         //       In case the on-demand creation fails, the return value
         //       is nullptr and a message is logged.
 
-        [[nodiscard]] static HRESULT CreateAccessibilityNotifier();
-        static IAccessibilityNotifier* LocateAccessibilityNotifier();
-
         [[nodiscard]] static NTSTATUS SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control);
         static IConsoleControl* LocateConsoleControl();
         template<typename T>
@@ -84,7 +81,9 @@ namespace Microsoft::Console::Interactivity
 
         static Globals& LocateGlobals();
 
-        static HWND LocatePseudoWindow(const HWND owner = nullptr /*HWND_DESKTOP = 0*/);
+        static HWND LocatePseudoWindow();
+        static void SetPseudoWindowOwner(HWND owner);
+        static void SetPseudoWindowVisibility(bool showOrHide);
 
         ServiceLocator(const ServiceLocator&) = delete;
         ServiceLocator& operator=(const ServiceLocator&) = delete;
@@ -94,7 +93,6 @@ namespace Microsoft::Console::Interactivity
 
         static std::unique_ptr<IInteractivityFactory> s_interactivityFactory;
 
-        static std::unique_ptr<IAccessibilityNotifier> s_accessibilityNotifier;
         static std::unique_ptr<IConsoleControl> s_consoleControl;
         static std::unique_ptr<IConsoleInputThread> s_consoleInputThread;
         // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton

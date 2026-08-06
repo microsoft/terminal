@@ -37,12 +37,14 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
+// The enum values being in this particular order allows the compiler to do some useful optimizations,
+// like simplifying `IsIndex16() || IsIndex256()` into a simple range check without branching.
 enum class ColorType : BYTE
 {
-    IsIndex256 = 0x0,
-    IsIndex16 = 0x1,
-    IsDefault = 0x2,
-    IsRgb = 0x3
+    IsDefault,
+    IsIndex16,
+    IsIndex256,
+    IsRgb
 };
 
 enum class ColorAlias : size_t
@@ -80,7 +82,8 @@ public:
     static constexpr size_t FRAME_FOREGROUND = 263;
     static constexpr size_t FRAME_BACKGROUND = 264;
     static constexpr size_t CURSOR_COLOR = 265;
-    static constexpr size_t TABLE_SIZE = 266;
+    static constexpr size_t SELECTION_BACKGROUND = 266;
+    static constexpr size_t TABLE_SIZE = 267;
 
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
@@ -117,10 +120,12 @@ public:
     }
 
     bool CanBeBrightened() const noexcept;
+    ColorType GetType() const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIndex16() const noexcept;
     bool IsIndex256() const noexcept;
     bool IsDefault() const noexcept;
+    bool IsDefaultOrLegacy() const noexcept;
     bool IsRgb() const noexcept;
 
     void SetColor(const COLORREF rgbColor) noexcept;
@@ -130,12 +135,11 @@ public:
     COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
-    constexpr BYTE GetIndex() const noexcept
-    {
-        return _index;
-    }
-
-    COLORREF GetRGB() const noexcept;
+    constexpr BYTE GetIndex() const noexcept { return _index; }
+    constexpr BYTE GetR() const noexcept { return _red; }
+    constexpr BYTE GetG() const noexcept { return _green; }
+    constexpr BYTE GetB() const noexcept { return _blue; }
+    constexpr COLORREF GetRGB() const noexcept { return RGB(_red, _green, _blue); }
 
     static constexpr BYTE TransposeLegacyIndex(const size_t index)
     {

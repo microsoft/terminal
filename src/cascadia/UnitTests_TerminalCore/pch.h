@@ -17,6 +17,25 @@ Author(s):
 
 #pragma once
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN // If this is not defined, windows.h includes commdlg.h which defines FindText globally and conflicts with UIAutomation ITextRangeProvider.
+#endif
+
+#define NOMINMAX
+
+// Define and then undefine WIN32_NO_STATUS because windows.h has no guard to prevent it from double defing certain statuses
+// when included with ntstatus.h
+#define WIN32_NO_STATUS
+#include <windows.h>
+#undef WIN32_NO_STATUS
+
+#include <winternl.h>
+
+#pragma warning(push)
+#pragma warning(disable : 4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.
+#include <ntstatus.h>
+#pragma warning(pop)
+
 #define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
@@ -29,7 +48,7 @@ Author(s):
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 
 #include <WexTestClass.h>
@@ -39,6 +58,7 @@ Author(s):
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.UI.Xaml.Data.h>
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
@@ -48,14 +68,7 @@ Author(s):
 // <Conhost includes>
 // These are needed because the roundtrip tests included in this library also
 // re-use some conhost code that depends on these.
-
 #include "conddkrefs.h"
-// From ntdef.h, but that can't be included or it'll fight over PROBE_ALIGNMENT and other such arch specific defs
-typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
-/*lint -save -e624 */ // Don't complain about different typedefs.
-typedef NTSTATUS* PNTSTATUS;
-/*lint -restore */ // Resume checking for different typedefs.
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 // </Conhost Includes>
 
 #include <cppwinrt_utils.h>

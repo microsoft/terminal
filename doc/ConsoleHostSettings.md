@@ -59,11 +59,11 @@ To modify settings specific to the current application, invoke the `Properties` 
 
 When console applications are launched, the Windows Console Host determines which settings to use by overlaying settings from the above locations.
 
-1. Initialize settings based on hardcoded defaults
+1. Initialize settings based on hard-coded defaults
 2. Overlay settings specified by the user's configured defaults
 3. Overlay application-specific settings from either the registry or the shortcut file, depending on how the application was launched
 
-Note that the registry settings are "sparse" settings repositories, meaning that if a setting isn't present, then whatever value that is already in use remains unchanged. This allows users to have some settings shared amongst all console applications and other settings be specific. Shortcut files, however, store each setting regardless of whether it was a default setting or not.
+Note that the registry settings are "sparse" settings repositories, meaning that if a setting isn't present, then whatever value that is already in use remains unchanged. This allows users to have some settings shared amongst all console applications and other settings be specific. Shortcut files, however, store each setting regardless of whether or not it was a default setting.
 
 ## Known Issues
 

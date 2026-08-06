@@ -43,6 +43,9 @@
     <AppxManifest Include="Package-Pre.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Preview'">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <AppxManifest Include="Package-Can.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='Canary'">
+      <SubType>Designer</SubType>
+    </AppxManifest>
     <AppxManifest Include="Package-Dev.appxmanifest" Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">
       <SubType>Designer</SubType>
     </AppxManifest>
@@ -63,6 +66,9 @@
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Canary'">
+    <WindowsTerminalAssetSuffix>-Can</WindowsTerminalAssetSuffix>
+  </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
@@ -70,9 +76,6 @@
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj">
       <Project>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalAzBridge\TerminalAzBridge.vcxproj">
-      <Project>{067F0A06-FCB7-472C-96E9-B03B54E8E18D}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ShellExtension\WindowsTerminalShellExt.vcxproj">
       <Project>{f2ed628a-db22-446f-a081-4cc845b51a2b}</Project>
@@ -100,7 +103,7 @@
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
         <SourceProject>
         </SourceProject>
-        <!-- Replace the filename for wt/wtd.exe with the one the manifest wants. -->
+        <!-- Replace the filename for wt/wtd.exe with the one that the manifest wants. -->
         <TargetPath Condition="'%(Filename)' == 'wt' and '%(Extension)' == '.exe'">$(OCExecutionAliasName).exe</TargetPath>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
@@ -153,6 +156,8 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug.UWPDesktop'" />
     </ItemGroup>
   </Target>
 
@@ -161,6 +166,8 @@
     <ItemGroup>
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs'" />
       <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug'" />
+      <FrameworkSdkReference Remove="@(FrameworkSdkReference)" Condition="'%(FrameworkSdkReference.SimpleName)'=='Microsoft.VCLibs.Desktop'" />
+      <FrameworkSdkPackage Remove="@(FrameworkSdkPackage)" Condition="'%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.UWPDesktop' or '%(FrameworkSdkPackage.Name)'=='Microsoft.VCLibs.140.00.Debug.UWPDesktop'" />
     </ItemGroup>
   </Target>
 

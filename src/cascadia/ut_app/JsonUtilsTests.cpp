@@ -354,16 +354,16 @@ namespace TerminalAppUnitTests
         TryBasicType(int{ -1024 }, -1024);
         TryBasicType(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
         TryBasicType(false, false);
-        TryBasicType(1.0f, 1.0f);
+        TryBasicType(1.1f, 1.1f);
 
         // string -> wstring
         TryBasicType(std::wstring{ L"hello" }, "hello");
 
         // float -> double
-        TryBasicType(1.0, 1.0f);
+        TryBasicType(static_cast<double>(1.1f), 1.1f);
 
         // double -> float
-        TryBasicType(1.0f, 1.0);
+        TryBasicType(1.1f, static_cast<double>(1.1f));
 
         TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#ABCDEF");
         TryBasicType(til::color{ 0xcc, 0xcc, 0xcc }, "#CCC", "#CCCCCC");

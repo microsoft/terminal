@@ -1,20 +1,26 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+
 constexpr std::wstring_view WtExe{ L"wt.exe" };
 constexpr std::wstring_view WtdExe{ L"wtd.exe" };
 constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
+constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
 
+// Forward declared from appmodel.h so that we don't need to pull in that header everywhere.
+extern "C" {
+WINBASEAPI LONG WINAPI GetCurrentPackageId(UINT32* bufferLength, BYTE* buffer);
+}
+
+#ifdef WINRT_Windows_ApplicationModel_H
 _TIL_INLINEPREFIX bool IsPackaged()
 {
-    static const auto isPackaged = []() -> bool {
-        try
-        {
-            const auto package = winrt::Windows::ApplicationModel::Package::Current();
-            return true;
-        }
-        catch (...)
-        {
-            return false;
-        }
+    static const auto isPackaged = []() {
+        UINT32 bufferLength = 0;
+        const auto hr = GetCurrentPackageId(&bufferLength, nullptr);
+        return hr != APPMODEL_ERROR_NO_PACKAGE;
     }();
     return isPackaged;
 }
@@ -104,19 +110,18 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
     }();
     return exePath;
 }
+#endif
 
 // Method Description:
 // - Quotes and escapes the given string so that it can be used as a command-line arg.
 // - e.g. given `\";foo\` will return `"\\\"\;foo\\"` so that the caller can construct a command-line
-//   using something such as `fmt::format(L"wt --title {}", QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
+//   using something such as `fmt::format(FMT_COMPILE(L"wt --title {}"), QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
 // Arguments:
 // - arg - the command-line argument to quote and escape.
 // Return Value:
 // - the quoted and escaped command-line argument.
-_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+inline void QuoteAndEscapeCommandlineArg(const std::wstring_view& arg, std::wstring& out)
 {
-    std::wstring out;
-    out.reserve(arg.size() + 2);
     out.push_back(L'"');
 
     size_t backslashes = 0;
@@ -139,5 +144,12 @@ _TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_v
 
     out.append(backslashes, L'\\');
     out.push_back(L'"');
+}
+
+_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+{
+    std::wstring out;
+    out.reserve(arg.size() + 2);
+    QuoteAndEscapeCommandlineArg(arg, out);
     return out;
 }

@@ -1,0 +1,45 @@
+From c3be070b7ee42639554555c27dce10c9de7af76c Mon Sep 17 00:00:00 2001
+From: "J. Berger" <mail@janaberger.de>
+Date: Sat, 1 Nov 2025 17:38:30 +0100
+Subject: [PATCH] When using MSVC x86 to compile v12.0.0 or v12.1.0,
+ conversions from __int64 to a 32bit unsigned int trigger warnings. (#4594)
+
+This is a follow-up for PR #4572.
+---
+ include/fmt/format.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/include/fmt/format.h b/include/fmt/format.h
+index 4a653007..65e19d2d 100644
+--- a/include/fmt/format.h
++++ b/include/fmt/format.h
+@@ -2534,7 +2534,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
+     auto grouping = Grouping(loc, specs.localized());
+     size += grouping.count_separators(exp);
+     return write_padded<Char, align::right>(
+-        out, specs, to_unsigned(size), [&](iterator it) {
++        out, specs, static_cast<size_t>(size), [&](iterator it) {
+           if (s != sign::none) *it++ = detail::getsign<Char>(s);
+           it = write_significand(it, f.significand, significand_size, exp,
+                                  decimal_point, grouping);
+@@ -2550,7 +2550,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
+   bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt();
+   size += 1 + (pointy ? 1 : 0) + num_zeros;
+   return write_padded<Char, align::right>(
+-      out, specs, to_unsigned(size), [&](iterator it) {
++      out, specs, static_cast<size_t>(size), [&](iterator it) {
+         if (s != sign::none) *it++ = detail::getsign<Char>(s);
+         *it++ = Char('0');
+         if (!pointy) return it;
+@@ -2594,7 +2594,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
+     *it++ = Char(exp_char);
+     return write_exponent<Char>(exp, it);
+   };
+-  auto usize = to_unsigned(size);
++  size_t usize = static_cast<size_t>(size);
+   return specs.width > 0
+              ? write_padded<Char, align::right>(out, specs, usize, write)
+              : base_iterator(out, write(reserve(out, usize)));
+-- 
+2.52.0.vfs.0.5
+

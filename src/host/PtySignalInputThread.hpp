@@ -55,17 +55,22 @@ namespace Microsoft::Console
             unsigned short show; // used as a bool, but passed as a ushort
         };
 
+        struct ClearBufferData
+        {
+            unsigned short keepCursorRow;
+        };
+
         struct SetParentData
         {
             uint64_t handle;
         };
 
-        [[nodiscard]] HRESULT _InputThread();
-        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
+        [[nodiscard]] HRESULT _InputThread() noexcept;
+        [[nodiscard]] bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
-        void _DoClearBuffer();
-        void _DoShowHide(const bool show);
+        void _DoClearBuffer(bool keepCursorRow) const;
+        void _DoShowHide(const ShowHideData& data);
         void _Shutdown();
 
         wil::unique_hfile _hFile;
@@ -75,8 +80,5 @@ namespace Microsoft::Console
         std::optional<ResizeWindowData> _earlyResize;
         std::optional<ShowHideData> _initialShowHide;
         ConhostInternalGetSet _api;
-
-    public:
-        std::optional<SetParentData> _earlyReparent;
     };
 }

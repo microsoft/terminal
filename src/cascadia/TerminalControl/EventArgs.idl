@@ -3,28 +3,69 @@
 
 namespace Microsoft.Terminal.Control
 {
-    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
-    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
-
     [flags]
     enum CopyFormat
     {
+        None = 0x0,
         HTML = 0x1,
         RTF = 0x2,
         All = 0xffffffff
     };
 
-    runtimeclass CopyToClipboardEventArgs
+    enum GraphicsAPI
     {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-        Windows.Foundation.IReference<CopyFormat> Formats { get; };
+        Automatic,
+        Direct2D,
+        Direct3D11,
+    };
+
+    enum TextMeasurement
+    {
+        Graphemes,
+        Wcswidth,
+        Console,
+    };
+
+    enum AmbiguousWidth
+    {
+        Narrow,
+        Wide,
+    };
+
+    enum DefaultInputScope
+    {
+        Default,
+        AlphanumericHalfWidth,
+    };
+
+    enum WarnAboutMultiLinePaste
+    {
+        Automatic,
+        Always,
+        Never,
+    };
+
+    runtimeclass FontSizeChangedArgs
+    {
+        Int32 Width { get; };
+        Int32 Height { get; };
+    }
+
+    runtimeclass ContextMenuRequestedEventArgs
+    {
+        Windows.Foundation.Point Position { get; };
     }
 
     runtimeclass TitleChangedEventArgs
     {
         String Title;
+    }
+
+    runtimeclass WriteToClipboardEventArgs
+    {
+        String Plain { get; }; // UTF-16, as required by CF_UNICODETEXT
+        byte[] Html { get; }; // UTF-8, as required by "HTML Format"
+        byte[] Rtf { get; }; // UTF-8, as required by "Rich Text Format"
     }
 
     runtimeclass PasteFromClipboardEventArgs
@@ -35,6 +76,7 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass OpenHyperlinkEventArgs
     {
+        OpenHyperlinkEventArgs(String uri);
         String Uri { get; };
     }
 
@@ -61,26 +103,72 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass RendererWarningArgs
     {
-        UInt64 Result { get; };
+        HRESULT Result { get; };
+        String Parameter { get; };
     }
 
     runtimeclass TransparencyChangedEventArgs
     {
-        Double Opacity { get; };
+        Single Opacity { get; };
     }
 
-    runtimeclass FoundResultsArgs
+    enum SearchState
     {
-        Boolean FoundMatch { get; };
-    }
+        Inactive = 0,
+        Active = 1,
+    };
 
     runtimeclass ShowWindowArgs
     {
         Boolean ShowOrHide { get; };
     }
-    
+
     runtimeclass UpdateSelectionMarkersEventArgs
     {
         Boolean ClearMarkers { get; };
+    }
+
+    runtimeclass CompletionsChangedEventArgs
+    {
+        String MenuJson { get; };
+        UInt32 ReplacementLength { get; };
+    }
+
+    runtimeclass KeySentEventArgs
+    {
+        UInt16 VKey { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+        Boolean KeyDown { get; };
+    }
+
+    runtimeclass CharSentEventArgs
+    {
+        Char Character { get; };
+        UInt16 ScanCode { get; };
+        Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
+    }
+
+    runtimeclass StringSentEventArgs
+    {
+        String Text { get; };
+    }
+
+    runtimeclass SearchMissingCommandEventArgs
+    {
+        String MissingCommand { get; };
+        Int32 BufferRow { get; };
+    }
+
+    runtimeclass ShowNotificationEventArgs
+    {
+        String Title { get; };
+        String Body { get; };
+    }
+
+    runtimeclass WindowSizeChangedEventArgs
+    {
+        Int32 Width;
+        Int32 Height;
     }
 }

@@ -12,12 +12,22 @@ namespace winrt::SampleApp::implementation
     {
     public:
         App();
+        void Initialize();
+        void Close();
         void OnLaunched(Windows::ApplicationModel::Activation::LaunchActivatedEventArgs const&);
+
+        bool IsDisposed() const
+        {
+            return _bIsClosed;
+        }
 
         SampleApp::SampleAppLogic Logic();
 
     private:
         bool _isUwp = false;
+        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager = nullptr;
+        winrt::Windows::Foundation::Collections::IVector<winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider> _providers = winrt::single_threaded_vector<Windows::UI::Xaml::Markup::IXamlMetadataProvider>();
+        bool _bIsClosed = false;
     };
 }
 

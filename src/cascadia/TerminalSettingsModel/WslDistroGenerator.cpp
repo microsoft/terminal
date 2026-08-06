@@ -11,6 +11,9 @@
 
 static constexpr std::wstring_view WslHomeDirectory{ L"~" };
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
+static constexpr std::wstring_view RancherDistributionPrefix{ L"rancher-desktop" };
+static constexpr std::wstring_view IconPath{ L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png" };
+static constexpr std::wstring_view GeneratorIconPath{ L"ms-appx:///ProfileGeneratorIcons/WSL.png" };
 
 // The WSL entries are structured as such:
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
@@ -18,6 +21,7 @@ static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" }
 //     ⌞ DistributionName: {the name}
 static constexpr wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
 static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
+static constexpr wchar_t RegKeyModern[] = L"Modern";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -45,6 +49,16 @@ std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
     return WslGeneratorNamespace;
 }
 
+std::wstring_view WslDistroGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"WslDistroGeneratorDisplayName");
+}
+
+std::wstring_view WslDistroGenerator::GetIcon() const noexcept
+{
+    return GeneratorIconPath;
+}
+
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
 {
     const auto WSLDistro{ CreateDynamicProfile(distName) };
@@ -53,7 +67,8 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     std::wstring command{};
     THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
     WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
-    WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance().DarkColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance().LightColorSchemeName(L"Campbell");
     if (isWslDashDashCdAvailableForLinuxPaths())
     {
         WSLDistro->StartingDirectory(winrt::hstring{ WslHomeDirectory });
@@ -62,7 +77,8 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     {
         WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     }
-    WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+    WSLDistro->Icon(winrt::hstring{ IconPath });
+    WSLDistro->PathTranslationStyle(winrt::Microsoft::Terminal::Control::PathTranslationStyle::WSL);
     return WSLDistro;
 }
 
@@ -77,9 +93,9 @@ static void namesToProfiles(const std::vector<std::wstring>& names, std::vector<
 {
     for (const auto& distName : names)
     {
-        if (til::starts_with(distName, DockerDistributionPrefix))
+        if (til::starts_with(distName, DockerDistributionPrefix) || til::starts_with(distName, RancherDistributionPrefix))
         {
-            // Docker for Windows creates some utility distributions to handle Docker commands.
+            // Docker for Windows and Rancher for Windows creates some utility distributions to handle Docker commands.
             // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
             continue;
         }
@@ -182,6 +198,12 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
     {
         auto distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
+        {
+            continue;
+        }
+
+        const auto modernValue{ wil::reg::try_get_value<uint32_t>(distroKey.get(), RegKeyModern) };
+        if (modernValue.value_or(0u) == 1u)
         {
             continue;
         }

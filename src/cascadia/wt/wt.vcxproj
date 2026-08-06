@@ -7,6 +7,7 @@
     <ProjectName>wt</ProjectName>
     <TargetName>wt</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <VersionInfoFileDescription>Windows Terminal Launcher Shim</VersionInfoFileDescription>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

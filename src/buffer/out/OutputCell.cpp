@@ -9,6 +9,10 @@
 #include "../../types/inc/convert.hpp"
 #include "../../inc/conattrs.hpp"
 
+// BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
+// initializer list leads to this warning. Can probably be removed in the future.
+#pragma warning(disable : 26493) // Don't use C-style casts (type.4).)
+
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
 
 OutputCell::OutputCell() noexcept :

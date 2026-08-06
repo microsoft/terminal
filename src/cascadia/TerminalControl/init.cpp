@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
 #include <WilErrorReporting.h>
+
+// For g_hCTerminalCoreProvider
+#include "../../cascadia/TerminalCore/tracing.hpp"
 
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
@@ -20,6 +22,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hInstDll);
         TraceLoggingRegister(g_hTerminalControlProvider);
+        TraceLoggingRegister(g_hCTerminalCoreProvider);
         Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hTerminalControlProvider);
         break;
     case DLL_PROCESS_DETACH:

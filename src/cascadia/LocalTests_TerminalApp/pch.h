@@ -28,11 +28,11 @@ Author(s):
 #endif
 
 #include <wil/cppwinrt.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 
 #include <WexTestClass.h>
-#include <json.h>
+#include <json/json.h>
 #include "consoletaeftemplates.hpp"
 #include "winrtTaefTemplates.hpp"
 
@@ -56,17 +56,21 @@ Author(s):
 #include <winrt/windows.applicationmodel.core.h>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 #include <regex>
-#include <CLI11/CLI11.hpp>
+#include <CLI/CLI.hpp>
 
 #include <shobjidl_core.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <SafeDispatcherTimer.h>
 
 // Common includes for most tests:
 #include "../../inc/conattrs.hpp"
@@ -74,3 +78,5 @@ Author(s):
 #include "../../inc/DefaultSettings.h"
 
 #include <cppwinrt_utils.h>
+
+#include <til/winrt.h>

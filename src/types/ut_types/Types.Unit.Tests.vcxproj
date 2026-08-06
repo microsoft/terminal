@@ -11,6 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
   <ItemGroup>
+    <ClCompile Include="CodepointWidthDetectorTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="UuidTests.cpp" />
     <ClCompile Include="..\precomp.cpp">

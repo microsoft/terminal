@@ -60,7 +60,7 @@ it could host any arbitrary content.
 
 ### Security
 
-I don't forsee this implementation by itself raising security concerns. This
+I don't foresee this implementation by itself raising security concerns. This
 feature is mostly concerned with adding support for arbitrary controls, not
 actually implementing some arbitrary controls.
 
@@ -70,7 +70,7 @@ With more possible controls in a pane than just a terminal, it's possible that
 crashes in those controls could impact the entire Terminal app's reliability.
 This would largely be out of our control, as we only author the TermControl.
 
-We may want to consider hosting each pane in it's own process, similar to how
+We may want to consider hosting each pane in its own process, similar to how
 moder browsers will host each tab in its own process, to help isolate tabs. This
 is a bigger discussion than the feature at hand, however.
 
@@ -94,7 +94,7 @@ should the control provide some sort of accessibility pattern.
   if the hosted control wants to use Ctrl+T for its own shortcut? The current
   keybindings model has the `TermControl` call into the App layer to see if a
   keystroke should be handled by the app first. We may want to make sure that
-  for non-terminal controls, we add a event handler to try and have the
+  for non-terminal controls, we add an event handler to try and have the
   `AppKeyBindings` handle the keypress if the control doesn't. This won't solve
   the case where the control wants to use a keybinding that is mapped by the
   Terminal App. In that case, non-terminal controls will actually behave

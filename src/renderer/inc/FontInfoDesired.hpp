@@ -20,6 +20,7 @@ Author(s):
 
 #include "FontInfoBase.hpp"
 #include "FontInfo.hpp"
+#include "CSSLengthPercentage.h"
 
 class FontInfoDesired : public FontInfoBase
 {
@@ -33,6 +34,14 @@ public:
 
     bool operator==(const FontInfoDesired& other) = delete;
 
+    void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
+    void SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept;
+    void SetEnableColorGlyphs(bool colorGlyphs) noexcept;
+
+    const CSSLengthPercentage& GetCellWidth() const noexcept;
+    const CSSLengthPercentage& GetCellHeight() const noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
+    bool GetEnableColorGlyphs() const noexcept;
     float GetFontSize() const noexcept;
     til::size GetEngineSize() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
@@ -40,4 +49,8 @@ public:
 private:
     til::size _coordSizeDesired;
     float _fontSize;
+    CSSLengthPercentage _cellWidth;
+    CSSLengthPercentage _cellHeight;
+    bool _builtinGlyphs = false;
+    bool _colorGlyphs = true;
 };

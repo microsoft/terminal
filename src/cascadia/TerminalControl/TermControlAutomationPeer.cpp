@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include <LibraryResources.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"
@@ -52,7 +51,7 @@ static std::wstring Sanitize(std::wstring_view text)
 // Arguments:
 // - text: the string we're validating
 // Return Value:
-// - true, if the text is readable. false, otherwise.
+// - true, if the text is readable; otherwise, false.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)
@@ -112,9 +111,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (const auto keyEventChar{ gsl::narrow_cast<wchar_t>(charCode) }; IsReadable({ &keyEventChar, 1 }))
             {
-                _keyEvents.emplace_back(keyEventChar);
+                _keyEvents.lock()->emplace_back(keyEventChar);
             }
         }
+    }
+
+    void TermControlAutomationPeer::Close()
+    {
+        // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
+        // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
+        _termControl = {};
+
+        // Solve the circular reference between us and the content automation peer.
+        _contentAutomationPeer.ParentProvider(nullptr);
     }
 
     // Method Description:
@@ -202,27 +211,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControlAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     {
-        // Try to suppress any events (or event data)
-        // that is just the keypress the user made
         auto sanitized{ Sanitize(newOutput) };
-        while (!_keyEvents.empty() && IsReadable(sanitized))
+        // Try to suppress any events (or event data)
+        // that are just the keypresses that the user made
         {
-            if (til::toupper_ascii(sanitized.front()) == _keyEvents.front())
+            auto keyEvents = _keyEvents.lock();
+            while (!keyEvents->empty() && IsReadable(sanitized))
             {
-                // the key event's character (i.e. the "A" key) matches
-                // the output character (i.e. "a" or "A" text).
-                // We can assume that the output character resulted from
-                // the pressed key, so we can ignore it.
-                sanitized = sanitized.substr(1);
-                _keyEvents.pop_front();
-            }
-            else
-            {
-                // The output doesn't match,
-                // so clear the input stack and
-                // move on to fire the event.
-                _keyEvents.clear();
-                break;
+                if (til::toupper_ascii(sanitized.front()) == keyEvents->front())
+                {
+                    // the key event's character (i.e. the "A" key) matches
+                    // the output character (i.e. "a" or "A" text).
+                    // We can assume that the output character resulted from
+                    // the pressed key, so we can ignore it.
+                    sanitized = sanitized.substr(1);
+                    keyEvents->pop_front();
+                }
+                else
+                {
+                    // The output doesn't match,
+                    // so clear the input stack and
+                    // move on to fire the event.
+                    keyEvents->clear();
+                    break;
+                }
             }
         }
 
@@ -295,21 +307,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetNameCore() const
     {
-        // fallback to title if profile name is empty
+        // fall back to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
-            const auto profileName = control->GetProfileName();
-            if (profileName.empty())
+            const auto originalName = control->GetStartingTitle();
+            if (originalName.empty())
             {
                 return control->Title();
             }
             else
             {
-                return profileName;
+                return originalName;
             }
         }
 
-        return L"";
+        return {};
     }
 
     hstring TermControlAutomationPeer::GetHelpTextCore() const
@@ -318,7 +330,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return control->Title();
         }
-        return L"";
+        return {};
     }
 
     AutomationLiveSetting TermControlAutomationPeer::GetLiveSettingCore() const

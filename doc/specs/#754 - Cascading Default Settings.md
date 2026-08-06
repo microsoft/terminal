@@ -115,7 +115,7 @@ greater detail below:
 
 ### Default Settings
 
-We'll have a static version of the "Default" file **hardcoded within the
+We'll have a static version of the "Default" file **hard-coded within the
 application package**. This `defaults.json` file will live within the
 application's package, which will prevent users from being able to edit it.
 
@@ -128,19 +128,19 @@ won't actually be generated, but because it's shipped with our app, it'll be
 overridden each time the app is updated. "Auto-generated" should be good enough
 to indicate to users that it should not be modified.
 
-Because the `defaults.json` file is hardcoded within our application, we can use
+Because the `defaults.json` file is hard-coded within our application, we can use
 its text directly, without loading the file from disk. This should help save
 some startup time, as we'll only need to load the user settings from disk.
 
 When we make changes to the default settings, or we make changes to the settings
-schema, we should make sure that we update the hardcoded `defaults.json` with
+schema, we should make sure that we update the hard-coded `defaults.json` with
 the new values. That way, the `defaults.json` file will always have the complete
 set of settings in it.
 
 ### Layering settings
 
 When we load the settings, we'll do it in three stages. First, we'll deserialize
-the default settings that we've hardcoded. We'll then generate any profiles that
+the default settings that we've hard-coded. We'll then generate any profiles that
 might come from dynamic profile sources. Then, we'll intelligently layer the
 user's setting upon those we've already loaded. If a user wants to make changes
 to some objects, like the default profiles, we'll need to make sure to load from
@@ -273,7 +273,7 @@ with GUIDs set.
 After a dynamic profile generator runs, we will determine what new profiles need
 to be added to the user settings, so we can append those to the list of
 profiles. The deserializer will look at the list of generated profiles and check
-if each and every one already has a entry in the user settings. The generator
+if each and every one already has an entry in the user settings. The generator
 will just blind hand back a list of profiles, and the deserializer will figure
 out if any of them need to be added to the user settings. We'll store some sort
 of result indicating that we want a save operation to occur. After the rest of
@@ -360,7 +360,7 @@ GUID GetNamespaceGuid(IDynamicProfileGenerator& generator);
 GUID GetGuidForName(IDynamicProfileGenerator& generator, std::wstring& name);
 ```
 
-The generator does not _need_ to use `GetGuidForName` to generate guids for it's
+The generator does not _need_ to use `GetGuidForName` to generate guids for its
 profiles. If the generator can determine another way to generate stable GUIDs
 for its profiles, it's free to use whatever method it wants. `GetGuidForName` is
 provided as a convenience.
@@ -505,8 +505,8 @@ like so:
 // To view the default settings, open the defaults.json file in this directory
 ```
 
-The "Settings" button would then only open the file the user needs to edit, and
-provide them instructions on how to open the defaults file.
+The "Settings" button would then only open the file that the user needs to edit,
+and provide them instructions on how to open the defaults file.
 
 There could alternatively be a hidden option for the "Open Settings" button,
 where holding <kbd>Alt</kbd> while clicking on the button would open the

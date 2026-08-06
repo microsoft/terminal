@@ -10,11 +10,12 @@ $LocalizationsFromContextMenu | ForEach-Object {
 ForEach ($pair in $Languages.GetEnumerator()) {
 	$LanguageDir = "./src/cascadia/CascadiaPackage/Resources/$($pair.Key)"
 	$ResPath = "$LanguageDir/Resources.resw"
+	$XmlDocument = $null
 	$PreexistingResw = Get-Item $ResPath -EA:Ignore
 	If ($null -eq $PreexistingResw) {
 		Write-Host "Copying $($pair.Value.FullName) to $ResPath"
+		$XmlDocument = [xml](Get-Content $pair.Value.FullName)
 		New-Item -type Directory $LanguageDir -EA:Ignore
-		Copy-Item $pair.Value.FullName $ResPath
 	} Else {
 		# Merge Them!
 		Write-Host "Merging $($pair.Value.FullName) into $ResPath"
@@ -29,6 +30,20 @@ ForEach ($pair in $Languages.GetEnumerator()) {
 		$newXml.root.data | % {
 			$null = $existingXml.root.AppendChild($existingXml.ImportNode($_, $true))
 		}
-		$existingXml.Save($PreexistingResw.FullName)
+		$XmlDocument = $existingXml # (which has been updated)
 	}
+
+	# Reset paths to be absolute (for .NET)
+	$LanguageDir = (Get-Item $LanguageDir).FullName
+	$ResPath = "$LanguageDir/Resources.resw"
+	# Force the "new" and "preexisting" paths to serialize with XmlWriter,
+	# to ensure consistency.
+	$writerSettings = [System.Xml.XmlWriterSettings]::new()
+	$writerSettings.NewLineChars = "`r`n"
+	$writerSettings.Indent = $true
+	$writerSettings.Encoding = [System.Text.UTF8Encoding]::new($false) # suppress the BOM
+	$writer = [System.Xml.XmlWriter]::Create($ResPath, $writerSettings)
+	$XmlDocument.Save($writer)
+	$writer.Flush()
+	$writer.Close()
 }

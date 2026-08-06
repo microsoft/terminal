@@ -17,43 +17,33 @@ Author(s):
 
 #pragma once
 
-#include <functional>
-
 #include "../types/inc/Viewport.hpp"
 
-#if DBG
-#define DBGCHARS(_params_)              \
-    {                                   \
-        Tracing::s_TraceChars _params_; \
-    }
-#define DBGOUTPUT(_params_)              \
-    {                                    \
-        Tracing::s_TraceOutput _params_; \
-    }
-#else
-#define DBGCHARS(_params_)
-#define DBGOUTPUT(_params_)
-#endif
+#define TraceLoggingConsoleCoord(value, name)        \
+    TraceLoggingPackedData(&value, sizeof(COORD)),   \
+        TraceLoggingPackedStruct(2, name),           \
+        TraceLoggingPackedMetadata(TlgInINT16, "X"), \
+        TraceLoggingPackedMetadata(TlgInINT16, "Y")
+
+#define TraceLoggingConsoleSmallRect(value, name)       \
+    TraceLoggingPackedData(&value, sizeof(SMALL_RECT)), \
+        TraceLoggingPackedStruct(4, name),              \
+        TraceLoggingInt16(TlgInINT16, "Left"),          \
+        TraceLoggingInt16(TlgInINT16, "Top"),           \
+        TraceLoggingInt16(TlgInINT16, "Right"),         \
+        TraceLoggingInt16(TlgInINT16, "Bottom")
+
+// We intentionally don't differentiate between A and W versions of CHAR_INFO, because some particularly nasty
+// applications smuggle data in the upper bytes of the UnicodeChar field while using the A APIs and then they
+// expect to read the same values back at a later time, which is something we stopped supporting.
+#define TraceLoggingConsoleCharInfo(value, name)           \
+    TraceLoggingStruct(2, name),                           \
+        TraceLoggingInt16(value.Char.UnicodeChar, "Char"), \
+        TraceLoggingInt16(value.Attributes, "Attributes")
 
 class Tracing
 {
 public:
-    ~Tracing();
-
-    static Tracing s_TraceApiCall(const NTSTATUS result, PCSTR traceName);
-
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
-    static void s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a);
-
-    static void s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
-
-    static void s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a);
-    static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_view handleType);
-    static void s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
-    static void s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
-
     static void s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
@@ -62,15 +52,11 @@ public:
     static void s_TraceWindowMessage(const MSG& msg);
     static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);
 
-    static void s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength);
+    static void s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, const std::wstring_view& text);
     static void s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_ bool bIsAttach);
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
 private:
     static ULONG s_ulDebugFlag;
-
-    Tracing(std::function<void()> onExit);
-
-    std::function<void()> _onExit;
 };

@@ -253,7 +253,7 @@ After much discussion as a team, we decided that **Proposal D** would be the
 best option. We felt that there wasn't a need to add any extra configuration to
 invoke the "pane switcher" as anything different than the "tab switcher". The
 "pane switcher" should really just exist as a part of the functionality of the
-advanced tab switcher, not as it's own thing.
+advanced tab switcher, not as its own thing.
 
 Additionally, we concurred that the new "direction" value should be `prev`, not
 `last`, for consistency's sake.

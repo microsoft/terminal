@@ -32,7 +32,7 @@ public:
     OutputCellRect() noexcept;
     OutputCellRect(const til::CoordType rows, const til::CoordType cols);
 
-    gsl::span<OutputCell> GetRow(const til::CoordType row);
+    std::span<OutputCell> GetRow(const til::CoordType row);
     OutputCellIterator GetRowIter(const til::CoordType row) const;
 
     til::CoordType Height() const noexcept;
@@ -44,6 +44,6 @@ private:
     OutputCell* _FindRowOffset(const til::CoordType row);
     const OutputCell* _FindRowOffset(const til::CoordType row) const;
 
-    til::CoordType _cols;
-    til::CoordType _rows;
+    til::CoordType _cols{ 0 };
+    til::CoordType _rows{ 0 };
 };

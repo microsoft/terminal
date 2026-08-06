@@ -54,4 +54,4 @@ Tango Dark and Light Schemes
 ----------------------------
 Released to the public domain by the Tango Desktop Project in 2009.
 
-http://tango-project.org
+https://web.archive.org/web/20160105113523/http://tango.freedesktop.org/

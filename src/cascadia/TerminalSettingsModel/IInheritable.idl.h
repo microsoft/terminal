@@ -9,7 +9,10 @@
         get;                                  \
         set;                                  \
     };                                        \
-    Boolean Has##Name { get; };               \
+    Boolean Has##Name                         \
+    {                                         \
+        get;                                  \
+    };                                        \
     void Clear##Name()
 
 #define INHERITABLE_SETTING(Type, Name) \

@@ -1,0 +1,34 @@
+{
+    "$version": "1.0.0",
+    "snippets":
+    [
+        {
+            "input": "bx\r",
+            "name": "Build project",
+            "description": "Build the project in the CWD"
+        },
+        {
+            "input": "bz\r",
+            "name": "Build solution, incremental",
+            "description": "Just build changes to the solution"
+        },
+        {
+            "input": "bcz\r",
+            "name": "Clean & build solution",
+            "icon": "\uE8e6",
+            "description": "Start over. Go get your coffee. "
+        },
+        {
+            "input": "nuget push -ApiKey az -source TerminalDependencies %userprofile%\\Downloads",
+            "name": "Upload package to nuget feed",
+            "icon": "\uE898",
+            "description": "Go download a .nupkg, put it in ~/Downloads, and use this to push to our private feed."
+        },
+        {
+            "input": "runut /name:**\u001b[D",
+            "name": "Run a test",
+            "icon": "",
+            "description": "Enter the name of a test to run"
+        }
+    ]
+}

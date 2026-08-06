@@ -26,14 +26,12 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SetColorTableEntry);
 
-        TEST_METHOD(CursorVisibility);
         TEST_METHOD(CursorVisibilityViaStateMachine);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
         // This test ensures that Terminal::_WriteBuffer doesn't get stuck when
         // PrintString() is called with more code units than the buffer width.
         TEST_METHOD(PrintStringOfSurrogatePairs);
-        TEST_METHOD(CheckDoubleWidthCursor);
 
         TEST_METHOD(AddHyperlink);
         TEST_METHOD(AddHyperlinkCustomId);
@@ -48,7 +46,7 @@ using namespace TerminalCoreUnitTests;
 
 void TerminalApiTest::SetColorTableEntry()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -67,7 +65,7 @@ void TerminalApiTest::SetColorTableEntry()
 // PrintString() is called with more code units than the buffer width.
 void TerminalApiTest::PrintStringOfSurrogatePairs()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 3, renderer);
 
@@ -97,7 +95,7 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
         [](LPVOID data) -> DWORD {
             const auto& baton = *reinterpret_cast<Baton*>(data);
             Log::Comment(L"Writing data.");
-            baton.pTerm->PrintString(baton.text);
+            baton.pTerm->_stateMachine->ProcessString(baton.text);
             Log::Comment(L"Setting event.");
             SetEvent(baton.done);
             return 0;
@@ -131,42 +129,10 @@ void TerminalApiTest::PrintStringOfSurrogatePairs()
     return;
 }
 
-void TerminalApiTest::CursorVisibility()
-{
-    // GH#3093 - Cursor Visibility and On states shouldn't affect each other
-    Terminal term;
-    DummyRenderer renderer{ &term };
-    term.Create({ 100, 100 }, 0, renderer);
-
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
-
-    term.SetCursorOn(false);
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
-
-    term.SetCursorOn(true);
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
-
-    term.GetTextBuffer().GetCursor().SetIsVisible(false);
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
-
-    term.SetCursorOn(false);
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
-}
-
 void TerminalApiTest::CursorVisibilityViaStateMachine()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestCursorIsOn, adapted for the Terminal
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -175,94 +141,43 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
-    cursor.SetIsOn(false);
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
-}
-
-void TerminalApiTest::CheckDoubleWidthCursor()
-{
-    Terminal term;
-    DummyRenderer renderer{ &term };
-    term.Create({ 100, 100 }, 0, renderer);
-
-    auto& tbi = *(term._mainBuffer);
-    auto& stateMachine = *(term._stateMachine);
-    auto& cursor = tbi.GetCursor();
-
-    // Lets stuff the buffer with single width characters,
-    // but leave the last two columns empty for double width.
-    std::wstring singleWidthText;
-    singleWidthText.reserve(98);
-    for (size_t i = 0; i < 98; ++i)
-    {
-        singleWidthText.append(L"A");
-    }
-    stateMachine.ProcessString(singleWidthText);
-    VERIFY_IS_TRUE(cursor.GetPosition().X == 98);
-
-    // Stuff two double width characters.
-    std::wstring doubleWidthText{ L"我愛" };
-    stateMachine.ProcessString(doubleWidthText);
-
-    // The last 'A'
-    cursor.SetPosition({ 97, 0 });
-    VERIFY_IS_FALSE(term.IsCursorDoubleWidth());
-
-    // This and the next CursorPos are taken up by '我‘
-    cursor.SetPosition({ 98, 0 });
-    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    cursor.SetPosition({ 99, 0 });
-    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-
-    // This and the next CursorPos are taken up by ’愛‘
-    cursor.SetPosition({ 0, 1 });
-    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
-    cursor.SetPosition({ 1, 1 });
-    VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlink, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -288,7 +203,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlinkCustomId, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -316,7 +231,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
 {
     // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlinkCustomId, adapted for the Terminal
 
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -344,7 +259,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
 
 void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 
@@ -415,7 +330,7 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
 
 void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
 {
-    Terminal term;
+    Terminal term{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &term };
     term.Create({ 100, 100 }, 0, renderer);
 

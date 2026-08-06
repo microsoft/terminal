@@ -27,24 +27,6 @@ ConsoleShimPolicy::ConsoleShimPolicy(const HANDLE hProcess)
         const auto isInboxPowershell = til::equals_insensitive_ascii(clientName, L"powershell.exe");
         const auto isPwsh = til::equals_insensitive_ascii(clientName, L"pwsh.exe");
         _isPowershell = isInboxPowershell || isPwsh;
-
-        // Inside Windows, we are guaranteed that we're building alongside a new (good) inbox Powershell.
-        // Therefore, we can default _requiresVtColorQuirk to false.
-#ifndef __INSIDE_WINDOWS
-        // Outside of Windows, we need to check the OS version: Powershell was fixed in early Iron builds.
-        static auto doesInboxPowershellVersionRequireQuirk = [] {
-            OSVERSIONINFOEXW osver{};
-            osver.dwOSVersionInfoSize = sizeof(osver);
-            osver.dwBuildNumber = 20348; // Windows Server 2022 RTM
-
-            DWORDLONG dwlConditionMask = 0;
-            VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_LESS);
-
-            return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
-        }();
-        _requiresVtColorQuirk = isInboxPowershell && doesInboxPowershellVersionRequireQuirk;
-        // All modern versions of pwsh.exe have been fixed, and we can direct users to update.
-#endif
     }
     CATCH_LOG();
 }
@@ -72,16 +54,4 @@ bool ConsoleShimPolicy::IsCmdExe() const noexcept
 bool ConsoleShimPolicy::IsPowershellExe() const noexcept
 {
     return _isPowershell;
-}
-
-// Method Description:
-// - Returns true if the connected client application is known to
-//   attempt VT color promotion of legacy colors. See GH#6807 for more.
-// Arguments:
-// - <none>
-// Return Value:
-// - True as laid out above.
-bool ConsoleShimPolicy::IsVtColorQuirkRequired() const noexcept
-{
-    return _requiresVtColorQuirk;
 }

@@ -58,11 +58,6 @@ private:
     ULONG _ulControlKeyState;
 };
 
-#define TAB_SIZE 8
-#define TAB_MASK (TAB_SIZE - 1)
-// WHY IS THIS NOT POSITION % TAB_SIZE?!
-#define NUMBER_OF_SPACES_IN_TAB(POSITION) (TAB_SIZE - ((POSITION)&TAB_MASK))
-
 // these values are related to GetKeyboardState
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
@@ -78,7 +73,7 @@ bool ShouldTakeOverKeyboardShortcuts();
 void HandleMenuEvent(const DWORD wParam);
 void HandleFocusEvent(const BOOL fSetFocus);
 void HandleCtrlEvent(const DWORD EventType);
-void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak);
+void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak);
 
 void ProcessCtrlEvents();
 

@@ -3,16 +3,20 @@
 
 namespace Microsoft.Terminal.Control
 {
-    delegate void SearchHandler(String query, Boolean goForward, Boolean isCaseSensitive);
+    delegate void SearchHandler(String query, Boolean goForward, Boolean isCaseSensitive, Boolean regularExpression);
 
-    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         SearchBoxControl();
         void SetFocusOnTextbox();
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
+        void ClearStatus();
+        Windows.Foundation.Rect ContentClipRect{ get; };
+        Double OpenAnimationStartPoint{ get; };
 
         event SearchHandler Search;
+        event SearchHandler SearchChanged;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
 }

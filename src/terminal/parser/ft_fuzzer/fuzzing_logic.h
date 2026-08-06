@@ -242,12 +242,12 @@ namespace fuzz
     class CFuzzLogic;
 
     // Flips a random byte value within the buffer.
-    template<typename _Type>
+    template<typename _Type, typename... FuzzLogicTs>
     static _Type* _fz_flipByte(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
     {
         if (rcelms > 0)
         {
-            return reinterpret_cast<_Type*>(CFuzzLogic<>::FuzzArrayElement(
+            return reinterpret_cast<_Type*>(CFuzzLogic<FuzzLogicTs...>::FuzzArrayElement(
                 reinterpret_cast<BYTE*>(p), (rcelms) * sizeof(_Type)));
         }
 
@@ -255,12 +255,12 @@ namespace fuzz
     }
 
     // Flips a random entry value within the buffer
-    template<typename _Type>
+    template<typename _Type, typename... FuzzLogicTs>
     static _Type* _fz_flipEntry(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
     {
         if (rcelms > 0)
         {
-            return CFuzzLogic<>::FuzzArrayElement(p, rcelms);
+            return CFuzzLogic<FuzzLogicTs...>::FuzzArrayElement(p, rcelms);
         }
 
         return p;
@@ -346,9 +346,9 @@ namespace fuzz
                 };
                 CFuzzString<__FUZZING_ALLOCATOR, CHAR> eval(FUZZ_MAP(fuzzMap), pszReallocTemp);
 
-                // Performance optimization: 95% of the time the buffer returned from eval will not be reallocated
+                // Performance optimization: 95% of the time, the buffer returned from eval will not be reallocated
                 // and thus will still be pointing at pszReallocTemp.  In this case, it is not necessary to duplicate
-                // the string a second time, just transfer ownership to the calling function.
+                // the string again, just transfer ownership to the calling function.
                 if ((LPSTR)eval == pszReallocTemp)
                 {
                     pszRealloc = pszReallocTemp;
@@ -404,8 +404,8 @@ namespace fuzz
         }
 
     private:
-        CFuzzLogic(){};
-        virtual ~CFuzzLogic(){};
+        CFuzzLogic() {};
+        virtual ~CFuzzLogic() {};
 
         static LPWSTR FuzzStringW_NoRealloc(__inout LPWSTR pwsz, __inout size_t& rcch)
         {
@@ -416,8 +416,8 @@ namespace fuzz
                     { 21, _fz_wsz_addFormatChar },
                     { 21, _fz_wsz_addPathChar },
                     { 21, _fz_wsz_addInvalidPathChar },
-                    { 11, [](WCHAR* pwsz, size_t& rcch) { return _fz_flipByte(pwsz, rcch); } },
-                    { 10, [](WCHAR* pwsz, size_t& rcch) { return _fz_flipEntry(pwsz, rcch); } },
+                    { 11, [](WCHAR* pwsz, size_t& rcch) { return _fz_flipByte<WCHAR, _Alloc>(pwsz, rcch); } },
+                    { 10, [](WCHAR* pwsz, size_t& rcch) { return _fz_flipEntry<WCHAR, _Alloc>(pwsz, rcch); } },
 
                     // non-random manipulations
                     { 4, _const_wsz_replicate },
@@ -441,7 +441,7 @@ namespace fuzz
                     { 21, _fz_sz_addFormatChar },
                     { 21, _fz_sz_addPathChar },
                     { 21, _fz_sz_addInvalidPathChar },
-                    { 21, [](CHAR* psz, size_t& rcch) { return _fz_flipByte<CHAR>(psz, rcch); } },
+                    { 21, [](CHAR* psz, size_t& rcch) { return _fz_flipByte<CHAR, _Alloc>(psz, rcch); } },
 
                     // non-random manipulations
                     { 4, _const_sz_replicate },

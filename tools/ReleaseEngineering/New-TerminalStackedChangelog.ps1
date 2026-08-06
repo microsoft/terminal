@@ -34,12 +34,12 @@ Function Test-MicrosoftPerson($email) {
 
 Function Generate-Thanks($Entry) {
     # We don't need to thank ourselves for doing our jobs
-    If ($_.Microsoft) {
+    If ($Entry.Microsoft) {
         ""
-    } ElseIf (-Not [string]::IsNullOrEmpty($_.PossibleUsername)) {
-        " (thanks @{0}!)" -f $_.PossibleUsername
+    } ElseIf (-Not [string]::IsNullOrEmpty($Entry.PossibleUsername)) {
+        " (thanks @{0}!)" -f $Entry.PossibleUsername
     } Else {
-        " (thanks @<{0}>!)" -f $_.Email
+        " (thanks @<{0}>!)" -f $Entry.Email
     }
 }
 
@@ -54,6 +54,7 @@ Function Get-PossibleUserName($email) {
 
 $Entries = @()
 
+$i = 0
 ForEach ($RevisionRange in $RevisionRanges) {
     # --pretty=format notes:
     #   - %an: author name
@@ -61,7 +62,7 @@ ForEach ($RevisionRange in $RevisionRanges) {
     #   - %ae: author email
     #   - %x1C: another FS
     #   - %s: subject, the title of the commit
-    $NewEntries = & git log $RevisionRange "--pretty=format:%an%x1C%ae%x1C%s" |
+    $NewEntries = & git log $RevisionRange --first-parent "--pretty=format:%an%x1C%ae%x1C%s" |
         ConvertFrom-CSV -Delimiter "`u{001C}" -Header Author,Email,Subject
 
     $Entries += $NewEntries | % { [PSCustomObject]@{
@@ -70,15 +71,23 @@ ForEach ($RevisionRange in $RevisionRanges) {
         Subject = $_.Subject;
         Microsoft = (Test-MicrosoftPerson $_.Email);
         PossibleUsername = (Get-PossibleUserName $_.Email);
+        RevRangeID = $i;
     } }
+    $i++
 }
 
-$Unique = $Entries | Group-Object Subject | %{ $_.Group[0] | Add-Member Count $_.Count -Force -PassThru }
+For($c = 0; $c -Lt $i; $c++) {
+    "   " + ("|" * $c) + "/ " + $RevisionRanges[$c]
+}
+
+$Unique = $Entries | Group-Object Subject
 
 $Unique | % {
-    $c = ""
-    If ($_.Count -Gt 1) {
-        $c = "[{0}] " -f $_.Count
+    $en = $_.Group[0]
+    $revSpec = (" " * $i)
+    $_.Group | % {
+        $revSpec = $revSpec.remove($_.RevRangeID, 1).insert($_.RevRangeID, "X")
     }
-    "* {0}{1}{2}" -f ($c, $_.Subject, (Generate-Thanks $_))
+    $c = "[{0}] " -f $revSpec
+    "* {0}{1}{2}" -f ($c, $en.Subject, (Generate-Thanks $en))
 }

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--  (c) 2024 Microsoft Corporation  -->
+<policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="terminal" namespace="Microsoft.Policies.WindowsTerminal" />
+    <using prefix="windows" namespace="Microsoft.Policies.Windows" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_WindowsTerminal_1_21" displayName="$(string.SUPPORTED_WindowsTerminal_1_21)" />
+      <definition name="SUPPORTED_DefaultTerminalApplication" displayName="$(string.SUPPORTED_DefaultTerminalApplication)" />
+    </definitions>
+  </supportedOn>
+  <categories>
+    <category name="WindowsTerminal" displayName="$(string.WindowsTerminal)">
+      <parentCategory ref="windows:WindowsComponents" />
+    </category>
+  </categories>
+  <policies>
+    <policy name="DisabledProfileSources" class="Both" displayName="$(string.DisabledProfileSources)" explainText="$(string.DisabledProfileSourcesText)" presentation="$(presentation.DisabledProfileSources)" key="Software\Policies\Microsoft\Windows Terminal">
+      <parentCategory ref="WindowsTerminal" />
+      <supportedOn ref="SUPPORTED_WindowsTerminal_1_21" />
+      <elements>
+        <multiText id="DisabledProfileSources" valueName="DisabledProfileSources" required="true" />
+      </elements>
+    </policy>
+    <policy name="DefaultTerminalApplication" class="User" displayName="$(string.DefaultTerminalApplication)" explainText="$(string.DefaultTerminalApplicationText)" presentation="$(presentation.TermAppSelection)" key="Console\%%Startup">
+      <parentCategory ref="WindowsTerminal" />
+      <supportedOn ref="SUPPORTED_DefaultTerminalApplication" />
+      <elements>
+        <enum id="TermAppSelect" required="true" valueName="DelegationTerminal">
+          <item displayName="$(string.TermAppAutomatic)">
+            <value>
+              <string>{00000000-0000-0000-0000-000000000000}</string>
+            </value>
+            <valueList>
+              <item key="Console\%%Startup" valueName="DelegationConsole">
+                <value>
+                  <string>{00000000-0000-0000-0000-000000000000}</string>
+                </value>
+              </item>
+            </valueList>
+          </item>
+          <item displayName="$(string.TermAppConsoleHost)">
+            <value>
+              <string>{B23D10C0-E52E-411E-9D5B-C09FDF709C7D}</string>
+            </value>
+            <valueList>
+              <item key="Console\%%Startup" valueName="DelegationConsole">
+                <value>
+                  <string>{B23D10C0-E52E-411E-9D5B-C09FDF709C7D}</string>
+                </value>
+              </item>
+            </valueList>
+          </item>
+          <item displayName="$(string.TermAppWindowsTerminal)">
+            <value>
+              <string>{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}</string>
+            </value>
+            <valueList>
+              <item key="Console\%%Startup" valueName="DelegationConsole">
+                <value>
+                  <string>{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}</string>
+                </value>
+              </item>
+            </valueList>
+          </item>
+          <item displayName="$(string.TermAppWindowsTerminalPreview)">
+            <value>
+              <string>{86633F1F-6454-40EC-89CE-DA4EBA977EE2}</string>
+            </value>
+            <valueList>
+              <item key="Console\%%Startup" valueName="DelegationConsole">
+                <value>
+                  <string>{06EC847C-C0A5-46B8-92CB-7C92F6E35CD5}</string>
+                </value>
+              </item>
+            </valueList>
+          </item>
+        </enum>
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>

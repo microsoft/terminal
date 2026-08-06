@@ -11,27 +11,16 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
-    <ClCompile Include="ConsoleTSF.cpp" />
-    <ClCompile Include="contsf.cpp" />
-    <ClCompile Include="TfCatUtil.cpp" />
-    <ClCompile Include="TfConvArea.cpp" />
-    <ClCompile Include="TfDispAttr.cpp" />
-    <ClCompile Include="TfEditSession.cpp" />
-    <ClCompile Include="TfTxtevCb.cpp" />
+    <ClCompile Include="Handle.cpp" />
+    <ClCompile Include="Implementation.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConsoleTSF.h" />
-    <ClInclude Include="debug.h" />
-    <ClInclude Include="globals.h" />
+    <ClInclude Include="Handle.h" />
+    <ClInclude Include="Implementation.h" />
     <ClInclude Include="precomp.h" />
-    <ClInclude Include="TfCatUtil.h" />
-    <ClInclude Include="TfConvArea.h" />
-    <ClInclude Include="TfCtxtComp.h" />
-    <ClInclude Include="TfDispAttr.h" />
-    <ClInclude Include="TfEditSession.h" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

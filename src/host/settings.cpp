@@ -9,54 +9,10 @@
 
 #pragma hdrstop
 
-constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
-constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
-
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 Settings::Settings() :
-    _dwHotKey(0),
-    _dwStartupFlags(0),
-    _wFillAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE), // White (not bright) on black by default
-    _wPopupFillAttribute(FOREGROUND_RED | FOREGROUND_BLUE | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY), // Purple on white (bright) by default
-    _wShowWindow(SW_SHOWNORMAL),
-    _wReserved(0),
-    // dwScreenBufferSize initialized below
-    // dwWindowSize initialized below
-    // dwWindowOrigin initialized below
-    _nFont(0),
-    // dwFontSize initialized below
-    _uFontFamily(0),
-    _uFontWeight(0),
-    // FaceName initialized below
-    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
-    _bFullScreen(false),
-    _bQuickEdit(true),
-    _bInsertMode(true),
-    _bAutoPosition(true),
-    _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
-    _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
-    _bHistoryNoDup(false),
-    // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
-    _uScrollScale(1),
-    _bLineSelection(true),
-    _bWrapText(true),
-    _fCtrlKeyShortcutsDisabled(false),
-    _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
-    _fFilterOnPaste(false),
-    _LaunchFaceName{},
-    _fTrimLeadingZeros(FALSE),
-    _fEnableColorSelection(FALSE),
-    _fAllowAltF4Close(true),
-    _dwVirtTermLevel(0),
-    _fUseWindowSizePixels(false),
-    _fAutoReturnOnNewline(true), // the historic Windows behavior defaults this to on.
-    _fRenderGridWorldwide(false), // historically grid lines were only rendered in DBCS codepages, so this is false by default unless otherwise specified.
-    // window size pixels initialized below
-    _fInterceptCopyPaste(0),
-    _fUseDx(UseDx::Disabled),
-    _fCopyColor(false)
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -79,7 +35,7 @@ Settings::Settings() :
 }
 
 // Routine Description:
-// - Applies hardcoded default settings that are in line with what is defined
+// - Applies hard-coded default settings that are in line with what is defined
 //   in our Windows edition manifest (living in win32k-settings.man).
 // - NOTE: This exists in case we cannot access the registry on desktop platforms.
 //   We will use this to provide better defaults than the constructor values which
@@ -351,6 +307,8 @@ void Settings::Validate()
     TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
     // And calculate the position of the default colors in the color table.
     CalculateDefaultColorIndices();
+    // We can also then save these values as the default render settings.
+    SaveDefaultRenderSettings();
 
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
@@ -358,11 +316,11 @@ void Settings::Validate()
     FAIL_FAST_IF(!(_dwScreenBufferSize.Y > 0));
 }
 
-DWORD Settings::GetVirtTermLevel() const
+DWORD Settings::GetDefaultVirtTermLevel() const
 {
     return _dwVirtTermLevel;
 }
-void Settings::SetVirtTermLevel(const DWORD dwVirtTermLevel)
+void Settings::SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel)
 {
     _dwVirtTermLevel = dwVirtTermLevel;
 }
@@ -374,33 +332,6 @@ bool Settings::IsAltF4CloseAllowed() const
 void Settings::SetAltF4CloseAllowed(const bool fAllowAltF4Close)
 {
     _fAllowAltF4Close = fAllowAltF4Close;
-}
-
-bool Settings::IsReturnOnNewlineAutomatic() const
-{
-    return _fAutoReturnOnNewline;
-}
-void Settings::SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline)
-{
-    _fAutoReturnOnNewline = fAutoReturnOnNewline;
-}
-
-bool Settings::IsGridRenderingAllowedWorldwide() const
-{
-    return _fRenderGridWorldwide;
-}
-void Settings::SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed)
-{
-    // Only trigger a notification and update the status if something has changed.
-    if (_fRenderGridWorldwide != fGridRenderingAllowed)
-    {
-        _fRenderGridWorldwide = fGridRenderingAllowed;
-
-        if (ServiceLocator::LocateGlobals().pRender != nullptr)
-        {
-            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
-        }
-    }
 }
 
 bool Settings::GetFilterOnPaste() const
@@ -784,6 +715,11 @@ void Settings::CalculateDefaultColorIndices() noexcept
     _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, backgroundAlias);
 }
 
+void Settings::SaveDefaultRenderSettings() noexcept
+{
+    _renderSettings.SaveDefaultSettings();
+}
+
 bool Settings::IsTerminalScrolling() const noexcept
 {
     return _TerminalScrolling;
@@ -794,9 +730,24 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
     _TerminalScrolling = terminalScrollingEnabled;
 }
 
+std::wstring_view Settings::GetAnswerbackMessage() const noexcept
+{
+    return _answerbackMessage;
+}
+
+DWORD Settings::GetMSAADelay() const noexcept
+{
+    return _msaaDelay;
+}
+
+DWORD Settings::GetUIADelay() const noexcept
+{
+    return _uiaDelay;
+}
+
 // Determines whether our primary renderer should be DirectX or GDI.
 // This is based on user preference and velocity hold back state.
-UseDx Settings::GetUseDx() const noexcept
+bool Settings::GetUseDx() const noexcept
 {
     return _fUseDx;
 }
@@ -804,4 +755,19 @@ UseDx Settings::GetUseDx() const noexcept
 bool Settings::GetCopyColor() const noexcept
 {
     return _fCopyColor;
+}
+
+SettingsTextMeasurementMode Settings::GetTextMeasurementMode() const noexcept
+{
+    return _textMeasurement;
+}
+
+void Settings::SetTextMeasurementMode(const SettingsTextMeasurementMode mode) noexcept
+{
+    _textMeasurement = mode;
+}
+
+bool Settings::GetEnableBuiltinGlyphs() const noexcept
+{
+    return _fEnableBuiltinGlyphs;
 }

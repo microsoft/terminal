@@ -22,5 +22,4 @@ Abstract:
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
-#include "telemetry.hpp"
 #include "tracing.hpp"

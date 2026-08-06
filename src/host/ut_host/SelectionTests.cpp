@@ -10,7 +10,6 @@
 #include "globals.h"
 
 #include "selection.hpp"
-#include "cmdline.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -30,7 +29,6 @@ class SelectionTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
 
         m_pSelection = &Selection::Instance();
@@ -42,7 +40,6 @@ class SelectionTests
         m_pSelection = nullptr;
 
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
 
         delete m_state;
 
@@ -59,249 +56,257 @@ class SelectionTests
         return true;
     }
 
-    void VerifyGetSelectionRects_BoxMode()
+    void VerifyGetSelectionSpans_BoxMode()
     {
-        const auto selectionRects = m_pSelection->GetSelectionRects();
-        const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
+        const auto selectionSpans = m_pSelection->GetSelectionSpans();
+        const UINT cRectanglesExpected = m_pSelection->_d->srSelectionRect.bottom - m_pSelection->_d->srSelectionRect.top + 1;
 
-        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
+        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionSpans.size()))
         {
-            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionRects.size()); iRect++)
+            for (auto iRect = 0; iRect < gsl::narrow<int>(selectionSpans.size()); iRect++)
             {
                 // ensure each rectangle is exactly the width requested (block selection)
-                const auto psrRect = &selectionRects[iRect];
+                const auto& span = selectionSpans[iRect];
 
-                const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.Top;
+                const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_d->srSelectionRect.top;
 
-                VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
-                VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
+                VERIFY_ARE_EQUAL(span.start.y, sRectangleLineNumber);
+                VERIFY_ARE_EQUAL(span.end.y, sRectangleLineNumber);
 
-                VERIFY_ARE_EQUAL(psrRect->Left, m_pSelection->_srSelectionRect.Left);
-                VERIFY_ARE_EQUAL(psrRect->Right, m_pSelection->_srSelectionRect.Right);
+                VERIFY_ARE_EQUAL(span.start.x, m_pSelection->_d->srSelectionRect.left);
+                VERIFY_ARE_EQUAL(span.end.x, m_pSelection->_d->srSelectionRect.right + 1);
             }
         }
     }
 
-    TEST_METHOD(TestGetSelectionRects_BoxMode)
+    TEST_METHOD(TestGetSelectionSpans_BoxMode)
     {
-        m_pSelection->_fSelectionVisible = true;
-
-        // set selection region
-        m_pSelection->_srSelectionRect.Top = 0;
-        m_pSelection->_srSelectionRect.Bottom = 3;
-        m_pSelection->_srSelectionRect.Left = 1;
-        m_pSelection->_srSelectionRect.Right = 10;
-
-        // #1 top-left to bottom right selection first
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
-
-        // A. false/false for the selection modes should mean box selection
-        m_pSelection->_fLineSelection = false;
-        m_pSelection->_fUseAlternateSelection = false;
-
-        VerifyGetSelectionRects_BoxMode();
-
-        // B. true/true for the selection modes should also mean box selection
-        m_pSelection->_fLineSelection = true;
-        m_pSelection->_fUseAlternateSelection = true;
-
-        VerifyGetSelectionRects_BoxMode();
-
-        // now try the other 3 configurations of box region.
-        // #2 top-right to bottom-left selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
-
-        VerifyGetSelectionRects_BoxMode();
-
-        // #3 bottom-left to top-right selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
-
-        VerifyGetSelectionRects_BoxMode();
-
-        // #4 bottom-right to top-left selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
-
-        VerifyGetSelectionRects_BoxMode();
-    }
-
-    void VerifyGetSelectionRects_LineMode()
-    {
-        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-        const auto selectionRects = m_pSelection->GetSelectionRects();
-        const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
-
-        if (VERIFY_ARE_EQUAL(cRectanglesExpected, selectionRects.size()))
         {
-            // RULES:
-            // 1. If we're only selection one line, select the entire region between the two rectangles.
-            //    Else if we're selecting multiple lines...
-            // 2. Extend all lines except the last line to the right edge of the screen
-            //    Extend all lines except the first line to the left edge of the screen
-            // 3. If our anchor is in the top-right or bottom-left corner of the rectangle...
-            //    The inside portion of our rectangle on the first and last lines is invalid.
-            //    Remove from selection (but preserve the anchors themselves).
+            auto selection{ m_pSelection->_d.write() };
+            selection->fSelectionVisible = true;
 
-            // RULE #1: If 1 line, entire region selected.
-            auto fHaveOneLine = selectionRects.size() == 1;
+            // set selection region
+            selection->srSelectionRect.top = 0;
+            selection->srSelectionRect.bottom = 3;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
 
-            if (fHaveOneLine)
-            {
-                auto srSelectionRect = m_pSelection->_srSelectionRect;
-                VERIFY_ARE_EQUAL(srSelectionRect.Top, srSelectionRect.Bottom);
+            // #1 top-left to bottom right selection first
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-                const auto psrRect = &selectionRects[0];
+            // A. false/false for the selection modes should mean box selection
+            selection->fLineSelection = false;
+            selection->fUseAlternateSelection = false;
 
-                VERIFY_ARE_EQUAL(psrRect->Top, srSelectionRect.Top);
-                VERIFY_ARE_EQUAL(psrRect->Bottom, srSelectionRect.Bottom);
+            VerifyGetSelectionSpans_BoxMode();
+        }
 
-                VERIFY_ARE_EQUAL(psrRect->Left, srSelectionRect.Left);
-                VERIFY_ARE_EQUAL(psrRect->Right, srSelectionRect.Right);
-            }
-            else
-            {
-                // RULE #2 : Check extension to edges
-                for (UINT iRect = 0; iRect < selectionRects.size(); iRect++)
-                {
-                    // ensure each rectangle is exactly the width requested (block selection)
-                    const auto psrRect = &selectionRects[iRect];
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // B. true/true for the selection modes should also mean box selection
+            selection->fLineSelection = true;
+            selection->fUseAlternateSelection = true;
 
-                    const auto sRectangleLineNumber = (til::CoordType)iRect + m_pSelection->_srSelectionRect.Top;
+            VerifyGetSelectionSpans_BoxMode();
+        }
 
-                    VERIFY_ARE_EQUAL(psrRect->Top, sRectangleLineNumber);
-                    VERIFY_ARE_EQUAL(psrRect->Bottom, sRectangleLineNumber);
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // now try the other 3 configurations of box region.
+            // #2 top-right to bottom-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-                    auto fIsFirstLine = iRect == 0;
-                    auto fIsLastLine = iRect == selectionRects.size() - 1;
+            VerifyGetSelectionSpans_BoxMode();
+        }
 
-                    // for all lines except the last, the line should reach the right edge of the buffer
-                    if (!fIsLastLine)
-                    {
-                        // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, gci.GetActiveOutputBuffer().GetTextBuffer().GetSize().RightInclusive());
-                    }
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // #3 bottom-left to top-right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-                    // for all lines except the first, the line should reach the left edge of the buffer
-                    if (!fIsFirstLine)
-                    {
-                        VERIFY_ARE_EQUAL(psrRect->Left, 0);
-                    }
-                }
+            VerifyGetSelectionSpans_BoxMode();
+        }
 
-                // RULE #3: Check first and last line have invalid regions removed, if applicable
-                UINT iFirst = 0;
-                auto iLast = gsl::narrow<UINT>(selectionRects.size() - 1u);
+        {
+            auto selection{ m_pSelection->_d.write() };
 
-                const auto psrFirst = &selectionRects[iFirst];
-                const auto psrLast = &selectionRects[iLast];
+            // #4 bottom-right to top-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
 
-                auto fRemoveRegion = false;
-
-                auto srSelectionRect = m_pSelection->_srSelectionRect;
-                auto coordAnchor = m_pSelection->_coordSelectionAnchor;
-
-                // if the anchor is in the top right or bottom left corner, we must have removed a region. otherwise, it stays as is.
-                if (coordAnchor.Y == srSelectionRect.Top && coordAnchor.X == srSelectionRect.Right)
-                {
-                    fRemoveRegion = true;
-                }
-                else if (coordAnchor.Y == srSelectionRect.Bottom && coordAnchor.X == srSelectionRect.Left)
-                {
-                    fRemoveRegion = true;
-                }
-
-                // now check the first row's left based on removal
-                if (!fRemoveRegion)
-                {
-                    VERIFY_ARE_EQUAL(psrFirst->Left, srSelectionRect.Left);
-                }
-                else
-                {
-                    VERIFY_ARE_EQUAL(psrFirst->Left, srSelectionRect.Right);
-                }
-
-                // and the last row's right based on removal
-                if (!fRemoveRegion)
-                {
-                    VERIFY_ARE_EQUAL(psrLast->Right, srSelectionRect.Right);
-                }
-                else
-                {
-                    VERIFY_ARE_EQUAL(psrLast->Right, srSelectionRect.Left);
-                }
-            }
+            VerifyGetSelectionSpans_BoxMode();
         }
     }
 
-    TEST_METHOD(TestGetSelectionRects_LineMode)
+    void VerifyGetSelectionSpans_LineMode(const til::point inclusiveStart, const til::point inclusiveEnd)
     {
-        m_pSelection->_fSelectionVisible = true;
+        const auto selectionSpans = m_pSelection->GetSelectionSpans();
 
-        // Part I: Multiple line selection
-        // set selection region
-        m_pSelection->_srSelectionRect.Top = 0;
-        m_pSelection->_srSelectionRect.Bottom = 3;
-        m_pSelection->_srSelectionRect.Left = 1;
-        m_pSelection->_srSelectionRect.Right = 10;
+        if (VERIFY_ARE_EQUAL(1u, selectionSpans.size()))
+        {
+            auto& span{ selectionSpans[0] };
+            VERIFY_ARE_EQUAL(inclusiveStart, span.start, L"start");
 
-        // #1 top-left to bottom right selection first
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
+            const til::point exclusiveEnd{ inclusiveEnd.x + 1, inclusiveEnd.y };
+            VERIFY_ARE_EQUAL(exclusiveEnd, span.end, L"end");
+        }
+    }
 
-        // A. true/false for the selection modes should mean line selection
-        m_pSelection->_fLineSelection = true;
-        m_pSelection->_fUseAlternateSelection = false;
+    // All of the logic tested herein is trying to determine where the selection
+    // must have started, given a rectangle and the point where the mouse was last seen.
+    TEST_METHOD(TestGetSelectionSpans_LineMode)
+    {
+        {
+            auto selection{ m_pSelection->_d.write() };
+            selection->fSelectionVisible = true;
 
-        VerifyGetSelectionRects_LineMode();
+            // Part I: Multiple line selection
+            // set selection region
+            selection->srSelectionRect.top = 0;
+            selection->srSelectionRect.bottom = 3;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
 
-        // B. false/true for the selection modes should also mean line selection
-        m_pSelection->_fLineSelection = false;
-        m_pSelection->_fUseAlternateSelection = true;
+            /*
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+---------+
+                  1|         |
+                  2|         |
+                --3+---------+
+                  4
+            */
 
-        VerifyGetSelectionRects_LineMode();
+            // #1 top-left to bottom right selection first
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        // now try the other 3 configurations of box region.
-        // #2 top-right to bottom-left selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
+            // A. true/false for the selection modes should mean line selection
+            selection->fLineSelection = true;
+            selection->fUseAlternateSelection = false;
 
-        VerifyGetSelectionRects_LineMode();
+            /*
+                Mouse at 0,0; therefore, the selection "begins" at 3,10
+                Selection extends to bottom right corner of rectangle
 
-        // #3 bottom-left to top-right selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0*#########*#####
+                  1################
+                  2################
+                --3*#########*
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
+        }
 
-        VerifyGetSelectionRects_LineMode();
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // B. false/true for the selection modes should also mean line selection
+            selection->fLineSelection = false;
+            selection->fUseAlternateSelection = true;
 
-        // #4 bottom-right to top-left selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
+            // Same as above.
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
+        }
 
-        VerifyGetSelectionRects_LineMode();
+        {
+            auto selection{ m_pSelection->_d.write() };
+            // now try the other 3 configurations of box region.
+            // #2 top-right to bottom-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
 
-        // Part II: Single line selection
-        m_pSelection->_srSelectionRect.Top = 2;
-        m_pSelection->_srSelectionRect.Bottom = 2;
-        m_pSelection->_srSelectionRect.Left = 1;
-        m_pSelection->_srSelectionRect.Right = 10;
+            /*
+                Mouse at 0,10; therefore, the selection must have started at 3,0
+                Selection does not include bottom-most line
 
-        // #1: left to right selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Left;
-        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Bottom;
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+         *#####
+                  1################
+                  2################
+                --3*         +
+                  4
+            */
 
-        VerifyGetSelectionRects_LineMode();
+            VerifyGetSelectionSpans_LineMode({ 10, 0 }, { 1, 3 });
+        }
 
-        // #2: right to left selection
-        m_pSelection->_coordSelectionAnchor.X = m_pSelection->_srSelectionRect.Right;
-        VERIFY_IS_TRUE(m_pSelection->_srSelectionRect.Bottom == m_pSelection->_srSelectionRect.Top);
-        m_pSelection->_coordSelectionAnchor.Y = m_pSelection->_srSelectionRect.Top;
+        {
+            auto selection{ m_pSelection->_d.write() };
 
-        VerifyGetSelectionRects_LineMode();
+            // #3 bottom-left to top-right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
+
+            /*
+                Mouse at 3,1; therefore, the selection must have started at 0,10
+                Selection extends from top right to bottom left
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0+         *#####
+                  1################
+                  2################
+                --3*         +
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 10, 0 }, { 1, 3 });
+        }
+
+        {
+            auto selection{ m_pSelection->_d.write() };
+
+            // #4 bottom-right to top-left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
+
+            /*
+                Mouse at 3,10; therefore, the selection must have started at 0,0
+                Just like case #1, selection covers all lines and top left/bottom right of rect.
+
+                   |  RECT   |
+                   0123456789ABCDEF
+                --0*#########*#####
+                  1################
+                  2################
+                --3*#########*
+                  4
+            */
+            VerifyGetSelectionSpans_LineMode({ 1, 0 }, { 10, 3 });
+        }
+
+        {
+            auto selection{ m_pSelection->_d.write() };
+
+            // Part II: Single line selection
+            selection->srSelectionRect.top = 2;
+            selection->srSelectionRect.bottom = 2;
+            selection->srSelectionRect.left = 1;
+            selection->srSelectionRect.right = 10;
+
+            // #1: left to right selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.left;
+            VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.bottom;
+
+            VerifyGetSelectionSpans_LineMode({ 1, 2 }, { 10, 2 });
+        }
+
+        {
+            auto selection{ m_pSelection->_d.write() };
+
+            // #2: right to left selection
+            selection->coordSelectionAnchor.x = selection->srSelectionRect.right;
+            VERIFY_IS_TRUE(selection->srSelectionRect.bottom == selection->srSelectionRect.top);
+            selection->coordSelectionAnchor.y = selection->srSelectionRect.top;
+
+            VerifyGetSelectionSpans_LineMode({ 1, 2 }, { 10, 2 });
+        }
     }
 
     void TestBisectSelectionDelta(til::CoordType sTargetX, til::CoordType sTargetY, til::CoordType sLength, til::CoordType sDeltaLeft, til::CoordType sDeltaRight)
@@ -315,21 +320,21 @@ class SelectionTests
         til::inclusive_rect srOriginal;
 
         sStringLength = sLength;
-        coordTargetPoint.X = sTargetX;
-        coordTargetPoint.Y = sTargetY;
+        coordTargetPoint.x = sTargetX;
+        coordTargetPoint.y = sTargetY;
 
         // selection area is always one row at a time so top/bottom = Y = row position
-        srSelection.Top = srSelection.Bottom = coordTargetPoint.Y;
+        srSelection.top = srSelection.bottom = coordTargetPoint.y;
 
         // selection rectangle starts from the target and goes for the length requested
-        srSelection.Left = coordTargetPoint.X;
-        srSelection.Right = coordTargetPoint.X + sStringLength;
+        srSelection.left = coordTargetPoint.x;
+        srSelection.right = coordTargetPoint.x + sStringLength;
 
         // save original for comparison
-        srOriginal.Top = srSelection.Top;
-        srOriginal.Bottom = srSelection.Bottom;
-        srOriginal.Left = srSelection.Left;
-        srOriginal.Right = srSelection.Right;
+        srOriginal.top = srSelection.top;
+        srOriginal.bottom = srSelection.bottom;
+        srOriginal.left = srSelection.left;
+        srOriginal.right = srSelection.right;
 
         til::point startPos{ sTargetX, sTargetY };
         til::point endPos{ sTargetX + sLength, sTargetY };
@@ -338,10 +343,10 @@ class SelectionTests
         VERIFY_ARE_EQUAL(static_cast<size_t>(1), selectionRects.size());
         srSelection = selectionRects.at(0);
 
-        VERIFY_ARE_EQUAL(srOriginal.Top, srSelection.Top);
-        VERIFY_ARE_EQUAL(srOriginal.Bottom, srSelection.Bottom);
-        VERIFY_ARE_EQUAL(srOriginal.Left + sDeltaLeft, srSelection.Left);
-        VERIFY_ARE_EQUAL(srOriginal.Right + sDeltaRight, srSelection.Right);
+        VERIFY_ARE_EQUAL(srOriginal.top, srSelection.top);
+        VERIFY_ARE_EQUAL(srOriginal.bottom, srSelection.bottom);
+        VERIFY_ARE_EQUAL(srOriginal.left + sDeltaLeft, srSelection.left);
+        VERIFY_ARE_EQUAL(srOriginal.right + sDeltaRight, srSelection.right);
     }
 };
 
@@ -356,7 +361,6 @@ class SelectionInputTests
     {
         m_state = new CommonState();
 
-        m_state->PrepareGlobalFont();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
@@ -374,95 +378,11 @@ class SelectionInputTests
         CommandHistory::s_Free(nullptr);
         m_pHistory = nullptr;
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalFont();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
 
         return true;
-    }
-
-    TEST_METHOD(TestGetInputLineBoundaries)
-    {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        // 80x80 box
-        const til::CoordType sRowWidth = 80;
-
-        til::inclusive_rect srectEdges;
-        srectEdges.Left = srectEdges.Top = 0;
-        srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
-
-        // false when no cooked read data exists
-        VERIFY_IS_FALSE(gci.HasPendingCookedRead());
-
-        auto fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
-        VERIFY_IS_FALSE(fResult);
-
-        // prepare some read data
-        m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
-
-        m_state->PrepareCookedReadData();
-        // set up to clean up read data later
-        auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
-
-        auto& readData = gci.CookedReadData();
-
-        // backup text info position over remainder of text execution duration
-        auto& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-        til::point coordOldTextInfoPos;
-        coordOldTextInfoPos.X = textBuffer.GetCursor().GetPosition().X;
-        coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
-
-        // set various cursor positions
-        readData.OriginalCursorPosition().X = 15;
-        readData.OriginalCursorPosition().Y = 3;
-
-        readData.VisibleCharCount() = 200;
-
-        textBuffer.GetCursor().SetXPosition(35);
-        textBuffer.GetCursor().SetYPosition(35);
-
-        // try getting boundaries with no pointers. parameters should be fully optional.
-        fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
-        VERIFY_IS_TRUE(fResult);
-
-        // now let's get some actual data
-        til::point coordStart;
-        til::point coordEnd;
-
-        fResult = Selection::s_GetInputLineBoundaries(&coordStart, &coordEnd);
-        VERIFY_IS_TRUE(fResult);
-
-        // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.X, readData.OriginalCursorPosition().X);
-        VERIFY_ARE_EQUAL(coordStart.Y, readData.OriginalCursorPosition().Y);
-
-        // ending position can vary. it's in one of two spots
-        // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
-        til::point coordFinalPos;
-
-        const auto cCharsToAdjust = ((til::CoordType)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
-
-        coordFinalPos.X = (readData.OriginalCursorPosition().X + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.Y = readData.OriginalCursorPosition().Y + ((readData.OriginalCursorPosition().X + cCharsToAdjust) / sRowWidth);
-
-        VERIFY_ARE_EQUAL(coordEnd.X, coordFinalPos.X);
-        VERIFY_ARE_EQUAL(coordEnd.Y, coordFinalPos.Y);
-
-        // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        readData.OriginalCursorPosition().X = -1;
-        readData.OriginalCursorPosition().Y = -1;
-
-        fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
-        VERIFY_IS_TRUE(fResult);
-
-        VERIFY_ARE_EQUAL(coordEnd.X, textBuffer.GetCursor().GetPosition().X - 1); // -1 to be on the last piece of text, not past it
-        VERIFY_ARE_EQUAL(coordEnd.Y, textBuffer.GetCursor().GetPosition().Y);
-
-        // restore text buffer info position
-        textBuffer.GetCursor().SetXPosition(coordOldTextInfoPos.X);
-        textBuffer.GetCursor().SetYPosition(coordOldTextInfoPos.Y);
     }
 
     TEST_METHOD(TestWordByWordPrevious)
@@ -502,14 +422,14 @@ class SelectionInputTests
 
             do
             {
-                resultExpected.X--;
-            } while (resultExpected.X > 0 && text.at(resultExpected.X - 1) != UNICODE_SPACE);
+                resultExpected.x--;
+            } while (resultExpected.x > 0 && text.at(resultExpected.x - 1) != UNICODE_SPACE);
 
             point = sel.WordByWordSelection(true, bufferSize, anchor, point);
 
             VERIFY_ARE_EQUAL(resultExpected, point);
 
-        } while (point.X > left.X);
+        } while (point.x > left.x);
     }
 
     TEST_METHOD(TestWordByWordNext)
@@ -549,22 +469,22 @@ class SelectionInputTests
 
             do
             {
-                resultExpected.X++;
-            } while (resultExpected.X + 1 < right.X && text.at(resultExpected.X + 1) != UNICODE_SPACE);
-            resultExpected.X++;
+                resultExpected.x++;
+            } while (resultExpected.x + 1 < right.x && text.at(resultExpected.x + 1) != UNICODE_SPACE);
+            resultExpected.x++;
 
             // when we reach the end, word by word selection will seek forward to the end of the buffer, so update
             // the expected to the end in that circumstance
-            if (resultExpected.X >= right.X)
+            if (resultExpected.x >= right.x)
             {
-                resultExpected.X = bufferSize.RightInclusive();
-                resultExpected.Y = bufferSize.BottomInclusive();
+                resultExpected.x = bufferSize.RightInclusive();
+                resultExpected.y = bufferSize.BottomInclusive();
             }
 
             point = sel.WordByWordSelection(false, bufferSize, anchor, point);
 
             VERIFY_ARE_EQUAL(resultExpected, point);
 
-        } while (point.Y < bufferSize.BottomInclusive()); // stop once we've advanced to a point on the bottom row of the buffer.
+        } while (point.y < bufferSize.BottomInclusive()); // stop once we've advanced to a point on the bottom row of the buffer.
     }
 };

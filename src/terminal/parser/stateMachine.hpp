@@ -15,7 +15,6 @@ Abstract:
 #pragma once
 
 #include "IStateMachineEngine.hpp"
-#include "telemetry.hpp"
 #include "tracing.hpp"
 #include <memory>
 
@@ -32,6 +31,30 @@ namespace Microsoft::Console::VirtualTerminal
     // that number.
     constexpr size_t MAX_PARAMETER_COUNT = 32;
 
+    // Sub parameter limit for each parameter.
+    constexpr size_t MAX_SUBPARAMETER_COUNT = 6;
+    // we limit ourself to 256 sub parameters because we use bytes to store
+    // the their indexes.
+    static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
+
+    // When we encounter something like a RIS (hard reset), ConPTY must re-enable
+    // modes that it relies on (like the Win32 Input Mode). To do this, the VT
+    // parser tells it the positions of any such relevant VT sequences.
+    enum class InjectionType : size_t
+    {
+        RIS, // All of the below
+        DECSET_FOCUS, // CSI ? 1004 h
+        W32IM, // CSI ? 9001 h
+
+        Count,
+    };
+
+    struct Injection
+    {
+        InjectionType type;
+        size_t offset;
+    };
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -41,16 +64,15 @@ namespace Microsoft::Console::VirtualTerminal
 
     public:
         template<typename T>
-        StateMachine(std::unique_ptr<T> engine) :
+        StateMachine(std::unique_ptr<T> engine) noexcept :
             StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
         {
         }
-        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput);
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept;
 
         enum class Mode : size_t
         {
             AcceptC1,
-            AlwaysAcceptC1,
             Ansi,
         };
 
@@ -61,19 +83,15 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessString(const std::wstring_view string);
         bool IsProcessingLastCharacter() const noexcept;
 
-        void ResetState() noexcept;
+        void InjectSequence(InjectionType type);
+        const til::small_vector<Injection, 8>& GetInjections() const noexcept;
 
+        void OnCsiComplete(const std::function<void()> callback);
+        void ResetState() noexcept;
         bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
-
-        class ShutdownException : public wil::ResultException
-        {
-        public:
-            ShutdownException() noexcept :
-                ResultException(E_ABORT) {}
-        };
 
     private:
         void _ActionExecute(const wchar_t wch);
@@ -84,31 +102,33 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionVt52EscDispatch(const wchar_t wch);
         void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
+        void _ActionSubParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
-        void _ActionOscDispatch(const wchar_t wch);
+        void _ActionOscDispatch();
         void _ActionSs3Dispatch(const wchar_t wch);
         void _ActionDcsDispatch(const wchar_t wch);
 
-        void _ActionClear();
+        void _ActionClear() noexcept;
         void _ActionIgnore() noexcept;
         void _ActionInterrupt();
 
         void _EnterGround() noexcept;
-        void _EnterEscape();
+        void _EnterEscape() noexcept;
         void _EnterEscapeIntermediate() noexcept;
-        void _EnterCsiEntry();
+        void _EnterCsiEntry() noexcept;
         void _EnterCsiParam() noexcept;
+        void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
         void _EnterCsiIntermediate() noexcept;
         void _EnterOscParam() noexcept;
         void _EnterOscString() noexcept;
         void _EnterOscTermination() noexcept;
-        void _EnterSs3Entry();
+        void _EnterSs3Entry() noexcept;
         void _EnterSs3Param() noexcept;
         void _EnterVt52Param() noexcept;
-        void _EnterDcsEntry();
+        void _EnterDcsEntry() noexcept;
         void _EnterDcsParam() noexcept;
         void _EnterDcsIgnore() noexcept;
         void _EnterDcsIntermediate() noexcept;
@@ -122,7 +142,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiIntermediate(const wchar_t wch);
         void _EventCsiIgnore(const wchar_t wch);
         void _EventCsiParam(const wchar_t wch);
-        void _EventOscParam(const wchar_t wch) noexcept;
+        void _EventCsiSubParam(const wchar_t wch);
+        void _EventOscParam(const wchar_t wch);
         void _EventOscString(const wchar_t wch);
         void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
@@ -139,8 +160,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda);
-        template<typename TLambda>
-        bool _SafeExecuteWithLog(const wchar_t wch, TLambda&& lambda);
+
+        void _ExecuteCsiCompleteCallback();
 
         enum class VTStates
         {
@@ -151,6 +172,7 @@ namespace Microsoft::Console::VirtualTerminal
             CsiIntermediate,
             CsiIgnore,
             CsiParam,
+            CsiSubParam,
             OscParam,
             OscString,
             OscTermination,
@@ -189,7 +211,11 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitReached;
+        bool _parameterLimitOverflowed;
+        std::vector<VTParameter> _subParameters;
+        std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
+        bool _subParameterLimitOverflowed;
+        BYTE _subParameterCounter;
 
         std::wstring _oscString;
         VTInt _oscParameter;
@@ -197,10 +223,12 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
+        til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.
-        bool _processingIndividually;
         bool _processingLastCharacter;
+
+        std::function<void()> _onCsiCompleteCallback;
     };
 }

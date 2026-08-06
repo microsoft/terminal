@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ProfileViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Profiles_Base_Orphaned : Windows.UI.Xaml.Controls.Page
+    {
+        Profiles_Base_Orphaned();
+        ProfileViewModel Profile { get; };
+    }
+}

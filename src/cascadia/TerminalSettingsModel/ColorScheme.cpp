@@ -52,7 +52,8 @@ ColorScheme::ColorScheme() noexcept :
 }
 
 ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
-    _Name{ name }
+    _Name{ name },
+    _Origin{ OriginTag::User }
 {
     const auto table = Utils::CampbellColorTable();
     std::copy_n(table.data(), table.size(), _table.data());
@@ -67,6 +68,7 @@ winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
     scheme->_SelectionBackground = _SelectionBackground;
     scheme->_CursorColor = _CursorColor;
     scheme->_table = _table;
+    scheme->_Origin = _Origin;
     return scheme;
 }
 
@@ -162,29 +164,10 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) no
     _table[index] = value;
 }
 
-winrt::Microsoft::Terminal::Core::Scheme ColorScheme::ToCoreScheme() const noexcept
+bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept
 {
-    winrt::Microsoft::Terminal::Core::Scheme coreScheme{};
-
-    coreScheme.Foreground = Foreground();
-    coreScheme.Background = Background();
-    coreScheme.CursorColor = CursorColor();
-    coreScheme.SelectionBackground = SelectionBackground();
-    coreScheme.Black = Table()[0];
-    coreScheme.Red = Table()[1];
-    coreScheme.Green = Table()[2];
-    coreScheme.Yellow = Table()[3];
-    coreScheme.Blue = Table()[4];
-    coreScheme.Purple = Table()[5];
-    coreScheme.Cyan = Table()[6];
-    coreScheme.White = Table()[7];
-    coreScheme.BrightBlack = Table()[8];
-    coreScheme.BrightRed = Table()[9];
-    coreScheme.BrightGreen = Table()[10];
-    coreScheme.BrightYellow = Table()[11];
-    coreScheme.BrightBlue = Table()[12];
-    coreScheme.BrightPurple = Table()[13];
-    coreScheme.BrightCyan = Table()[14];
-    coreScheme.BrightWhite = Table()[15];
-    return coreScheme;
+    // The caller likely only got here if the names were the same, so skip checking that one.
+    // We do not care about the cursor color or the selection background, as the main reason we are
+    // doing equivalence merging is to replace old, poorly-specified versions of those two properties.
+    return _table == other->_table && _Background == other->_Background && _Foreground == other->_Foreground;
 }

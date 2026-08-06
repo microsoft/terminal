@@ -21,6 +21,11 @@
       <DeploymentContent>true</DeploymentContent>
       <Link>ProfileIcons\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
+    <!-- Profile Generator Icons -->
+    <Content Include="$(OpenConsoleDir)src\cascadia\CascadiaPackage\ProfileGeneratorIcons\**\*">
+      <DeploymentContent>true</DeploymentContent>
+      <Link>ProfileGeneratorIcons\%(RecursiveDir)%(FileName)%(Extension)</Link>
+    </Content>
     <!-- Default Settings -->
     <Content Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\defaults.json">
       <DeploymentContent>true</DeploymentContent>

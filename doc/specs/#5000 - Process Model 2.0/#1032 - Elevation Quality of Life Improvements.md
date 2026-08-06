@@ -109,7 +109,7 @@ each thing in the elevated window that they'd want to create it elevated. Or the
 Terminal would need to provide some setting like
 `"autoElevateEverythingInAnElevatedWindow"`.
 
-We cannot support mixed elevation when starting in a unelevated window.
+We cannot support mixed elevation when starting in an unelevated window.
 Therefore, it doesn't make a lot of UX sense to support it in the other
 direction. It's a cleaner UX story to just have everything in a single window at
 the same elevation level.
@@ -141,7 +141,7 @@ We could also simplify this to only allow a boolean true/false for displaying
 the shield. As we do often with other enums, we could define `true` to be the
 same as the default appearance, and `false` to be the hidden option. As always,
 the development of the Terminal is an iterative process, where we can
-incrementally improve from no setting, to a boolean setting, to a enum-backed
+incrementally improve from no setting, to a boolean setting, to an enum-backed
 one.
 
 ### Configuring a profile to always run elevated
@@ -612,8 +612,8 @@ You could have a profile that layers on an existing profile, with elevated-speci
 [#8514]: https://github.com/microsoft/terminal/issues/8514
 [#10276]: https://github.com/microsoft/terminal/issues/10276
 
-[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
-[Configuration object for profiles]: https://github.com/microsoft/terminal/blob/main/doc/specs/Configuration%20object%20for%20profiles.md
-[Session Management Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234472%20-%20Windows%20Terminal%20Session%20Management.md
+[Process Model 2.0 Spec]: ../%235000%20-%20Process%20Model%202.0.md
+[Configuration object for profiles]: ../%233062%20-%20Appearance configuration object for profiles.md
+[Session Management Spec]: ./%234472%20-%20Windows%20Terminal%20Session%20Management.md
 [The Old New Thing: How can I launch an unelevated process from my elevated process, redux]: https://devblogs.microsoft.com/oldnewthing/20190425-00/?p=102443
 [Workspace Trust]: https://code.visualstudio.com/docs/editor/workspace-trust

@@ -14,16 +14,10 @@ Author:
 --*/
 
 #pragma once
-#include <deque>
-#include <memory>
-#include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft::Console::Interactivity
 {
-    std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch, const unsigned int codepage);
-
-    std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch,
-                                                                   const short keyState);
-
-    std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage);
+    void CharToKeyEvents(wchar_t wch, unsigned int codepage, InputEventQueue& out);
+    void SynthesizeKeyboardEvents(wchar_t wch, short keyState, InputEventQueue& out);
+    void SynthesizeNumpadEvents(wchar_t wch, unsigned int codepage, InputEventQueue& out);
 }

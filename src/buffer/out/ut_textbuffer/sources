@@ -17,6 +17,7 @@ SOURCES = \
     ReflowTests.cpp \
     TextColorTests.cpp \
     TextAttributeTests.cpp \
+    UTextAdapterTests.cpp \
     DefaultResource.rc \
 
 TARGETLIBS = \
@@ -24,6 +25,9 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(CONSOLE_OBJ_PATH)\types\lib\$(O)\ConTypes.lib \
     $(TARGETLIBS) \
+
+DELAYLOAD = \
+    icu.dll \
 
 # -------------------------------------
 # Localization

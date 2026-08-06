@@ -15,7 +15,7 @@
 // unused (CM_CONSOLE_SHUTDOWN)  (WM_USER + 7)
 // unused (CM_HIDE_WINDOW)       (WM_USER + 8)
 #define CM_CONIME_CREATE         (WM_USER+9)
-#define CM_SET_CONSOLEIME_WINDOW (WM_USER+10)
+// unused #define CM_SET_CONSOLEIME_WINDOW (WM_USER+10)
 #define CM_WAIT_CONIME_PROCESS   (WM_USER+11)
 // unused CM_SET_IME_CODEPAGE      (WM_USER+12)
 // unused CM_SET_NLSMODE           (WM_USER+13)
@@ -28,5 +28,7 @@
 #define CM_SET_KEY_STATE         (WM_USER+18)
 #define CM_SET_KEYBOARD_LAYOUT   (WM_USER+19)
 #endif
+
+#define CM_UPDATE_CLIPBOARD      (WM_USER+20)
 
 // clang-format on

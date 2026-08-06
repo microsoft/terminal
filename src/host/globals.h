@@ -17,18 +17,18 @@ Revision History:
 
 #pragma once
 
+#include "AccessibilityNotifier.h"
+#include "ApiRoutines.h"
+#include "ConsoleArguments.hpp"
 #include "selection.hpp"
 #include "server.h"
-#include "ConsoleArguments.hpp"
-#include "ApiRoutines.h"
 
 #include "../propslib/DelegationConfig.hpp"
 #include "../renderer/base/Renderer.hpp"
 #include "../server/DeviceComm.h"
-#include "../server/ConDrvDeviceComm.h"
+#include "../tsf/Handle.h"
 
 #include <TraceLoggingProvider.h>
-#include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
 class Globals
@@ -60,9 +60,9 @@ public:
     DWORD dwInputThreadId;
 
     std::vector<wchar_t> WordDelimiters;
-
     Microsoft::Console::Render::Renderer* pRender;
-
+    Microsoft::Console::TSF::Handle tsf;
+    Microsoft::Console::AccessibilityNotifier accessibilityNotifier;
     Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
@@ -75,10 +75,6 @@ public:
     wil::unique_hfile handoffInboxConsoleHandle;
     wil::unique_threadpool_wait handoffInboxConsoleExitWait;
     bool defaultTerminalMarkerCheckRequired = false;
-
-#ifdef UNIT_TESTING
-    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
-#endif
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;

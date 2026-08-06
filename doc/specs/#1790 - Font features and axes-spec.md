@@ -23,7 +23,7 @@ In a similar vein, many fonts allow for setting variations on the font along cer
 
 ### Font features
 
-It is already possible to pass in a list of [font feature structs](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_font_feature) to DWrite for it to handle. A font feature struct contains only 2 things: 
+It is already possible to pass in a list of [font feature structs](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/ns-dwrite-dwrite_font_feature) to DWrite for it to handle. A font feature struct contains only 2 things:
 
 1. A font feature tag
 2. A parameter value
@@ -36,7 +36,7 @@ We will do this by allowing users to define a dictionary in their settings.json 
 
 ### Axes of variation
 
-Specifying axes of variation is done in an extremely similar manner to the way font features are specified - a 4-character tag is used to specify which font axis is being modified and a numerical value is provided to specify the value the axis should be set to. For example, {'slnt', 20} specifies that the 'slant' axis should be set to 20.
+Specifying axes of variation is done in an extremely similar manner to the way font features are specified - a 4-character tag is used to specify which font axis is being modified and a numerical value is provided to specify the value for the axis. For example, {'slnt', 20} specifies that the 'slant' axis should be set to 20.
 
 There is also a standard list of axes of variation, and each axis has its own default. We will approach this the same way we approached font features, by allowing users to specify additional features or omit features without needing to redefine the defaults.
 
@@ -78,7 +78,7 @@ Aside from additional parsing required for the settings file (which inherently o
 
 ### Compatibility
 
-Older versions of Windows may not have the DWrite updates that allow for defining font features and axes of variation. We must make sure to fallback to the current implementation in these cases.
+Older versions of Windows may not have the DWrite updates that allow for defining font features and axes of variation. We must make sure to fall back to the current implementation in these cases.
 
 ### Performance, Power, and Efficiency
 

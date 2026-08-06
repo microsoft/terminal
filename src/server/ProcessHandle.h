@@ -28,11 +28,20 @@ Revision History:
 class ConsoleProcessHandle
 {
 public:
-    const std::unique_ptr<ConsoleWaitQueue> pWaitBlockQueue;
-    std::unique_ptr<ConsoleHandleData> pInputHandle;
-    std::unique_ptr<ConsoleHandleData> pOutputHandle;
+    ConsoleProcessHandle(const DWORD dwProcessId,
+                         const DWORD dwThreadId,
+                         const ULONG ulProcessGroupId);
+    ~ConsoleProcessHandle() = default;
+    ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
+    ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
+    ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
+    ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
 
-    bool fRootProcess;
+    const std::unique_ptr<ConsoleWaitQueue> pWaitBlockQueue;
+    std::unique_ptr<ConsoleHandleData> pInputHandle{ nullptr };
+    std::unique_ptr<ConsoleHandleData> pOutputHandle{ nullptr };
+
+    bool fRootProcess{ false };
 
     DWORD const dwProcessId;
     DWORD const dwThreadId;
@@ -44,23 +53,14 @@ public:
 
     CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
-    const ULONG64 GetProcessCreationTime() const;
+    const FILETIME GetProcessCreationTime() const;
 
 private:
-    ConsoleProcessHandle(const DWORD dwProcessId,
-                         const DWORD dwThreadId,
-                         const ULONG ulProcessGroupId);
-    ~ConsoleProcessHandle() = default;
-    ConsoleProcessHandle(const ConsoleProcessHandle&) = delete;
-    ConsoleProcessHandle(ConsoleProcessHandle&&) = delete;
-    ConsoleProcessHandle& operator=(const ConsoleProcessHandle&) & = delete;
-    ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
-
-    ULONG _ulTerminateCount;
+    ULONG _ulTerminateCount{ 0 };
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
 
-    mutable ULONG64 _processCreationTime;
+    mutable FILETIME _processCreationTime;
 
     const ConsoleProcessPolicy _policy;
     const ConsoleShimPolicy _shimPolicy;

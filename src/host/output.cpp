@@ -5,10 +5,6 @@
 
 #include "_output.h"
 #include "output.h"
-#include "handle.h"
-
-#include "getset.h"
-#include "misc.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
@@ -35,6 +31,8 @@ using namespace Microsoft::Console::Interactivity;
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
     gci.CP = gci.GetCodePage();
     gci.OutputCP = gci.GetCodePage();
+    gci.DefaultCP = gci.GetCodePage();
+    gci.DefaultOutputCP = gci.GetCodePage();
 
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
@@ -49,7 +47,7 @@ using namespace Microsoft::Console::Interactivity;
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         gci.ScreenBuffers[0].IncrementOriginalScreenBuffer();
     }
@@ -80,11 +78,11 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
     //    row locations instead of copying or moving anything.
     {
         const auto bufferSize = screenInfo.GetBufferSize().Dimensions();
-        const auto sourceFullRows = source.Width() == bufferSize.X;
-        const auto verticalCopyOnly = source.Left() == 0 && targetOrigin.X == 0;
+        const auto sourceFullRows = source.Width() == bufferSize.width;
+        const auto verticalCopyOnly = source.Left() == 0 && targetOrigin.x == 0;
         if (sourceFullRows && verticalCopyOnly)
         {
-            const auto delta = targetOrigin.Y - source.Top();
+            const auto delta = targetOrigin.y - source.Top();
 
             screenInfo.GetTextBuffer().ScrollRows(source.Top(), source.Height(), delta);
 
@@ -102,13 +100,20 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
         auto sourcePos = source.GetWalkOrigin(walkDirection);
         auto targetPos = target.GetWalkOrigin(walkDirection);
 
+        // Note that we read two cells from the source before we start writing
+        // to the target, so a two-cell DBCS character can't accidentally delete
+        // itself when moving one cell horizontally.
+        auto next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
         do
         {
-            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
-            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
-
+            const auto current = next;
             source.WalkInBounds(sourcePos, walkDirection);
+            next = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            screenInfo.GetTextBuffer().WriteLine(OutputCellIterator({ &current, 1 }), targetPos);
         } while (target.WalkInBounds(targetPos, walkDirection));
+
+        auto& textBuffer = screenInfo.GetTextBuffer();
+        ImageSlice::CopyBlock(textBuffer, source.ToExclusive(), textBuffer, target.ToExclusive());
     }
 }
 
@@ -218,7 +223,12 @@ std::wstring ReadOutputStringW(const SCREEN_INFORMATION& screenInfo,
             // Otherwise, add anything that isn't a trailing cell. (Trailings are duplicate copies of the leading.)
             if (it->DbcsAttr() != DbcsAttribute::Trailing)
             {
-                retVal += it->Chars();
+                auto chars = it->Chars();
+                if (chars.size() > 1)
+                {
+                    chars = { &UNICODE_REPLACEMENT, 1 };
+                }
+                retVal += chars;
             }
         }
 
@@ -253,7 +263,7 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 
     try
     {
-        gci.pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));
+        gci.pInputBuffer->Write(SynthesizeWindowBufferSizeEvent(coordNewSize));
     }
     catch (...)
     {
@@ -269,17 +279,8 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 // - source - The viewport describing the region where data was copied from
 // - fill - The viewport describing the area that was filled in with the fill character (uncovered area)
 // - target - The viewport describing the region where data was copied to
-static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source, const Viewport& fill, const Viewport& target)
+static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& fill, const Viewport& target)
 {
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().X - source.Left(), target.Origin().Y - source.RightInclusive());
-        }
-    }
-
     // Get the text buffer and send it commands.
     // It will figure out whether or not we're active and where the messages need to go.
     auto& textBuffer = screenInfo.GetTextBuffer();
@@ -287,41 +288,6 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
     textBuffer.TriggerRedraw(target);
     // Also redraw anything that was filled.
     textBuffer.TriggerRedraw(fill);
-}
-
-// Routine Description:
-// - This routine is a special-purpose scroll for use by AdjustCursorPosition.
-// Arguments:
-// - screenInfo - reference to screen buffer info.
-// Return Value:
-// - true if we succeeded in scrolling the buffer, otherwise false (if we're out of memory)
-bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
-{
-    // Rotate the circular buffer around and wipe out the previous final line.
-    const auto inVtMode = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    auto fSuccess = screenInfo.GetTextBuffer().IncrementCircularBuffer(inVtMode);
-    if (fSuccess)
-    {
-        // Trigger a graphical update if we're active.
-        if (screenInfo.IsActiveScreenBuffer())
-        {
-            til::point coordDelta;
-            coordDelta.Y = -1;
-
-            auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-            if (pNotifier)
-            {
-                // Notify accessibility that a scroll has occurred.
-                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
-            }
-
-            if (ServiceLocator::LocateGlobals().pRender != nullptr)
-            {
-                ServiceLocator::LocateGlobals().pRender->TriggerScroll(&coordDelta);
-            }
-        }
-    }
-    return fSuccess;
 }
 
 // Routine Description:
@@ -402,8 +368,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // the target origin.
     {
         auto currentSourceOrigin = source.Origin();
-        targetOrigin.X += currentSourceOrigin.X - originalSourceOrigin.X;
-        targetOrigin.Y += currentSourceOrigin.Y - originalSourceOrigin.Y;
+        targetOrigin.x += currentSourceOrigin.x - originalSourceOrigin.x;
+        targetOrigin.y += currentSourceOrigin.y - originalSourceOrigin.y;
     }
 
     // And now the target viewport is the same size as the source viewport but at the different position.
@@ -415,13 +381,13 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     const auto originalTargetOrigin = target.Origin();
     target = Viewport::Intersect(clip, target);
 
-    // OK, if the target became smaller than before, we need to also adjust the source accordingly
+    // OK, if the target became smaller than before, we also need to adjust the source accordingly
     // so we don't waste time loading up/copying things that have no place to go within the target.
     {
         const auto currentTargetOrigin = target.Origin();
         auto sourceOrigin = source.Origin();
-        sourceOrigin.X += currentTargetOrigin.X - originalTargetOrigin.X;
-        sourceOrigin.Y += currentTargetOrigin.Y - originalTargetOrigin.Y;
+        sourceOrigin.x += currentTargetOrigin.x - originalTargetOrigin.x;
+        sourceOrigin.y += currentTargetOrigin.y - originalTargetOrigin.y;
 
         source = Viewport::FromDimensions(sourceOrigin, target.Dimensions());
     }
@@ -434,7 +400,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         _CopyRectangle(screenInfo, source, target.Origin());
 
         // Notify the renderer and accessibility as to what moved and where.
-        _ScrollScreen(screenInfo, source, fill, target);
+        _ScrollScreen(screenInfo, fill, target);
     }
 
     // ------ 6. FILL ------
@@ -452,9 +418,12 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         const auto& view = remaining.at(i);
         screenInfo.WriteRect(fillData, view);
 
+        // If the region has image content it needs to be erased.
+        ImageSlice::EraseBlock(screenInfo.GetTextBuffer(), view.ToExclusive());
+
         // If we're scrolling an area that encompasses the full buffer width,
         // then the filled rows should also have their line rendition reset.
-        if (view.Width() == buffer.Width() && destinationOriginGiven.X == 0)
+        if (view.Width() == buffer.Width() && destinationOriginGiven.x == 0)
         {
             screenInfo.GetTextBuffer().ResetLineRenditionRange(view.Top(), view.BottomExclusive());
         }
@@ -466,21 +435,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetActiveOutputBuffer(screenInfo);
 
-    // initialize cursor GH#4102 - Typically, the cursor is set to on by the
-    // cursor blinker. Unfortunately, in conpty mode, there is no cursor
-    // blinker. So, in conpty mode, we need to leave the cursor on always. The
-    // cursor can still be set to hidden, and whether the cursor should be
-    // blinking will still be passed through to the terminal, but internally,
-    // the cursor should always be on.
-    //
-    // In particular, some applications make use of a calling
-    // `SetConsoleScreenBuffer` and `SetCursorPosition` without printing any
-    // text in between these calls. If we initialize the cursor to Off in conpty
-    // mode, then the cursor will remain off until they print text. This can
-    // lead to alignment problems in the terminal, because we won't move the
-    // terminal's cursor in this _exact_ scenario.
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsInVtIoMode());
-
     // set font
     screenInfo.RefreshFontWithRenderer();
 
@@ -490,8 +444,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     // Set window size.
     screenInfo.PostUpdateWindowSize();
 
-    gci.ConsoleIme.RefreshAreaAttributes();
-
     // Write data to screen.
     WriteToScreen(screenInfo, screenInfo.GetViewport());
 }
@@ -500,6 +452,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 void CloseConsoleProcessState()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -511,14 +464,4 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
-
-    // Jiggle the handle: (see MSFT:19419231)
-    // When we call this function, we'll only actually close the console once
-    //      we're totally unlocked. If our caller has the console locked, great,
-    //      we'll dispatch the ctrl event once they unlock. However, if they're
-    //      not running under lock (eg PtySignalInputThread::_GetData), then the
-    //      ctrl event will never actually get dispatched.
-    // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
-    UnlockConsole();
 }

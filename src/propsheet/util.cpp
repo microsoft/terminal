@@ -67,7 +67,7 @@ BOOL InitializeConsoleState()
     OEMCP = GetOEMCP();
     g_fIsComCtlV6Present = IsComCtlV6Present();
 
-    return NT_SUCCESS(InitializeDbcsMisc());
+    return SUCCEEDED_NTSTATUS(InitializeDbcsMisc());
 }
 
 void UninitializeConsoleState()

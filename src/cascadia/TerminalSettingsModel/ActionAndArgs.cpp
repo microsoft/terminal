@@ -7,7 +7,8 @@
 #include "JsonUtils.h"
 #include "HashUtils.h"
 
-#include <LibraryResources.h>
+#include <til/static_map.h>
+#include <ScopedResourceLoader.h>
 
 static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
 static constexpr std::string_view CloseOtherPanesKey{ "closeOtherPanes" };
@@ -52,6 +53,7 @@ static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view SuggestionsKey{ "showSuggestions" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
@@ -65,11 +67,17 @@ static constexpr std::string_view MoveTabKey{ "moveTab" };
 static constexpr std::string_view BreakIntoDebuggerKey{ "breakIntoDebugger" };
 static constexpr std::string_view FindMatchKey{ "findMatch" };
 static constexpr std::string_view TogglePaneReadOnlyKey{ "toggleReadOnlyMode" };
+static constexpr std::string_view EnablePaneReadOnlyKey{ "enableReadOnlyMode" };
+static constexpr std::string_view DisablePaneReadOnlyKey{ "disableReadOnlyMode" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view IdentifyWindowKey{ "identifyWindow" };
 static constexpr std::string_view IdentifyWindowsKey{ "identifyWindows" };
 static constexpr std::string_view RenameWindowKey{ "renameWindow" };
+static constexpr std::string_view OpenWorkspaceKey{ "openWorkspace" };
+
 static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
+static constexpr std::string_view DisplayWorkingDirectoryKey{ "debugTerminalCwd" };
+static constexpr std::string_view SearchForTextKey{ "searchWeb" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
 static constexpr std::string_view FocusPaneKey{ "focusPane" };
@@ -81,64 +89,73 @@ static constexpr std::string_view QuitKey{ "quit" };
 static constexpr std::string_view AdjustOpacityKey{ "adjustOpacity" };
 static constexpr std::string_view RestoreLastClosedKey{ "restoreLastClosed" };
 static constexpr std::string_view SelectAllKey{ "selectAll" };
+static constexpr std::string_view SelectCommandKey{ "selectCommand" };
+static constexpr std::string_view SelectOutputKey{ "selectOutput" };
 static constexpr std::string_view MarkModeKey{ "markMode" };
 static constexpr std::string_view ToggleBlockSelectionKey{ "toggleBlockSelection" };
 static constexpr std::string_view SwitchSelectionEndpointKey{ "switchSelectionEndpoint" };
 static constexpr std::string_view ColorSelectionKey{ "experimental.colorSelection" };
+static constexpr std::string_view ShowContextMenuKey{ "showContextMenu" };
 static constexpr std::string_view ExpandSelectionToWordKey{ "expandSelectionToWord" };
+static constexpr std::string_view RestartConnectionKey{ "restartConnection" };
+static constexpr std::string_view ToggleBroadcastInputKey{ "toggleBroadcastInput" };
+static constexpr std::string_view OpenScratchpadKey{ "experimental.openScratchpad" };
+static constexpr std::string_view OpenAboutKey{ "openAbout" };
+static constexpr std::string_view QuickFixKey{ "quickFix" };
+static constexpr std::string_view OpenCWDKey{ "openCWD" };
+static constexpr std::string_view WorkspacesKey{ "workspaces" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
-#define KEY_TO_ACTION_PAIR(action) { action##Key, ShortcutAction::action },
-#define ACTION_TO_KEY_PAIR(action) { ShortcutAction::action, action##Key },
-#define ACTION_TO_SERIALIZERS_PAIR(action) { ShortcutAction::action, { action##Args::FromJson, action##Args::ToJson } },
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
 
-    // Specifically use a map here over an unordered_map. We want to be able to
-    // iterate over these entries in-order when we're serializing the keybindings.
-    // HERE BE DRAGONS:
-    // These are string_views that are being used as keys. These string_views are
-    // just pointers to other strings. This could be dangerous, if the map outlived
-    // the actual strings being pointed to. However, since both these strings and
-    // the map are all const for the lifetime of the app, we have nothing to worry
-    // about here.
-    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
+    using ParseActionFunction = FromJsonResult (*)(const Json::Value&);
+    using SerializeActionFunction = Json::Value (*)(const IActionArgs&);
+
+    using KeyToActionPair = std::pair<std::string_view, ShortcutAction>;
+    using ActionToKeyPair = std::pair<ShortcutAction, std::string_view>;
+    using SerializersPair = std::pair<ParseActionFunction, SerializeActionFunction>;
+    using ActionToSerializersPair = std::pair<ShortcutAction, SerializersPair>;
+
+#define KEY_TO_ACTION_PAIR(action) KeyToActionPair{ action##Key, ShortcutAction::action },
+#define ACTION_TO_KEY_PAIR(action) ActionToKeyPair{ ShortcutAction::action, action##Key },
+#define ACTION_TO_SERIALIZERS_PAIR(action) ActionToSerializersPair{ ShortcutAction::action, { action##Args::FromJson, action##Args::ToJson } },
+
+    static constexpr til::static_map ActionKeyNamesMap{
 #define ON_ALL_ACTIONS(action) KEY_TO_ACTION_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
 
-    static const std::map<ShortcutAction, std::string_view, std::less<>> ActionToStringMap{
+    static constexpr til::static_map ActionToStringMap{
 #define ON_ALL_ACTIONS(action) ACTION_TO_KEY_PAIR(action)
         ALL_SHORTCUT_ACTIONS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS
     };
-
-    using ParseResult = std::tuple<IActionArgs, std::vector<SettingsLoadWarnings>>;
-    using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
-    using SerializeActionFunction = std::function<Json::Value(IActionArgs)>;
 
     // This is a map of ShortcutAction->{function<IActionArgs(Json::Value)>, function<Json::Value(IActionArgs)>. It holds
     // a set of (de)serializer functions that can be used to (de)serialize an IActionArgs
     // from json. Each type of IActionArgs that can accept arbitrary args should be
     // placed into this map, with the corresponding deserializer function as the
     // value.
-    static const std::unordered_map<ShortcutAction, std::pair<ParseActionFunction, SerializeActionFunction>> argSerializerMap{
+    static constexpr til::static_map argSerializerMap{
 
         // These are special cases.
         // - QuakeMode: deserializes into a GlobalSummon, so we don't need a serializer
         // - Invalid: has no args
-        { ShortcutAction::QuakeMode, { GlobalSummonArgs::QuakeModeFromJson, nullptr } },
-        { ShortcutAction::Invalid, { nullptr, nullptr } },
+        ActionToSerializersPair{ ShortcutAction::QuakeMode, { &GlobalSummonArgs::QuakeModeFromJson, nullptr } },
+        ActionToSerializersPair{ ShortcutAction::Invalid, { nullptr, nullptr } },
 
 #define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
+    // Don't include the INTERNAL_SHORTCUT_ACTIONS here
 #undef ON_ALL_ACTIONS_WITH_ARGS
     };
 
@@ -182,8 +199,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
-        return found != ActionAndArgs::ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionKeyNamesMap.find(actionString);
+        return found != ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     // Method Description:
@@ -191,8 +208,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   * If json is a string, we'll attempt to treat it as an action name,
     //     without arguments.
     //   * If json is an object, we'll attempt to retrieve the action name from
-    //     its "action" property, and we'll use that name to fine a deserializer
-    //     to precess the rest of the arguments in the json object.
+    //     its "action" property, and we'll use that name to find a deserializer
+    //     to process the rest of the arguments in the json object.
     // - If the action name is null or "unbound", or we don't understand the
     //   action name, or we failed to parse the arguments to this action, we'll
     //   return null. This should indicate to the caller that the action should
@@ -325,102 +342,78 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return copy;
     }
 
-    winrt::hstring ActionAndArgs::GenerateName() const
+    winrt::hstring ActionAndArgs::GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const
     {
-        // Use a magic static to initialize this map, because we won't be able
-        // to load the resources at _init_, only at runtime.
-        static const auto GeneratedActionNames = []() {
-            return std::unordered_map<ShortcutAction, winrt::hstring>{
-                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
-                { ShortcutAction::CloseOtherPanes, RS_(L"CloseOtherPanesCommandKey") },
-                { ShortcutAction::CloseOtherTabs, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
-                { ShortcutAction::CloseTab, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::CloseTabsAfter, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
-                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
-                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
-                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
-                { ShortcutAction::Find, RS_(L"FindCommandKey") },
-                { ShortcutAction::Invalid, L"" },
-                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
-                { ShortcutAction::MovePane, RS_(L"MovePaneCommandKey") },
-                { ShortcutAction::SwapPane, RS_(L"SwapPaneCommandKey") },
-                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
-                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
-                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
-                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsUICommandKey") },
-                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
-                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
-                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
-                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
-                { ShortcutAction::OpenTabRenamer, RS_(L"OpenTabRenamerCommandKey") },
-                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
-                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
-                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
-                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
-                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
-                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
-                { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
-                { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
-                { ShortcutAction::ScrollToMark, RS_(L"ScrollToPreviousMarkCommandKey") },
-                { ShortcutAction::AddMark, RS_(L"AddMarkCommandKey") },
-                { ShortcutAction::ClearMark, RS_(L"ClearMarkCommandKey") },
-                { ShortcutAction::ClearAllMarks, RS_(L"ClearAllMarksCommandKey") },
-                { ShortcutAction::SendInput, L"" },
-                { ShortcutAction::SetColorScheme, L"" },
-                { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
-                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
-                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
-                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
-                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
-                { ShortcutAction::ToggleCommandPalette, L"" },
-                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
-                { ShortcutAction::SetFocusMode, L"" },
-                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
-                { ShortcutAction::SetFullScreen, L"" },
-                { ShortcutAction::SetMaximized, L"" },
-                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
-                { ShortcutAction::ToggleSplitOrientation, RS_(L"ToggleSplitOrientationCommandKey") },
-                { ShortcutAction::ToggleShaderEffects, RS_(L"ToggleShaderEffectsCommandKey") },
-                { ShortcutAction::MoveTab, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::BreakIntoDebugger, RS_(L"BreakIntoDebuggerCommandKey") },
-                { ShortcutAction::FindMatch, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::TogglePaneReadOnly, RS_(L"TogglePaneReadOnlyCommandKey") },
-                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
-                { ShortcutAction::IdentifyWindow, RS_(L"IdentifyWindowCommandKey") },
-                { ShortcutAction::IdentifyWindows, RS_(L"IdentifyWindowsCommandKey") },
-                { ShortcutAction::RenameWindow, RS_(L"ResetWindowNameCommandKey") },
-                { ShortcutAction::OpenWindowRenamer, RS_(L"OpenWindowRenamerCommandKey") },
-                { ShortcutAction::GlobalSummon, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::QuakeMode, RS_(L"QuakeModeCommandKey") },
-                { ShortcutAction::FocusPane, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::OpenSystemMenu, RS_(L"OpenSystemMenuCommandKey") },
-                { ShortcutAction::ExportBuffer, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::ClearBuffer, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::MultipleActions, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::Quit, RS_(L"QuitCommandKey") },
-                { ShortcutAction::AdjustOpacity, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::RestoreLastClosed, RS_(L"RestoreLastClosedCommandKey") },
-                { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
-                { ShortcutAction::MarkMode, RS_(L"MarkModeCommandKey") },
-                { ShortcutAction::ToggleBlockSelection, RS_(L"ToggleBlockSelectionCommandKey") },
-                { ShortcutAction::SwitchSelectionEndpoint, RS_(L"SwitchSelectionEndpointCommandKey") },
-                { ShortcutAction::ColorSelection, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::ExpandSelectionToWord, RS_(L"ExpandSelectionToWordCommandKey") },
-            };
-        }();
-
         if (_Args)
         {
-            auto nameFromArgs = _Args.GenerateName();
+            auto nameFromArgs = _Args.GenerateName(context);
             if (!nameFromArgs.empty())
             {
                 return nameFromArgs;
             }
         }
 
-        const auto found = GeneratedActionNames.find(_Action);
-        return found != GeneratedActionNames.end() ? found->second : L"";
+        return ActionArgFactory::GetNameForAction(_Action, context);
     }
+
+    winrt::hstring ActionAndArgs::GenerateName() const
+    {
+        return GenerateName(GetLibraryResourceLoader().ResourceContext());
+    }
+
+    // Function Description:
+    // - This will generate an ID for this ActionAndArgs, based on the ShortcutAction and the Args
+    // - It will always create the same ID if the ShortcutAction and the Args are the same
+    // - Note: this should only be called for User-created actions
+    // - Example: The "SendInput 'abc'" action will have the generated ID "User.sendInput.<hash of 'abc'>"
+    // Return Value:
+    // - The ID, based on the ShortcutAction and the Args
+    winrt::hstring ActionAndArgs::GenerateID() const
+    {
+        if (_Action != ShortcutAction::Invalid)
+        {
+            auto actionKeyString = ActionToStringMap.find(_Action)->second;
+            auto result = fmt::format(FMT_COMPILE(L"User.{}"), winrt::to_hstring(actionKeyString));
+            if (_Args)
+            {
+                // If there are args, we need to append the hash of the args
+                // However, to make it a little more presentable we
+                // 1. truncate the hash to 32 bits
+                // 2. convert it to a hex string
+                // there is a _tiny_ chance of collision because of the truncate but unlikely for
+                // the number of commands a user is expected to have
+                const auto argsHash32 = static_cast<uint32_t>(_Args.Hash() & 0xFFFFFFFF);
+                // {0:X} formats the truncated hash to an uppercase hex string
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE(L".{:X}"), argsHash32);
+            }
+            return winrt::hstring{ result };
+        }
+        return {};
+    }
+
+    winrt::hstring ActionAndArgs::Serialize(const winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs>& args)
+    {
+        Json::Value json{ Json::objectValue };
+        JsonUtils::SetValueForKey(json, "actions", args);
+        Json::StreamWriterBuilder wbuilder;
+        auto str = Json::writeString(wbuilder, json);
+        return winrt::to_hstring(str);
+    }
+    winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> ActionAndArgs::Deserialize(winrt::hstring content)
+    {
+        auto data = winrt::to_string(content);
+
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder{}.newCharReader() };
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        winrt::Windows::Foundation::Collections::IVector<Model::ActionAndArgs> result{ nullptr };
+        JsonUtils::GetValueForKey(root, "actions", result);
+        return result;
+    }
+
 }

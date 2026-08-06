@@ -2,5 +2,8 @@
   "$schema": "http://universaltest/schema/testlist-2.json",
   "Testlists": [
         { "FilePath": "Microsoft.Console.Tests.testlist" }
-    ]
+    ],
+  "TestMDs" :  [
+    { "FilePath": "Microsoft.Console.Host.FeatureTests.testmd" }
+  ]
 }

@@ -29,8 +29,8 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
 
-    _fontSize.X = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
-    _fontSize.Y = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
+    _fontSize.width = FontWidth > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontWidth);
+    _fontSize.height = FontHeight > SHORT_MAX ? SHORT_MAX : gsl::narrow_cast<til::CoordType>(FontHeight);
 }
 
 [[nodiscard]] HRESULT BgfxEngine::Invalidate(const til::rect* /*psrRegion*/) noexcept
@@ -48,11 +48,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::InvalidateSelection(const std::vector<til::rect>& /*rectangles*/) noexcept
-{
-    return S_OK;
-}
-
 [[nodiscard]] HRESULT BgfxEngine::InvalidateScroll(const til::point* /*pcoordDelta*/) noexcept
 {
     return S_OK;
@@ -61,12 +56,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 [[nodiscard]] HRESULT BgfxEngine::InvalidateAll() noexcept
 {
     return S_OK;
-}
-
-[[nodiscard]] HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::StartPaint() noexcept
@@ -79,7 +68,7 @@ try
 {
     const auto Status = ConIoSrvComm::GetConIoSrvComm()->RequestUpdateDisplay(0);
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         for (SIZE_T i = 0; i < _displayHeight; i++)
         {
@@ -126,20 +115,19 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const gsl::span<const Cluster> clusters,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                   const til::point coord,
-                                                  const bool /*trimLeft*/,
-                                                  const bool /*lineWrapped*/) noexcept
+                                                  const bool /*trimLeft*/) noexcept
 {
     try
     {
-        const auto y = gsl::narrow_cast<SIZE_T>(coord.Y);
+        const auto y = gsl::narrow_cast<SIZE_T>(coord.y);
         const auto NewRun = reinterpret_cast<PCD_IO_CHARACTER>(_sharedViewBase + (y * 2 * _runLength) + _runLength);
 
         for (SIZE_T i = 0; i < clusters.size() && i < _displayWidth; i++)
         {
-            NewRun[coord.X + i].Character = til::at(clusters, i).GetTextAsSingle();
-            NewRun[coord.X + i].Attribute = _currentLegacyColorAttribute;
+            NewRun[coord.x + i].Character = til::at(clusters, i).GetTextAsSingle();
+            NewRun[coord.x + i].Attribute = _currentLegacyColorAttribute;
         }
 
         return S_OK;
@@ -147,9 +135,10 @@ CATCH_RETURN()
     CATCH_RETURN()
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
-                                                       COLORREF const /*color*/,
-                                                       size_t const /*cchLine*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
+                                                       const COLORREF /*gridlineColor*/,
+                                                       const COLORREF /*underlineColor*/,
+                                                       const size_t /*cchLine*/,
                                                        const til::point /*coordTarget*/) noexcept
 {
     return S_OK;
@@ -166,8 +155,8 @@ try
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     CD_IO_CURSOR_INFORMATION CursorInfo;
-    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.Y);
-    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.X);
+    CursorInfo.Row = gsl::narrow<USHORT>(options.coordCursor.y);
+    CursorInfo.Column = gsl::narrow<USHORT>(options.coordCursor.x);
     CursorInfo.Height = options.ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
@@ -215,7 +204,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(std::span<const til::rect>& area) noexcept
 {
     _dirtyArea.bottom = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayHeight));
     _dirtyArea.right = gsl::narrow_cast<til::CoordType>(std::max(static_cast<SIZE_T>(0), _displayWidth));

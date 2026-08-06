@@ -1,20 +1,14 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- history.h
-
-Abstract:
-- Encapsulates the cmdline functions and structures specifically related to
-        command history functionality.
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
 class CommandHistory
 {
 public:
+    using Index = int32_t;
+    static constexpr Index IndexMax = INT32_MAX;
+
     // CommandHistory Flags
     static constexpr int CLE_ALLOCATED = 0x00000001;
     static constexpr int CLE_RESET = 0x00000002;
@@ -41,36 +35,32 @@ public:
     };
 
     bool FindMatchingCommand(const std::wstring_view command,
-                             const SHORT startingIndex,
-                             SHORT& indexFound,
+                             const Index startingIndex,
+                             Index& indexFound,
                              const MatchOptions options);
     bool IsAppNameMatch(const std::wstring_view other) const;
 
     [[nodiscard]] HRESULT Add(const std::wstring_view command,
                               const bool suppressDuplicates);
 
-    [[nodiscard]] HRESULT Retrieve(const SearchDirection searchDirection,
-                                   const gsl::span<wchar_t> buffer,
-                                   size_t& commandSize);
+    std::wstring_view Retrieve(const SearchDirection searchDirection);
+    std::wstring_view RetrieveNth(Index index);
 
-    [[nodiscard]] HRESULT RetrieveNth(const SHORT index,
-                                      const gsl::span<wchar_t> buffer,
-                                      size_t& commandSize);
+    Index GetNumberOfCommands() const;
+    std::wstring_view GetNth(Index index) const;
+    const std::vector<std::wstring>& GetCommands() const noexcept;
 
-    size_t GetNumberOfCommands() const;
-    std::wstring_view GetNth(const SHORT index) const;
-
-    void Realloc(const size_t commands);
+    void Realloc(Index commands);
     void Empty();
 
-    std::wstring Remove(const SHORT iDel);
+    std::wstring Remove(const Index iDel);
 
     bool AtFirstCommand() const;
     bool AtLastCommand() const;
 
     std::wstring_view GetLastCommand() const;
 
-    void Swap(const short indexA, const short indexB);
+    void Swap(const Index indexA, const Index indexB);
 
 private:
     void _Reset();
@@ -78,22 +68,24 @@ private:
     // _Next and _Prev go to the next and prev command
     // _Inc  and _Dec go to the next and prev slots
     // Don't get the two confused - it matters when the cmd history is not full!
-    void _Prev(SHORT& ind) const;
-    void _Next(SHORT& ind) const;
-    void _Dec(SHORT& ind) const;
-    void _Inc(SHORT& ind) const;
+    void _Prev(Index& ind) const;
+    void _Next(Index& ind) const;
+    void _Dec(Index& ind) const;
+    void _Inc(Index& ind) const;
 
+    // NOTE: In conhost v1 this used to be a circular buffer because removal at the
+    // start is a very common operation. It seems this was lost in the C++ refactor.
     std::vector<std::wstring> _commands;
-    SHORT _maxCommands;
+    Index _maxCommands = 0;
 
     std::wstring _appName;
-    HANDLE _processHandle;
+    HANDLE _processHandle = nullptr;
 
     static std::list<CommandHistory> s_historyLists;
 
 public:
-    DWORD Flags;
-    SHORT LastDisplayed;
+    DWORD Flags = 0;
+    Index LastDisplayed = 0;
 
 #ifdef UNIT_TESTING
     static void s_ClearHistoryListStorage();

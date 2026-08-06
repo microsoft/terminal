@@ -9,12 +9,12 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 UINT SystemConfigurationProvider::GetCaretBlinkTime() noexcept
 {
-    return s_DefaultCaretBlinkTime;
+    return 530; // milliseconds
 }
 
 bool SystemConfigurationProvider::IsCaretBlinkingEnabled() noexcept
 {
-    return s_DefaultIsCaretBlinkingEnabled;
+    return true;
 }
 
 int SystemConfigurationProvider::GetNumberOfMouseButtons() noexcept
@@ -25,23 +25,23 @@ int SystemConfigurationProvider::GetNumberOfMouseButtons() noexcept
     }
     else
     {
-        return s_DefaultNumberOfMouseButtons;
+        return 3;
     }
 }
 
 ULONG SystemConfigurationProvider::GetCursorWidth() noexcept
 {
-    return s_DefaultCursorWidth;
+    return 1;
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines() noexcept
 {
-    return s_DefaultNumberOfWheelScrollLines;
+    return 3;
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollCharacters() noexcept
 {
-    return s_DefaultNumberOfWheelScrollCharacters;
+    return 3;
 }
 
 void SystemConfigurationProvider::GetSettingsFromLink(
@@ -61,6 +61,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     // Hence, we make it seem like the console is in fact configured to use a
     // TrueType font by the user.
 
+#pragma warning(suppress : 26485) // This isn't even really _supposed to be_ an array-to-pointer decay: it's passed as a string view.
     pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME);
     pLinkSettings->SetFontFamily(TMPF_TRUETYPE);
 

@@ -20,8 +20,6 @@ Revision History:
 #include "ApiMessageState.h"
 #include "IApiRoutines.h"
 
-#include <til/small_vector.h>
-
 class ConsoleProcessHandle;
 class ConsoleHandleData;
 
@@ -41,13 +39,10 @@ typedef struct _CONSOLE_API_MSG
     ConsoleHandleData* GetObjectHandle() const;
 
     [[nodiscard]] HRESULT ReadMessageInput(const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, const ULONG cbSize);
-    [[nodiscard]] HRESULT GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                                   _Outptr_result_bytebuffer_(*pcbSize) PVOID* ppvBuffer,
-                                                   _Out_ PULONG pcbSize);
     [[nodiscard]] HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
     [[nodiscard]] HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
 
-    [[nodiscard]] HRESULT ReleaseMessageBuffers();
+    void ReleaseMessageBuffers();
 
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);

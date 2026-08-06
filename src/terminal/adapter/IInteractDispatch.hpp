@@ -28,21 +28,14 @@ namespace Microsoft::Console::VirtualTerminal
         virtual ~IInteractDispatch() = default;
 #pragma warning(pop)
 
-        virtual bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) = 0;
-
-        virtual bool WriteCtrlKey(const KeyEvent& event) = 0;
-
-        virtual bool WriteString(const std::wstring_view string) = 0;
-
-        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                        const VTParameter parameter1,
-                                        const VTParameter parameter2) = 0;
-
-        virtual bool MoveCursor(const VTInt row,
-                                const VTInt col) = 0;
-
         virtual bool IsVtInputEnabled() const = 0;
 
-        virtual bool FocusChanged(const bool focused) const = 0;
+        virtual void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) = 0;
+        virtual void WriteCtrlKey(const INPUT_RECORD& event) = 0;
+        virtual void WriteString(std::wstring_view string) = 0;
+        virtual void WriteStringRaw(std::wstring_view string) = 0;
+        virtual void WindowManipulation(DispatchTypes::WindowManipulationType function, VTParameter parameter1, VTParameter parameter2) = 0;
+        virtual void MoveCursor(VTInt row, VTInt col) = 0;
+        virtual void FocusChanged(bool focused) = 0;
     };
 }

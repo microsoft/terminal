@@ -46,7 +46,7 @@ application, and each tab has a set of panes that are visible within the context
 of that tab.
 
 Panes are implemented as a binary tree of panes. A Pane can either be a leaf
-pane, with it's own terminal control that it displays, or it could be a parent
+pane, with its own terminal control that it displays, or it could be a parent
 pane, where it has two children, each with their own terminal control.
 
 When a pane is a parent, its two children are either split vertically or
@@ -156,7 +156,7 @@ then this is the pane with the currently focused terminal control. When the user
 brings the tab into focus, the last focused pane is the pane that should become
 focused again.
 
-The tab's state will be updated to reflect the state of it's focused pane. The
+The tab's state will be updated to reflect the state of its focused pane. The
 title text and icon of the tab will reflect that of the focused pane. Should the
 focus switch from one pane to another, the tab's text and icon should update to
 reflect the newly focused control. Any additional state that the tab would
@@ -172,7 +172,7 @@ match.
 A pane can either be closed by the user manually, or when the terminal it's
 attached to raises its ConnectionClosed event. When this happens, we should
 remove this pane from the tree. The parent of the closing pane will have to
-remove the pane as one of it's children. If the sibling of the closing pane is a
+remove the pane as one of its children. If the sibling of the closing pane is a
 leaf, then the parent should just take all of the state from the remaining pane.
 This will cause the remaining pane's content to expand to take the entire
 boundaries of the parent's pane. If the remaining child was a parent itself,
@@ -182,7 +182,7 @@ replaced by the remaining child.
 
 ## Future considerations
 
-The Pane implementation isn't complete in it's current form. There are many
+The Pane implementation isn't complete in its current form. There are many
 additional things that could be done to improve the user experience. This is by
 no means a comprehensive list.
 
@@ -211,7 +211,7 @@ no means a comprehensive list.
 
 ### Why not top-level panes, and nested tabs?
 
-If each pane were to have it's own set of tabs, then each pane would need to
+If each pane were to have its own set of tabs, then each pane would need to
 reserve screen real estate for a row of tabs. As a user continued to split the
 window, more and more of the screen would be dedicated to just displaying a row
 of tabs, which isn't really the important part of the application, the terminal
@@ -223,10 +223,10 @@ user would need to somehow close the other panes, to be able to make the split
 the size of the dull window.
 
 One con of this design is that if a control is hosted in a pane, the current
-design makes it hard to move out of a pane into it's own tab, or into another
+design makes it hard to move out of a pane into its own tab, or into another
 pane. This could be solved a number of ways. There could be keyboard shortcuts
 for swapping the positions of tabs, or a shortcut for both "zooming" a tab
-(temporarily making it the full size) or even popping a pane out to it's own
+(temporarily making it the full size) or even popping a pane out to its own
 tab. Additionally, a right-click menu option could be added to do the
 aforementioned actions. Discoverability of these two actions is not as high as
 just dragging a tab from one pane to another; however, it's believed that panes

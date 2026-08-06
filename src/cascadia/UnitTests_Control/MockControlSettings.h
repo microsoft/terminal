@@ -8,12 +8,12 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 #include "../../inc/ControlProperties.h"
 
-using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 
 namespace ControlUnitTests
 {
-    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>
+    class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance, winrt::Microsoft::Terminal::Core::ICoreScheme>
     {
         // Color Table is special because it's an array
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
@@ -28,14 +28,14 @@ namespace ControlUnitTests
     public:
         MockControlSettings() = default;
 
-        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        void SetColorTable(const std::array<winrt::Microsoft::Terminal::Core::Color, 16>& colors)
         {
-            return _ColorTable.at(index);
+            _ColorTable = colors;
         }
-        void SetColorTableEntry(int32_t index,
-                                winrt::Microsoft::Terminal::Core::Color color) noexcept
+
+        void GetColorTable(winrt::com_array<winrt::Microsoft::Terminal::Core::Color>& table) noexcept
         {
-            _ColorTable.at(index) = color;
+            table = winrt::com_array(_ColorTable.begin(), _ColorTable.end());
         }
     };
 }

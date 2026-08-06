@@ -153,14 +153,14 @@ bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
 }
 
 bool FontBuffer::SetStartChar(const VTParameter startChar,
-                              const DispatchTypes::DrcsCharsetSize charsetSize) noexcept
+                              const DispatchTypes::CharsetSize charsetSize) noexcept
 {
     switch (charsetSize)
     {
-    case DispatchTypes::DrcsCharsetSize::Size94:
+    case DispatchTypes::CharsetSize::Size94:
         _startChar = startChar.value_or(1);
         break;
-    case DispatchTypes::DrcsCharsetSize::Size96:
+    case DispatchTypes::CharsetSize::Size96:
         _startChar = startChar.value_or(0);
         break;
     default:
@@ -198,7 +198,10 @@ void FontBuffer::AddSixelData(const wchar_t ch)
 bool FontBuffer::FinalizeSixelData()
 {
     // If the charset ID hasn't been initialized this isn't a valid update.
-    RETURN_BOOL_IF_FALSE(_charsetIdInitialized);
+    if (!_charsetIdInitialized)
+    {
+        return false;
+    }
 
     // Flush the current line to make sure we take all the used positions
     // into account when calculating the font dimensions.
@@ -217,7 +220,7 @@ bool FontBuffer::FinalizeSixelData()
     return true;
 }
 
-gsl::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
+std::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
 {
     return { _buffer.data(), gsl::narrow_cast<size_t>(MAX_CHARS * _fullHeight) };
 }
@@ -256,7 +259,7 @@ void FontBuffer::_prepareCharacterBuffer()
 {
     // If any of the attributes have changed since the last time characters
     // were downloaded, the font dimensions will need to be recalculated, and
-    // the buffer will need to be cleared. Otherwise we'll just be adding to
+    // the buffer will need to be cleared. Otherwise, we'll just be adding to
     // the existing font, assuming the current dimensions.
     if (_cellMatrix != _pendingCellMatrix ||
         _cellHeight != _pendingCellHeight ||
@@ -313,7 +316,7 @@ void FontBuffer::_addSixelValue(const VTInt value) noexcept
 {
     if (_currentChar < MAX_CHARS && _sixelColumn < _textWidth)
     {
-        // Each sixel updates six pixels of a single column, so we setup a bit
+        // Each sixel updates six pixels of a single column, so we set up a bit
         // mask for the column we want to update, and then set that bit in each
         // row for which there is a corresponding "on" bit in the input value.
         const auto outputColumnBit = (0x8000 >> (_sixelColumn + _textOffset));
@@ -332,6 +335,11 @@ void FontBuffer::_addSixelValue(const VTInt value) noexcept
 void FontBuffer::_endOfSixelLine()
 {
     // Move down six rows to the get to the next sixel position.
+    if (_currentCharBuffer >= _buffer.end() || _sixelRow >= MAX_HEIGHT) [[unlikely]]
+    {
+        // Advancing the cursor beyond the last row is not OK.
+        THROW_HR(E_OUTOFMEMORY);
+    }
     std::advance(_currentCharBuffer, 6);
     _sixelRow += 6;
 
@@ -394,7 +402,7 @@ std::tuple<VTInt, VTInt, VTInt> FontBuffer::_calculateDimensions() const
     }
 
     // Now we're going to test whether the dimensions are in range for a number
-    // of known terminals. We use the declared dimensions if given, otherwise
+    // of known terminals. We use the declared dimensions if given; otherwise,
     // estimate the size from the used sixel values. If comparing a sixel-based
     // height, though, we need to round up the target cell height to account for
     // the fact that our used height will always be a multiple of six.

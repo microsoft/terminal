@@ -1,5 +1,4 @@
 CHINESEBIG
 choseong
-Jongseong
-Jungseong
-ssangtikeut
+Choseong
+CHOSEONG

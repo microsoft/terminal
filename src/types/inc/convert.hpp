@@ -19,10 +19,9 @@ Author:
 
 enum class CodepointWidth : BYTE
 {
+    Ambiguous = 0, // could be narrow or wide depending on the current codepage and font
     Narrow,
     Wide,
-    Ambiguous, // could be narrow or wide depending on the current codepage and font
-    Invalid // not a valid unicode codepoint
 };
 
 [[nodiscard]] std::wstring ConvertToW(const UINT codepage,
@@ -33,7 +32,5 @@ enum class CodepointWidth : BYTE
 
 [[nodiscard]] size_t GetALengthFromW(const UINT codepage,
                                      const std::wstring_view source);
-
-CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept;
 
 wchar_t Utf16ToUcs2(const std::wstring_view charData);

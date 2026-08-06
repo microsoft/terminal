@@ -11,20 +11,6 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 using namespace Microsoft::Console::Types;
 
-BOOL ConsoleWindow::EnableBothScrollBars() noexcept
-{
-    return FALSE;
-}
-
-int ConsoleWindow::UpdateScrollBar(bool /*isVertical*/,
-                                   bool /*isAltBuffer*/,
-                                   UINT /*pageSize*/,
-                                   int /*maxSize*/,
-                                   int /*viewportPosition*/) noexcept
-{
-    return 0;
-}
-
 bool ConsoleWindow::IsInFullscreen() const noexcept
 {
     return true;
@@ -123,11 +109,6 @@ void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /
 
 void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) noexcept
 {
-}
-
-[[nodiscard]] HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/) noexcept
-{
-    return E_NOTIMPL;
 }
 
 [[nodiscard]] HRESULT ConsoleWindow::UiaSetTextAreaFocus() noexcept

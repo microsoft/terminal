@@ -37,7 +37,7 @@ namespace Microsoft::Console
         T _ReceiveTypedPacket();
         [[nodiscard]] HRESULT _InputThread();
 
-        bool _GetData(gsl::span<gsl::byte> buffer);
+        bool _GetData(std::span<std::byte> buffer);
         bool _AdvanceReader(DWORD byteCount);
         void _Shutdown();
 

@@ -11,6 +11,7 @@
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <PgoTarget>true</PgoTarget>
+    <VersionInfoFileDescription>Windows Terminal Settings Model Library</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -37,7 +38,28 @@
     <ClInclude Include="../KeyMapping.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
-    <ClInclude Include="../IconPathConverter.h" />
+    <ClInclude Include="../NewTabMenuEntry.h" />
+    <ClInclude Include="../ActionEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../SeparatorEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../FolderEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../ProfileEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../RemainingProfilesEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../ProfileCollectionEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../MatchProfilesEntry.h">
+      <DependentUpon>../NewTabMenuEntry.h</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->
@@ -78,7 +100,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
 
-    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use it's winmd as
+    <!-- Reference Microsoft.Terminal.Settings.ModelLib here, so we can use its winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj">
@@ -107,11 +129,8 @@
   </ItemGroup>
 
   <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-    </ClCompile>
     <Link>
-      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);user32.lib;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res</AdditionalDependencies>
       <!-- TSM Lib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>

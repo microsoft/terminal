@@ -7,10 +7,12 @@ namespace TerminalApp
 {
     // ADD ARBITRARY APP LOGIC TO AppLogic.idl, NOT HERE.
     // This is for XAML platform setup only.
-    [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
+    [default_interface] runtimeclass App : Windows.UI.Xaml.Application
     {
         App();
 
         AppLogic Logic { get; };
+
+        Boolean IsDisposed { get; };
     }
 }

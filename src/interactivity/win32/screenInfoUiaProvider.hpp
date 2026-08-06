@@ -33,7 +33,7 @@ namespace Microsoft::Console::Interactivity::Win32
     {
     public:
         ScreenInfoUiaProvider() = default;
-        HRESULT RuntimeClassInitialize(_In_ Microsoft::Console::Types::IUiaData* pData,
+        HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                        _In_ WindowUiaProvider* const pUiaParent);
 
         // IRawElementProviderFragment methods

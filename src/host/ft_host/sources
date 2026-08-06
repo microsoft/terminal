@@ -55,4 +55,5 @@ TARGETLIBS = \
 
 DELAYLOAD = \
     $(DELAYLOAD) \
+    icu.dll; \
     ext-ms-win-rtcore-ntuser-dpi-l1.dll; \

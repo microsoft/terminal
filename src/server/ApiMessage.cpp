@@ -108,7 +108,7 @@ try
 
         // If we were previously called with a huge buffer we have an equally large _inputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
+        if (_inputBuffer.capacity() > 128 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
         {
             _inputBuffer.shrink_to_fit();
         }
@@ -131,17 +131,15 @@ CATCH_RETURN();
 
 // Routine Description:
 // - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-//   The allocated will be bigger than the actual output size by the requested factor.
 // - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
 // Arguments:
-// - Factor - Supplies the factor to multiply the allocated buffer by.
+// - Message - Supplies the message whose output buffer will be retrieved.
 // - Buffer - Receives a pointer to the output buffer.
 // - Size - Receives the size, in bytes, of the output buffer.
-//  Return Value:
+// Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                                                 _Outptr_result_bytebuffer_(*pcbSize) PVOID* const ppvBuffer,
-                                                                 _Out_ PULONG pcbSize)
+[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
+                                                        _Out_ ULONG* const pcbSize)
 try
 {
     // Initialize the buffer if it hasn't been initialized yet.
@@ -150,11 +148,10 @@ try
         RETURN_HR_IF(E_FAIL, State.WriteOffset > Descriptor.OutputSize);
 
         auto cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
-        RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
         // If we were previously called with a huge buffer we have an equally large _outputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
+        if (_outputBuffer.capacity() > 128 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
         {
             _outputBuffer.shrink_to_fit();
         }
@@ -177,33 +174,14 @@ try
 CATCH_RETURN();
 
 // Routine Description:
-// - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
-// - Before completing the message, ReleaseMessageBuffers must be called to free any allocation performed by this routine.
-// Arguments:
-// - Message - Supplies the message whose output buffer will be retrieved.
-// - Buffer - Receives a pointer to the output buffer.
-// - Size - Receives the size, in bytes, of the output buffer.
-// Return Value:
-// - HRESULT indicating if the output buffer was successfully retrieved.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
-                                                        _Out_ ULONG* const pcbSize)
-{
-    return GetAugmentedOutputBuffer(1, ppvBuffer, pcbSize);
-}
-
-// Routine Description:
 // - This routine releases output or input buffers that might have been allocated
 //   during the processing of the given message. If the current completion status
 //   of the message indicates success, this routine also writes the output buffer
 //   (if any) to the message.
 // Arguments:
 // - <none>
-// Return Value:
-// - HRESULT indicating if the payload was successfully written if applicable.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
+void _CONSOLE_API_MSG::ReleaseMessageBuffers()
 {
-    auto hr = S_OK;
-
     if (State.InputBuffer != nullptr)
     {
         _inputBuffer.clear();
@@ -213,7 +191,7 @@ CATCH_RETURN();
 
     if (State.OutputBuffer != nullptr)
     {
-        if (NT_SUCCESS(Complete.IoStatus.Status))
+        if (SUCCEEDED_NTSTATUS(Complete.IoStatus.Status))
         {
             CD_IO_OPERATION IoOperation;
             IoOperation.Identifier = Descriptor.Identifier;
@@ -221,15 +199,15 @@ CATCH_RETURN();
             IoOperation.Buffer.Data = State.OutputBuffer;
             IoOperation.Buffer.Size = (ULONG)Complete.IoStatus.Information;
 
-            LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
+            // This call fails when the server pipe is closed on us,
+            // which results in log spam in practice.
+            std::ignore = _pDeviceComm->WriteOutput(&IoOperation);
         }
 
         _outputBuffer.clear();
         State.OutputBuffer = nullptr;
         State.OutputBufferSize = 0;
     }
-
-    return hr;
 }
 
 void _CONSOLE_API_MSG::SetReplyStatus(const NTSTATUS Status)

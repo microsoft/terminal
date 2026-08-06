@@ -25,10 +25,8 @@ class WriteData : public IWaitRoutine
 {
 public:
     WriteData(SCREEN_INFORMATION& siContext,
-              _In_reads_bytes_(cbContext) PCWCHAR pwchContext,
-              const size_t cbContext,
-              const UINT uiOutputCodepage,
-              const bool requiresVtQuirk);
+              std::wstring pwchContext,
+              const UINT uiOutputCodepage);
     ~WriteData();
 
     void SetLeadByteAdjustmentStatus(const bool fLeadByteCaptured,
@@ -42,14 +40,12 @@ public:
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ size_t* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
-                _Out_ void* const pOutputData);
+                _Out_ void* const pOutputData) override;
 
 private:
     SCREEN_INFORMATION& _siContext;
-    wchar_t* const _pwchContext;
-    const size_t _cbContext;
+    std::wstring _pwchContext;
     UINT const _uiOutputCodepage;
-    bool _requiresVtQuirk;
     bool _fLeadByteCaptured;
     bool _fLeadByteConsumed;
     size_t _cchUtf8Consumed;

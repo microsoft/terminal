@@ -3,43 +3,39 @@
 
 #pragma once
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
-#include <array>
 #include <filesystem>
+#include <functional>
 #include <optional>
-#include <sstream>
+#include <shared_mutex>
+#include <span>
 #include <string_view>
-#include <thread>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
+#include <cassert>
 
-#include <d2d1_1.h>
-#include <d3d11_1.h>
+#include <d2d1_3.h>
+#include <d3d11_2.h>
 #include <d3dcompiler.h>
-#include <dwrite_3.h>
 #include <dcomp.h>
+#include <dwrite_3.h>
 #include <dxgi1_3.h>
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
+#include <wincodec.h>
 
-#include <gsl/gsl_util>
+#include <gsl/narrow>
+#include <gsl/util>
 #include <gsl/pointers>
-#include <gsl/span>
 #include <wil/com.h>
 #include <wil/filesystem.h>
-#include <wil/result_macros.h>
 #include <wil/stl.h>
-#include <wil/win32_helpers.h>
-
-// Dynamic Bitset (optional dependency on LibPopCnt for perf at bit counting)
-// Variable-size compressed-storage header-only bit flag storage library.
-#pragma warning(push)
-#pragma warning(disable : 4702) // unreachable code
-#include <dynamic_bitset.hpp>
-#pragma warning(pop)
 
 // Chromium Numerics (safe math)
 #pragma warning(push)
@@ -48,5 +44,21 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
+// {fmt}, a C++20-compatible formatting library
+#pragma warning(push)
+#pragma warning(disable : 4702) // unreachable code
+// Workaround: clang-cl advertises consteval support but fmt's use of it in
+// color.h triggers "call to consteval function is not a constant expression".
+// Hide __cpp_lib_is_constant_evaluated so fmt falls back to the non-consteval path.
+#ifdef __clang__
+#pragma push_macro("__cpp_lib_is_constant_evaluated")
+#undef __cpp_lib_is_constant_evaluated
+#endif
+#include <fmt/compile.h>
+#include <fmt/xchar.h>
+#ifdef __clang__
+#pragma pop_macro("__cpp_lib_is_constant_evaluated")
+#endif
+#pragma warning(pop)
+
 #include <til.h>
-#include <til/bit.h>

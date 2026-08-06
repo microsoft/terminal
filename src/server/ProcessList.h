@@ -23,7 +23,10 @@ Revision History:
 // holding the console lock.
 struct ConsoleProcessTerminationRecord
 {
-    HANDLE hProcess;
+    // Unfortunately the reason for this was lost in time, but presumably a process
+    // handle is held so that we can refer to a process via PID (dwProcessID) without
+    // holding the console lock and fearing that the PID might get reused by the OS.
+    wil::unique_handle hProcess;
     DWORD dwProcessID;
     ULONG ulTerminateCount;
 };
@@ -31,25 +34,21 @@ struct ConsoleProcessTerminationRecord
 class ConsoleProcessList
 {
 public:
-    static const DWORD ROOT_PROCESS_ID = 0;
-
     [[nodiscard]] HRESULT AllocProcessData(const DWORD dwProcessId,
                                            const DWORD dwThreadId,
                                            const ULONG ulProcessGroupId,
-                                           _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                            _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
 
     void FreeProcessData(_In_ ConsoleProcessHandle* const ProcessData);
 
     ConsoleProcessHandle* FindProcessInList(const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
+    ConsoleProcessHandle* GetRootProcess() const;
+    ConsoleProcessHandle* GetOldestProcess() const;
 
     [[nodiscard]] HRESULT GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
                                                          const bool fCtrlClose,
-                                                         _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
-                                                         _Out_ size_t* const pcRecords) const;
-
-    ConsoleProcessHandle* GetFirstProcess() const;
+                                                         std::vector<ConsoleProcessTerminationRecord>& termRecords) const;
 
     [[nodiscard]] HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                                          _Inout_ size_t* const pcProcessList) const;
@@ -59,7 +58,7 @@ public:
     bool IsEmpty() const;
 
 private:
-    std::list<ConsoleProcessHandle*> _processes;
+    std::vector<ConsoleProcessHandle*> _processes;
 
     void _ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const;
 };

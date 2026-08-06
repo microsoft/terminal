@@ -16,10 +16,14 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 
-namespace Microsoft::Console::Render
+namespace Microsoft::Console::Render::Atlas
 {
     class AtlasEngine;
-    class DxEngine;
+}
+
+namespace Microsoft::Console::Render
+{
+    using AtlasEngine = Atlas::AtlasEngine;
     class GdiEngine;
 }
 
@@ -60,12 +64,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void HorizontalScroll(const WORD wScrollCommand,
                               const WORD wAbsoluteChange);
 
-        BOOL EnableBothScrollBars();
-        int UpdateScrollBar(bool isVertical,
-                            bool isAltBuffer,
-                            UINT pageSize,
-                            int maxSize,
-                            int viewportPosition);
+        void UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state);
 
         void UpdateWindowSize(const til::size coordSizeInChars);
         void UpdateWindowPosition(_In_ const til::point ptNewPos) const;
@@ -82,8 +81,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateScrollBars() const;
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
-
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
 
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);
@@ -108,17 +105,12 @@ namespace Microsoft::Console::Interactivity::Win32
         void _CloseWindow() const;
 
         static ATOM s_atomWindowClass;
-        Settings* _pSettings;
+        Settings* _pSettings{ nullptr };
 
-        HWND _hWnd;
+        HWND _hWnd{ nullptr };
 
         Render::GdiEngine* pGdiEngine = nullptr;
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        Render::DxEngine* pDxEngine = nullptr;
-#endif
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
-#endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const til::size sizeNew);
@@ -139,13 +131,14 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]] HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(const LPARAM lParam);
+        LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
                                                const WPARAM wParam,
                                                const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
-        WRL::ComPtr<WindowUiaProvider> _pUiaProvider;
+        WRL::ComPtr<WindowUiaProvider> _pUiaProvider{ nullptr };
 
         // Dynamic Settings helpers
         [[nodiscard]] static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
@@ -162,11 +155,11 @@ namespace Microsoft::Console::Interactivity::Win32
         // Full screen
         void _RestoreFullscreenPosition(const RECT& rcWork);
         void _SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork);
-        bool _fIsInFullscreen;
-        bool _fWasMaximizedBeforeFullscreen;
+        bool _fIsInFullscreen{ false };
+        bool _fWasMaximizedBeforeFullscreen{ false };
         RECT _rcWindowBeforeFullscreen;
         RECT _rcWorkBeforeFullscreen;
-        UINT _dpiBeforeFullscreen;
+        UINT _dpiBeforeFullscreen{ 0 };
 
         // math helpers
         void _CalculateWindowRect(const til::size coordWindowInChars,
@@ -177,9 +170,13 @@ namespace Microsoft::Console::Interactivity::Win32
                                           const til::size coordBufferSize,
                                           _In_opt_ HWND const hWnd,
                                           _Inout_ til::rect* const prectWindow);
+        static void s_ExpandRectByNonClientSize(HWND const hWnd,
+                                                UINT dpi,
+                                                _Inout_ til::rect* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 
+        WORD _resizingWindow = 0; // > 0 if we should ignore WM_SIZE messages
         bool _fInDPIChange = false;
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,

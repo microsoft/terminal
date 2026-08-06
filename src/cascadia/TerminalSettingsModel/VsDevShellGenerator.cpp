@@ -8,6 +8,16 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+static bool _IsPwshAvailable()
+{
+    // Try to detect if `pwsh.exe` is available in the PATH, if so we want to use that
+    // Allow some extra space in case user put it somewhere odd
+    // We do need to allocate space for the full path even if we don't want to paste the whole thing in
+    wchar_t pwshPath[MAX_PATH] = { 0 };
+    const auto pwshExeName = L"pwsh.exe";
+    return SearchPathW(nullptr, pwshExeName, nullptr, MAX_PATH, pwshPath, nullptr);
+}
+
 void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     try
@@ -18,12 +28,13 @@ void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupIn
         }
 
         const auto seed = GetProfileGuidSeed(instance);
-        const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(seed))) };
+        const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ seed })) };
         auto profile = winrt::make_self<implementation::Profile>(profileGuid);
         profile->Name(winrt::hstring{ GetProfileName(instance) });
-        profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });
+        auto isPwsh = _IsPwshAvailable();
+        profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance, isPwsh) });
         profile->StartingDirectory(winrt::hstring{ instance.GetInstallationPath() });
-        profile->Icon(winrt::hstring{ GetProfileIconPath() });
+        profile->Icon(winrt::hstring{ GetProfileIconPath(isPwsh) });
         profile->Hidden(hidden);
         profiles.emplace_back(std::move(profile));
     }
@@ -37,19 +48,40 @@ std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsS
     return name;
 }
 
-std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const
+std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance, bool isPwsh) const
 {
-    // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
-    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
-    // so the path in the profile will be used instead.
+    // Build this in stages, so reserve space now
     std::wstring commandLine;
     commandLine.reserve(256);
-    commandLine.append(LR"(powershell.exe -NoExit -Command "&{Import-Module """)");
+
+    if (isPwsh)
+    {
+        commandLine.append(L"pwsh.exe");
+    }
+    else
+    {
+        commandLine.append(L"powershell.exe");
+    }
+
+    // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
+    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
+    // so the path in the profile will be used instead
+    commandLine.append(LR"( -NoExit -Command "&{Import-Module """)");
     commandLine.append(GetDevShellModulePath(instance));
     commandLine.append(LR"("""; Enter-VsDevShell )");
     commandLine.append(instance.GetInstanceId());
 #if defined(_M_ARM64)
-    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=x64"""}")");
+    // This part stays constant no matter what
+    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=)");
+    if (instance.VersionInRange(L"[17.4,"))
+    {
+        commandLine.append(LR"("arm64 """}")");
+    }
+    // If an old version of VS is installed without ARM64 host support
+    else
+    {
+        commandLine.append(LR"("x64 """}")");
+    }
 #elif defined(_M_AMD64)
     commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=x64 -host_arch=x64"""}")");
 #else

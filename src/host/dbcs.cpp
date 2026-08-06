@@ -6,7 +6,6 @@
 #include "misc.h"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -45,56 +44,6 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
     }
 
     return false;
-}
-
-// Routine Description:
-// - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
-// - It munges up Unicode cells that are about to be returned whenever there is DBCS data and a raster font is enabled.
-// - This function is ONLY FOR COMPATIBILITY PURPOSES. Please do not introduce new usages.
-// Arguments:
-// - buffer - The buffer to walk and fix
-// Return Value:
-// - The length of the final modified buffer.
-DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
-{
-    // Walk through the source CHAR_INFO and copy each to the destination.
-    // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
-
-    // Set up indices used for arrays.
-    DWORD iDst = 0;
-
-    // Walk through every CHAR_INFO
-    for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
-    {
-        // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        auto& src{ til::at(buffer, iSrc) };
-        if (!WI_IsFlagSet(src.Attributes, COMMON_LVB_TRAILING_BYTE))
-        {
-            auto& dst{ til::at(buffer, iDst) };
-            dst = src;
-            WI_ClearAllFlags(dst.Attributes, COMMON_LVB_SBCSDBCS);
-            iDst++;
-        }
-
-        // If it was a trailing byte, we'll just walk past it and keep going.
-    }
-
-    // Zero out the remaining part of the destination buffer that we didn't use.
-    const auto cchDstToClear = gsl::narrow<DWORD>(buffer.size()) - iDst;
-
-    if (cchDstToClear > 0)
-    {
-        const auto pciDstClearStart = buffer.data() + iDst;
-        ZeroMemory(pciDstClearStart, cchDstToClear * sizeof(CHAR_INFO));
-    }
-
-    // Add the additional length we just modified.
-    iDst += cchDstToClear;
-
-    // now that we're done, we should have copied, left alone, or cleared the entire length.
-    FAIL_FAST_IF(iDst != buffer.size());
-
-    return iDst;
 }
 
 // Routine Description:
@@ -176,78 +125,4 @@ BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
     default:
         return false;
     }
-}
-
-_Ret_range_(0, cbAnsi)
-    ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                                const ULONG cchUnicode,
-                                _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                                const ULONG cbAnsi,
-                                _Out_ std::unique_ptr<IInputEvent>& partialEvent)
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto TmpUni = new (std::nothrow) WCHAR[cchUnicode];
-    if (TmpUni == nullptr)
-    {
-        return 0;
-    }
-
-    memcpy(TmpUni, pwchUnicode, cchUnicode * sizeof(WCHAR));
-
-    BYTE AsciiDbcs[2];
-    AsciiDbcs[1] = 0;
-
-    ULONG i, j;
-    for (i = 0, j = 0; i < cchUnicode && j < cbAnsi; i++, j++)
-    {
-        if (IsGlyphFullWidth(TmpUni[i]))
-        {
-            const auto NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
-            {
-                if (j < cbAnsi - 1)
-                { // -1 is safe DBCS in buffer
-                    pchAnsi[j] = AsciiDbcs[0];
-                    j++;
-                    pchAnsi[j] = AsciiDbcs[1];
-                    AsciiDbcs[1] = 0;
-                }
-                else
-                {
-                    pchAnsi[j] = AsciiDbcs[0];
-                    break;
-                }
-            }
-            else
-            {
-                pchAnsi[j] = AsciiDbcs[0];
-                AsciiDbcs[1] = 0;
-            }
-        }
-        else
-        {
-            ConvertToOem(gci.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
-        }
-    }
-
-    if (AsciiDbcs[1])
-    {
-        try
-        {
-            auto keyEvent = std::make_unique<KeyEvent>();
-            if (keyEvent.get())
-            {
-                keyEvent->SetCharData(AsciiDbcs[1]);
-                partialEvent.reset(static_cast<IInputEvent* const>(keyEvent.release()));
-            }
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-        }
-    }
-
-    delete[] TmpUni;
-    return j;
 }

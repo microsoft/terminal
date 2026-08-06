@@ -18,16 +18,11 @@ Author(s):
 
 #pragma once
 
-#include "inc/viewport.hpp"
-#include "../buffer/out/textBuffer.hpp"
-#include "IUiaData.h"
-#include "unicode.hpp"
-#include "IUiaTraceable.h"
-
 #include <UIAutomationCore.h>
-#include <deque>
-#include <tuple>
-#include <wrl/implements.h>
+
+#include "IUiaTraceable.h"
+#include "unicode.hpp"
+#include "../buffer/out/search.h"
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -51,18 +46,18 @@ namespace Microsoft::Console::Types
         static constexpr std::wstring_view DefaultWordDelimiter{ &UNICODE_SPACE, 1 };
 
         // degenerate range
-        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // degenerate range at cursor position
-        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ const Cursor& cursor,
                                                _In_ std::wstring_view wordDelimiters = DefaultWordDelimiter) noexcept;
 
         // specific endpoint range
-        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData,
+        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                                _In_ IRawElementProviderSimple* const pProvider,
                                                _In_ const til::point start,
                                                _In_ const til::point end,
@@ -82,7 +77,7 @@ namespace Microsoft::Console::Types
         bool IsDegenerate() const noexcept;
 
         // ITextRangeProvider methods
-        virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
+        IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override = 0;
         IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
@@ -121,14 +116,15 @@ namespace Microsoft::Console::Types
 
     protected:
         UiaTextRangeBase() = default;
-        IUiaData* _pData{ nullptr };
+        Render::IRenderData* _pData{ nullptr };
 
         IRawElementProviderSimple* _pProvider{ nullptr };
 
         std::wstring _wordDelimiters{};
+        ::Search _searcher;
 
-        virtual void _TranslatePointToScreen(til::point* clientPoint) const = 0;
-        virtual void _TranslatePointFromScreen(til::point* screenPoint) const = 0;
+        virtual void _TranslatePointToScreen(til::point& clientPoint) const = 0;
+        virtual void _TranslatePointFromScreen(til::point& screenPoint) const = 0;
 
         void Initialize(_In_ const UiaPoint point);
 

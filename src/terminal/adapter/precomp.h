@@ -13,13 +13,11 @@ Abstract:
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include <cmath>
+#include <Shlwapi.h>
+
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
 #include <sal.h>
-
-#include "telemetry.hpp"
-#include "tracing.hpp"
 
 #include "../../inc/conattrs.hpp"

@@ -17,7 +17,7 @@ namespace til
             constexpr O narrow_float(T val)
             {
                 const auto o = gsl::narrow_cast<O>(val);
-                if (std::isnan(val) || static_cast<T>(o) != val)
+                if (static_cast<T>(o) != val)
                 {
                     throw gsl::narrowing_error{};
                 }

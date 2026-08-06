@@ -50,7 +50,7 @@ void InitSideBySide()
         // OpenConsole anyways, nothing happens and we get ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET.
         if (ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET != error)
         {
-            RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);
+            LOG_WIN32_MSG(error, "InitSideBySide failed create an activation context.");
         }
     }
 }

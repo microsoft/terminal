@@ -7,6 +7,16 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateSelection(std::span<const til::rect> /*selections*/) noexcept
+{
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT RenderEngineBase::InvalidateHighlight(std::span<const til::point_span> /*highlights*/, const TextBuffer& /*renditions*/) noexcept
+{
+    return S_OK;
+}
+
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
     if (proposedTitle != _lastFrameTitle)
@@ -35,14 +45,14 @@ HRESULT RenderEngineBase::NotifyNewText(const std::wstring_view /*newText*/) noe
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::UpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+HRESULT RenderEngineBase::UpdateSoftFont(const std::span<const uint16_t> /*bitPattern*/,
                                          const til::size /*cellSize*/,
                                          const size_t /*centeringHint*/) noexcept
 {
     return S_FALSE;
 }
 
-HRESULT RenderEngineBase::PrepareRenderInfo(const RenderFrameInfo& /*info*/) noexcept
+HRESULT RenderEngineBase::PrepareRenderInfo(RenderFrameInfo /*info*/) noexcept
 {
     return S_FALSE;
 }
@@ -55,6 +65,13 @@ HRESULT RenderEngineBase::ResetLineTransform() noexcept
 HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRendition*/,
                                                const til::CoordType /*targetRow*/,
                                                const til::CoordType /*viewportLeft*/) noexcept
+{
+    return S_FALSE;
+}
+
+HRESULT RenderEngineBase::PaintImageSlice(const ImageSlice& /*imageSlice*/,
+                                          const til::CoordType /*targetRow*/,
+                                          const til::CoordType /*viewportLeft*/) noexcept
 {
     return S_FALSE;
 }
@@ -77,18 +94,6 @@ void RenderEngineBase::WaitUntilCanRender() noexcept
     Sleep(8);
 }
 
-// Routine Description:
-// - Notifies us that we're about to circle the buffer, giving us a chance to
-//   force a repaint before the buffer contents are lost.
-// - The default implementation of flush, is to do nothing for most renderers.
-// Arguments:
-// - circled - ignored
-// - pForcePaint - Always filled with false
-// Return Value:
-// - S_FALSE because we don't use this.
-[[nodiscard]] HRESULT RenderEngineBase::InvalidateFlush(_In_ const bool /*circled*/, _Out_ bool* const pForcePaint) noexcept
+void RenderEngineBase::UpdateHyperlinkHoveredId(const uint16_t /*hoveredId*/) noexcept
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
-    *pForcePaint = false;
-    return S_FALSE;
 }

@@ -5,8 +5,11 @@
 ********************************************************/
 #include "pch.h"
 #include "NonClientIslandWindow.h"
+
+#include <dwmapi.h>
+#include <uxtheme.h>
+
 #include "../types/inc/utils.hpp"
-#include "TerminalThemeHelpers.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -14,7 +17,6 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
 
 static constexpr int AutohideTaskbarSize = 2;
 
@@ -26,7 +28,18 @@ NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme)
 {
 }
 
-NonClientIslandWindow::~NonClientIslandWindow() = default;
+NonClientIslandWindow::~NonClientIslandWindow()
+{
+    Close();
+}
+
+void NonClientIslandWindow::Close()
+{
+    // Avoid further callbacks into XAML/WinUI-land after we've Close()d the DesktopWindowXamlSource
+    // inside `IslandWindow::Close()`. XAML thanks us for doing that by not crashing. Thank you XAML.
+    SetWindowLongPtr(_dragBarWindow.get(), GWLP_USERDATA, 0);
+    IslandWindow::Close();
+}
 
 static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
@@ -51,6 +64,12 @@ static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
 
 void NonClientIslandWindow::MakeWindow() noexcept
 {
+    if (_window)
+    {
+        // no-op if we already have a window.
+        return;
+    }
+
     IslandWindow::MakeWindow();
 
     static auto dragBarWindowClass{ []() {
@@ -343,6 +362,7 @@ void NonClientIslandWindow::Initialize()
     Controls::RowDefinition contentRow{};
     titlebarRow.Height(GridLengthHelper::Auto());
 
+    _rootGrid.RowDefinitions().Clear();
     _rootGrid.RowDefinitions().Append(titlebarRow);
     _rootGrid.RowDefinitions().Append(contentRow);
 
@@ -350,17 +370,23 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
-    _dragBar.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
-    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.dragBarSizeChanged = _dragBar.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
+    _callbacks.rootGridSizeChanged = _rootGrid.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
 
     Controls::Grid::SetRow(_titlebar, 0);
 
     // GH#3440 - When the titlebar is loaded (officially added to our UI tree),
-    // then make sure to update it's visual state to reflect if we're in the
+    // then make sure to update its visual state to reflect if we're in the
     // maximized state on launch.
-    _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+    _callbacks.titlebarLoaded = _titlebar.Loaded(winrt::auto_revoke, [this](auto&&, auto&&) { _OnMaximizeChange(); });
+
+    // LOAD BEARING: call _ResizeDragBarWindow to update the position of our
+    // XAML island to reflect our current bounds. In the case of a "warm init"
+    // (i.e. re-using an existing window), we need to manually update the
+    // island's position to fill the new window bounds.
+    _ResizeDragBarWindow();
 }
 
 // Method Description:
@@ -371,8 +397,6 @@ void NonClientIslandWindow::Initialize()
 // - <none>
 void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
-    _clientContent = content;
-
     _rootGrid.Children().Append(content);
 
     // SetRow only works on FrameworkElement's, so cast it to a FWE before
@@ -398,7 +422,7 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
     // GH#4288 - add a SizeChanged handler to this content. It's possible that
     // this element's size will change after the dragbar's. When that happens,
     // the drag bar won't send another SizeChanged event, because the dragbar's
-    // _size_ didn't change, only it's position.
+    // _size_ didn't change, only its position.
     const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
     if (fwe)
     {
@@ -442,11 +466,21 @@ til::rect NonClientIslandWindow::_GetDragAreaRect() const noexcept
             static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
+
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+
+        // Make sure to trim the right side of the rectangle, so that it doesn't
+        // hang off the right side of the root window. This normally wouldn't
+        // matter, but UIA will still think its bounds can extend past the right
+        // of the parent HWND.
+        //
+        // x here is the width of the tabs.
+        const auto x = gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale);
+
         return {
-            gsl::narrow_cast<til::CoordType>(clientDragBarRect.X * scale),
+            x,
             gsl::narrow_cast<til::CoordType>(clientDragBarRect.Y * scale),
-            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            gsl::narrow_cast<til::CoordType>((clientDragBarRect.Width + clientDragBarRect.X) * scale) - x,
             gsl::narrow_cast<til::CoordType>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
     }
@@ -542,8 +576,8 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
-                                   newIslandPos.X,
-                                   newIslandPos.Y,
+                                   newIslandPos.x,
+                                   newIslandPos.y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));
@@ -639,7 +673,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
-            // This helper can be used to determine if there's a auto-hide
+            // This helper can be used to determine if there's an auto-hide
             // taskbar on the given edge of the monitor we're currently on.
             auto hasAutohideTaskbar = [&monInfo](const UINT edge) -> bool {
                 APPBARDATA data{ 0 };
@@ -658,7 +692,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
             //
-            // Note to future code archeologists:
+            // Note to future code archaeologists:
             // This doesn't seem to work for fullscreen on the primary display.
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
@@ -829,14 +863,15 @@ til::rect NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 til::size NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
 {
     const auto islandFrame{ GetNonClientFrame(dpi) };
+    const auto scale = GetCurrentDpiScale();
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
-    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) : 0;
+    const auto titleBarHeight = _titlebar ? static_cast<LONG>(_titlebar.ActualHeight()) * scale : 0;
 
     return {
         islandFrame.right - islandFrame.left,
-        islandFrame.bottom - islandFrame.top + titleBarHeight
+        islandFrame.bottom - islandFrame.top + static_cast<til::CoordType>(titleBarHeight)
     };
 }
 
@@ -879,7 +914,26 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         //  at the top) in the WM_PAINT handler. This eliminates the transparency
         //  bug and it's what a lot of Win32 apps that customize the title bar do
         //  so it should work fine.
-        margins.cyTopHeight = -frame.top;
+        //
+        // Notes #3 (circa late 2022): We want to make some changes here to
+        // support Mica. This introduces some complications.
+        // - If we leave the titlebar visible AT ALL, then a transparent
+        //   titlebar (theme.tabRow.background:#ff00ff00 for example) will allow
+        //   the DWM titlebar to be visible, underneath our content. EVEN MORE
+        //   SO: Mica + "show accent color on title bars" will _always_ show the
+        //   accent-colored strip of the titlebar, even on top of the Mica.
+        // - It _seems_ like we can just set this to 0, and have it work. You'd
+        //   be wrong. On Windows 10, setting this to 0 will cause the topmost
+        //   pixel of our window to be just a little darker than the rest of the
+        //   frame. So ONLY set this to 0 when the user has explicitly asked for
+        //   Mica. Though it won't do anything on Windows 10, they should be
+        //   able to opt back out of having that weird dark pixel.
+        // - This is LOAD-BEARING. By having the titlebar a totally empty rect,
+        //   DWM will know that we don't have the traditional titlebar, and will
+        //   use NCHITTEST to determine where to place the Snap Flyout. The drag
+        //   rect will handle that.
+
+        margins.cyTopHeight = (_useMica || _titlebarOpacity < 1.0) ? 0 : -frame.top;
     }
 
     // Extend the frame into the client area. microsoft/terminal#2735 - Just log
@@ -904,6 +958,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
+    case WM_NCACTIVATE:
+    {
+        const bool activated = LOWORD(wParam) != 0;
+        _titlebar.Focused(activated);
+        break;
+    }
     case WM_SETCURSOR:
         return _OnSetCursor(wParam, lParam);
     case WM_DISPLAYCHANGE:
@@ -1016,27 +1076,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 }
 
 // Method Description:
-// - This method is called when the window receives the WM_NCCREATE message.
-// Return Value:
-// - The value returned from the window proc.
-[[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
-{
-    const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (!ret)
-    {
-        return FALSE;
-    }
-
-    // This is a hack to make the window borders dark instead of light.
-    // It must be done before WM_NCPAINT so that the borders are rendered with
-    // the correct theme.
-    // For more information, see GH#6620.
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
-
-    return TRUE;
-}
-
-// Method Description:
 // - Called when the app wants to change its theme. We'll update the frame
 //   theme to match the new theme.
 // Arguments:
@@ -1096,7 +1135,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
 // Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
-//   need to manually hide the entire titlebar.
+//   need to check whether to hide the titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.
 // Arguments:
 // - fullscreenEnabled: If true, we're entering fullscreen mode. If false, we're leaving.
@@ -1105,10 +1144,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
-    if (_titlebar)
-    {
-        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
-    }
+    _UpdateTitlebarVisibility();
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
@@ -1116,19 +1152,58 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     _ResizeDragBarWindow();
 }
 
+void NonClientIslandWindow::SetShowTabsFullscreen(const bool newShowTabsFullscreen)
+{
+    IslandWindow::SetShowTabsFullscreen(newShowTabsFullscreen);
+
+    // don't waste time recalculating UI elements if we're not
+    // in fullscreen state - this setting doesn't affect other
+    // window states
+    if (_fullscreen)
+    {
+        _UpdateTitlebarVisibility();
+    }
+}
+
+void NonClientIslandWindow::_UpdateTitlebarVisibility()
+{
+    if (!_titlebar)
+    {
+        return;
+    }
+
+    const auto showTitlebar = _IsTitlebarVisible();
+    _titlebar.Visibility(showTitlebar ? Visibility::Visible : Visibility::Collapsed);
+    _titlebar.FullscreenChanged(_fullscreen);
+}
+
 // Method Description:
-// - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode (aka "focus mode"), this will return false.
+// - Returns true if the titlebar is visible. For borderless mode (aka "focus mode"),
+//   this will return false. For fullscreen, this will return false unless the user
+//   has enabled fullscreen tabs.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    return !(_fullscreen || _borderless);
+    return !_borderless && (!_fullscreen || _showTabsFullscreen);
 }
 
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
 {
     _titlebar.Background(brush);
+}
+
+void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity)
+{
+    // Stash internally if we're using Mica. If we aren't, we don't want to
+    // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
+    // especially on Windows 10
+    _useMica = newValue;
+    _titlebarOpacity = titlebarOpacity;
+
+    IslandWindow::UseMica(newValue, titlebarOpacity);
+
+    _UpdateFrameMargins();
 }

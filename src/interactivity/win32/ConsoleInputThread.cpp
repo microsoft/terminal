@@ -27,7 +27,10 @@ HANDLE ConsoleInputThread::Start()
     {
         _hThread = hThread;
         _dwThreadId = dwThreadId;
-        LOG_IF_FAILED(SetThreadDescription(hThread, L"Win32 Window Message Input Thread"));
+        if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+        {
+            LOG_IF_FAILED(func(hThread, L"Win32 Window Message Input Thread"));
+        }
     }
 
     return hThread;

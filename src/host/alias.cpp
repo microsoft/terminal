@@ -21,7 +21,9 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
 struct case_insensitive_hash
 {
-    std::size_t operator()(const std::wstring& key) const
+    using is_transparent = void;
+
+    std::size_t operator()(const std::wstring_view& key) const
     {
         til::hasher h;
         for (const auto& ch : key)
@@ -34,9 +36,11 @@ struct case_insensitive_hash
 
 struct case_insensitive_equality
 {
-    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const
+    using is_transparent = void;
+
+    bool operator()(const std::wstring_view& lhs, const std::wstring_view& rhs) const
     {
-        return 0 == _wcsicmp(lhs.data(), rhs.data());
+        return til::compare_ordinal_insensitive(lhs, rhs) == 0;
     }
 };
 
@@ -137,7 +141,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
-                                                 std::optional<gsl::span<wchar_t>> target,
+                                                 std::optional<std::span<wchar_t>> target,
                                                  size_t& writtenOrNeeded,
                                                  const std::wstring_view exeName)
 {
@@ -156,10 +160,10 @@ std::unordered_map<std::wstring,
     // We use .find for the iterators then dereference to search without creating entries.
     const auto exeIter = g_aliasData.find(exeNameString);
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), exeIter == g_aliasData.end());
-    const auto exeData = exeIter->second;
+    const auto& exeData = exeIter->second;
     const auto sourceIter = exeData.find(sourceString);
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), sourceIter == exeData.end());
-    const auto targetString = sourceIter->second;
+    const auto& targetString = sourceIter->second;
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), targetString.size() == 0);
 
     // TargetLength is a byte count, convert to characters.
@@ -195,7 +199,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
-                                                        gsl::span<char> target,
+                                                        std::span<char> target,
                                                         size_t& written,
                                                         const std::string_view exeName) noexcept
 {
@@ -235,12 +239,12 @@ std::unordered_map<std::wstring,
         // Call the Unicode version of this method
         size_t targetWritten;
         RETURN_IF_FAILED(GetConsoleAliasWImplHelper(sourceW,
-                                                    gsl::span<wchar_t>(targetBuffer.get(), targetNeeded),
+                                                    std::span<wchar_t>(targetBuffer.get(), targetNeeded),
                                                     targetWritten,
                                                     exeNameW));
 
         // Set the return size copied to the size given before we attempt to copy.
-        // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
+        // Then multiply by sizeof(wchar_t) due to a long-standing bug that we must preserve for compatibility.
         // On failure, the API has historically given back this value.
         written = target.size() * sizeof(wchar_t);
 
@@ -268,7 +272,7 @@ std::unordered_map<std::wstring,
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
-                                                        gsl::span<wchar_t> target,
+                                                        std::span<wchar_t> target,
                                                         size_t& written,
                                                         const std::wstring_view exeName) noexcept
 {
@@ -333,7 +337,7 @@ static std::wstring aliasesSeparator(L"=");
         auto exeIter = g_aliasData.find(exeNameString);
         if (exeIter != g_aliasData.end())
         {
-            auto list = exeIter->second;
+            const auto& list = exeIter->second;
             for (auto& pair : list)
             {
                 // Alias stores lengths in bytes.
@@ -440,7 +444,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
-                                                   std::optional<gsl::span<wchar_t>> aliasBuffer,
+                                                   std::optional<std::span<wchar_t>> aliasBuffer,
                                                    size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -464,7 +468,7 @@ void Alias::s_ClearCmdExeAliases()
     auto exeIter = g_aliasData.find(exeNameString);
     if (exeIter != g_aliasData.end())
     {
-        auto list = exeIter->second;
+        const auto& list = exeIter->second;
         for (auto& pair : list)
         {
             // Alias stores lengths in bytes.
@@ -527,7 +531,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
-                                                          gsl::span<char> alias,
+                                                          std::span<char> alias,
                                                           size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -563,7 +567,7 @@ void Alias::s_ClearCmdExeAliases()
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, gsl::span<wchar_t>(aliasBuffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(exeNameW, std::span<wchar_t>(aliasBuffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { aliasBuffer.get(), bufferWritten });
@@ -591,7 +595,7 @@ void Alias::s_ClearCmdExeAliases()
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 [[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                                          gsl::span<wchar_t> alias,
+                                                          std::span<wchar_t> alias,
                                                           size_t& written) noexcept
 {
     LockConsole();
@@ -688,7 +692,7 @@ void Alias::s_ClearCmdExeAliases()
 //                                        or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasExesBuffer,
+[[nodiscard]] HRESULT GetConsoleAliasExesWImplHelper(std::optional<std::span<wchar_t>> aliasExesBuffer,
                                                      size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
@@ -745,7 +749,7 @@ void Alias::s_ClearCmdExeAliases()
 // - written - Specifies how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(std::span<char> aliasExes,
                                                             size_t& written) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -777,7 +781,7 @@ void Alias::s_ClearCmdExeAliases()
 
         // Call the Unicode version of this method
         size_t bufferWritten;
-        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(gsl::span<wchar_t>(targetBuffer.get(), bufferNeeded), bufferWritten));
+        RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(std::span<wchar_t>(targetBuffer.get(), bufferNeeded), bufferWritten));
 
         // Convert result to A
         const auto converted = ConvertToA(codepage, { targetBuffer.get(), bufferWritten });
@@ -804,7 +808,7 @@ void Alias::s_ClearCmdExeAliases()
 // - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(std::span<wchar_t> aliasExes,
                                                             size_t& written) noexcept
 {
     LockConsole();
@@ -818,305 +822,6 @@ void Alias::s_ClearCmdExeAliases()
 }
 
 // Routine Description:
-// - Trims trailing \r\n off of a string
-// Arguments:
-// - str - String to trim
-void Alias::s_TrimTrailingCrLf(std::wstring& str)
-{
-    const auto trailingCrLfPos = str.find_last_of(UNICODE_CARRIAGERETURN);
-    if (std::wstring::npos != trailingCrLfPos)
-    {
-        str.erase(trailingCrLfPos);
-    }
-}
-
-// Routine Description:
-// - Tokenizes a string into a collection using space as a separator
-// Arguments:
-// - str - String to tokenize
-// Return Value:
-// - Collection of tokenized strings
-std::deque<std::wstring> Alias::s_Tokenize(const std::wstring& str)
-{
-    std::deque<std::wstring> result;
-
-    size_t prevIndex = 0;
-    auto spaceIndex = str.find(L' ');
-    while (std::wstring::npos != spaceIndex)
-    {
-        const auto length = spaceIndex - prevIndex;
-
-        result.emplace_back(str.substr(prevIndex, length));
-
-        spaceIndex++;
-        prevIndex = spaceIndex;
-
-        spaceIndex = str.find(L' ', spaceIndex);
-    }
-
-    // Place the final one into the set.
-    result.emplace_back(str.substr(prevIndex));
-
-    return result;
-}
-
-// Routine Description:
-// - Gets just the arguments portion of the command string
-//   Specifically, all text after the first space character.
-// Arguments:
-// - str - String to split into just args
-// Return Value:
-// - Only the arguments part of the string or empty if there are no arguments.
-std::wstring Alias::s_GetArgString(const std::wstring& str)
-{
-    std::wstring result;
-    auto firstSpace = str.find_first_of(L' ');
-    if (std::wstring::npos != firstSpace)
-    {
-        firstSpace++;
-        if (firstSpace < str.size())
-        {
-            result = str.substr(firstSpace);
-        }
-    }
-
-    return result;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is a numbered arg replacement macro
-//   and replaces it with the counted argument if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// - tokens - Tokens of the original command string. 0 is alias. 1-N are arguments.
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplaceNumberedArgMacro(const wchar_t ch,
-                                         std::wstring& appendToStr,
-                                         const std::deque<std::wstring>& tokens)
-{
-    if (ch >= L'1' && ch <= L'9')
-    {
-        // Numerical macros substitute that numbered argument
-        const size_t index = ch - L'0';
-
-        if (index < tokens.size() && index > 0)
-        {
-            appendToStr.append(tokens[index]);
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is a wildcard arg replacement macro
-//   and replaces it with the entire argument string if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// - fullArgString - All of the arguments as one big string.
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplaceWildcardArgMacro(const wchar_t ch,
-                                         std::wstring& appendToStr,
-                                         const std::wstring fullArgString)
-{
-    if (L'*' == ch)
-    {
-        // Wildcard substitutes all arguments
-        appendToStr.append(fullArgString);
-        return true;
-    }
-
-    return false;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is an input redirection macro
-//   and replaces it with the < redirector if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplaceInputRedirMacro(const wchar_t ch,
-                                        std::wstring& appendToStr)
-{
-    if (L'L' == towupper(ch))
-    {
-        // L (either case) replaces with input redirector <
-        appendToStr.push_back(L'<');
-        return true;
-    }
-    return false;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is an output redirection macro
-//   and replaces it with the > redirector if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplaceOutputRedirMacro(const wchar_t ch,
-                                         std::wstring& appendToStr)
-{
-    if (L'G' == towupper(ch))
-    {
-        // G (either case) replaces with output redirector >
-        appendToStr.push_back(L'>');
-        return true;
-    }
-    return false;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is a pipe redirection macro
-//   and replaces it with the | redirector if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplacePipeRedirMacro(const wchar_t ch,
-                                       std::wstring& appendToStr)
-{
-    if (L'B' == towupper(ch))
-    {
-        // B (either case) replaces with pipe operator |
-        appendToStr.push_back(L'|');
-        return true;
-    }
-    return false;
-}
-
-// Routine Description:
-// - Checks the given character to see if it is a next command macro
-//   and replaces it with CRLF if there is a match
-// Arguments:
-// - ch - Character to test as a macro
-// - appendToStr - Append the macro result here if it matched
-// - lineCount - Updates the rolling count of lines if we add a CRLF.
-// Return Value:
-// - True if we found the macro and appended to the string.
-// - False if the given character doesn't match this macro.
-bool Alias::s_TryReplaceNextCommandMacro(const wchar_t ch,
-                                         std::wstring& appendToStr,
-                                         size_t& lineCount)
-{
-    if (L'T' == towupper(ch))
-    {
-        // T (either case) inserts a CRLF to chain commands
-        s_AppendCrLf(appendToStr, lineCount);
-        return true;
-    }
-    return false;
-}
-
-// Routine Description:
-// - Appends the system line feed (CRLF) to the given string
-// Arguments:
-// - appendToStr - Append the system line feed here
-// - lineCount - Updates the rolling count of lines if we add a CRLF.
-void Alias::s_AppendCrLf(std::wstring& appendToStr,
-                         size_t& lineCount)
-{
-    appendToStr.push_back(L'\r');
-    appendToStr.push_back(L'\n');
-    lineCount++;
-}
-
-// Routine Description:
-// - Searches through the given string for macros and replaces them
-//   with the matching action
-// Arguments:
-// - str - On input, the string to search. On output, the string is replaced.
-// - tokens - The tokenized command line input. 0 is the alias, 1-N are arguments.
-// - fullArgString - Shorthand to 1-N argument string in case of wildcard match.
-// Return Value:
-// - The number of commands in the final string (line feeds, CRLFs)
-size_t Alias::s_ReplaceMacros(std::wstring& str,
-                              const std::deque<std::wstring>& tokens,
-                              const std::wstring& fullArgString)
-{
-    size_t lineCount = 0;
-    std::wstring finalText;
-
-    // The target text may contain substitution macros indicated by $.
-    // Walk through and substitute them as appropriate.
-    for (auto ch = str.cbegin(); ch < str.cend(); ch++)
-    {
-        if (L'$' == *ch)
-        {
-            // Attempt to read ahead by one character.
-            const auto chNext = ch + 1;
-
-            if (chNext < str.cend())
-            {
-                auto isProcessed = s_TryReplaceNumberedArgMacro(*chNext, finalText, tokens);
-                if (!isProcessed)
-                {
-                    isProcessed = s_TryReplaceWildcardArgMacro(*chNext, finalText, fullArgString);
-                }
-                if (!isProcessed)
-                {
-                    isProcessed = s_TryReplaceInputRedirMacro(*chNext, finalText);
-                }
-                if (!isProcessed)
-                {
-                    isProcessed = s_TryReplaceOutputRedirMacro(*chNext, finalText);
-                }
-                if (!isProcessed)
-                {
-                    isProcessed = s_TryReplacePipeRedirMacro(*chNext, finalText);
-                }
-                if (!isProcessed)
-                {
-                    isProcessed = s_TryReplaceNextCommandMacro(*chNext, finalText, lineCount);
-                }
-                if (!isProcessed)
-                {
-                    // If nothing matches, just push these two characters in.
-                    finalText.push_back(*ch);
-                    finalText.push_back(*chNext);
-                }
-
-                // Since we read ahead and used that character,
-                // advance the iterator one extra to compensate.
-                ch++;
-            }
-            else
-            {
-                // If no read-ahead, just push this character and be done.
-                finalText.push_back(*ch);
-            }
-        }
-        else
-        {
-            // If it didn't match the macro specifier $, push the character.
-            finalText.push_back(*ch);
-        }
-    }
-
-    // We always terminate with a CRLF to symbolize end of command.
-    s_AppendCrLf(finalText, lineCount);
-
-    // Give back the final text and count.
-    str.swap(finalText);
-    return lineCount;
-}
-
-// Routine Description:
 // - Takes the source text and searches it for an alias belonging to exe name's list.
 // Arguments:
 // - sourceText - The string to search for an alias
@@ -1126,129 +831,145 @@ size_t Alias::s_ReplaceMacros(std::wstring& str,
 // - If we found a matching alias, this will be the processed data
 //   and lineCount is updated to the new number of lines.
 // - If we didn't match and process an alias, return an empty string.
-std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
-                                        const std::wstring& exeName,
-                                        size_t& lineCount)
+std::wstring Alias::s_MatchAndCopyAlias(std::wstring_view sourceText, std::wstring_view exeName, size_t& lineCount)
 {
-    // Copy source text into a local for manipulation.
-    auto sourceCopy = sourceText;
-
-    // Trim trailing \r\n off of sourceCopy if it has one.
-    s_TrimTrailingCrLf(sourceCopy);
-
     // Check if we have an EXE in the list that matches the request first.
-    auto exeIter = g_aliasData.find(exeName);
+    const auto exeIter = g_aliasData.find(exeName);
     if (exeIter == g_aliasData.end())
     {
-        // We found no data for this exe. Give back an empty string.
-        return std::wstring();
+        // We found no data for this exe.
+        return {};
     }
 
-    auto exeList = exeIter->second;
+    const auto& exeList = exeIter->second;
     if (exeList.size() == 0)
     {
-        // If there's no match, give back an empty string.
-        return std::wstring();
+        return {};
     }
 
-    // Tokenize the text by spaces
-    const auto tokens = s_Tokenize(sourceCopy);
+    std::wstring_view args[10];
+    size_t argc = 0;
 
-    // If there are no tokens, return an empty string
-    if (tokens.size() == 0)
+    // Split the source string into whitespace delimited arguments.
+    for (size_t argBegIdx = 0; argBegIdx < sourceText.size();)
     {
-        return std::wstring();
+        // Find the end of the current word (= argument).
+        const auto argEndIdx = sourceText.find_first_of(L' ', argBegIdx);
+        const auto str = til::safe_slice_abs(sourceText, argBegIdx, argEndIdx);
+
+        // str is empty if the text starting at argBegIdx is whitespace.
+        // This can only occur if either the source text starts with whitespace or past
+        // an argument there's only whitespace text left until the end of sourceText.
+        if (str.empty())
+        {
+            break;
+        }
+
+        args[argc] = str;
+        argc++;
+
+        if (argc >= std::size(args))
+        {
+            break;
+        }
+
+        // Find the start of the next word (= argument).
+        // If the rest of the text is only whitespace, argBegIdx will be npos
+        // and the for() loop condition will make us exit.
+        argBegIdx = sourceText.find_first_not_of(L' ', argEndIdx);
     }
 
-    // Find alias. If there isn't one, return an empty string
-    const auto alias = tokens.front();
-    const auto aliasIter = exeList.find(alias);
+    // As mentioned above, argc will be 0 if the source text starts with whitespace or only consists of whitespace.
+    if (argc == 0)
+    {
+        return {};
+    }
+
+    // The text up to the first space is the alias name.
+    const auto aliasIter = exeList.find(args[0]);
     if (aliasIter == exeList.end())
     {
-        // We found no alias pair with this name. Give back an empty string.
-        return std::wstring();
+        return {};
     }
 
-    const auto target = aliasIter->second;
+    const auto& target = aliasIter->second;
     if (target.size() == 0)
     {
-        return std::wstring();
+        return {};
     }
 
-    // Get the string of all parameters as a shorthand for $* later.
-    const auto allParams = s_GetArgString(sourceCopy);
+    std::wstring buffer;
+    size_t lines = 0;
 
-    // The final text will be the target but with macros replaced.
-    auto finalText = target;
-    lineCount = s_ReplaceMacros(finalText, tokens, allParams);
-
-    return finalText;
-}
-
-// Routine Description:
-// - This routine matches the input string with an alias and copies the alias to the input buffer.
-// Arguments:
-// - pwchSource - string to match
-// - cbSource - length of pwchSource in bytes
-// - pwchTarget - where to store matched string
-// - cbTargetSize - on input, contains size of pwchTarget.
-// - cbTargetWritten - On output, contains length of alias stored in pwchTarget.
-// - pwchExe - Name of exe that command is associated with to find related aliases
-// - cbExe - Length in bytes of exe name
-// - LineCount - aliases can contain multiple commands.  $T is the command separator
-// Return Value:
-// - None. It will just maintain the source as the target if we can't match an alias.
-void Alias::s_MatchAndCopyAliasLegacy(_In_reads_bytes_(cbSource) PCWCH pwchSource,
-                                      _In_ size_t cbSource,
-                                      _Out_writes_bytes_(cbTargetWritten) PWCHAR pwchTarget,
-                                      _In_ const size_t cbTargetSize,
-                                      size_t& cbTargetWritten,
-                                      const std::wstring& exeName,
-                                      DWORD& lines)
-{
-    try
+    for (auto it = target.begin(), end = target.end(); it != end;)
     {
-        std::wstring sourceText(pwchSource, cbSource / sizeof(WCHAR));
-        size_t lineCount = lines;
-
-        const auto targetText = s_MatchAndCopyAlias(sourceText, exeName, lineCount);
-
-        // Only return data if the reply was non-empty (we had a match).
-        if (!targetText.empty())
+        auto ch = *it++;
+        if (ch != L'$' || it == end)
         {
-            const auto cchTargetSize = cbTargetSize / sizeof(wchar_t);
+            buffer.push_back(ch);
+            continue;
+        }
 
-            // If the target text will fit in the result buffer, fill out the results.
-            if (targetText.size() <= cchTargetSize)
+        // $ is our "escape character" and this code handles the escape
+        // sequence consisting of a single subsequent character.
+        ch = *it++;
+        const auto chLower = til::tolower_ascii(ch);
+        if (chLower >= L'1' && chLower <= L'9')
+        {
+            // $1-9 = append the given parameter
+            const size_t idx = chLower - L'0';
+            if (idx < argc)
             {
-                // Non-null terminated copy into memory space
-                std::copy_n(targetText.data(), targetText.size(), pwchTarget);
-
-                // Return bytes copied.
-                cbTargetWritten = gsl::narrow<ULONG>(targetText.size() * sizeof(wchar_t));
-
-                // Return lines info.
-                lines = gsl::narrow<DWORD>(lineCount);
+                buffer.append(args[idx]);
             }
         }
+        else if (chLower == L'*')
+        {
+            // $* = append all parameters
+            if (argc > 1)
+            {
+                // args[] is an array of slices into the source text. This appends the text
+                // starting at first argument up to the end of the source to the buffer.
+                buffer.append(args[1].data(), sourceText.data() + sourceText.size());
+            }
+        }
+        else if (chLower == L'l')
+        {
+            buffer.push_back(L'<');
+        }
+        else if (chLower == L'g')
+        {
+            buffer.push_back(L'>');
+        }
+        else if (chLower == L'b')
+        {
+            buffer.push_back(L'|');
+        }
+        else if (chLower == L't')
+        {
+            buffer.append(L"\r\n");
+            lines++;
+        }
+        else
+        {
+            buffer.push_back(L'$');
+            buffer.push_back(ch);
+        }
     }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+
+    buffer.append(L"\r\n");
+    lines++;
+
+    lineCount = lines;
+    return buffer;
 }
 
-#ifdef UNIT_TESTING
-void Alias::s_TestAddAlias(std::wstring& exe,
-                           std::wstring& alias,
-                           std::wstring& target)
+void Alias::s_TestAddAlias(std::wstring exe, std::wstring alias, std::wstring target)
 {
-    g_aliasData[exe][alias] = target;
+    g_aliasData[std::move(exe)][std::move(alias)] = std::move(target);
 }
 
 void Alias::s_TestClearAliases()
 {
     g_aliasData.clear();
 }
-
-#endif

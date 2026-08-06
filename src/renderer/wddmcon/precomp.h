@@ -19,7 +19,7 @@
 #include <condrv.h>
 #else
 #include <Windows.h>
-#include <unknwn.h>
+#include <Unknwn.h>
 #endif
 
 #include <dxgi1_2.h>

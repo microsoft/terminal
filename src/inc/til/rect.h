@@ -4,39 +4,20 @@
 #pragma once
 
 #include "bit.h"
-#include "some.h"
 #include "math.h"
 #include "size.h"
 #include "point.h"
 #include "operators.h"
+#include "small_vector.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     struct inclusive_rect
     {
-        // **** TRANSITIONAL ****
-        // The old SMALL_RECT type uses uppercase member names.
-        // We'll migrate to lowercase ones in the future.
-        union
-        {
-            CoordType left = 0;
-            CoordType Left;
-        };
-        union
-        {
-            CoordType top = 0;
-            CoordType Top;
-        };
-        union
-        {
-            CoordType right = 0;
-            CoordType Right;
-        };
-        union
-        {
-            CoordType bottom = 0;
-            CoordType Bottom;
-        };
+        CoordType left = 0;
+        CoordType top = 0;
+        CoordType right = 0;
+        CoordType bottom = 0;
 
         constexpr bool operator==(const inclusive_rect& rhs) const noexcept
         {
@@ -50,8 +31,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         explicit constexpr operator bool() const noexcept
         {
-            return (left >= 0) & (top >= 0) &
-                   (right >= left) & (bottom >= top);
+            return left >= 0 && top >= 0 && right >= left && bottom >= top;
         }
     };
 
@@ -164,29 +144,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         using const_iterator = details::_rectangle_const_iterator;
 
-        // **** TRANSITIONAL ****
-        // The old SMALL_RECT type uses uppercase member names.
-        // We'll migrate to lowercase ones in the future.
-        union
-        {
-            CoordType left = 0;
-            CoordType Left;
-        };
-        union
-        {
-            CoordType top = 0;
-            CoordType Top;
-        };
-        union
-        {
-            CoordType right = 0;
-            CoordType Right;
-        };
-        union
-        {
-            CoordType bottom = 0;
-            CoordType Bottom;
-        };
+        CoordType left = 0;
+        CoordType top = 0;
+        CoordType right = 0;
+        CoordType bottom = 0;
 
         constexpr rect() noexcept = default;
 
@@ -240,10 +201,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
+        constexpr rect to_origin(const rect& other) const
+        {
+            return to_origin(other.origin());
+        }
+
+        constexpr rect to_origin(const point& origin) const
+        {
+            const auto l = details::extract(::base::CheckSub(left, origin.x));
+            const auto t = details::extract(::base::CheckSub(top, origin.y));
+            const auto r = details::extract(::base::CheckSub(right, origin.x));
+            const auto b = details::extract(::base::CheckSub(bottom, origin.y));
+            return { l, t, r, b };
+        }
+
         explicit constexpr operator bool() const noexcept
         {
-            return (left >= 0) & (top >= 0) &
-                   (right > left) & (bottom > top);
+            return left >= 0 && top >= 0 && right > left && bottom > top;
         }
 
         constexpr const_iterator begin() const
@@ -332,9 +306,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // - = subtract
-        constexpr some<rect, 4> operator-(const rect& other) const
+        small_vector<rect, 4> operator-(const rect& other) const
         {
-            some<rect, 4> result;
+            small_vector<rect, 4> result;
 
             // We could have up to four rectangles describing the area resulting when you take removeMe out of main.
             // Find the intersection of the two so we know which bits of removeMe are actually applicable
@@ -604,14 +578,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool contains(point pt) const noexcept
         {
-            return (pt.x >= left) & (pt.x < right) &
-                   (pt.y >= top) & (pt.y < bottom);
+            return pt.x >= left && pt.x < right && pt.y >= top && pt.y < bottom;
         }
 
         constexpr bool contains(const rect& rc) const noexcept
         {
-            return (rc.left >= left) & (rc.top >= top) &
-                   (rc.right <= right) & (rc.bottom <= bottom);
+            return rc.left >= left && rc.top >= top && rc.right <= right && rc.bottom <= bottom;
         }
 
         template<typename T = CoordType>
@@ -651,8 +623,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #ifdef _WINCONTYPES_
         // NOTE: This will convert from INCLUSIVE on the way in because
         // that is generally how SMALL_RECTs are handled in console code and via the APIs.
-        explicit constexpr rect(const inclusive_rect other) noexcept :
-            rect{ other.Left, other.Top, other.Right + 1, other.Bottom + 1 }
+        explicit constexpr rect(const inclusive_rect& other) noexcept :
+            rect{ other.left, other.top, other.right + 1, other.bottom + 1 }
         {
         }
 
@@ -792,6 +764,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return S_OK;
         }
         RETURN_WIN32(ERROR_UNHANDLED_EXCEPTION);
+    }
+
+    // Given an ordered span of til::point_span, returns the sub-span of all point spans that
+    // cover the given rectangle. This function **DOES NOT** change any of the point_spans.
+    // It is therefore possible that you will get a point_span whose start and/or end are
+    // outside the rectangle.
+    constexpr std::span<const til::point_span> point_span_subspan_within_rect(const std::span<const til::point_span>& pointSpan, const til::rect rect)
+    {
+        const auto beg = std::lower_bound(pointSpan.begin(), pointSpan.end(), rect.top, [](const auto& ps, const auto& drTop) { return ps.end.y < drTop; });
+        const auto end = std::upper_bound(beg, pointSpan.end(), rect.bottom, [](const auto& drBottom, const auto& ps) { return drBottom < ps.start.y; });
+        return { beg, end };
     }
 }
 

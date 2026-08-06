@@ -5,6 +5,8 @@
 #include "ScrollBarVisualStateManager.h"
 #include "ScrollBarVisualStateManager.g.cpp"
 
+#include "TermControl.h"
+
 using namespace winrt::Windows::UI::Xaml::Media;
 
 namespace winrt::Microsoft::Terminal::Control::implementation

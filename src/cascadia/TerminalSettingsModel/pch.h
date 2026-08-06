@@ -24,20 +24,20 @@
 #endif
 
 #include <wil/cppwinrt.h>
+#include <wil/registry.h>
 
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Graphics.Imaging.h>
-#include <Windows.Graphics.Imaging.Interop.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
-#include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
@@ -53,13 +53,16 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 #include <TraceLoggingActivity.h>
 
 // JsonCpp
-#include <json.h>
+#include <json/json.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/winrt.h>
 
 #include <til/mutex.h>
 #include <til/throttled_func.h>
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

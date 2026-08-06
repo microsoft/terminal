@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#pragma once
+
 namespace til
 {
     namespace details
@@ -9,7 +11,8 @@ namespace til
         class shared_mutex_guard
         {
         public:
-            shared_mutex_guard(T& data, std::shared_mutex& mutex) :
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'shared_mutex>()' which may throw exceptions (f.6).)
+            shared_mutex_guard(T& data, std::shared_mutex& mutex) noexcept :
                 _data{ data },
                 _lock{ mutex }
             {
@@ -21,17 +24,17 @@ namespace til
             shared_mutex_guard(shared_mutex_guard&&) = default;
             shared_mutex_guard& operator=(shared_mutex_guard&&) = default;
 
-            [[nodiscard]] constexpr T* operator->() const
+            [[nodiscard]] constexpr T* operator->() const noexcept
             {
                 return &_data;
             }
 
-            [[nodiscard]] constexpr T& operator*() const&
+            [[nodiscard]] constexpr T& operator*() const& noexcept
             {
                 return _data;
             }
 
-            [[nodiscard]] constexpr T&& operator*() const&&
+            [[nodiscard]] constexpr T&& operator*() const&& noexcept
             {
                 return std::move(_data);
             }
@@ -70,7 +73,7 @@ namespace til
     {
     public:
         // An exclusive, read/write reference to a til::shared_mutex's underlying data.
-        // If you drop the guard the mutex is unlocked.
+        // If you drop the guard, the mutex is unlocked.
         using guard = details::shared_mutex_guard<T, std::unique_lock<std::shared_mutex>>;
 
         // A shared, read-only reference to a til::shared_mutex's underlying data.

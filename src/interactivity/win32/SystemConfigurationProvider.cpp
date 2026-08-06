@@ -35,7 +35,7 @@ ULONG SystemConfigurationProvider::GetCursorWidth()
     else
     {
         LOG_LAST_ERROR();
-        return s_DefaultCursorWidth;
+        return 1;
     }
 }
 
@@ -112,7 +112,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                                                                  &iShowWindow,
                                                                  &wHotKey);
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
                 // Convert results back to appropriate types and set.
                 if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
@@ -148,7 +148,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 }
             }
 
-            if (NT_SUCCESS(Status) && fReadConsoleProperties)
+            if (SUCCEEDED_NTSTATUS(Status) && fReadConsoleProperties)
             {
                 // copy settings
                 pLinkSettings->InitFromStateInfo(&csi);

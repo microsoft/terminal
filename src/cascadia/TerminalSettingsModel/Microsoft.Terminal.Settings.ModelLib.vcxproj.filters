@@ -18,6 +18,9 @@
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="SshHostGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
@@ -27,11 +30,7 @@
     <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <Filter>json</Filter>
-    </ClCompile>
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="IconPathConverter.cpp" />
     <ClCompile Include="DefaultTerminal.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="VisualStudioGenerator.cpp">
@@ -46,6 +45,7 @@
     <ClCompile Include="VsSetupConfiguration.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="TestHooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -59,6 +59,9 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="WslDistroGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="SshHostGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
@@ -77,7 +80,6 @@
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="MTSMSettings.h" />
-    <ClInclude Include="IconPathConverter.h" />
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="HashUtils.h" />
@@ -94,6 +96,7 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="ActionArgsMagic.h" />
+    <ClInclude Include="NewTabMenuEntry.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -106,13 +109,12 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
-    <Midl Include="IconPathConverter.idl" />
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
     <Midl Include="FontConfig.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="ApplicationState.idl" />
+    <Midl Include="NewTabMenuEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

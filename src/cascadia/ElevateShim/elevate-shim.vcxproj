@@ -7,6 +7,7 @@
     <ProjectName>elevate-shim</ProjectName>
     <TargetName>elevate-shim</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <VersionInfoFileDescription>Windows Terminal Administrator Launch Helper</VersionInfoFileDescription>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

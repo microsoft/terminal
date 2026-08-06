@@ -7,11 +7,7 @@
 
 // Routine Description:
 // - Constructs an empty in-memory region for holding output buffer cell data.
-OutputCellRect::OutputCellRect() noexcept :
-    _rows(0),
-    _cols(0)
-{
-}
+OutputCellRect::OutputCellRect() noexcept = default;
 
 // Routine Description:
 // - Constructs an in-memory region for holding a copy of output buffer cell data.
@@ -34,9 +30,9 @@ OutputCellRect::OutputCellRect(const til::CoordType rows, const til::CoordType c
 // - row - The Y position or row index in the buffer.
 // Return Value:
 // - Read/write span of OutputCells
-gsl::span<OutputCell> OutputCellRect::GetRow(const til::CoordType row)
+std::span<OutputCell> OutputCellRect::GetRow(const til::CoordType row)
 {
-    return gsl::span<OutputCell>(_FindRowOffset(row), _cols);
+    return std::span<OutputCell>(_FindRowOffset(row), _cols);
 }
 
 // Routine Description:
@@ -47,7 +43,7 @@ gsl::span<OutputCell> OutputCellRect::GetRow(const til::CoordType row)
 // - Read-only iterator of OutputCells
 OutputCellIterator OutputCellRect::GetRowIter(const til::CoordType row) const
 {
-    const gsl::span<const OutputCell> view(_FindRowOffset(row), _cols);
+    const std::span<const OutputCell> view(_FindRowOffset(row), _cols);
 
     return OutputCellIterator(view);
 }

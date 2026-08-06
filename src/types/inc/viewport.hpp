@@ -17,7 +17,7 @@ namespace Microsoft::Console::Types
 {
     class Viewport;
 
-    using SomeViewports = til::some<Viewport, 4>;
+    using SomeViewports = til::small_vector<Viewport, 4>;
 
     class Viewport final
     {
@@ -28,17 +28,7 @@ namespace Microsoft::Console::Types
 
         static Viewport FromInclusive(const til::inclusive_rect& sr) noexcept;
         static Viewport FromExclusive(const til::rect& sr) noexcept;
-
-        static Viewport FromDimensions(const til::point origin,
-                                       const til::CoordType width,
-                                       const til::CoordType height) noexcept;
-
-        static Viewport FromDimensions(const til::point origin,
-                                       const til::size dimensions) noexcept;
-
-        static Viewport FromDimensions(const til::size dimensions) noexcept;
-
-        static Viewport FromCoord(const til::point origin) noexcept;
+        static Viewport FromDimensions(const til::point origin, const til::size dimensions) noexcept;
 
         til::CoordType Left() const noexcept;
         til::CoordType RightInclusive() const noexcept;
@@ -51,44 +41,28 @@ namespace Microsoft::Console::Types
         til::point Origin() const noexcept;
         til::point BottomRightInclusive() const noexcept;
         til::point BottomRightExclusive() const noexcept;
+        til::point BottomInclusiveRightExclusive() const noexcept;
         til::point EndExclusive() const noexcept;
         til::size Dimensions() const noexcept;
 
         bool IsInBounds(const Viewport& other) const noexcept;
         bool IsInBounds(const til::point pos, bool allowEndExclusive = false) const noexcept;
+        bool IsInExclusiveBounds(const til::point pos) const noexcept;
 
         void Clamp(til::point& pos) const;
         Viewport Clamp(const Viewport& other) const noexcept;
 
-        bool MoveInBounds(const til::CoordType move, til::point& pos) const noexcept;
         bool IncrementInBounds(til::point& pos, bool allowEndExclusive = false) const noexcept;
-        bool IncrementInBoundsCircular(til::point& pos) const noexcept;
         bool DecrementInBounds(til::point& pos, bool allowEndExclusive = false) const noexcept;
-        bool DecrementInBoundsCircular(til::point& pos) const noexcept;
+        bool IncrementInExclusiveBounds(til::point& pos) const noexcept;
+        bool DecrementInExclusiveBounds(til::point& pos) const noexcept;
         int CompareInBounds(const til::point first, const til::point second, bool allowEndExclusive = false) const noexcept;
+        int CompareInExclusiveBounds(const til::point first, const til::point second) const noexcept;
 
-        enum class XWalk
-        {
-            LeftToRight,
-            RightToLeft
-        };
-
-        enum class YWalk
-        {
-            TopToBottom,
-            BottomToTop
-        };
-
-        struct WalkDir final
-        {
-            const XWalk x;
-            const YWalk y;
-        };
-
-        bool WalkInBounds(til::point& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
-        bool WalkInBoundsCircular(til::point& pos, const WalkDir dir, bool allowEndExclusive = false) const noexcept;
-        til::point GetWalkOrigin(const WalkDir dir) const noexcept;
-        static WalkDir DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
+        bool WalkInBounds(til::point& pos, const til::CoordType delta, bool allowEndExclusive = false) const noexcept;
+        bool WalkInExclusiveBounds(til::point& pos, const til::CoordType delta) const noexcept;
+        til::point GetWalkOrigin(const til::CoordType delta) const noexcept;
+        static til::CoordType DetermineWalkDirection(const Viewport& source, const Viewport& target) noexcept;
 
         bool TrimToViewport(_Inout_ til::rect* psr) const noexcept;
         void ConvertToOrigin(_Inout_ til::rect* psr) const noexcept;

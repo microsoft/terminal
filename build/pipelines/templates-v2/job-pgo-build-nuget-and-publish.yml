@@ -1,0 +1,76 @@
+parameters:
+  - name: buildConfiguration
+    type: string
+  - name: pool
+    type: object
+    default: []
+  - name: dependsOn
+    type: object
+    default: null
+  - name: artifactStem
+    type: string
+    default: ''
+  - name: jobName
+    type: string
+    default: BuildAndPublishPGONuget
+
+jobs:
+- job: ${{ parameters.jobName }}
+  ${{ if ne(length(parameters.pool), 0) }}:
+    pool: ${{ parameters.pool }}
+  dependsOn: ${{ parameters.dependsOn }}
+  displayName: Package and Publish PGO Databases
+
+  variables:
+    artifactsPath: $(Build.SourcesDirectory)\Artifacts
+    pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
+    nuspecPath: $(pgoToolsPath)\NuSpecs
+    nuspecFilename: PGO.nuspec
+    nugetFeed: "https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies/nuget/v3/index.json"
+
+  steps:
+  - checkout: self
+    clean: true
+    # It is important that this be 0; otherwise, git will not fetch the branch ref names that the PGO rules require.
+    fetchDepth: 0
+    submodules: false
+    persistCredentials: false
+
+  - task: DownloadPipelineArtifact@2
+    displayName: Download Final PGO Databases
+    inputs:
+      artifact: pgd-merged-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+      downloadPath: $(artifactsPath)
+
+  - template: steps-ensure-nuget-version.yml
+
+  - task: NuGetAuthenticate@1
+    inputs:
+      azureDevOpsServiceConnection: 'Terminal Public Artifact Feed'
+      feedUrl: $(nugetFeed)
+
+  # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
+  # This should be `task: NuGetCommand@2`
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: Restore NuGet packages for extraneous build actions
+    inputs:
+      command: restore
+      feedsToUse: config
+      configPath: NuGet.config
+      restoreSolution: build/packages.config
+      restoreDirectory: '$(Build.SourcesDirectory)\packages'
+
+  - task: MSBuild@1
+    displayName: 'Create PGO Nuget'
+    inputs:
+      solution: $(pgoToolsPath)\PGO.DB.proj
+      msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
+
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
+    displayName: "Publish Pipeline Artifact"
+
+  - pwsh: |-
+      $nupkg = Get-Item "$(Build.ArtifactStagingDirectory)/*.nupkg"
+      & nuget push -ApiKey az -Source "$(nugetFeed)" "$nupkg"
+    displayName: NuGet push

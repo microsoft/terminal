@@ -46,12 +46,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ToCoreScheme() const noexcept;
-
         com_array<Core::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
+        bool IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept;
+
         WINRT_PROPERTY(winrt::hstring, Name);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
         WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND));
         WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND));

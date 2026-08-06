@@ -176,7 +176,7 @@ DWORD GetRegistryValues(
     //
     Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return 0;
     }
@@ -194,7 +194,7 @@ DWORD GetRegistryValues(
                                                      REG_DWORD,
                                                      (PBYTE)&dwValue,
                                                      nullptr);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             dwRet = dwValue;
         }
@@ -214,7 +214,7 @@ DWORD GetRegistryValues(
         Status = RegistrySerialization::s_OpenKey(hConsoleKey,
                                                   pStateInfo->OriginalTitle,
                                                   &hTitleKey);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             RegCloseKey(hConsoleKey);
             RegCloseKey(hCurrentUserKey);
@@ -232,7 +232,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->ScreenAttributes = (WORD)dwValue;
     }
@@ -247,7 +247,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->PopupAttributes = (WORD)dwValue;
     }
@@ -268,7 +268,7 @@ DWORD GetRegistryValues(
                                                      REG_DWORD,
                                                      (PBYTE)&dwValue,
                                                      nullptr);
-        if (NT_SUCCESS(Status))
+        if (SUCCEEDED_NTSTATUS(Status))
         {
             pStateInfo->ColorTable[i] = dwValue;
         }
@@ -283,7 +283,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->InsertMode = !!dwValue;
     }
@@ -297,7 +297,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->QuickEdit = !!dwValue;
     }
@@ -313,7 +313,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         if (IsValidCodePage(dwValue))
         {
@@ -330,7 +330,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->ScreenBufferSize.X = LOWORD(dwValue);
         pStateInfo->ScreenBufferSize.Y = HIWORD(dwValue);
@@ -345,7 +345,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->WindowSize.X = LOWORD(dwValue);
         pStateInfo->WindowSize.Y = HIWORD(dwValue);
@@ -360,7 +360,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->WindowPosX = (SHORT)LOWORD(dwValue);
         pStateInfo->WindowPosY = (SHORT)HIWORD(dwValue);
@@ -377,7 +377,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->FontSize.X = LOWORD(dwValue);
         pStateInfo->FontSize.Y = HIWORD(dwValue);
@@ -392,7 +392,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->FontFamily = dwValue;
     }
@@ -406,7 +406,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->FontWeight = dwValue;
     }
@@ -420,7 +420,7 @@ DWORD GetRegistryValues(
                                                  REG_SZ,
                                                  (PBYTE)awchBuffer,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         RtlCopyMemory(pStateInfo->FaceName, awchBuffer, sizeof(awchBuffer));
     }
@@ -434,7 +434,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->CursorSize = dwValue;
     }
@@ -448,7 +448,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->HistoryBufferSize = dwValue;
     }
@@ -462,7 +462,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->NumberOfHistoryBuffers = dwValue;
     }
@@ -476,7 +476,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->HistoryNoDup = dwValue;
     }
@@ -490,7 +490,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->fWrapText = dwValue;
     }
@@ -504,7 +504,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->fFilterOnPaste = dwValue;
     }
@@ -518,7 +518,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->fCtrlKeyShortcutsDisabled = dwValue;
     }
@@ -532,7 +532,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->fLineSelection = dwValue;
     }
@@ -546,7 +546,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         if (dwValue <= BYTE_MAX)
         {
@@ -561,7 +561,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->CursorColor = dwValue;
     }
@@ -572,7 +572,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->CursorType = dwValue;
     }
@@ -584,7 +584,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->InterceptCopyPaste = !!dwValue;
     }
@@ -596,7 +596,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->DefaultForeground = dwValue;
     }
@@ -608,7 +608,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->DefaultBackground = dwValue;
     }
@@ -620,7 +620,7 @@ DWORD GetRegistryValues(
                                                  REG_DWORD,
                                                  (PBYTE)&dwValue,
                                                  nullptr);
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
         pStateInfo->TerminalScrolling = dwValue;
     }
@@ -693,7 +693,7 @@ VOID SetRegistryValues(
     //
     Status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUserKey, &hConsoleKey);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED_NTSTATUS(Status))
     {
         return;
     }
@@ -719,7 +719,7 @@ VOID SetRegistryValues(
         Status = RegistrySerialization::s_CreateKey(hConsoleKey,
                                                     pStateInfo->OriginalTitle,
                                                     &hTitleKey);
-        if (!NT_SUCCESS(Status))
+        if (FAILED_NTSTATUS(Status))
         {
             RegCloseKey(hConsoleKey);
             RegCloseKey(hCurrentUserKey);

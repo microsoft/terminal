@@ -1,3 +1,0 @@
-[submodule "dep/gsl"]
-	path = dep/gsl
-	url = https://github.com/microsoft/gsl

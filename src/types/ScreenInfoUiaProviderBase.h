@@ -22,8 +22,8 @@ Author(s):
 #pragma once
 
 #include "../buffer/out/textBuffer.hpp"
+#include "../renderer/inc/IRenderData.hpp"
 #include "UiaTextRangeBase.hpp"
-#include "IUiaData.h"
 #include "IUiaTraceable.h"
 
 #include <UIAutomationCore.h>
@@ -39,7 +39,7 @@ namespace Microsoft::Console::Types
         public IUiaTraceable
     {
     public:
-        virtual HRESULT RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
+        virtual HRESULT RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters = UiaTextRangeBase::DefaultWordDelimiter) noexcept;
 
         ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = delete;
         ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = delete;
@@ -47,7 +47,6 @@ namespace Microsoft::Console::Types
         ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = delete;
         ~ScreenInfoUiaProviderBase() = default;
 
-        [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
         virtual void ChangeViewport(const til::inclusive_rect& NewWindow) = 0;
 
         // IRawElementProviderSimple methods
@@ -59,13 +58,12 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) noexcept override;
 
         // IRawElementProviderFragment methods
-        virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
-                                        _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
+        IFACEMETHODIMP Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override = 0;
         IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
-        virtual IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) = 0;
+        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override = 0;
         IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept override;
-        IFACEMETHODIMP SetFocus() override;
-        virtual IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) = 0;
+        IFACEMETHODIMP SetFocus() noexcept override;
+        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override = 0;
 
         // ITextProvider
         IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
@@ -104,25 +102,12 @@ namespace Microsoft::Console::Types
                                         const std::wstring_view wordDelimiters,
                                         _COM_Outptr_result_maybenull_ UiaTextRangeBase** ppUtr) = 0;
 
-        // weak reference to IUiaData
-        IUiaData* _pData{ nullptr };
+        // weak reference to IRenderData
+        Render::IRenderData* _pData{ nullptr };
 
         std::wstring _wordDelimiters{};
 
     private:
-        // this is used to prevent the object from
-        // signaling an event while it is already in the
-        // process of signalling another event.
-        // This fixes a problem with JAWS where it would
-        // call a public method that calls
-        // UiaRaiseAutomationEvent to signal something
-        // happened, which JAWS then detects the signal
-        // and calls the same method in response,
-        // eventually overflowing the stack.
-        // We aren't using this as a cheap locking
-        // mechanism for multi-threaded code.
-        std::unordered_map<EVENTID, bool> _signalFiringMapping{};
-
         til::size _getScreenBufferCoords() const noexcept;
         const TextBuffer& _getTextBuffer() const noexcept;
         Viewport _getViewport() const noexcept;

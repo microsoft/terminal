@@ -14,8 +14,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(Editor::RenderingViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
+        til::property_changed_event PropertyChanged;
+        WINRT_OBSERVABLE_PROPERTY(Editor::RenderingViewModel, ViewModel, PropertyChanged.raise, nullptr);
     };
 }
 

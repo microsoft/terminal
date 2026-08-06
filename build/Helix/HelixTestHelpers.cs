@@ -20,34 +20,15 @@ namespace HelixTestHelpers
         public string Name { get; set; }
         public string SourceWttFile { get; set; }
         public bool Passed { get; set; }
+        public bool Skipped { get; set; }
         public bool CleanupPassed { get; set; }
         public TimeSpan ExecutionTime { get; set; }
         public string Details { get; set; }
 
         public List<string> Screenshots { get; private set; }
         public List<TestResult> RerunResults { get; private set; }
-
-        // Returns true if the test pass rate is sufficient to avoid being counted as a failure.
-        public bool PassedOrUnreliable(int requiredNumberOfPasses)
-        {
-            if(Passed)
-            {
-                return true;
-            }
-            else
-            {
-                if(RerunResults.Count == 1)
-                {
-                    return RerunResults[0].Passed;
-                }
-                else
-                {
-                    return RerunResults.Where(r => r.Passed).Count() >= requiredNumberOfPasses;
-                }
-            }
-        }
     }
-    
+
     //
     // Azure DevOps doesn't currently provide a way to directly report sub-results for tests that failed at least once
     // that were run multiple times.  To get around that limitation, we'll mark the test as "Skip" since
@@ -68,46 +49,46 @@ namespace HelixTestHelpers
     // TODO (https://github.com/dotnet/arcade/issues/2773): Once we're able to directly report things in a
     // more granular fashion than just a binary pass/fail result, we should do that.
     //
-    [DataContract]  
+    [DataContract]
     internal class JsonSerializableTestResults
-    {  
+    {
         [DataMember]
         internal string blobPrefix;
-        
+
         [DataMember]
         internal string blobSuffix;
-        
+
         [DataMember]
         internal string[] errors;
-        
+
         [DataMember]
         internal JsonSerializableTestResult[] results;
     }
-    
-    [DataContract]  
-    internal class JsonSerializableTestResult  
+
+    [DataContract]
+    internal class JsonSerializableTestResult
     {
         [DataMember]
         internal string outcome;
 
         [DataMember]
         internal int duration;
-        
+
         [DataMember(EmitDefaultValue = false)]
         internal string log;
-        
+
         [DataMember(EmitDefaultValue = false)]
         internal string[] screenshots;
-        
+
         [DataMember(EmitDefaultValue = false)]
         internal int errorIndex;
     }
-    
+
     public class TestPass
     {
         public TimeSpan TestPassExecutionTime { get; set; }
         public List<TestResult> TestResults { get; set; }
-        
+
         public static TestPass ParseTestWttFile(string fileName, bool cleanupFailuresAreRegressions, bool truncateTestNames)
         {
             using (var stream = File.OpenRead(fileName))
@@ -193,7 +174,7 @@ namespace HelixTestHelpers
                         if (testsExecuting == 1)
                         {
                             string testName = element.Attribute("Title").Value;
-                            
+
                             if (truncateTestNames)
                             {
                                 const string xamlNativePrefix = "Windows::UI::Xaml::Tests::";
@@ -221,7 +202,9 @@ namespace HelixTestHelpers
                         testsExecuting--;
 
                         // If any inner test fails, we'll still fail the outer
-                        currentResult.Passed &= element.Attribute("Result").Value == "Pass";
+                        var value = element.Attribute("Result").Value;
+                        currentResult.Passed = value == "Pass";
+                        currentResult.Skipped = value == "Skipped";
 
                         // Only gather execution data if this is the outer test we ran initially
                         if (testsExecuting == 0)
@@ -260,7 +243,7 @@ namespace HelixTestHelpers
 
 
                         // The test cleanup errors will often come after the test claimed to have
-                        // 'passed'. We treat them as errors as well. 
+                        // 'passed'. We treat them as errors as well.
                         if (inTestCleanup)
                         {
                             currentResult.CleanupPassed = false;
@@ -309,7 +292,7 @@ namespace HelixTestHelpers
                                 foreach(var screenshot in screenshots)
                                 {
                                     string fileNameSuffix = string.Empty;
-                                    
+
                                     if (fileName.Contains("_rerun_multiple"))
                                     {
                                         fileNameSuffix = "_rerun_multiple";
@@ -318,7 +301,7 @@ namespace HelixTestHelpers
                                     {
                                         fileNameSuffix = "_rerun";
                                     }
-                                    
+
                                     currentResult.Screenshots.Add(screenshot.Replace(".jpg", fileNameSuffix + ".jpg"));
                                 }
                             }
@@ -330,7 +313,7 @@ namespace HelixTestHelpers
                 testPassStopTime = Int64.Parse(doc.Root.Descendants("WexTraceInfo").Last().Attribute("TimeStamp").Value);
 
                 var testPassTime = TimeSpan.FromSeconds((double)(testPassStopTime - testPassStartTime) / frequency);
-                
+
                 foreach (TestResult testResult in testResults)
                 {
                     if (testResult.Details != null)
@@ -348,13 +331,13 @@ namespace HelixTestHelpers
                 return testpass;
             }
         }
-        
+
         public static TestPass ParseTestWttFileWithReruns(string fileName, string singleRerunFileName, string multipleRerunFileName, bool cleanupFailuresAreRegressions, bool truncateTestNames)
         {
             TestPass testPass = ParseTestWttFile(fileName, cleanupFailuresAreRegressions, truncateTestNames);
             TestPass singleRerunTestPass = File.Exists(singleRerunFileName) ? ParseTestWttFile(singleRerunFileName, cleanupFailuresAreRegressions, truncateTestNames) : null;
             TestPass multipleRerunTestPass = File.Exists(multipleRerunFileName) ? ParseTestWttFile(multipleRerunFileName, cleanupFailuresAreRegressions, truncateTestNames) : null;
-            
+
             List<TestResult> rerunTestResults = new List<TestResult>();
 
             if (singleRerunTestPass != null)
@@ -394,9 +377,9 @@ namespace HelixTestHelpers
         public static void OutputFailedTestQuery(string wttInputPath)
         {
             var testPass = TestPass.ParseTestWttFile(wttInputPath, cleanupFailuresAreRegressions: true, truncateTestNames: false);
-            
+
             List<string> failedTestNames = new List<string>();
-            
+
             foreach (var result in testPass.TestResults)
             {
                 if (!result.Passed)
@@ -404,23 +387,23 @@ namespace HelixTestHelpers
                     failedTestNames.Add(result.Name);
                 }
             }
-            
+
             if (failedTestNames.Count > 0)
             {
                 string failedTestSelectQuery = "(@Name='";
-                
+
                 for (int i = 0; i < failedTestNames.Count; i++)
                 {
                     failedTestSelectQuery += failedTestNames[i];
-                    
+
                     if (i < failedTestNames.Count - 1)
                     {
                         failedTestSelectQuery += "' or @Name='";
                     }
                 }
-                
+
                 failedTestSelectQuery += "')";
-            
+
                 Console.WriteLine(failedTestSelectQuery);
             }
             else
@@ -435,7 +418,7 @@ namespace HelixTestHelpers
         private string testNamePrefix;
         private string helixResultsContainerUri;
         private string helixResultsContainerRsas;
-    
+
         public TestResultParser(string testNamePrefix, string helixResultsContainerUri, string helixResultsContainerRsas)
         {
             this.testNamePrefix = testNamePrefix;
@@ -447,7 +430,7 @@ namespace HelixTestHelpers
         {
             Dictionary<string, string> subResultsJsonByMethod = new Dictionary<string, string>();
             TestPass testPass = TestPass.ParseTestWttFileWithReruns(wttInputPath, wttSingleRerunInputPath, wttMultipleRerunInputPath, cleanupFailuresAreRegressions: true, truncateTestNames: false);
-            
+
             foreach (var result in testPass.TestResults)
             {
                 var methodName = result.Name.Substring(result.Name.LastIndexOf('.') + 1);
@@ -498,20 +481,20 @@ namespace HelixTestHelpers
             return subResultsJsonByMethod;
         }
 
-        public void ConvertWttLogToXUnitLog(string wttInputPath, string wttSingleRerunInputPath, string wttMultipleRerunInputPath, string xunitOutputPath, int requiredPassRateThreshold)
+        public void ConvertWttLogToXUnitLog(string wttInputPath, string wttSingleRerunInputPath, string wttMultipleRerunInputPath, string xunitOutputPath)
         {
             TestPass testPass = TestPass.ParseTestWttFileWithReruns(wttInputPath, wttSingleRerunInputPath, wttMultipleRerunInputPath, cleanupFailuresAreRegressions: true, truncateTestNames: false);
             var results = testPass.TestResults;
 
             int resultCount = results.Count;
             int passedCount = results.Where(r => r.Passed).Count();
-            
+
             // Since we re-run tests on failure, we'll mark every test that failed at least once as "skipped" rather than "failed".
             // If the test failed sufficiently often enough for it to count as a failed test (determined by a property on the
             // Azure DevOps job), we'll later mark it as failed during test results processing.
 
-            int failedCount = results.Where(r => !r.PassedOrUnreliable(requiredPassRateThreshold)).Count();
-            int skippedCount = results.Where(r => !r.Passed && r.PassedOrUnreliable(requiredPassRateThreshold)).Count();
+            int failedCount = results.Where(r => !r.Passed).Count();
+            int skippedCount = results.Where(r => (!r.Passed && r.Skipped)).Count();
 
             var root = new XElement("assemblies");
 
@@ -521,15 +504,15 @@ namespace HelixTestHelpers
             assembly.SetAttributeValue("run-date", DateTime.Now.ToString("yyyy-MM-dd"));
 
             // This doesn't need to be completely accurate since it's not exposed anywhere.
-            // If we need accurate an start time we can probably calculate it from the te.wtl file, but for
+            // If we need an accurate start time we can probably calculate it from the te.wtl file, but for
             // now this is fine.
             assembly.SetAttributeValue("run-time", (DateTime.Now - testPass.TestPassExecutionTime).ToString("hh:mm:ss"));
-            
+
             assembly.SetAttributeValue("total", resultCount);
             assembly.SetAttributeValue("passed", passedCount);
             assembly.SetAttributeValue("failed", failedCount);
             assembly.SetAttributeValue("skipped", skippedCount);
-            
+
             assembly.SetAttributeValue("time", (int)testPass.TestPassExecutionTime.TotalSeconds);
             assembly.SetAttributeValue("errors", 0);
             root.Add(assembly);
@@ -554,15 +537,16 @@ namespace HelixTestHelpers
                 test.SetAttributeValue("method", methodName);
 
                 test.SetAttributeValue("time", result.ExecutionTime.TotalSeconds);
-                
+
                 string resultString = string.Empty;
-                
-                if (result.Passed)
+
+                if (result.Passed && !result.Skipped)
                 {
                     resultString = "Pass";
                 }
-                else if(result.PassedOrUnreliable(requiredPassRateThreshold))
+                else if (result.Skipped)
                 {
+
                     resultString = "Skip";
                 }
                 else
@@ -570,67 +554,61 @@ namespace HelixTestHelpers
                     resultString = "Fail";
                 }
 
-                
-                test.SetAttributeValue("result", resultString);
 
                 if (!result.Passed)
                 {
-                    // If a test failed, we'll have rerun it multiple times.
-                    // We'll save the subresults to a JSON text file that we'll upload to the helix results container -
-                    // this allows it to be as long as we want, whereas the reason field in Azure DevOps has a 4000 character limit.
-                    string subResultsFileName = methodName + "_subresults.json";
-                    string subResultsFilePath = Path.Combine(Path.GetDirectoryName(wttInputPath), subResultsFileName);
-					
-                    if (result.PassedOrUnreliable(requiredPassRateThreshold))
+                    if (result.Skipped)
                     {
                         var reason = new XElement("reason");
-                        reason.Add(new XCData(GetUploadedFileUrl(subResultsFileName, helixResultsContainerUri, helixResultsContainerRsas)));
+                        reason.Add(new XCData("Test skipped"));
                         test.Add(reason);
                     }
-                    else
-                    {
+                    else {
                         var failure = new XElement("failure");
                         var message = new XElement("message");
-						message.Add(new XCData(GetUploadedFileUrl(subResultsFileName, helixResultsContainerUri, helixResultsContainerRsas)));
+                        message.Add(new XCData("Test failed"));
                         failure.Add(message);
                         test.Add(failure);
                     }
                 }
+
+                test.SetAttributeValue("result", resultString);
+
                 collection.Add(test);
             }
 
             File.WriteAllText(xunitOutputPath, root.ToString());
         }
-        
+
         private JsonSerializableTestResult ConvertToSerializableResult(TestResult rerunResult, string[] uniqueErrors)
         {
             var serializableResult = new JsonSerializableTestResult();
-            
+
             serializableResult.outcome = rerunResult.Passed ? "Passed" : "Failed";
             serializableResult.duration = (int)Math.Round(rerunResult.ExecutionTime.TotalMilliseconds);
-            
+
             if (!rerunResult.Passed)
             {
                 serializableResult.log = Path.GetFileName(rerunResult.SourceWttFile);
-                
+
                 if (rerunResult.Screenshots.Any())
                 {
                     List<string> screenshots = new List<string>();
-                    
+
                     foreach (var screenshot in rerunResult.Screenshots)
                     {
                         screenshots.Add(Path.GetFileName(screenshot));
                     }
-                    
+
                     serializableResult.screenshots = screenshots.ToArray();
                 }
-                
+
                 // To conserve space, we'll log the index of the error to index in a list of unique errors rather than
                 // jotting down every single error in its entirety. We'll add one to the result so we can avoid
                 // serializing this property when it has the default value of 0.
                 serializableResult.errorIndex = Array.IndexOf(uniqueErrors, rerunResult.Details) + 1;
             }
-            
+
             return serializableResult;
         }
 
@@ -639,7 +617,7 @@ namespace HelixTestHelpers
             var filename = Path.GetFileName(filePath);
             return string.Format("{0}/{1}{2}", helixResultsContainerUri, filename, helixResultsContainerRsas);
         }
-		
+
 		private string GetTestNameSeparator(string testname)
         {
             var separatorString = ".";

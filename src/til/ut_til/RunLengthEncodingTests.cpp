@@ -190,7 +190,7 @@ class RunLengthEncodingTests
 
         // We're testing replace() elsewhere, but this is special:
         // This ensures that even if we're default constructed we can add data.
-        rle.replace(0, 0, { 1, 5 });
+        rle.replace(0, 0, rle_type{ 1, 5 });
         VERIFY_ARE_EQUAL(5u, rle.size());
         VERIFY_IS_FALSE(rle.empty());
     }

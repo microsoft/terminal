@@ -21,14 +21,18 @@ Revision History:
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
+constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
+constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
+
 #include "ConsoleArguments.hpp"
 #include "../renderer/inc/RenderSettings.hpp"
+#include "../buffer/out/cursor.h"
 
-enum class UseDx : DWORD
+enum class SettingsTextMeasurementMode : DWORD
 {
-    Disabled = 0,
-    DxEngine,
-    AtlasEngine,
+    Graphemes,
+    Wcswidth,
+    Console,
 };
 
 class Settings
@@ -50,17 +54,11 @@ public:
     RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
     const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
-    DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
+    DWORD GetDefaultVirtTermLevel() const;
+    void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
-
-    bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
-
-    bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -178,66 +176,77 @@ public:
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
     void CalculateDefaultColorIndices() noexcept;
+    void SaveDefaultRenderSettings() noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    UseDx GetUseDx() const noexcept;
+    std::wstring_view GetAnswerbackMessage() const noexcept;
+
+    DWORD GetMSAADelay() const noexcept;
+    DWORD GetUIADelay() const noexcept;
+    bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
+    SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
+    void SetTextMeasurementMode(SettingsTextMeasurementMode mode) noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
 
 private:
     RenderSettings _renderSettings;
 
-    DWORD _dwHotKey;
-    DWORD _dwStartupFlags;
-    WORD _wFillAttribute;
-    WORD _wPopupFillAttribute;
-    WORD _wShowWindow; // used when window is created
-    WORD _wReserved;
+    DWORD _dwHotKey{ 0 };
+    DWORD _dwStartupFlags{ 0 };
+    WORD _wFillAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE }; // White (not bright) on black by default
+    WORD _wPopupFillAttribute{ FOREGROUND_RED | FOREGROUND_BLUE | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY }; // Purple on white (bright) by default
+    WORD _wShowWindow{ SW_SHOWNORMAL }; // used when window is created
+    WORD _wReserved{ 0 };
     // START - This section filled via memcpy from shortcut properties. Do not rearrange/change.
     COORD _dwScreenBufferSize;
     COORD _dwWindowSize; // this is in characters.
     COORD _dwWindowOrigin; // used when window is created
-    DWORD _nFont;
+    DWORD _nFont{ 0 };
     COORD _dwFontSize;
-    UINT _uFontFamily;
-    UINT _uFontWeight;
+    UINT _uFontFamily{ 0 };
+    UINT _uFontWeight{ 0 };
     WCHAR _FaceName[LF_FACESIZE];
-    UINT _uCursorSize;
-    BOOL _bFullScreen; // deprecated
-    BOOL _bQuickEdit;
-    BOOL _bInsertMode; // used by command line editing
-    BOOL _bAutoPosition;
-    UINT _uHistoryBufferSize;
-    UINT _uNumberOfHistoryBuffers;
-    BOOL _bHistoryNoDup;
+    UINT _uCursorSize{ Cursor::CURSOR_SMALL_SIZE };
+    BOOL _bFullScreen{ FALSE }; // deprecated
+    BOOL _bQuickEdit{ TRUE };
+    BOOL _bInsertMode{ TRUE }; // used by command line editing
+    BOOL _bAutoPosition{ TRUE };
+    UINT _uHistoryBufferSize{ DEFAULT_NUMBER_OF_COMMANDS };
+    UINT _uNumberOfHistoryBuffers{ DEFAULT_NUMBER_OF_BUFFERS };
+    BOOL _bHistoryNoDup{ FALSE };
     // END - memcpy
     UINT _uCodePage;
-    UINT _uScrollScale;
-    bool _fTrimLeadingZeros;
-    bool _fEnableColorSelection;
-    bool _bLineSelection;
-    bool _bWrapText; // whether to use text wrapping when resizing the window
-    bool _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
-    BYTE _bWindowAlpha; // describes the opacity of the window
+    UINT _uScrollScale{ 1 };
+    bool _fTrimLeadingZeros{ false };
+    bool _fEnableColorSelection{ false };
+    bool _bLineSelection{ true };
+    bool _bWrapText{ true }; // whether to use text wrapping when resizing the window
+    bool _fCtrlKeyShortcutsDisabled{ false }; // disables Ctrl+<something> key intercepts
+    BYTE _bWindowAlpha{ BYTE_MAX }; // describes the opacity of the window. 255 alpha = opaque. 0 = transparent.
 
-    bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
+    bool _fFilterOnPaste{ false }; // should we filter text when the user pastes? (e.g. remove <tab>)
     std::wstring _LaunchFaceName;
-    bool _fAllowAltF4Close;
-    DWORD _dwVirtTermLevel;
-    bool _fAutoReturnOnNewline;
-    bool _fRenderGridWorldwide;
-    UseDx _fUseDx;
-    bool _fCopyColor;
+    bool _fAllowAltF4Close{ true };
+    DWORD _dwVirtTermLevel{ 0 };
+    DWORD _msaaDelay = 100;
+    DWORD _uiaDelay = 25;
+    SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
+    bool _fUseDx{ false };
+    bool _fCopyColor{ false };
+    bool _fEnableBuiltinGlyphs = true;
 
     // this is used for the special STARTF_USESIZE mode.
-    bool _fUseWindowSizePixels;
+    bool _fUseWindowSizePixels{ false };
     COORD _dwWindowSizePixels;
 
     CursorType _CursorType;
 
-    bool _fInterceptCopyPaste;
+    bool _fInterceptCopyPaste{ false };
 
-    bool _TerminalScrolling;
+    bool _TerminalScrolling = true;
+    WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };

@@ -16,9 +16,7 @@ ConsoleHandleData::ConsoleHandleData(const ACCESS_MASK amAccess,
                                      const ULONG ulShareAccess) :
     _ulHandleType(HandleType::NotReady),
     _amAccess(amAccess),
-    _ulShareAccess(ulShareAccess),
-    _pvClientPointer(nullptr),
-    _pClientInput(nullptr)
+    _ulShareAccess(ulShareAccess)
 {
 }
 
@@ -273,7 +271,18 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
     LOG_IF_FAILED(pScreenInfo->FreeIoHandle(this));
     if (!pScreenInfo->HasAnyOpenHandles())
     {
+        auto& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto oldSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+        auto writer = gci.GetVtWriter();
+
         SCREEN_INFORMATION::s_RemoveScreenBuffer(pScreenInfo);
+
+        if (writer && gci.HasActiveOutputBuffer())
+        {
+            auto& newContext = gci.GetActiveOutputBuffer();
+            writer.WriteScreenInfo(newContext, oldSize);
+            writer.Submit();
+        }
     }
 
     return S_OK;

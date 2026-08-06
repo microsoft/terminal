@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "WexTestClass.h"
 
+#include <til/replace.h>
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

@@ -37,7 +37,6 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\AccessibilityNotifier.cpp \
     ..\clipboard.cpp \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
@@ -50,7 +49,6 @@ SOURCES = \
     ..\UiaTextRange.cpp \
     ..\window.cpp \
     ..\windowdpiapi.cpp \
-    ..\windowime.cpp \
     ..\windowio.cpp \
     ..\WindowMetrics.cpp \
     ..\windowproc.cpp \
@@ -61,4 +59,5 @@ INCLUDES = \
     ..; \
 
 TARGETLIBS = \
+    $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib  \

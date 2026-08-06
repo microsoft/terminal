@@ -25,17 +25,15 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         InteractDispatch();
 
-        bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-        bool WriteCtrlKey(const KeyEvent& event) override;
-        bool WriteString(const std::wstring_view string) override;
-        bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const VTParameter parameter1,
-                                const VTParameter parameter2) override; // DTTERM_WindowManipulation
-        bool MoveCursor(const VTInt row, const VTInt col) override;
-
         bool IsVtInputEnabled() const override;
 
-        bool FocusChanged(const bool focused) const override;
+        void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) override;
+        void WriteCtrlKey(const INPUT_RECORD& event) override;
+        void WriteString(std::wstring_view string) override;
+        void WriteStringRaw(std::wstring_view string) override;
+        void WindowManipulation(DispatchTypes::WindowManipulationType function, VTParameter parameter1, VTParameter parameter2) override;
+        void MoveCursor(VTInt row, VTInt col) override;
+        void FocusChanged(bool focused) override;
 
     private:
         ConhostInternalGetSet _api;

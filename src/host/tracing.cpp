@@ -6,6 +6,12 @@
 #include "../types/UiaTextRangeBase.hpp"
 #include "../types/ScreenInfoUiaProviderBase.h"
 
+TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
+                             "Microsoft.Windows.Console.Host",
+                             // {fe1ff234-1f09-50a8-d38d-c44fab43e818}
+                             (0xfe1ff234, 0x1f09, 0x50a8, 0xd3, 0x8d, 0xc4, 0x4f, 0xab, 0x43, 0xe8, 0x18),
+                             TraceLoggingOptionMicrosoftTelemetry());
+
 using namespace Microsoft::Console::Types;
 
 // NOTE: See `til.h` for which keyword flags are reserved
@@ -18,7 +24,7 @@ enum TraceKeywords
     Output = 0x008, // _DBGOUTPUT
     General = 0x100,
     Input = 0x200,
-    API = 0x400,
+    //API = 0x400, // No longer used
     UIA = 0x800,
     CookedRead = 0x1000,
     ConsoleAttachDetach = 0x2000,
@@ -26,240 +32,7 @@ enum TraceKeywords
 };
 DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
 
-// Routine Description:
-// - Creates a tracing object to assist with automatically firing a stop event
-//   when this object goes out of scope.
-// - Give it back to the caller and they will release it when the event period is over.
-// Arguments:
-// - onExit - Function to process when the object is destroyed (on exit)
-Tracing::Tracing(std::function<void()> onExit) :
-    _onExit(onExit)
-{
-}
-
-// Routine Description:
-// - Destructs a tracing object, running any on exit routine, if necessary.
-Tracing::~Tracing()
-{
-    if (_onExit)
-    {
-        _onExit();
-    }
-}
-
-// Routine Description:
-// - Provides generic tracing for all API call types in the form of
-//   start/stop period events for timing and region-of-interest purposes
-//   while doing performance analysis.
-// Arguments:
-// - result - Reference to the area where the result code from the Api call
-//            will be stored for use in the stop event.
-// - traceName - The name of the API call to list in the trace details
-// Return Value:
-// - An object for the caller to hold until the API call is complete.
-//   Then destroy it to signal that the call is over so the stop trace can be written.
-Tracing Tracing::s_TraceApiCall(const NTSTATUS result, PCSTR traceName)
-{
-    // clang-format off
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "ApiCall",
-        TraceLoggingString(traceName, "ApiName"),
-        TraceLoggingOpcode(WINEVENT_OPCODE_START),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-
-    return Tracing([traceName, &result] {
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ApiCall",
-            TraceLoggingString(traceName, "ApiName"),
-            TraceLoggingHResult(result, "Result"),
-            TraceLoggingOpcode(WINEVENT_OPCODE_STOP),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-            TraceLoggingKeyword(TraceKeywords::API));
-    });
-    // clang-format on
-}
-
 ULONG Tracing::s_ulDebugFlag = 0x0;
-
-void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_GetLargestWindowSize",
-        TraceLoggingHexInt32(status, "ResultCode"),
-        TraceLoggingInt32(a->Size.X, "MaxWindowWidthInChars"),
-        TraceLoggingInt32(a->Size.Y, "MaxWindowHeightInChars"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
-
-void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet)
-{
-    // Duplicate copies required by TraceLogging documentation ("don't get cute" examples)
-    // Using logic inside these macros can make problems. Do all logic outside macros.
-
-    if (fSet)
-    {
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "API_SetConsoleScreenBufferInfo",
-            TraceLoggingHexInt32(status, "ResultCode"),
-            TraceLoggingInt32(a->Size.X, "BufferWidthInChars"),
-            TraceLoggingInt32(a->Size.Y, "BufferHeightInChars"),
-            TraceLoggingInt32(a->CurrentWindowSize.X, "WindowWidthInChars"),
-            TraceLoggingInt32(a->CurrentWindowSize.Y, "WindowHeightInChars"),
-            TraceLoggingInt32(a->MaximumWindowSize.X, "MaxWindowWidthInChars"),
-            TraceLoggingInt32(a->MaximumWindowSize.Y, "MaxWindowHeightInChars"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-            TraceLoggingKeyword(TraceKeywords::API));
-    }
-    else
-    {
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "API_GetConsoleScreenBufferInfo",
-            TraceLoggingHexInt32(status, "ResultCode"),
-            TraceLoggingInt32(a->Size.X, "BufferWidthInChars"),
-            TraceLoggingInt32(a->Size.Y, "BufferHeightInChars"),
-            TraceLoggingInt32(a->CurrentWindowSize.X, "WindowWidthInChars"),
-            TraceLoggingInt32(a->CurrentWindowSize.Y, "WindowHeightInChars"),
-            TraceLoggingInt32(a->MaximumWindowSize.X, "MaxWindowWidthInChars"),
-            TraceLoggingInt32(a->MaximumWindowSize.Y, "MaxWindowHeightInChars"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-            TraceLoggingKeyword(TraceKeywords::API));
-    }
-}
-
-void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_SetConsoleScreenBufferSize",
-        TraceLoggingHexInt32(status, "ResultCode"),
-        TraceLoggingInt32(a->Size.X, "BufferWidthInChars"),
-        TraceLoggingInt32(a->Size.Y, "BufferHeightInChars"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
-
-void Tracing::s_TraceApi(const NTSTATUS status, const CONSOLE_SETWINDOWINFO_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_SetConsoleWindowInfo",
-        TraceLoggingHexInt32(status, "ResultCode"),
-        TraceLoggingBool(a->Absolute, "IsWindowRectAbsolute"),
-        TraceLoggingInt32(a->Window.Left, "WindowRectLeft"),
-        TraceLoggingInt32(a->Window.Right, "WindowRectRight"),
-        TraceLoggingInt32(a->Window.Top, "WindowRectTop"),
-        TraceLoggingInt32(a->Window.Bottom, "WindowRectBottom"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
-
-void Tracing::s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a)
-{
-    // clang-format off
-    if (a->Unicode)
-    {
-        const auto buf = static_cast<const wchar_t* const>(buffer);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "API_WriteConsole",
-            TraceLoggingBoolean(a->Unicode, "Unicode"),
-            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
-            TraceLoggingCountedWideString(buf, static_cast<UINT16>(a->NumBytes / sizeof(wchar_t)), "input buffer"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-            TraceLoggingKeyword(TraceKeywords::API));
-    }
-    else
-    {
-        const auto buf = static_cast<const char* const>(buffer);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "API_WriteConsole",
-            TraceLoggingBoolean(a->Unicode, "Unicode"),
-            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
-            TraceLoggingCountedString(buf, static_cast<UINT16>(a->NumBytes / sizeof(char)), "input buffer"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-            TraceLoggingKeyword(TraceKeywords::API));
-    }
-    // clang-format on
-}
-
-void Tracing::s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_GetConsoleScreenBufferInfo",
-        TraceLoggingInt16(a->Size.X, "Size.X"),
-        TraceLoggingInt16(a->Size.Y, "Size.Y"),
-        TraceLoggingInt16(a->CursorPosition.X, "CursorPosition.X"),
-        TraceLoggingInt16(a->CursorPosition.Y, "CursorPosition.Y"),
-        TraceLoggingInt16(a->ScrollPosition.X, "ScrollPosition.X"),
-        TraceLoggingInt16(a->ScrollPosition.Y, "ScrollPosition.Y"),
-        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
-        TraceLoggingInt16(a->CurrentWindowSize.X, "CurrentWindowSize.X"),
-        TraceLoggingInt16(a->CurrentWindowSize.Y, "CurrentWindowSize.Y"),
-        TraceLoggingInt16(a->MaximumWindowSize.X, "MaximumWindowSize.X"),
-        TraceLoggingInt16(a->MaximumWindowSize.Y, "MaximumWindowSize.Y"),
-        TraceLoggingHexUInt16(a->PopupAttributes, "PopupAttributes"),
-        TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
-        TraceLoggingHexUInt32FixedArray((UINT32 const*)a->ColorTable, _countof(a->ColorTable), "ColorTable"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-    static_assert(sizeof(UINT32) == sizeof(*a->ColorTable), "a->ColorTable");
-}
-
-void Tracing::s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_view handleType)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_GetConsoleMode",
-        TraceLoggingHexUInt32(a->Mode, "Mode"),
-        TraceLoggingCountedWideString(handleType.data(), gsl::narrow_cast<ULONG>(handleType.size()), "Handle type"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
-
-void Tracing::s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_SetConsoleTextAttribute",
-        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
-
-void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "API_WriteConsoleOutput",
-        TraceLoggingInt16(a->WriteCoord.X, "WriteCoord.X"),
-        TraceLoggingInt16(a->WriteCoord.Y, "WriteCoord.Y"),
-        TraceLoggingHexUInt32(a->StringType, "StringType"),
-        TraceLoggingUInt32(a->NumRecords, "NumRecords"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::API));
-}
 
 void Tracing::s_TraceWindowViewport(const Viewport& viewport)
 {
@@ -406,17 +179,18 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
     }
 }
 
-void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
+void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, const std::wstring_view& text)
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead))
     {
+        const auto length = ::base::saturated_cast<ULONG>(text.size());
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "CookedRead",
-            TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
-            TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
-            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
-            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingCountedWideString(text.data(), length, "ReadBuffer"),
+            TraceLoggingULong(length, "ReadBufferLength"),
+            TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::CookedRead));
     }
@@ -426,15 +200,12 @@ void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConso
 {
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
     {
-        auto bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
-
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "ConsoleAttachDetach",
-            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
-            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingPid(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingFileTime(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingBool(bIsAttach, "IsAttach"),
-            TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),
             TraceLoggingKeyword(TraceKeywords::ConsoleAttachDetach));
     }

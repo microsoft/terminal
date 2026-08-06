@@ -8,11 +8,9 @@ namespace Microsoft.Terminal.Wpf
     using System;
     using System.Runtime.InteropServices;
     using System.Windows;
-    using System.Windows.Automation;
     using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
-    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -25,7 +23,6 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
@@ -34,50 +31,14 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         public TerminalContainer()
         {
+            // WPF & TSF can't deal with us setting TF_TMAE_CONSOLE on the UI thread.
+            // It simply crashes on Windows 10 if you use the Emoji picker.
+            // (On later versions of Windows it just doesn't work.)
+            NativeMethods.AvoidBuggyTSFConsoleFlags();
+
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
-
-            var blinkTime = NativeMethods.GetCaretBlinkTime();
-
-            if (blinkTime == uint.MaxValue)
-            {
-                return;
-            }
-
-            this.blinkTimer = new DispatcherTimer();
-            this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
-            this.blinkTimer.Tick += (_, __) =>
-            {
-                if (this.terminal != IntPtr.Zero)
-                {
-                    NativeMethods.TerminalBlinkCursor(this.terminal);
-                }
-            };
-        }
-
-        /// <summary>
-        /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
-        /// force the usage of the WPF automation peer. We explicitly mark it as
-        /// not handled and don't return an automation peer in "OnCreateAutomationPeer" below.
-        /// This forces the message to go down to the HwndTerminal where we return terminal's UiaProvider.
-        /// </summary>
-        /// <inheritdoc/>
-        protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == (int)NativeMethods.WindowMessage.WM_GETOBJECT)
-            {
-                handled = false;
-                return IntPtr.Zero;
-            }
-
-            return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
-        }
-
-        /// <inheritdoc/>
-        protected override AutomationPeer OnCreateAutomationPeer()
-        {
-            return null;
         }
 
         /// <summary>
@@ -139,9 +100,23 @@ namespace Microsoft.Terminal.Wpf
                     this.connection.TerminalOutput -= this.Connection_TerminalOutput;
                 }
 
+                this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x001bc\x1b]104\x1b\\")); // reset console/clear screen - https://github.com/microsoft/terminal/pull/15062#issuecomment-1505654110
+                var wasNull = this.connection == null;
                 this.connection = value;
-                this.connection.TerminalOutput += this.Connection_TerminalOutput;
-                this.connection.Start();
+                if (this.connection != null)
+                {
+                    if (wasNull)
+                    {
+                        this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25h")); // show cursor
+                    }
+
+                    this.connection.TerminalOutput += this.Connection_TerminalOutput;
+                    this.connection.Start();
+                }
+                else
+                {
+                    this.Connection_TerminalOutput(this, new TerminalOutputEventArgs("\x1b[?25l")); // hide cursor
+                }
             }
         }
 
@@ -274,6 +249,30 @@ namespace Microsoft.Terminal.Wpf
             }
         }
 
+        /// <summary>
+        /// WPF's HwndHost likes to mark the WM_GETOBJECT message as handled to
+        /// force the usage of the WPF automation peer. We explicitly mark it as
+        /// not handled and don't return an automation peer in "OnCreateAutomationPeer" below.
+        /// This forces the message to go down to the HwndTerminal where we return terminal's UiaProvider.
+        /// </summary>
+        /// <inheritdoc/>
+        protected override IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == (int)NativeMethods.WindowMessage.WM_GETOBJECT)
+            {
+                handled = false;
+                return IntPtr.Zero;
+            }
+
+            return base.WndProc(hwnd, msg, wParam, lParam, ref handled);
+        }
+
+        /// <inheritdoc/>
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return null;
+        }
+
         /// <inheritdoc/>
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
@@ -299,15 +298,6 @@ namespace Microsoft.Terminal.Wpf
             if (dpiScale.PixelsPerInchX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
             {
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
-            }
-
-            if (NativeMethods.GetFocus() == this.hwnd)
-            {
-                this.blinkTimer?.Start();
-            }
-            else
-            {
-                NativeMethods.TerminalSetCursorVisible(this.terminal, false);
             }
 
             return new HandleRef(this, this.hwnd);
@@ -347,13 +337,10 @@ namespace Microsoft.Terminal.Wpf
                 switch ((NativeMethods.WindowMessage)msg)
                 {
                     case NativeMethods.WindowMessage.WM_SETFOCUS:
-                        NativeMethods.TerminalSetFocus(this.terminal);
-                        this.blinkTimer?.Start();
+                        NativeMethods.TerminalSetFocused(this.terminal, true);
                         break;
                     case NativeMethods.WindowMessage.WM_KILLFOCUS:
-                        NativeMethods.TerminalKillFocus(this.terminal);
-                        this.blinkTimer?.Stop();
-                        NativeMethods.TerminalSetCursorVisible(this.terminal, false);
+                        NativeMethods.TerminalSetFocused(this.terminal, false);
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
@@ -362,12 +349,8 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_SYSKEYDOWN: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         {
-                            // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-                            NativeMethods.TerminalSetCursorVisible(this.terminal, true);
-
                             UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
                             NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
-                            this.blinkTimer?.Start();
                             break;
                         }
 
@@ -430,41 +413,13 @@ namespace Microsoft.Terminal.Wpf
             return IntPtr.Zero;
         }
 
-        private void LeftClickHandler(int lParam)
-        {
-            var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
-            var x = lParam & 0xffff;
-            var y = lParam >> 16;
-            var cursorPosition = new NativeMethods.TilPoint
-            {
-                X = x,
-                Y = y,
-            };
-
-            NativeMethods.TerminalStartSelection(this.terminal, cursorPosition, altPressed);
-        }
-
-        private void MouseMoveHandler(int wParam, int lParam)
-        {
-            if ((wParam & 0x0001) == 1)
-            {
-                var x = lParam & 0xffff;
-                var y = lParam >> 16;
-                var cursorPosition = new NativeMethods.TilPoint
-                {
-                    X = x,
-                    Y = y,
-                };
-                NativeMethods.TerminalMoveSelection(this.terminal, cursorPosition);
-            }
-        }
-
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
-            if (this.terminal == IntPtr.Zero)
+            if (this.terminal == IntPtr.Zero || string.IsNullOrEmpty(e.Data))
             {
                 return;
             }
+
             NativeMethods.TerminalSendOutput(this.terminal, e.Data);
         }
 

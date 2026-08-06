@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         _CloseRenameBox();
         if (!_renameCancelled)
         {
-            _TitleChangeRequestedHandlers(HeaderRenamerTextBox().Text());
+            TitleChangeRequested.raise(HeaderRenamerTextBox().Text());
         }
     }
 
@@ -132,7 +132,7 @@ namespace winrt::TerminalApp::implementation
         {
             HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
             HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
-            _RenameEndedHandlers(*this, nullptr);
+            RenameEnded.raise(*this, nullptr);
         }
     }
 }

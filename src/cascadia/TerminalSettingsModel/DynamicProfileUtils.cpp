@@ -9,7 +9,7 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 
 // Method Description:
-// - Helper function for creating a skeleton default profile with a pre-populated
+// - Helper function for creating a skeleton default profile with a prepopulated
 //   guid and name.
 // Arguments:
 // - name: the name of the new profile.
@@ -17,7 +17,7 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 // - A Profile, ready to be filled in
 winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile> CreateDynamicProfile(const std::wstring_view& name)
 {
-    const auto profileGuid = Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+    const auto profileGuid = Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ name }));
 
     std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));

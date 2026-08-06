@@ -8,7 +8,6 @@
 #include "../host/globals.h"
 #include "../host/handle.h"
 #include "../host/server.h"
-#include "../host/telemetry.hpp"
 
 #include "../host/ntprivapi.hpp"
 
@@ -27,7 +26,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto a = &m->u.consoleMsgL3.GetConsoleProcessList;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
 
     PVOID Buffer;
     ULONG BufferSize;
@@ -60,7 +58,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                                              _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const auto a = &m->u.consoleMsgL1.GetConsoleLangId;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
 
     // TODO: MSFT: 9115192 - This should probably just ask through GetOutputCP and convert it ourselves on this side.
     return m->_pApiRoutines->GetConsoleLangIdImpl(a->LangId);
@@ -71,7 +68,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
 
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -93,7 +89,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
             RETURN_IF_FAILED(gci.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
                                                                     0,
                                                                     a->ProcessGroupId,
-                                                                    ProcessHandle,
                                                                     nullptr));
         }
     }

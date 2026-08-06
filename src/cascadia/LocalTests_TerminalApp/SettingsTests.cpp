@@ -4,13 +4,15 @@
 #include "pch.h"
 
 #include "../TerminalApp/TerminalPage.h"
-#include "../LocalTests_SettingsModel/TestUtils.h"
+#include "../UnitTests_SettingsModel/TestUtils.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -98,6 +100,26 @@ namespace TerminalAppLocalTests
                 }
             }
         }
+        void _logCommands(winrt::Windows::Foundation::Collections::IVector<Command> commands, const int indentation = 1)
+        {
+            if (indentation == 1)
+            {
+                Log::Comment((commands.Size() == 0) ? L"Commands:\n  <none>" : L"Commands:");
+            }
+            for (const auto& cmd : commands)
+            {
+                Log::Comment(fmt::format(L"{0:>{1}}* {2}",
+                                         L"",
+                                         indentation,
+                                         cmd.Name())
+                                 .c_str());
+
+                if (cmd.HasNestedCommands())
+                {
+                    _logCommandNames(cmd.NestedCommands(), indentation + 2);
+                }
+            }
+        }
     };
 
     void SettingsTests::TestIterateCommands()
@@ -156,22 +178,24 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", terminalArgs.Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command profile0", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -180,16 +204,18 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile1");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command profile1", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -198,16 +224,18 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command profile2", command.Name());
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -216,12 +244,13 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
         }
     }
 
@@ -279,22 +308,25 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", terminalArgs.Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile0", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -303,16 +335,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile1", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -321,16 +356,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"Split pane, profile: profile2", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -339,12 +377,13 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
         }
     }
 
@@ -404,22 +443,25 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", terminalArgs.Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command profile0", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -428,16 +470,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile1\"");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command profile1\"", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -446,16 +491,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1\"", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1\"", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command profile2", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -464,12 +512,13 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
         }
     }
 
@@ -527,14 +576,15 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"Connect to ssh...");
+        auto rootCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"Connect to ssh...", rootCommand.Name());
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
@@ -621,14 +671,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto grandparentCommand = expandedCommands.Lookup(L"grandparent");
+        auto grandparentCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(grandparentCommand);
+        VERIFY_ARE_EQUAL(L"grandparent", grandparentCommand.Name());
+
         auto grandparentActionAndArgs = grandparentCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(grandparentActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, grandparentActionAndArgs.Action());
@@ -654,12 +706,13 @@ namespace TerminalAppLocalTests
             const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"ssh me@first.com", realArgs.TerminalArgs().Commandline());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@first.com", terminalArgs.Commandline());
 
             VERIFY_IS_FALSE(child.HasNestedCommands());
         }
@@ -674,12 +727,13 @@ namespace TerminalAppLocalTests
             const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"ssh me@second.com", realArgs.TerminalArgs().Commandline());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_FALSE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_TRUE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@second.com", terminalArgs.Commandline());
 
             VERIFY_IS_FALSE(child.HasNestedCommands());
         }
@@ -687,7 +741,7 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::TestNestedInIterableCommand()
     {
-        // This test checks a iterable command that includes a nested command.
+        // This test checks an iterable command that includes a nested command.
         // The commands should look like:
         //
         // <Command Palette>
@@ -744,17 +798,22 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
-        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        const std::vector<std::wstring> profileNames{ L"profile0", L"profile1", L"profile2" };
+        for (auto i = 0u; i < profileNames.size(); i++)
         {
-            winrt::hstring commandName{ name + L"..." };
-            auto command = expandedCommands.Lookup(commandName);
+            const auto& name{ profileNames[i] };
+            winrt::hstring commandName{ profileNames[i] + L"..." };
+
+            auto command = expandedCommands.GetAt(i);
+            VERIFY_ARE_EQUAL(commandName, command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -764,7 +823,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -775,17 +834,18 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: down, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -796,17 +856,18 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: right, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -817,12 +878,13 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
@@ -880,14 +942,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"New Tab With Profile...");
+        auto rootCommand = expandedCommands.GetAt(0);
         VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"New Tab With Profile...", rootCommand.Name());
+
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
         VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
@@ -896,8 +960,8 @@ namespace TerminalAppLocalTests
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
-            winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
-            auto command = rootCommand.NestedCommands().Lookup(commandName);
+            const auto childCommandName = fmt::format(FMT_COMPILE(L"New tab, profile: {}"), name);
+            auto command = rootCommand.NestedCommands().Lookup(childCommandName);
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -906,12 +970,13 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
             VERIFY_IS_FALSE(command.HasNestedCommands());
         }
@@ -982,13 +1047,16 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
 
-        auto rootCommand = expandedCommands.Lookup(L"New Pane...");
+        auto rootCommand = expandedCommands.GetAt(0);
+        VERIFY_IS_NOT_NULL(rootCommand);
+        VERIFY_ARE_EQUAL(L"New Pane...", rootCommand.Name());
+
         VERIFY_IS_NOT_NULL(rootCommand);
         auto rootActionAndArgs = rootCommand.ActionAndArgs();
         VERIFY_IS_NOT_NULL(rootActionAndArgs);
@@ -1010,7 +1078,7 @@ namespace TerminalAppLocalTests
 
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1021,17 +1089,18 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: down, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1042,17 +1111,18 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: right, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1063,12 +1133,13 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
                 VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
-                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+                auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+                VERIFY_IS_NOT_NULL(terminalArgs);
+                VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+                VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+                VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+                VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+                VERIFY_ARE_EQUAL(name, terminalArgs.Profile());
 
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
@@ -1197,16 +1268,17 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"${scheme.name}", terminalArgs.Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
-        _logCommandNames(expandedCommands.GetView());
+        const auto& expandedCommands{ settings.GlobalSettings().ActionMap().ExpandedCommands() };
+        _logCommands(expandedCommands);
 
         VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
 
@@ -1215,7 +1287,9 @@ namespace TerminalAppLocalTests
         // just easy tests to write.
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Campbell");
+            auto command = expandedCommands.GetAt(0);
+            VERIFY_ARE_EQUAL(L"iterable command Campbell", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1224,16 +1298,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"Campbell", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"Campbell", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Campbell PowerShell");
+            auto command = expandedCommands.GetAt(1);
+            VERIFY_ARE_EQUAL(L"iterable command Campbell PowerShell", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1242,16 +1319,19 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"Campbell PowerShell", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"Campbell PowerShell", terminalArgs.Profile());
         }
 
         {
-            auto command = expandedCommands.Lookup(L"iterable command Vintage");
+            auto command = expandedCommands.GetAt(2);
+            VERIFY_ARE_EQUAL(L"iterable command Vintage", command.Name());
+
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1260,12 +1340,13 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"Vintage", realArgs.TerminalArgs().Profile());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"Vintage", terminalArgs.Profile());
         }
     }
 
@@ -1331,18 +1412,19 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
+            VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=nullopt: DO auto elevate");
@@ -1353,18 +1435,19 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
+            VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=nullopt: don't auto elevate");
@@ -1375,18 +1458,19 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NULL(realArgs.TerminalArgs().Elevate());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
+            VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
 
         {
@@ -1398,19 +1482,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=false: don't auto elevate");
@@ -1421,19 +1506,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=false: don't auto elevate");
@@ -1444,19 +1530,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
 
         {
@@ -1468,19 +1555,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=true: DO auto elevate");
@@ -1490,19 +1578,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=true: DO auto elevate");
@@ -1513,19 +1602,20 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().Elevate());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Elevate().Value());
+            auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_IS_TRUE(terminalArgs.Commandline().empty());
+            VERIFY_IS_TRUE(terminalArgs.StartingDirectory().empty());
+            VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
+            VERIFY_IS_FALSE(terminalArgs.Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
+            VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
+            VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
     }
 

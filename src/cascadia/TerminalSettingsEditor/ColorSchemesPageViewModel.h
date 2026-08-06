@@ -26,8 +26,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void RequestDeleteCurrentScheme();
         void RequestEditSelectedScheme();
         void RequestSetSelectedSchemeAsDefault();
+        void RequestDuplicateCurrentScheme();
 
         bool CanDeleteCurrentScheme() const;
+
+        void SchemeListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ColorSchemesPageViewModel>::PropertyChanged;

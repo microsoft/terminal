@@ -7,7 +7,7 @@ This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-S
 git submodule update --init --recursive
 ```
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
+OpenConsole.slnx may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
 When using Visual Studio, be sure to set up the path for code formatting. To download the required clang-format.exe file, follow one of the building instructions below and run:
 ```powershell
@@ -103,7 +103,7 @@ If you want to use .nupkg files instead of the downloaded Nuget package, you can
 The Terminal is bundled as an `.msix`, which is produced by the `CascadiaPackage.wapproj` project. To build that project from the commandline, you can run the following (from a window you've already run `tools\razzle.cmd` in):
 
 ```cmd
-"%msbuild%" "%OPENCON%\OpenConsole.sln" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
+"%msbuild%" "%OPENCON%\OpenConsole.slnx" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
 ```
 
 This takes quite some time, and only generates an `msix`. It does not install the msix. To deploy the package:
@@ -154,3 +154,47 @@ popd
 The `bx` will build just the Terminal package, critically, populating the `CascadiaPackage.build.appxrecipe` file. Once that's been built, then the `DeployAppRecipe.exe` command can be used to deploy a loose layout in the same way that Visual Studio does.
 
 Notably, this method of building the Terminal package can't leverage the FastUpToDate check in Visual Studio, so the builds end up being considerably slower for the whole package, as cppwinrt does a lot of work before confirming that it's up to date and doing nothing.
+
+
+### Are you seeing `DEP0700: Registration of the app failed`?
+
+Once in a blue moon, I get a `DEP0700: Registration of the app failed.
+[0x80073CF6] error 0x80070020: Windows cannot register the package because of an
+internal error or low memory.` when trying to deploy in VS. For us, that can
+happen if the `OpenConsoleProxy.dll` gets locked up, in use by some other
+terminal package.
+
+Doing the equivalent command in powershell can give us more info:
+
+```pwsh
+Add-AppxPackage -register "Z:\dev\public\OpenConsole\src\cascadia\CascadiaPackage\bin\x64\Debug\AppX\AppxManifest.xml"
+```
+
+That'll suggest `NOTE: For additional information, look for [ActivityId]
+dbf551f1-83d0-0007-43e7-9cded083da01 in the Event Log or use the command line
+Get-AppPackageLog -ActivityID dbf551f1-83d0-0007-43e7-9cded083da01`. So do that:
+
+```pwsh
+Get-AppPackageLog -ActivityID dbf551f1-83d0-0007-43e7-9cded083da01
+```
+
+which will give you a lot of info. In my case, that revealed that the platform
+couldn't delete the packaged com entries. The key line was: `AppX Deployment
+operation failed with error 0x0 from API Logging data because access was denied
+for file:
+C:\ProgramData\Microsoft\Windows\AppRepository\Packages\WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe,
+user SID: S-1-5-18`
+
+Take that path, and
+```pwsh
+sudo start C:\ProgramData\Microsoft\Windows\AppRepository\Packages\WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe
+```
+
+(use `sudo`, since the path is otherwise locked down). From there, go into the
+`PackagedCom` folder, and open [File
+Locksmith](https://learn.microsoft.com/en-us/windows/powertoys/file-locksmith)
+(or Process Explorer, if you're more familiar with that) on
+`OpenConsoleProxy.dll`. Just go ahead and immediately re-launch it as admin,
+too. That should list off a couple terminal processes that are just hanging
+around. Go ahead and end them all. You should be good to deploy again after
+that.

@@ -1,4 +1,3 @@
-alice
 aliceblue
 antiquewhite
 blanchedalmond
@@ -39,7 +38,6 @@ gainsboro
 ghostwhite
 greenyellow
 hotpink
-indian
 indianred
 lavenderblush
 lawngreen
@@ -74,7 +72,6 @@ mediumvioletred
 midnightblue
 mintcream
 mistyrose
-navajo
 navajowhite
 navyblue
 oldlace
@@ -88,7 +85,6 @@ papayawhip
 peachpuff
 peru
 powderblue
-rebecca
 rebeccapurple
 rosybrown
 royalblue
@@ -109,9 +105,4 @@ webgrey
 webmaroon
 webpurple
 whitesmoke
-xaroon
-xray
-xreen
-xrey
-xurple
 yellowgreen

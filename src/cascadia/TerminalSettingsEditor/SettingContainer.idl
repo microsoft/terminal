@@ -7,14 +7,25 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         SettingContainer();
 
+        void SetExpanded(Boolean expanded);
+
         IInspectable Header;
         static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
 
         String HelpText;
         static Windows.UI.Xaml.DependencyProperty HelpTextProperty { get; };
 
-        String CurrentValue;
+        String FontIconGlyph;
+        static Windows.UI.Xaml.DependencyProperty FontIconGlyphProperty { get; };
+
+        IInspectable CurrentValue;
         static Windows.UI.Xaml.DependencyProperty CurrentValueProperty { get; };
+
+        Windows.UI.Xaml.DataTemplate CurrentValueTemplate;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueTemplateProperty { get; };
+
+        String CurrentValueAccessibleName;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueAccessibleNameProperty { get; };
 
         Boolean HasSettingValue;
         static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };

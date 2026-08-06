@@ -5,8 +5,6 @@
 #include "DefaultTerminal.h"
 #include "DefaultTerminal.g.cpp"
 
-#include <LibraryResources.h>
-
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
@@ -37,9 +35,7 @@ winrt::hstring DefaultTerminal::Version() const
         return winrt::hstring{};
     }
 
-    fmt::wmemory_buffer buffer;
-    fmt::format_to(buffer, L"{}.{}.{}.{}", version.major, version.minor, version.build, version.revision);
-    return winrt::hstring{ buffer.data(), gsl::narrow_cast<winrt::hstring::size_type>(buffer.size()) };
+    return til::hstring_format(FMT_COMPILE(L"{}.{}.{}.{}"), version.major, version.minor, version.build, version.revision);
 }
 
 winrt::hstring DefaultTerminal::Author() const
@@ -99,7 +95,9 @@ bool DefaultTerminal::HasCurrent()
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
-    THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
+    // Just log if we fail to write the defterm configuration. It's not worth
+    // exploding over if the regkey is write-protected or something.
+    LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg));
 
     TraceLoggingWrite(g_hSettingsModelProvider,
                       "DefaultTerminalChanged",

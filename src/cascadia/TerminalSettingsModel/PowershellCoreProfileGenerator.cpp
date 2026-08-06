@@ -21,6 +21,7 @@ static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShel
 static constexpr std::wstring_view PWSH_EXE{ L"pwsh.exe" };
 static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_ICON{ L"ms-appx:///ProfileIcons/pwsh-preview.png" };
+static constexpr std::wstring_view GENERATOR_POWERSHELL_ICON{ L"ms-appx:///ProfileGeneratorIcons/PowerShell.png" };
 static constexpr std::wstring_view POWERSHELL_PREFERRED_PROFILE_NAME{ L"PowerShell" };
 
 namespace
@@ -157,7 +158,7 @@ static void _accumulateTraditionalLayoutPowerShellInstancesInDirectory(std::wstr
             const auto executable = versionedPath / PWSH_EXE;
             if (std::filesystem::exists(executable))
             {
-                const auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
+                const auto preview = versionedPath.filename().native().find(L"-preview") != std::wstring::npos;
                 const auto previewFlag = preview ? PowerShellFlags::Preview : PowerShellFlags::None;
                 out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()),
                                                      PowerShellFlags::Traditional | flags | previewFlag,
@@ -294,6 +295,16 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace() const noexcept
     return PowershellCoreGeneratorNamespace;
 }
 
+std::wstring_view PowershellCoreProfileGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"PowershellCoreProfileGeneratorDisplayName");
+}
+
+std::wstring_view PowershellCoreProfileGenerator::GetIcon() const noexcept
+{
+    return GENERATOR_POWERSHELL_ICON;
+}
+
 // Method Description:
 // - Checks if pwsh is installed, and if it is, creates a profile to launch it.
 // Arguments:
@@ -319,7 +330,8 @@ void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr
         profile->Commandline(winrt::hstring{ quotedCommandline });
 
         profile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
-        profile->DefaultAppearance().ColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().DarkColorSchemeName(L"Campbell");
+        profile->DefaultAppearance().LightColorSchemeName(L"Campbell");
         profile->Icon(winrt::hstring{ WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON });
 
         if (first)

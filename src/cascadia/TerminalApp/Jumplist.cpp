@@ -19,48 +19,13 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
         { 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 }, 29 \
     }
 
-// Function Description:
-// - This function guesses whether a string is a file path.
-static constexpr bool _isProbableFilePath(std::wstring_view path)
-{
-    // "C:X", "C:\X", "\\?", "\\."
-    // _this function rejects \??\ as a path_
-    if (path.size() >= 3)
-    {
-        const auto firstColon{ path.find(L':') };
-        if (firstColon == 1)
-        {
-            return true;
-        }
-
-        const auto prefix{ path.substr(0, 2) };
-        return prefix == LR"(//)" || prefix == LR"(\\)";
-    }
-    return false;
-}
-
-// Function Description:
-// - DestListLogoUri cannot take paths that are separated by / unless they're URLs.
-//   This function uses std::filesystem to normalize strings that appear to be file
-//   paths to have the "correct" slash direction.
-static std::wstring _normalizeIconPath(std::wstring_view path)
-{
-    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-    if (_isProbableFilePath(fullPath))
-    {
-        std::filesystem::path asPath{ fullPath };
-        return asPath.make_preferred().wstring();
-    }
-    return std::wstring{ fullPath };
-}
-
 // Method Description:
 // - Updates the items of the Jumplist based on the given settings.
 // Arguments:
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+safe_void_coroutine Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     if (!settings)
     {
@@ -78,6 +43,9 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
     // make sure to capture the settings _before_ the co_await
     const auto strongSettings = settings;
 
+    // Explorer APIs may block, so do it on a background thread.
+    //
+    // NOTE: Jumplist has no members, so we don't need to hold onto `this` here.
     co_await winrt::resume_background();
 
     try
@@ -121,10 +89,10 @@ void Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows:
     for (const auto& profile : profiles)
     {
         // Craft the arguments following "wt.exe"
-        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        auto args = fmt::format(FMT_COMPILE(L"-p {}"), to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
-        const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
+        const auto normalizedIconPath{ profile.Icon().Resolved() };
         const auto shLink = _createShellLink(profile.Name(), normalizedIconPath, args);
         THROW_IF_FAILED(jumplistItems->AddObject(shLink.get()));
     }
@@ -149,19 +117,39 @@ winrt::com_ptr<IShellLinkW> Jumplist::_createShellLink(const std::wstring_view n
     const auto module{ GetWtExePath() };
     THROW_IF_FAILED(sh->SetPath(module.data()));
     THROW_IF_FAILED(sh->SetArguments(args.data()));
+    auto propStore{ sh.as<IPropertyStore>() };
 
     PROPVARIANT titleProp;
     titleProp.vt = VT_LPWSTR;
     titleProp.pwszVal = const_cast<wchar_t*>(name.data());
 
-    PROPVARIANT iconProp;
-    iconProp.vt = VT_LPWSTR;
-    iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+    // Check for a comma in the path. If we find one we have an indirect icon. Parse the path into a file path and index/id.
+    auto commaPosition = path.find(L",");
+    if (commaPosition != std::wstring_view::npos)
+    {
+        const std::wstring iconPath{ path.substr(0, commaPosition) };
 
-    auto propStore{ sh.as<IPropertyStore>() };
+        // We dont want the comma included so add 1 to its position
+        if (const auto iconIndex = til::parse_signed<int>(path.substr(commaPosition + 1)))
+        {
+            THROW_IF_FAILED(sh->SetIconLocation(iconPath.data(), *iconIndex));
+        }
+    }
+    else if (til::ends_with(path, L"exe") || til::ends_with(path, L"dll"))
+    {
+        // We have a binary path but no index/id. Default to 0
+        THROW_IF_FAILED(sh->SetIconLocation(path.data(), 0));
+    }
+    else
+    {
+        PROPVARIANT iconProp;
+        iconProp.vt = VT_LPWSTR;
+        iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+
+        THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
+    }
+
     THROW_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
-    THROW_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
-
     THROW_IF_FAILED(propStore->Commit());
 
     return sh;

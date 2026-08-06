@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemeViewModel RequestAddNew();
         Boolean RequestRenameCurrentScheme(String newName);
         void RequestDeleteCurrentScheme();
+        void RequestDuplicateCurrentScheme();
         void RequestEditSelectedScheme();
         void RequestSetSelectedSchemeAsDefault();
 
@@ -27,5 +28,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanDeleteCurrentScheme { get; };
         ColorSchemesSubPage CurrentPage;
         Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> AllColorSchemes { get; };
+
+        void SchemeListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
     }
 }
