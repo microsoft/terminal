@@ -26,6 +26,7 @@ $ProhibitedUids = @(
     "ColorScheme_Rename",
     "Profile_ResetProfile",
     "Profile_DeleteProfile",
+    "Profile_DeleteUnfocusedAppearance",
     "Profiles_ColorSchemesNavigator",
     "Profiles_DefaultsNavigator"
 )
@@ -92,6 +93,11 @@ $ClassMap = @{
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::Profile_Appearance"
     }
+    "Microsoft::Terminal::Settings::Editor::Profiles_UnfocusedAppearance" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_UnfocusedAppearance"
+    }
     "Microsoft::Terminal::Settings::Editor::Profiles_Terminal" = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
         NavigationParam = "GlobalProfile_Nav"
@@ -112,8 +118,40 @@ $ClassMap = @{
 function IsProfileSubPage($pageClass)
 {
     return $pageClass -match "Editor::Profiles_Appearance" -or
+           $pageClass -match "Editor::Profiles_UnfocusedAppearance" -or
            $pageClass -match "Editor::Profiles_Terminal" -or
            $pageClass -match "Editor::Profiles_Advanced"
+}
+
+# Finds the first content-labeled control (CheckBox/ToggleSwitch/etc.) carrying an x:Uid
+# underneath $node. The search is recursive because these controls are frequently wrapped
+# in a layout panel (i.e. a StackPanel holding the control and its reset button), but it
+# never descends into a nested SettingsCard/SettingsExpander since those are indexed as
+# containers in their own right.
+function FindContentLabeledControl($node)
+{
+    foreach ($child in $node.ChildNodes)
+    {
+        if ($child.NodeType -ne [System.Xml.XmlNodeType]::Element)
+        {
+            continue
+        }
+        if (@("SettingsCard", "SettingsExpander") -contains $child.LocalName)
+        {
+            continue
+        }
+        if ((@("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $child.LocalName) -and
+            -not [string]::IsNullOrEmpty($child.GetAttribute("x:Uid")))
+        {
+            return $child
+        }
+        $descendant = FindContentLabeledControl $child
+        if ($null -ne $descendant)
+        {
+            return $descendant
+        }
+    }
+    return $null
 }
 
 if (-not (Test-Path $SourceDir)) { throw "SourceDir not found: $SourceDir" }
@@ -182,6 +220,41 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
+    elseif ($filename -eq "Profiles_Base.xaml")
+    {
+        # The navigator cards below are special:
+        # - no UID because we want to reuse existing resources to reduce localization burden
+        # - when selected, we want to navigate to the subpage (not focus the navigator)
+        $navigators = @(
+            @{ Resource = "Profile_Appearance/Header";                  SubPage = "BreadcrumbSubPage::Profile_Appearance" }
+            @{ Resource = "Profile_UnfocusedAppearanceTextBlock/Text";  SubPage = "BreadcrumbSubPage::Profile_UnfocusedAppearance" }
+            @{ Resource = "Profile_Terminal/Header";                    SubPage = "BreadcrumbSubPage::Profile_Terminal" }
+            @{ Resource = "Profile_Advanced/Header";                    SubPage = "BreadcrumbSubPage::Profile_Advanced" }
+        )
+        foreach ($nav in $navigators)
+        {
+            # Build-time entry: searchable from the profile defaults context
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $ClassMap[$pageClass].NavigationParam
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                SecondaryLabel  = "Nav_ProfileDefaults/Content"
+                File            = $filename
+            }
+            # Partial entry: instantiated per profile at runtime (the navigation arg is the profile VM).
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $null
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                SecondaryLabel  = $null
+                File            = $filename
+            }
+        }
+    }
 
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
@@ -198,10 +271,8 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         if ([string]::IsNullOrEmpty($uid))
         {
-            # No x:Uid on the container itself, look for a child control.
-            $child = $settingContainer.SelectNodes("*") |
-                Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
-                Select-Object -First 1
+            # No x:Uid on the container itself, look for a content-labeled control within it.
+            $child = FindContentLabeledControl $settingContainer
             if ($null -ne $child)
             {
                 $suffix = "Content"

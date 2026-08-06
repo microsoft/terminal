@@ -35,59 +35,85 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
-                    Spacing="2"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Antialiasing Mode  -->
             <local:SettingsCard x:Name="AntialiasingMode"
                                 x:Uid="Profile_AntialiasingMode">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="AntialiasingMode"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  AltGr Aliasing  -->
             <local:SettingsCard x:Name="AltGrAliasing"
                                 x:Uid="Profile_AltGrAliasing">
-                <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AltGrAliasing"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Snap On Input  -->
             <local:SettingsCard x:Name="SnapOnInput"
                                 x:Uid="Profile_SnapOnInput">
-                <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="SnapOnInput"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  History Size  -->
             <local:SettingsCard x:Name="HistorySize"
                                 x:Uid="Profile_HistorySize">
-                <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
-                                LargeChange="100"
-                                Minimum="0"
-                                SmallChange="10"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                                    LargeChange="100"
+                                    Minimum="0"
+                                    SmallChange="10"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="HistorySize"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Close On Exit  -->
             <local:SettingsCard x:Name="CloseOnExit"
                                 x:Uid="Profile_CloseOnExit">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="CloseOnExit"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Bell Style  -->
             <local:SettingsExpander x:Name="BellStyle"
                                     x:Uid="Profile_BellStyle">
                 <local:SettingsExpander.Content>
-                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                               Text="{x:Bind Profile.BellStylePreview, Mode=OneWay}" />
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <TextBlock VerticalAlignment="Center"
+                                   Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                                   Text="{x:Bind Profile.BellStylePreview, Mode=OneWay}" />
+                        <local:SettingResetButton SettingName="BellStyle"
+                                                  Target="{x:Bind Profile}" />
+                    </StackPanel>
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
@@ -109,8 +135,13 @@
             <local:SettingsExpander x:Name="BellSound"
                                     x:Uid="Profile_BellSound">
                 <local:SettingsExpander.Content>
-                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                               Text="{x:Bind Profile.BellSoundPreview, Mode=OneWay}" />
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <TextBlock VerticalAlignment="Center"
+                                   Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                                   Text="{x:Bind Profile.BellSoundPreview, Mode=OneWay}" />
+                        <local:SettingResetButton SettingName="BellSound"
+                                                  Target="{x:Bind Profile}" />
+                    </StackPanel>
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
@@ -193,63 +224,101 @@
             <!--  RightClickContextMenu  -->
             <local:SettingsCard x:Name="RightClickContextMenu"
                                 x:Uid="Profile_RightClickContextMenu">
-                <ToggleSwitch IsOn="{x:Bind Profile.RightClickContextMenu, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.RightClickContextMenu, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="RightClickContextMenu"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  ShowMarks  -->
             <local:SettingsCard x:Name="ShowMarks"
                                 x:Uid="Profile_ShowMarks"
                                 Visibility="{x:Bind Profile.ShowMarksAvailable}">
-                <ToggleSwitch IsOn="{x:Bind Profile.ShowMarks, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.ShowMarks, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="ShowMarks"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  AutoMarkPrompts  -->
             <local:SettingsCard x:Name="AutoMarkPrompts"
                                 x:Uid="Profile_AutoMarkPrompts"
                                 Visibility="{x:Bind Profile.AutoMarkPromptsAvailable}">
-                <ToggleSwitch IsOn="{x:Bind Profile.AutoMarkPrompts, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AutoMarkPrompts, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AutoMarkPrompts"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  ReloadEnvVars  -->
             <local:SettingsCard x:Name="ReloadEnvVars"
                                 x:Uid="Profile_ReloadEnvVars">
-                <ToggleSwitch IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="ReloadEnvironmentVariables"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  RepositionCursorWithMouse  -->
             <local:SettingsCard x:Name="RepositionCursorWithMouse"
                                 x:Uid="Profile_RepositionCursorWithMouse"
                                 Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
-                <ToggleSwitch IsOn="{x:Bind Profile.RepositionCursorWithMouse, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.RepositionCursorWithMouse, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="RepositionCursorWithMouse"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  RainbowSuggestions  -->
             <local:SettingsCard x:Name="RainbowSuggestions"
                                 x:Uid="Profile_RainbowSuggestions">
-                <ToggleSwitch IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="RainbowSuggestions"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Path Translation  -->
             <local:SettingsCard x:Name="PathTranslationStyle"
                                 x:Uid="Profile_PathTranslationStyle">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind Profile.PathTranslationStyleList, Mode=OneWay}"
-                          SelectedItem="{x:Bind Profile.CurrentPathTranslationStyle, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind Profile.PathTranslationStyleList, Mode=OneWay}"
+                              SelectedItem="{x:Bind Profile.CurrentPathTranslationStyle, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="PathTranslationStyle"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Drag Drop Delimiter  -->
             <local:SettingsCard x:Name="DragDropDelimiter"
                                 x:Uid="Profile_DragDropDelimiter">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="DragDropDelimiter"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
         </StackPanel>

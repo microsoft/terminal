@@ -22,7 +22,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
+        AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/Description")));
+        UnfocusedAppearanceNavigator().Header(box_value(RS_(L"Profile_UnfocusedAppearanceTextBlock/Text")));
+        UnfocusedAppearanceNavigator().Description(box_value(RS_(L"Profile_UnfocusedAppearanceNavigator/Description")));
         TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
+        TerminalNavigator().Description(box_value(RS_(L"Profile_TerminalNavigator/Description")));
         AdvancedNavigator().Header(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
@@ -75,6 +79,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Base::Appearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Appearance);
+    }
+
+    void Profiles_Base::UnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    {
+        _Profile.CurrentPage(ProfileSubPage::UnfocusedAppearance);
     }
 
     void Profiles_Base::Terminal_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
