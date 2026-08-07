@@ -5189,17 +5189,10 @@ namespace winrt::TerminalApp::implementation
 
             // GH#14384: a HostBackdrop tab row over a terminal's in-app
             // Backdrop acrylic flickers; match the terminal's source instead.
-            auto tabRowSource = Media::AcrylicBackgroundSource::HostBackdrop;
-            if (terminalBrush)
-            {
-                if (const auto termAcrylic = terminalBrush.try_as<Media::AcrylicBrush>())
-                {
-                    if (termAcrylic.BackgroundSource() == Media::AcrylicBackgroundSource::Backdrop)
-                    {
-                        tabRowSource = Media::AcrylicBackgroundSource::Backdrop;
-                    }
-                }
-            }
+            const auto termAcrylic = terminalBrush.try_as<Media::AcrylicBrush>();
+            const auto tabRowSource = termAcrylic && termAcrylic.BackgroundSource() == Media::AcrylicBackgroundSource::Backdrop ?
+                                          Media::AcrylicBackgroundSource::Backdrop :
+                                          Media::AcrylicBackgroundSource::HostBackdrop;
 
             // Reuse the brush unless the source or tint changed; recreating it
             // on every BackgroundBrush event rebuilds the acrylic and flickers.
