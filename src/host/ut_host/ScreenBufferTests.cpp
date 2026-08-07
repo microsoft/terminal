@@ -124,6 +124,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtSoftResetCursorPosition);
     TEST_METHOD(VtSoftResetAltBufferCursorState);
+    TEST_METHOD(VtScrollMarginsAltBufferInheritance);
 
     TEST_METHOD(VtScrollMarginsNewlineColor);
 
@@ -1533,6 +1534,25 @@ void ScreenBufferTests::VtSoftResetAltBufferCursorState()
 
     Log::Comment(L"Returning from alt buffer should restore the main cursor position.");
     VERIFY_ARE_EQUAL(til::point(6, 3), gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
+}
+
+void ScreenBufferTests::VtScrollMarginsAltBufferInheritance()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& stateMachine = gci.GetActiveOutputBuffer().GetStateMachine();
+
+    Log::Comment(L"Set margins on the main buffer and enter the alternate buffer.");
+    stateMachine.ProcessString(L"\x1b[1;15r\x1b[?1049h\x1b[999B");
+    VERIFY_IS_TRUE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+    VERIFY_ARE_EQUAL(til::point(0, 14), gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
+
+    Log::Comment(L"Change margins on the alternate buffer and return to the main buffer.");
+    stateMachine.ProcessString(L"\x1b[1;10r\x1b[?1049l\x1b[999B");
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+    VERIFY_ARE_EQUAL(til::point(0, 9), gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
 }
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()

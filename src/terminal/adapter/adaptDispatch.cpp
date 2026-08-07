@@ -1745,17 +1745,21 @@ void AdaptDispatch::_SetColumnMode(const bool enable)
 // - <none>
 void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
 {
+    const auto scrollMargins = _pages.ActivePage().Buffer().GetScrollMargins();
+
     if (enable)
     {
         CursorSaveState();
         const auto page = _pages.ActivePage();
         _api.UseAlternateScreenBuffer(_GetEraseAttributes(page));
         _usingAltBuffer = true;
+        _pages.ActivePage().Buffer().SetScrollMargins(scrollMargins);
     }
     else
     {
         _api.UseMainScreenBuffer();
         _usingAltBuffer = false;
+        _pages.ActivePage().Buffer().SetScrollMargins(scrollMargins);
         CursorRestoreState();
     }
 }
