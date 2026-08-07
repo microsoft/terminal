@@ -9,6 +9,55 @@
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
+namespace
+{
+    std::string quoteCommandlineArg(const std::string& arg)
+    {
+        if (arg.empty())
+        {
+            return "\"\"";
+        }
+
+        if (arg.find_first_of(" \t\"") == std::string::npos)
+        {
+            return arg;
+        }
+
+        std::string result;
+        result.push_back('"');
+
+        size_t backslashes = 0;
+
+        for (const char ch : arg)
+        {
+            if (ch == '\\')
+            {
+                ++backslashes;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                result.append(backslashes * 2 + 1, '\\');
+                result.push_back('"');
+                backslashes = 0;
+                continue;
+            }
+
+            result.append(backslashes, '\\');
+            backslashes = 0;
+            result.push_back(ch);
+        }
+
+        // Backslashes immediately before the closing quote
+        // need to be doubled.
+        result.append(backslashes * 2, '\\');
+        result.push_back('"');
+
+        return result;
+    }
+}
+
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
@@ -572,14 +621,7 @@ void AppCommandlineArgs::_buildSaveSnippetParser()
                         cmdlineBuffer << ' ';
                     }
 
-                    if (arg.find(" ") != std::string::npos)
-                    {
-                        cmdlineBuffer << '"' << arg << '"';
-                    }
-                    else
-                    {
-                        cmdlineBuffer << arg;
-                    }
+                    cmdlineBuffer << quoteCommandlineArg(arg);
                 }
 
                 args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
