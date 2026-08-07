@@ -312,8 +312,7 @@
             const maxChroma = (l, h) => {
                 let lo = 0;
                 let hi = 0.4;
-                // An 8-bit step is roughly 0.0016 of chroma, so this is well under one.
-                while (hi - lo > 1e-6) {
+                while (hi - lo > 1e-7) {
                     const mid = (lo + hi) / 2;
                     if (new Color("oklch", [l, mid, h]).inGamut("srgb")) {
                         lo = mid;
@@ -323,70 +322,158 @@
                 }
                 return lo;
             };
-            const ottosson = (min, max, dimming, grays, selectionBackground) => {
-                const mid = (min + max) / 2;
+            // Maximum chroma (and corresponding lightness) for a given hue within the sRGB gamut.
+            const cusp = hue => {
+                let lo = 0;
+                let hi = 1;
+                while (hi - lo > 1e-7) {
+                    const a = lo + (hi - lo) / 3;
+                    const b = hi - (hi - lo) / 3;
+                    if (maxChroma(a, hue) < maxChroma(b, hue)) {
+                        lo = a;
+                    } else {
+                        hi = b;
+                    }
+                }
+                const peakLightness = (lo + hi) / 2;
+                const peakChroma = maxChroma(peakLightness, hue);
+                return [peakLightness, peakChroma];
+            };
+            // For a given hue and chroma, this function returns the lightest
+            // (or darkest if light=false) color that is still in the sRGB gamut.
+            // To be clear, it does not return white or black, because it tries to reach the given chroma.
+            const colorAtChroma = (hue, chroma, light) => {
+                const [peakLightness, peakChroma] = cusp(hue);
 
-                const bright = [ //           cusp
-                    [min, 30],  // red       63.231%
-                    [mid, 150], // green     87.404%
-                    [max, 90],  // yellow    86.368%
-                    [min, 270], // blue      46.494%
-                    [mid, 330], // purple    69.733%
-                    [max, 210], // cyan      84.137%
-                ].map(([l, h]) => new Color("oklch", [l, maxChroma(l, h), h]));
-                const dark = bright.map(c => new Color("oklch", [c.l * dimming, c.c * dimming, c.h]));
+                if (chroma >= peakChroma) {
+                    return new Color("oklch", [peakLightness, peakChroma, hue]);
+                } else if (light) {
+                    // Black to the cusp is an exact ray in Oklab, because scaling linear RGB
+                    // scales L, a and b alike. So C/L is constant below the cusp, no search.
+                    const l = chroma * peakLightness / peakChroma;
+                    return new Color("oklch", [l, chroma, hue]);
+                } else {
+                    lo = peakLightness;
+                    hi = 1;
+                    while (hi - lo > 1e-7) {
+                        const mid = (lo + hi) / 2;
+                        if (maxChroma(mid, hue) > chroma) {
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    return new Color("oklch", [lo, chroma, hue]);
+                }
+            };
+            // For a given hue and lightness, this function returns the maximally chromatic color within the sRGB gamut.
+            const colorAtLightness = (hue, lightness) => new Color("oklch", [lightness, maxChroma(lightness, hue), hue]);
+            const interpolate = (a, b, t) => a + (b - a) * t;
+            const dim = (colors, factor) => colors.map(c => new Color("oklch", [c.l * factor, c.c * factor, c.h]));
+
+            const ottossonDark = (() => {
+                const dimming = 0.75;
+                const foreground = Color.to("#ccc", "oklch").l;
+                const yellow = colorAtChroma(90, Infinity, false);
+
+                // The ideal theme would have a uniform chroma and lightness for all colors,
+                // but due to limited sRGB gamut this is not anywhere remotely possible.
+                // My experiments with users (sample size 1, myself) suggest that a
+                // uniform chroma is more important than a uniform lightness.
+                //
+                // As such, I first compute a common chroma for green and red,
+                // since these two are the most important colors for text.
+                // As it turns out, when red, green and yellow sit on a brightness
+                // ramp of 67.6%, 77.0%, and 86.4%, they have uniform chroma (~0.212),
+                // with the exception of yellow which is limited by the sRGB gamut.
+                // The following computes it numerically.
+                let lo = yellow.c;
+                let hi = Math.min(
+                    colorAtChroma(30, Infinity, false).c,
+                    colorAtChroma(150, Infinity, true).c,
+                );
+                while (hi - lo > 1e-7) {
+                    const mid = (lo + hi) / 2;
+                    const green = colorAtChroma(150, mid, true).l;
+                    if ((yellow.l - green) > (green - colorAtChroma(30, mid, false).l)) {
+                        lo = mid;
+                    } else {
+                        hi = mid;
+                    }
+                }
+                const targetChroma = (lo + hi) / 2;
+
+                const red = colorAtChroma(30, targetChroma, false);
+                // We use green as it is rising to its cusp (from black to bright green, before loosing color
+                // again when going back down to white), because a full-bright green is just too bright.
+                // It turns out, this yields a green with acceptable lightness and chroma.
+                const green = colorAtChroma(150, targetChroma, true);
+
+                // Cyan is limited by the sRGB gamut, just like yellow. The targetChroma
+                // is effectively ignored. It's the least chromatic of all colors.
+                const cyan = colorAtChroma(210, targetChroma, false);
+                // Blue and magenta are the problem children: Blue is too dark and magenta is too bright.
+                // I was unable to find any elegant solution, so I picked the chroma of the opposing colors.
+                // This just so happens to yield colors that are visually sufficiently pleasant.
+                const blue = colorAtChroma(270, yellow.c, false);
+                const magenta = colorAtChroma(330, green.c, false);
+
+                const bright = [red, green, yellow, blue, magenta, cyan];
+                const dark = dim(bright, dimming);
+                const maxLightness = Math.max(...bright.map(c => c.l));
                 const colors = [
-                    grey(grays[0]), ...dark, grey(grays[1]),
-                    grey(grays[2]), ...bright, grey(grays[3]),
+                    grey(0), ...dark, grey(foreground),
+                    grey(foreground * dimming), ...bright, grey(1),
                 ];
 
                 return {
                     colors,
                     background: colors[0],
                     foreground: colors[7],
-                    selectionBackground,
+                    selectionBackground: new Color("oklch", [
+                        interpolate(0, maxLightness, 0.5),
+                        interpolate(0, cyan.c, 0.5),
+                        240,
+                    ]),
                 };
-            };
+            })();
+            const ottossonLight = (() => {
+                const foreground = Color.to("#444", "oklch").l;
+                const dimming = 0.6;
 
-            const min = 0.66;
-            const max = 0.86;
-            const dimming = 0.8;
-            const ottossonDark = ottosson(
-                // Bright rides the sRGB gamut boundary and gets calculated first.
-                // * Blue is the darkest color, so it sets an implicit upper bound
-                //   to the lightness of red, the darkest color out of red<>green.
-                // * Red provides the target chroma (0.227), because it's
-                //   the least bright out of red<>green & widely used.
-                // * Yellow is the brightest (red + green), so it
-                //   provides the max. target lightness (0.86).
-                // * Green gets interpolated halfway.
-                // * The other 3 colors follow these.
-                min, max,
-                // Dark colors are dimmed to 80% in both lightness and chroma.
-                dimming,
-                // Grays match the lightness of the lightest of bright/dark colors respectively.
-                [0, max, max * dimming, 1],
-                // 0.46 follows the chain of 0.86 -> 0.66
-                // 0.068 is half the chroma of dark blue
-                // 240 is between cyan and blue
-                new Color("oklch(0.46 0.068 240)"),
-            );
-            const ottossonLight = ottosson(
-                // Same as the dark theme but -10% lightness to give colors
-                // a slightly better contrast against the light background.
-                min - 0.1, max - 0.1,
-                dimming,
-                // Generally speaking, grays are inverted relative to the dark theme.
-                // However, this results in a problem: Brightness is subjectively highly non-linear.
-                // While l=0.86 gray can be distinguished from white at closer inspection,
-                // l=0.14 as the foreground color is effectively indistinguishable from black.
-                // As such we give +20% here.
-                [1, 1 - max + 0.2, 1 - max * dimming + 0.2, 0],
-                // l=0.86 at 240deg is already close to the gamut boundary.
-                // I wanted to brighten it further such that it looks lighter than any regular color (= distinct).
-                // To get it in-gamut at 0.93 (in between 0.86 and 1), I reduced the chroma by half.
-                new Color("oklch(0.93 0.04 240)"),
-            );
+                // Unlike the dark theme, the light theme's biggest problem is not uniform chroma.
+                // Even if Oklab is perceptually uniform, reading text (thin lines) on a bright background is not
+                // predictable by Oklab. So, we need to dial that lightness way down to get sufficient contrast.
+                // The following loosely mirrors the dark theme's coincidental brightness ramps.
+                // They just so happen to also work quite well for the light theme.
+                // Unfortunately, the chosen magenta works poorly with Protanopia, but fixing it requires lowering
+                // its brightness, which in turn makes it hard to distinguish for those without Protanopia.
+                const red = colorAtLightness(30, 0.5);
+                const green = colorAtLightness(150, 0.6);
+                const yellow = colorAtLightness(90, 0.7);
+                const blue = colorAtLightness(270, 0.5);
+                const magenta = colorAtLightness(330, 0.6);
+                const cyan = colorAtLightness(210, 0.7);
+
+                const bright = [red, green, yellow, blue, magenta, cyan];
+                const dark = dim(bright, dimming);
+                const maxLightness = Math.max(...bright.map(c => c.l));
+                const colors = [
+                    grey(1), ...dark, grey(foreground),
+                    grey(foreground / dimming), ...bright, grey(0),
+                ];
+
+                return {
+                    colors,
+                    background: colors[0],
+                    foreground: colors[7],
+                    selectionBackground: new Color("oklch", [
+                        interpolate(1, maxLightness, 0.5),
+                        interpolate(0, cyan.c, 0.5),
+                        240,
+                    ]),
+                };
+            })();
 
             const schemes = {
                 "Ottosson Dark": ottossonDark,
@@ -394,8 +481,8 @@
             };
 
             const KEYS = [
-                "black", "red", "green", "yellow", "blue", "purple", "cyan", "white",
-                "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightPurple", "brightCyan", "brightWhite",
+                "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+                "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightMagenta", "brightCyan", "brightWhite",
             ];
             // "brightBlack" reads as "Bright Black".
             const LABELS = KEYS.map(k => k.replace(/[A-Z]/g, c => ` ${c}`).replace(/^./, c => c.toUpperCase()));
