@@ -454,6 +454,34 @@ namespace TerminalAppLocalTests
         INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `nt` instead of `new-tab`");
         auto subcommand = useShortForm ? L"nt" : L"new-tab";
 
+        const auto verifyQuotedArgument = [&](const wchar_t* argument, const wchar_t* expected) {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{
+                L"wt.exe",
+                subcommand,
+                L"powershell.exe",
+                argument
+            };
+
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+
+            auto terminalArgs{
+                myArgs.ContentArgs().try_as<NewTerminalArgs>()
+            };
+            VERIFY_IS_NOT_NULL(terminalArgs);
+
+            VERIFY_ARE_EQUAL(expected, terminalArgs.Commandline());
+        };
+
         {
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand };
@@ -569,6 +597,22 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myCommand);
             VERIFY_IS_TRUE(terminalArgs.ColorScheme().empty());
         }
+
+        verifyQuotedArgument(
+            L"hello\tworld",
+            L"powershell.exe \"hello\tworld\"");
+
+        verifyQuotedArgument(
+            L"",
+            L"powershell.exe \"\"");
+
+        verifyQuotedArgument(
+            L"hello\"world",
+            L"powershell.exe \"hello\\\"world\"");
+
+        verifyQuotedArgument(
+            L"C:\\Program Files\\",
+            L"powershell.exe \"C:\\Program Files\\\\\"");
         {
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"powershell.exe", L"This is an arg with spaces", L"another-arg", L"more spaces in this one" };
