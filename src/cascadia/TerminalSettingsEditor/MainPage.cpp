@@ -198,6 +198,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Update the Settings UI with a new CascadiaSettings to bind to
     // Arguments:
     // - settings - the new settings source
+    // - windowSettings - the new window settings source
     // Return value:
     // - <none>
     void MainPage::UpdateSettings(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings)

@@ -1339,8 +1339,8 @@ void CascadiaSettings::_researchOnLoad()
     if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
         // ----------------------------- RE: Themes ----------------------------
-        const auto numThemes = GlobalSettings().Themes().Size();
-        const auto themeInUse = GlobalSettings().CurrentTheme(WindowSettingsDefaults()).Name();
+        const auto numThemes = _globals->Themes().Size();
+        const auto themeInUse = _globals->CurrentTheme(WindowSettingsDefaults()).Name();
         const auto changedTheme = _globals->HasTheme();
 
         // system: 0
