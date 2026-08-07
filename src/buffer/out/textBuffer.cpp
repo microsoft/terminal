@@ -275,6 +275,7 @@ ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 {
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
+    _scrollMargins = OtherBuffer._scrollMargins;
 }
 
 // Routine Description:
@@ -904,6 +905,16 @@ const TextAttribute& TextBuffer::GetCurrentAttributes() const noexcept
 void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept
 {
     _currentAttributes = currentAttributes;
+}
+
+til::inclusive_rect TextBuffer::GetScrollMargins() const noexcept
+{
+    return _scrollMargins;
+}
+
+void TextBuffer::SetScrollMargins(const til::inclusive_rect& scrollMargins) noexcept
+{
+    _scrollMargins = scrollMargins;
 }
 
 void TextBuffer::SetWrapForced(const til::CoordType y, bool wrap)

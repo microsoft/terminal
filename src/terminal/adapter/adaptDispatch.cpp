@@ -107,7 +107,7 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
     const auto& attributes = page.Attributes();
 
     auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
 
     auto lineWidth = textBuffer.GetLineWidth(cursorPosition.y);
     if (cursorPosition.x <= rightMargin && cursorPosition.y >= topMargin && cursorPosition.y <= bottomMargin)
@@ -275,16 +275,18 @@ void AdaptDispatch::CursorPrevLine(const VTInt distance)
 // - A std::pair containing the top and bottom coordinates (inclusive).
 std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const Page& page, const bool absolute) noexcept
 {
+    auto scrollMargins = page.Buffer().GetScrollMargins();
     // If the top is out of range, reset the margins completely.
     const auto bottommostRow = page.Height() - 1;
-    if (_scrollMargins.top >= bottommostRow)
+    if (scrollMargins.top >= bottommostRow)
     {
-        _scrollMargins.top = _scrollMargins.bottom = 0;
+        scrollMargins.top = scrollMargins.bottom = 0;
+        page.Buffer().SetScrollMargins(scrollMargins);
     }
     // If margins aren't set, use the full extent of the page.
-    const auto marginsSet = _scrollMargins.top < _scrollMargins.bottom;
-    auto topMargin = marginsSet ? _scrollMargins.top : 0;
-    auto bottomMargin = marginsSet ? _scrollMargins.bottom : bottommostRow;
+    const auto marginsSet = scrollMargins.top < scrollMargins.bottom;
+    auto topMargin = marginsSet ? scrollMargins.top : 0;
+    auto bottomMargin = marginsSet ? scrollMargins.bottom : bottommostRow;
     // If the bottom is out of range, clamp it to the bottommost row.
     bottomMargin = std::min(bottomMargin, bottommostRow);
     if (absolute)
@@ -298,21 +300,24 @@ std::pair<int, int> AdaptDispatch::_GetVerticalMargins(const Page& page, const b
 // Routine Description:
 // - Returns the coordinates of the horizontal scroll margins.
 // Arguments:
-// - pageWidth - The width of the page
+// - page - The page that the margins will apply to.
+// - pageWidth - The width of the page.
 // Return Value:
 // - A std::pair containing the left and right coordinates (inclusive).
-std::pair<int, int> AdaptDispatch::_GetHorizontalMargins(const til::CoordType pageWidth) noexcept
+std::pair<int, int> AdaptDispatch::_GetHorizontalMargins(const Page& page, const til::CoordType pageWidth) noexcept
 {
+    auto scrollMargins = page.Buffer().GetScrollMargins();
     // If the left is out of range, reset the margins completely.
     const auto rightmostColumn = pageWidth - 1;
-    if (_scrollMargins.left >= rightmostColumn)
+    if (scrollMargins.left >= rightmostColumn)
     {
-        _scrollMargins.left = _scrollMargins.right = 0;
+        scrollMargins.left = scrollMargins.right = 0;
+        page.Buffer().SetScrollMargins(scrollMargins);
     }
     // If margins aren't set, use the full extent of the buffer.
-    const auto marginsSet = _scrollMargins.left < _scrollMargins.right;
-    auto leftMargin = marginsSet ? _scrollMargins.left : 0;
-    auto rightMargin = marginsSet ? _scrollMargins.right : rightmostColumn;
+    const auto marginsSet = scrollMargins.left < scrollMargins.right;
+    auto leftMargin = marginsSet ? scrollMargins.left : 0;
+    auto rightMargin = marginsSet ? scrollMargins.right : rightmostColumn;
     // If the right is out of range, clamp it to the rightmost column.
     rightMargin = std::min(rightMargin, rightmostColumn);
     return { leftMargin, rightMargin };
@@ -332,7 +337,7 @@ void AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
     const auto pageWidth = page.Width();
     const auto cursorPosition = cursor.GetPosition();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(pageWidth);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, pageWidth);
 
     // For relative movement, the given offsets will be relative to
     // the current cursor position.
@@ -468,7 +473,7 @@ void AdaptDispatch::CursorSaveState()
     // Although if origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
-        cursorPosition.x -= _GetHorizontalMargins(page.Width()).first;
+        cursorPosition.x -= _GetHorizontalMargins(page, page.Width()).first;
         cursorPosition.y -= _GetVerticalMargins(page, false).first;
     }
 
@@ -659,7 +664,7 @@ void AdaptDispatch::_InsertDeleteCharacterHelper(const VTInt delta)
     const auto lineWidth = page.Buffer().GetLineWidth(row);
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
     const auto [leftMargin, rightMargin] = (row >= topMargin && row <= bottomMargin) ?
-                                               _GetHorizontalMargins(lineWidth) :
+                                               _GetHorizontalMargins(page, lineWidth) :
                                                std::make_pair(0, lineWidth - 1);
     if (col >= leftMargin && col <= rightMargin)
     {
@@ -1010,7 +1015,7 @@ til::rect AdaptDispatch::_CalculateRectArea(const Page& page, const VTInt top, c
     // We start by calculating the margin offsets and maximum dimensions.
     // If the origin mode isn't set, we use the page extent.
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, false);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(pageWidth);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, pageWidth);
     const auto yOffset = _modes.test(Mode::Origin) ? topMargin : 0;
     const auto yMaximum = _modes.test(Mode::Origin) ? bottomMargin + 1 : pageHeight;
     const auto xOffset = _modes.test(Mode::Origin) ? leftMargin : 0;
@@ -1563,7 +1568,7 @@ void AdaptDispatch::_CursorPositionReport(const bool extendedReport)
     // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
-        cursorPosition.x -= _GetHorizontalMargins(page.Width()).first;
+        cursorPosition.x -= _GetHorizontalMargins(page, page.Width()).first;
         cursorPosition.y -= _GetVerticalMargins(page, false).first;
     }
 
@@ -1617,7 +1622,7 @@ void AdaptDispatch::_ScrollMovement(const VTInt delta)
 {
     const auto page = _pages.ActivePage();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     _ScrollRectVertically(page, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, delta);
 }
 
@@ -2141,7 +2146,7 @@ void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
     const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
     {
         // We emulate inserting and deleting by scrolling the area between the cursor and the bottom margin.
@@ -2192,7 +2197,7 @@ void AdaptDispatch::_InsertDeleteColumnHelper(const VTInt delta)
     const auto row = cursor.GetPosition().y;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     if (row >= topMargin && row <= bottomMargin && col >= leftMargin && col <= rightMargin)
     {
         // We emulate inserting and deleting by scrolling the area between the cursor and the right margin.
@@ -2274,8 +2279,10 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
             actualTop -= 1;
             actualBottom -= 1;
         }
-        _scrollMargins.top = actualTop;
-        _scrollMargins.bottom = actualBottom;
+        auto scrollMargins = page.Buffer().GetScrollMargins();
+        scrollMargins.top = actualTop;
+        scrollMargins.bottom = actualBottom;
+        page.Buffer().SetScrollMargins(scrollMargins);
         // If requested, we may also need to move the cursor to the home
         // position, but only if the requested margins were valid.
         if (homeCursor)
@@ -2346,8 +2353,10 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
             actualLeft -= 1;
             actualRight -= 1;
         }
-        _scrollMargins.left = actualLeft;
-        _scrollMargins.right = actualRight;
+        auto scrollMargins = page.Buffer().GetScrollMargins();
+        scrollMargins.left = actualLeft;
+        scrollMargins.right = actualRight;
+        page.Buffer().SetScrollMargins(scrollMargins);
         // If requested, we may also need to move the cursor to the home
         // position, but only if the requested margins were valid.
         if (homeCursor)
@@ -2422,7 +2431,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
     const auto pageWidth = page.Width();
     const auto bufferHeight = page.BufferHeight();
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(pageWidth);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, pageWidth);
     auto viewportMoved = false;
 
     auto& cursor = page.Cursor();
@@ -2540,7 +2549,7 @@ void AdaptDispatch::ReverseLineFeed()
     const auto& textBuffer = page.Buffer();
     auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
 
     // If the cursor is at the top of the margin area, we shift the buffer
@@ -2566,7 +2575,7 @@ void AdaptDispatch::BackIndex()
     const auto page = _pages.ActivePage();
     auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
 
     // If the cursor is at the left of the margin area, we shift the buffer right.
@@ -2591,7 +2600,7 @@ void AdaptDispatch::ForwardIndex()
     const auto page = _pages.ActivePage();
     auto& cursor = page.Cursor();
     const auto cursorPosition = cursor.GetPosition();
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page.Width());
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, page.Width());
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
 
     // If the cursor is at the right of the margin area, we shift the buffer left.
@@ -2666,7 +2675,7 @@ void AdaptDispatch::ForwardTab(const VTInt numTabs)
     auto tabsPerformed = 0;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, width);
     const auto clampToMargin = row >= topMargin && row <= bottomMargin && column <= rightMargin;
     const auto maxColumn = clampToMargin ? rightMargin : width - 1;
 
@@ -2709,7 +2718,7 @@ void AdaptDispatch::BackwardsTab(const VTInt numTabs)
     auto tabsPerformed = 0;
 
     const auto [topMargin, bottomMargin] = _GetVerticalMargins(page, true);
-    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(width);
+    const auto [leftMargin, rightMargin] = _GetHorizontalMargins(page, width);
     const auto clampToMargin = row >= topMargin && row <= bottomMargin && column >= leftMargin;
     const auto minColumn = clampToMargin ? leftMargin : 0;
 
@@ -4406,8 +4415,8 @@ void AdaptDispatch::_ReportDECSTBMSetting()
 // - None
 void AdaptDispatch::_ReportDECSLRMSetting()
 {
-    const auto pageWidth = _pages.ActivePage().Width();
-    const auto [marginLeft, marginRight] = _GetHorizontalMargins(pageWidth);
+    const auto page = _pages.ActivePage();
+    const auto [marginLeft, marginRight] = _GetHorizontalMargins(page, page.Width());
     // A valid response always starts with 1 $ r and the 's' indicates this is a DECSLRM response.
     // VT origin is at 1,1 so we need to add 1 to these margins.
     _ReturnDcsResponse(fmt::format(FMT_COMPILE(L"1$r{};{}s"), marginLeft + 1, marginRight + 1));
@@ -4571,7 +4580,7 @@ void AdaptDispatch::_ReportCursorInformation()
     // If the origin mode is set, the cursor is relative to the margin origin.
     if (_modes.test(Mode::Origin))
     {
-        cursorPosition.x -= _GetHorizontalMargins(page.Width()).first;
+        cursorPosition.x -= _GetHorizontalMargins(page, page.Width()).first;
         cursorPosition.y -= _GetVerticalMargins(page, false).first;
     }
 

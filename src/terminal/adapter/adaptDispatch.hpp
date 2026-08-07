@@ -247,7 +247,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _WriteToBuffer(const std::wstring_view string);
         std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
-        std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
+        std::pair<int, int> _GetHorizontalMargins(const Page& page, const til::CoordType bufferWidth) noexcept;
         void _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
         void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
         void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
@@ -329,8 +329,6 @@ namespace Microsoft::Console::VirtualTerminal
         // obtain the saved state that should be currently active.
         std::array<CursorState, 2> _savedCursorState;
         bool _usingAltBuffer;
-
-        til::inclusive_rect _scrollMargins;
 
         til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
 

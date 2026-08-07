@@ -143,6 +143,9 @@ public:
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    til::inclusive_rect GetScrollMargins() const noexcept;
+    void SetScrollMargins(const til::inclusive_rect& scrollMargins) noexcept;
+
     void SetWrapForced(til::CoordType y, bool wrap);
     void SetCurrentLineRendition(const LineRendition lineRendition, const TextAttribute& fillAttributes);
     void ResetLineRenditionRange(const til::CoordType startRow, const til::CoordType endRow);
@@ -405,6 +408,7 @@ private:
     uint16_t _height = 0;
 
     TextAttribute _currentAttributes;
+    til::inclusive_rect _scrollMargins;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
     uint64_t _lastMutationId = 0;
 

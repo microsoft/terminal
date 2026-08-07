@@ -179,6 +179,8 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
         {
             newBuffer.CopyRow(i, visibleTop + i, visibleBuffer);
         }
+        saveBuffer.SetScrollMargins(visibleBuffer.GetScrollMargins());
+        visibleBuffer.SetScrollMargins(newBuffer.GetScrollMargins());
         _visiblePageNumber = newPageNumber;
         redrawRequired = true;
     }
@@ -203,7 +205,7 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
             auto position = oldBuffer.GetCursor().GetPosition();
             position.y = position.y - oldTop + newTop;
             newBuffer.SetCurrentAttributes(oldBuffer.GetCurrentAttributes());
-            newBuffer.CopyProperties(oldBuffer);
+            newBuffer.GetCursor().CopyProperties(oldBuffer.GetCursor());
             newBuffer.GetCursor().SetPosition(position);
         }
         // If we moved from the visible buffer to a background buffer we need
