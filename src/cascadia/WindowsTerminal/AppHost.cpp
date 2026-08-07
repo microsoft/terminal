@@ -1289,8 +1289,6 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
                               nCmdShow == SW_FORCEMINIMIZE;
     if (!noForeground)
     {
-        SetForegroundWindow(_window->GetHandle());
-
         // GH#14384, GH#16052: an acrylic tab row starts up stuck on its opaque
         // fallback: XAML evaluated the island's transparency policy while the
         // window was still hidden, and only re-evaluates on a real foreground
@@ -1298,26 +1296,28 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
         // throwaway window once so the acrylic composes on the first frame.
         // Skip it for autoHideWindow: the deactivation would dismiss the window.
         const auto& globals = _appLogic.Settings().GlobalSettings();
+        wil::unique_hwnd helper; // stays alive until we've taken the foreground back below
         if (globals.UseAcrylicInTabRow() && !globals.AutoHideWindow())
         {
-            wil::unique_hwnd helper{ CreateWindowExW(WS_EX_TOOLWINDOW,
-                                                     L"STATIC",
-                                                     nullptr,
-                                                     WS_POPUP | WS_VISIBLE,
-                                                     -32000,
-                                                     -32000,
-                                                     1,
-                                                     1,
-                                                     nullptr,
-                                                     nullptr,
-                                                     wil::GetModuleInstanceHandle(),
-                                                     nullptr) };
+            helper.reset(CreateWindowExW(WS_EX_TOOLWINDOW,
+                                         L"STATIC",
+                                         nullptr,
+                                         WS_POPUP | WS_VISIBLE,
+                                         -32000,
+                                         -32000,
+                                         1,
+                                         1,
+                                         nullptr,
+                                         nullptr,
+                                         wil::GetModuleInstanceHandle(),
+                                         nullptr));
             if (helper)
             {
                 SetForegroundWindow(helper.get());
-                SetForegroundWindow(_window->GetHandle());
             }
         }
+
+        SetForegroundWindow(_window->GetHandle());
     }
 
     // Don't set our state to Initialized until after the call to ShowWindow.
