@@ -42,10 +42,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ClearUnparsedDefaultProfile();
 
         // Delegate all MTSM_WINDOW_SETTINGS to GlobalAppSettings via inline methods.
-#define WINDOW_SETTINGS_DELEGATE(type, name, ...)                             \
-    type name() const { return _globals->name(); }                            \
-    void name(const type& value) { _globals->name(value); }                  \
-    bool Has##name() const { return _globals->Has##name(); }                  \
+#define WINDOW_SETTINGS_DELEGATE(type, name, ...)            \
+    type name() const { return _globals->name(); }           \
+    void name(const type& value) { _globals->name(value); }  \
+    bool Has##name() const { return _globals->Has##name(); } \
     void Clear##name() { _globals->Clear##name(); }
         MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_DELEGATE)
 #undef WINDOW_SETTINGS_DELEGATE

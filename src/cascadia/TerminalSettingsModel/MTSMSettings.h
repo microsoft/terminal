@@ -19,15 +19,15 @@ Author(s):
 // (type, name, jsonKey, defaultArgs)
 
 // Settings that are truly app-global (not per-window)
-#define MTSM_GLOBAL_ONLY_SETTINGS(X)                                                                                                                                                                  \
-    X(hstring, Language, "language")                                                                                                                                                                  \
-    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
-    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
-    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
-    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
+#define MTSM_GLOBAL_ONLY_SETTINGS(X)                                                                                               \
+    X(hstring, Language, "language")                                                                                               \
+    X(bool, InputServiceWarning, "warning.inputService", true)                                                                     \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)         \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                           \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                  \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr) \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                   \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
 
 // Settings that are per-window (may vary by window name in the future)
@@ -80,7 +80,7 @@ Author(s):
 
 // MTSM_GLOBAL_SETTINGS is the union of global-only and window settings.
 // GlobalAppSettings uses this to keep all settings on one object (for now).
-#define MTSM_GLOBAL_SETTINGS(X) \
+#define MTSM_GLOBAL_SETTINGS(X)  \
     MTSM_GLOBAL_ONLY_SETTINGS(X) \
     MTSM_WINDOW_SETTINGS(X)
 
