@@ -34,6 +34,7 @@ namespace ControlUnitTests
         TEST_METHOD(ScrollWithSelection);
         TEST_METHOD(TestScrollWithTrackpad);
         TEST_METHOD(TestQuickDragOnSelect);
+        TEST_METHOD(CopyOnSelectSkipsWhitespaceOnlySelections);
 
         TEST_METHOD(TestDragSelectOutsideBounds);
 
@@ -597,6 +598,86 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         til::point expectedAnchor{ 0, 0 };
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+    }
+
+    void ControlInteractivityTests::CopyOnSelectSkipsWhitespaceOnlySelections()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        settings->CopyOnSelect(true);
+
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        std::vector<std::wstring> clipboardWrites;
+        core->WriteToClipboard([&](auto&&, const Control::WriteToClipboardEventArgs& args) {
+            const auto plain{ args.Plain() };
+            clipboardWrites.emplace_back(plain.data(), plain.size());
+        });
+
+        auto pasteRequests = 0u;
+        interactivity->PasteFromClipboard([&](auto&&, auto&&) {
+            ++pasteRequests;
+        });
+
+        const auto select = [&](const til::point anchor, const til::point end) {
+            core->ClearSelection();
+            core->SetSelectionAnchor(anchor);
+            core->SetEndSelectionPoint(end);
+            VERIFY_IS_TRUE(core->HasSelection());
+            VERIFY_IS_TRUE(interactivity->_selectionNeedsToBeCopied);
+        };
+
+        const auto releaseSelection = [&]() {
+            const Control::MouseButtonState noMouseDown{};
+            interactivity->PointerReleased(0,
+                                           noMouseDown,
+                                           WM_LBUTTONUP,
+                                           ControlKeyStates{},
+                                           til::point{ 0, 0 }.to_core_point());
+        };
+
+        Log::Comment(L"An empty selected payload should not replace the clipboard on mouse-up");
+        select({ 0, 0 }, { 3, 0 });
+        releaseSelection();
+        VERIFY_ARE_EQUAL(0u, clipboardWrites.size());
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_IS_FALSE(interactivity->_selectionNeedsToBeCopied);
+
+        Log::Comment(L"A selection containing only spaces and line breaks should not replace the clipboard");
+        select({ 0, 0 }, { 3, 1 });
+        releaseSelection();
+        VERIFY_ARE_EQUAL(0u, clipboardWrites.size());
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_IS_FALSE(interactivity->_selectionNeedsToBeCopied);
+
+        Log::Comment(L"Right-click should still paste after a whitespace-only auto-copy is skipped");
+        const auto rightMouseDown{ Control::MouseButtonState::IsRightButtonDown };
+        interactivity->PointerPressed(0,
+                                      rightMouseDown,
+                                      WM_RBUTTONDOWN,
+                                      0,
+                                      ControlKeyStates{},
+                                      til::point{ 0, 0 }.to_core_point());
+        VERIFY_ARE_EQUAL(0u, clipboardWrites.size());
+        VERIFY_ARE_EQUAL(1u, pasteRequests);
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        Log::Comment(L"A selection containing non-whitespace should still auto-copy");
+        conn->WriteInput(winrt_wstring_to_array_view(L"abc"));
+        select({ 0, 0 }, { 3, 0 });
+        releaseSelection();
+        VERIFY_ARE_EQUAL(1u, clipboardWrites.size());
+        const std::wstring expectedText{ L"abc" };
+        VERIFY_ARE_EQUAL(expectedText, clipboardWrites.back());
+        VERIFY_IS_FALSE(interactivity->_selectionNeedsToBeCopied);
+
+        Log::Comment(L"An explicit copy should still write a whitespace-only selection");
+        select({ 0, 1 }, { 3, 1 });
+        VERIFY_IS_TRUE(interactivity->CopySelectionToClipboard(true, false, Control::CopyFormat::None));
+        VERIFY_ARE_EQUAL(2u, clipboardWrites.size());
+        const std::wstring expectedWhitespace(3, L' ');
+        VERIFY_ARE_EQUAL(expectedWhitespace, clipboardWrites.back());
+        VERIFY_IS_FALSE(interactivity->_selectionNeedsToBeCopied);
     }
 
     void ControlInteractivityTests::TestDragSelectOutsideBounds()
