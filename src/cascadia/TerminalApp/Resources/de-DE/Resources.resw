@@ -1003,4 +1003,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>Ein ungültiger regulärer Ausdruck wurde entdeckt.</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>Hinweis: Nicht erkannte Argumente werden automatisch an den Unterbefehl „new-tab“ übergeben.
+Beispielsweise entspricht 'wt -p "Ubuntu" -d C:\' wt new-tab -p "Ubuntu" -d C:\'.
+Für alle verfügbaren Optionen führen Sie 'wt new-tab --help' aus.</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

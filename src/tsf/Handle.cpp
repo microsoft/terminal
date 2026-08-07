@@ -91,6 +91,14 @@ bool Handle::HasActiveComposition() const noexcept
     return _impl ? _impl->HasActiveComposition() : false;
 }
 
+void Handle::FlushPendingComposition() const noexcept
+{
+    if (_impl)
+    {
+        _impl->FlushPendingComposition();
+    }
+}
+
 void Handle::_destroy() noexcept
 {
     if (_impl)

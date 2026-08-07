@@ -30,7 +30,7 @@ set MSBUILD=
 rem GH#1313: If msbuild is already on the path, we don't need to look for it.
 for %%X in (msbuild.exe) do (set MSBUILD=%%~$PATH:X)
 if defined MSBUILD (
-    echo Using MsBuild at %MSBUILD% which was already on the path.
+    echo Using MSBuild at %MSBUILD% which was already on the path.
     goto :FOUND_MSBUILD
 )
 
@@ -44,28 +44,42 @@ for /f "usebackq delims=" %%I in (`dir /b /aD /o-N /s "%~dp0..\packages\vswhere*
 
 if not defined VSWHERE (
     echo Could not find vswhere on your machine. Please set the VSWHERE variable to the location of vswhere.exe and run razzle again.
-    goto :EXIT
+    exit /b 1
 )
 
 rem Add path to MSBuild Binaries
 rem
-rem We're going to always prefer prerelease version of VS. This lets people who
-rem are using VS 2022 use that from the commandline over the 2019 version. This
-rem will use whatever the newest version of VS is, regardless if it's stable or
-rem not.
+rem We accept the latest prerelease of VS in the 17.x or 18.x range. The -version
+rem range [17.0,19.0) picks up both VS 2022 (17.x) and VS 18 (including previews)
+rem but not a still-newer major whose toolset may be incompatible. VS 18 uses our
+rem v145 PlatformToolset (see src\common.build.pre.props); older VS versions default
+rem to v143.
 rem
-for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+for /f "usebackq tokens=*" %%B in (`"%VSWHERE%" -latest -prerelease -products * -requires Microsoft.Component.MSBuild -version "[17.0,19.0)" -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
     set MSBUILD=%%B
 )
 
 if not defined MSBUILD (
-    echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
-    goto :EXIT
+    echo Could not find MSBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
+    exit /b 1
 )
 
 :FOUND_MSBUILD
 
-set PATH=%PATH%%MSBUILD%\..;
+rem Guard: make sure we actually resolved a real MSBuild.exe. Without this, a
+rem chained command like `razzle && bcz` would run bcz with an empty MSBUILD/
+rem PLATFORM/CONFIGURATION and fail cryptically with '""' is not recognized.
+if not exist "%MSBUILD%" (
+    echo Could not find a usable MSBuild.exe ^(resolved: "%MSBUILD%"^).
+    echo Open a "Developer PowerShell/Command Prompt for VS", or run
+    echo   Import-Module .\tools\OpenConsole.psm1; Set-MsbuildDevEnvironment
+    echo in your shell before razzle, then try again.
+    exit /b 1
+)
+
+rem Add MSBuild's own directory to PATH, with a proper ; separator.
+for %%F in ("%MSBUILD%") do set "MSBUILD_BIN=%%~dpF"
+set "PATH=%PATH%;%MSBUILD_BIN%"
 
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
     set ARCH=x64
@@ -122,5 +136,4 @@ set OpenConBuild=true
 
 :END
 echo The dev environment is ready to go!
-
-:EXIT
+exit /b 0

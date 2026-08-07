@@ -18,7 +18,6 @@ Author(s):
 #pragma once
 
 #include "SettingContainer.g.h"
-#include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

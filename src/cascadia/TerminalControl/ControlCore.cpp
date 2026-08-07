@@ -2176,12 +2176,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // without adding any characters from a previous command.
 
             // terminalPosition is viewport-relative.
-            const auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
+            auto bufferPos = _terminal->GetViewport().Origin() + terminalPosition;
             if (bufferPos.y > lastNonSpace.y)
             {
                 // Clicked under the prompt. Bail.
                 return;
             }
+
+            bufferPos.x = std::clamp(bufferPos.x, 0, bufferSize.Width());
+            bufferPos.y = std::clamp(bufferPos.y, 0, bufferSize.Height());
 
             // Limit the click to 1 past the last character on the last line.
             const auto clampedClick = std::min(bufferPos, lastNonSpace);

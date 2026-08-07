@@ -1780,6 +1780,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _altNumpadState = {};
         }
 
+        // If a composition just ended, its text is still queued up inside TSF. Hand it to
+        // the connection now, so that a key the IME passed on to us can't reach the
+        // connection before the text it finalized - neither by being forwarded to the PTY,
+        // nor by triggering an action bound to it. GH#20244
+        GetTSFHandle().FlushPendingComposition();
+
         // GH#2235: Terminal::Settings hasn't been modified to differentiate
         // between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.

@@ -224,6 +224,27 @@ bool Implementation::HasActiveComposition() const noexcept
     return _compositions > 0;
 }
 
+// OnEndComposition() can only request TF_ES_ASYNC, because it runs from within an active
+// edit session. If the composition ended due to a relevant terminal key (arrow keys,
+// Enter, etc.), the terminal will receive and handle that key input synchronously, before
+// we got around to handling the completion asynchronously. This method allows you to
+// synchronously flush it from inside the key handler. GH#20244
+void Implementation::FlushPendingComposition() noexcept
+{
+    // Nothing to flush unless a composition has ended and its edit session is still pending.
+    if (_compositions > 0 || !_editSessionCompositionUpdate.referenceCount || !_context)
+    {
+        return;
+    }
+
+    // NOTE: _request() would reject this, because the pending TF_ES_ASYNC request still
+    // references the proxy. Letting that request run afterwards is harmless, because
+    // _doCompositionUpdate() derives everything from the current state of the context.
+    HRESULT hr = S_OK;
+    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionUpdate, TF_ES_READWRITE | TF_ES_SYNC, &hr));
+    LOG_IF_FAILED(hr);
+}
+
 #pragma region IUnknown
 
 STDMETHODIMP Implementation::QueryInterface(REFIID riid, void** ppvObj) noexcept
