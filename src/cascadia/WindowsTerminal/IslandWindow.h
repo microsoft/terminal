@@ -70,7 +70,7 @@ public:
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
     void UseDarkTheme(const bool v);
-    virtual void UseMica(const bool newValue, const double titlebarOpacity);
+    virtual void UseMica(const bool newValue, const bool useMicaAlt = false, const double titlebarOpacity = 1.0);
 
     til::event<winrt::delegate<>> DragRegionClicked;
     til::event<winrt::delegate<>> WindowCloseButtonClicked;
