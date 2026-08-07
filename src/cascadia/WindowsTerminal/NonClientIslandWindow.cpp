@@ -1195,15 +1195,21 @@ void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Medi
     _titlebar.Background(brush);
 }
 
-void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity)
+void NonClientIslandWindow::UseMica(const bool newValue, const double titlebarOpacity, const bool useMicaAlt)
 {
+    if (_titlebar)
+    {
+        _titlebar.UseMica(newValue);
+    }
+
+    IslandWindow::UseMica(newValue, titlebarOpacity, useMicaAlt);
+
     // Stash internally if we're using Mica. If we aren't, we don't want to
     // totally blow away our titlebar with DwmExtendFrameIntoClientArea,
     // especially on Windows 10
     _useMica = newValue;
     _titlebarOpacity = titlebarOpacity;
 
-    IslandWindow::UseMica(newValue, titlebarOpacity);
 
     _UpdateFrameMargins();
 }

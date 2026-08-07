@@ -48,7 +48,7 @@ public:
     void SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush);
     void SetShowTabsFullscreen(const bool newShowTabsFullscreen) override;
 
-    virtual void UseMica(const bool newValue, const double titlebarOpacity) override;
+    virtual void UseMica(const bool newValue, const double titlebarOpacity = 1.0, const bool useMicaAlt = false) override;
 
 private:
     std::optional<til::point> _oldIslandPos;
