@@ -1524,8 +1524,7 @@ namespace TerminalAppLocalTests
             page->_updateThemeColors();
 
             // GH#14384: when the terminal uses in-app Backdrop acrylic, the tab row
-            // must stay acrylic and match that Backdrop source - not fall back to
-            // HostBackdrop (which flickers) nor to a solid brush.
+            // must stay acrylic and match that Backdrop source.
             const auto titlebarBrush{ page->TitlebarBrush() };
             VERIFY_IS_NOT_NULL(titlebarBrush);
             const auto titlebarAcrylicBrush{ titlebarBrush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>() };
