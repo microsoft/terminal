@@ -371,8 +371,58 @@
             const interpolate = (a, b, t) => a + (b - a) * t;
             const dim = (colors, factor) => colors.map(c => new Color("oklch", [c.l * factor, c.c * factor, c.h]));
 
+            // Maximising the *sum of squared* APCA is degenerate: Lc(black) + Lc(white) stays near
+            // 105 everywhere, so squaring rewards imbalance and the answer is pure white for every
+            // hue. Maximising the smaller of the two is the useful version and peaks where the two
+            // are equal. That pins APCA's luminance and nothing else, so chroma is left completely
+            // free: every hue has a whole iso-luminance curve of equally optimal colors.
+            const balancedOnBothBackgrounds = () => {
+                const black = new Color("#000");
+                const white = new Color("#fff");
+                const lc = (bg, c) => Math.abs(bg.contrast(c, "APCA"));
+                const hues = { red: 30, green: 150, yellow: 90, blue: 270, magenta: 330, cyan: 210 };
+
+                // Contrast against black rises with lightness while contrast against white falls,
+                // so the two cross exactly once. A null chroma follows the gamut boundary instead.
+                const balance = (hue, chroma) => {
+                    let lo = 0;
+                    let hi = 1;
+                    while (hi - lo > 1e-9) {
+                        const mid = (lo + hi) / 2;
+                        const c = new Color("oklch", [mid, chroma ?? maxChroma(mid, hue), hue]);
+                        if (lc(black, c) < lc(white, c)) {
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    const l = (lo + hi) / 2;
+                    return new Color("oklch", [l, chroma ?? maxChroma(l, hue), hue]);
+                };
+
+                const vivid = Object.values(hues).map(h => balance(h, null));
+                // Cyan's boundary is the tightest, so its chroma is the most all six can share.
+                const shared = Math.min(...vivid.map(c => c.c));
+                const row = c => ({
+                    hex: c.to("srgb").toString({ format: "hex" }),
+                    L: +c.l.toFixed(4),
+                    C: +c.c.toFixed(4),
+                    black: +lc(black, c).toFixed(2),
+                    white: +lc(white, c).toFixed(2),
+                });
+                const table = colors => Object.fromEntries(Object.keys(hues).map((n, i) => [n, row(colors[i])]));
+
+                console.group(`Balanced against #000 and #fff — Lc ${lc(black, vivid[0]).toFixed(2)} both ways`);
+                console.log("Most chromatic:");
+                console.table(table(vivid));
+                console.log(`Uniform chroma ${shared.toFixed(4)}, identical contrast:`);
+                console.table(table(Object.values(hues).map(h => balance(h, shared))));
+                console.groupEnd();
+            };
+            //balancedOnBothBackgrounds();
+
             const ottossonDark = (() => {
-                const dimming = 0.75;
+                const dimming = 0.8;
                 const foreground = Color.to("#ccc", "oklch").l;
                 const yellow = colorAtChroma(90, Infinity, false);
 
@@ -439,7 +489,7 @@
             })();
             const ottossonLight = (() => {
                 const foreground = Color.to("#444", "oklch").l;
-                const dimming = 0.6;
+                const dimming = 0.7;
 
                 // Unlike the dark theme, the light theme's biggest problem is not uniform chroma.
                 // Even if Oklab is perceptually uniform, reading text (thin lines) on a bright background is not
@@ -449,10 +499,10 @@
                 // Unfortunately, the chosen magenta works poorly with Protanopia, but fixing it requires lowering
                 // its brightness, which in turn makes it hard to distinguish for those without Protanopia.
                 const red = colorAtLightness(30, 0.5);
-                const green = colorAtLightness(150, 0.6);
-                const yellow = colorAtLightness(90, 0.7);
+                const green = colorAtLightness(150, 0.5);
+                const yellow = colorAtLightness(90, 0.5);
                 const blue = colorAtLightness(270, 0.5);
-                const magenta = colorAtLightness(330, 0.6);
+                const magenta = colorAtLightness(330, 0.5);
                 const cyan = colorAtLightness(210, 0.7);
 
                 const bright = [red, green, yellow, blue, magenta, cyan];
@@ -599,7 +649,7 @@
             };
 
             const preview = ({ hex, bg, fg, sel }) => `<pre class="preview" style="background:${bg};color:${fg};--sel:${sel}"><span style="color:${hex[10]}">user</span>@<span style="color:${hex[2]}">host</span> <span style="color:${hex[12]}">~/projects/terminal</span> <span style="color:${hex[13]}">main*</span>
-<span style="color:${hex[6]}">&gt;</span> cargo build --release
+<span style="color:${hex[14]}">&gt; foobar</span> cargo build --release
 <span style="color:${hex[11]}">warning</span>: unused variable <span style="color:${hex[15]}">'foobar'</span>
 <span style="color:${hex[9]}">error[E0308]</span>: mismatched types
 <span style="color:${hex[8]}">// 1 warning, 1 error</span>
