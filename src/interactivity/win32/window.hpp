@@ -83,6 +83,7 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateExtendedEditKeys() const;
 
         [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
+        [[nodiscard]] HRESULT SignalUiaAnnouncement(const std::wstring_view text);
 
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);

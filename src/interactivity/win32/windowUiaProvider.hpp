@@ -49,6 +49,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id);
         [[nodiscard]] virtual HRESULT SetTextAreaFocus();
+        [[nodiscard]] HRESULT SignalAnnouncement(const std::wstring_view text) noexcept;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;

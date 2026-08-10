@@ -35,5 +35,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void NotifyConsoleLayoutEvent();
         void NotifyConsoleStartApplicationEvent(_In_ DWORD processId);
         void NotifyConsoleEndApplicationEvent(_In_ DWORD processId);
+        
+        void AnnounceSearchResults(_In_ ptrdiff_t index, _In_ size_t count);
     };
 }

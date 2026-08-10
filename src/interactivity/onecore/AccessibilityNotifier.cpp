@@ -38,3 +38,7 @@ void AccessibilityNotifier::NotifyConsoleStartApplicationEvent(_In_ DWORD /*proc
 void AccessibilityNotifier::NotifyConsoleEndApplicationEvent(_In_ DWORD /*processId*/) noexcept
 {
 }
+
+void AccessibilityNotifier::AnnounceSearchResults(_In_ ptrdiff_t /*index*/, _In_ size_t /*count*/) noexcept
+{
+}
