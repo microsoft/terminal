@@ -747,7 +747,22 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
-            activeTab->ActivateTabRenamer();
+            // GH#14264: When tabs aren't visible (fullscreen/focus/etc.), the
+            // in-header renamer can't take focus. Reuse the window renamer
+            // TeachingTip UI and apply the result to the current tab instead.
+            const auto tabsVisible = _tabView && _tabView.Visibility() == Visibility::Visible;
+            if (tabsVisible)
+            {
+                activeTab->ActivateTabRenamer();
+            }
+            else
+            {
+                _tabToRename = activeTab.get_weak();
+                _OpenWindowRenamer();
+                WindowRenamer().Title(RS_(L"RenameTabText"));
+                WindowRenamerTextBox().Text(activeTab->Title());
+                WindowRenamerTextBox().SelectAll();
+            }
         }
         args.Handled(true);
     }
@@ -992,66 +1007,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenWindowRenamer(const IInspectable& /*sender*/,
                                                 const ActionEventArgs& args)
     {
-        if (WindowRenamer() == nullptr)
-        {
-            // We need to use FindName to lazy-load this object
-            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
-            {
-                tip.Closed({ get_weak(), &TerminalPage::_FocusActiveControl });
-            }
-        }
-
-        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
-
-        // BODGY: GH#12021
-        //
-        // TeachingTip doesn't provide an Opened event.
-        // (microsoft/microsoft-ui-xaml#1607). But we want to focus the renamer
-        // text box when it's opened. We can't do that immediately, the TextBox
-        // technically isn't in the visual tree yet. We have to wait for it to
-        // get added some time after we call IsOpen. How do we do that reliably?
-        // Usually, for this kind of thing, we'd just use a one-off
-        // LayoutUpdated event, as a notification that the TextBox was added to
-        // the tree. HOWEVER:
-        //   * The _first_ time this is fired, when the box is _first_ opened,
-        //     tossing focus doesn't work on the first LayoutUpdated. It does
-        //     work on the second LayoutUpdated. Okay, so we'll wait for two
-        //     LayoutUpdated events, and focus on the second.
-        //   * On subsequent opens: We only ever get a single LayoutUpdated.
-        //     Period. But, you can successfully focus it on that LayoutUpdated.
-        //
-        // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
-        // If we've had at least 2, then we can focus the text box.
-        //
-        // We're also not using a ContentDialog for this, because in Xaml
-        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
-        // Fun!
-        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
-        _renamerLayoutUpdatedRevoker.revoke();
-        _renamerLayoutCount = 0;
-        _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
-            if (auto self{ weakThis.get() })
-            {
-                auto& count{ self->_renamerLayoutCount };
-
-                // Don't just always increment this, we don't want to deal with overflow situations
-                if (count < 2)
-                {
-                    count++;
-                }
-
-                if (count >= 2)
-                {
-                    self->_renamerLayoutUpdatedRevoker.revoke();
-                    self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
-                }
-            }
-        });
-        // Make sure to mark that enter was not pressed in the renamer quite
-        // yet. More details in TerminalPage::_WindowRenamerKeyDown.
-        _renamerPressedEnter = false;
-        WindowRenamer().IsOpen(true);
-
+        _tabToRename = nullptr;
+        _OpenWindowRenamer();
+        WindowRenamer().Title(_WindowProperties.WindowIdForDisplay());
+        WindowRenamerTextBox().Text(_WindowProperties.WindowName());
         args.Handled(true);
     }
 

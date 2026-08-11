@@ -4829,9 +4829,83 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Lazily create and open the WindowRenamer TeachingTip, then focus its
+    //   TextBox once it's in the visual tree. Shared by window rename and by
+    //   tab rename when the tab header isn't visible (GH#14264).
+    void TerminalPage::_OpenWindowRenamer()
+    {
+        if (WindowRenamer() == nullptr)
+        {
+            // We need to use FindName to lazy-load this object
+            if (auto tip{ FindName(L"WindowRenamer").try_as<MUX::Controls::TeachingTip>() })
+            {
+                tip.Closed([weakThis = get_weak()](auto&& sender, auto&& eventArgs) {
+                    if (auto self{ weakThis.get() })
+                    {
+                        self->_tabToRename = nullptr;
+                        self->_FocusActiveControl(sender, eventArgs);
+                    }
+                });
+            }
+        }
+
+        _UpdateTeachingTipTheme(WindowRenamer().try_as<winrt::Windows::UI::Xaml::FrameworkElement>());
+
+        // BODGY: GH#12021
+        //
+        // TeachingTip doesn't provide an Opened event.
+        // (microsoft/microsoft-ui-xaml#1607). But we want to focus the renamer
+        // text box when it's opened. We can't do that immediately, the TextBox
+        // technically isn't in the visual tree yet. We have to wait for it to
+        // get added some time after we call IsOpen. How do we do that reliably?
+        // Usually, for this kind of thing, we'd just use a one-off
+        // LayoutUpdated event, as a notification that the TextBox was added to
+        // the tree. HOWEVER:
+        //   * The _first_ time this is fired, when the box is _first_ opened,
+        //     tossing focus doesn't work on the first LayoutUpdated. It does
+        //     work on the second LayoutUpdated. Okay, so we'll wait for two
+        //     LayoutUpdated events, and focus on the second.
+        //   * On subsequent opens: We only ever get a single LayoutUpdated.
+        //     Period. But, you can successfully focus it on that LayoutUpdated.
+        //
+        // So, we'll keep track of how many LayoutUpdated's we've _ever_ gotten.
+        // If we've had at least 2, then we can focus the text box.
+        //
+        // We're also not using a ContentDialog for this, because in Xaml
+        // Islands a text box in a ContentDialog won't receive _any_ keypresses.
+        // Fun!
+        // WindowRenamerTextBox().Focus(FocusState::Programmatic);
+        _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutCount = 0;
+        _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                auto& count{ self->_renamerLayoutCount };
+
+                // Don't just always increment this, we don't want to deal with overflow situations
+                if (count < 2)
+                {
+                    count++;
+                }
+
+                if (count >= 2)
+                {
+                    self->_renamerLayoutUpdatedRevoker.revoke();
+                    self->WindowRenamerTextBox().Focus(FocusState::Programmatic);
+                }
+            }
+        });
+        // Make sure to mark that enter was not pressed in the renamer quite
+        // yet. More details in TerminalPage::_WindowRenamerKeyDown.
+        _renamerPressedEnter = false;
+        WindowRenamer().IsOpen(true);
+    }
+
+    // Method Description:
     // - Called when the user hits the "Ok" button on the WindowRenamer TeachingTip.
-    // - Will raise an event that will bubble up to the monarch, asking if this
-    //   name is acceptable.
+    // - When opened for a tab rename (GH#14264), applies the text to that tab.
+    // - Otherwise raises an event that will bubble up to the monarch, asking if
+    //   this name is acceptable.
     //   - we'll eventually get called back in TerminalPage::WindowName(hstring).
     // Arguments:
     // - <unused>
@@ -4841,7 +4915,20 @@ namespace winrt::TerminalApp::implementation
                                                  const IInspectable& /*eventArgs*/)
     {
         auto newName = WindowRenamerTextBox().Text();
-        _RequestWindowRename(newName);
+        if (auto tab{ _tabToRename.get() })
+        {
+            // Clear before closing so a Closed handler can't observe stale state.
+            _tabToRename = nullptr;
+            tab->SetTabText(newName);
+            if (WindowRenamer())
+            {
+                WindowRenamer().IsOpen(false);
+            }
+        }
+        else
+        {
+            _RequestWindowRename(newName);
+        }
     }
 
     void TerminalPage::_RequestWindowRename(const winrt::hstring& newName)
@@ -4902,7 +4989,15 @@ namespace winrt::TerminalApp::implementation
         else if (key == Windows::System::VirtualKey::Escape)
         {
             // User wants to discard the changes they made
-            WindowRenamerTextBox().Text(_WindowProperties.WindowName());
+            if (auto tab{ _tabToRename.get() })
+            {
+                WindowRenamerTextBox().Text(tab->Title());
+                _tabToRename = nullptr;
+            }
+            else
+            {
+                WindowRenamerTextBox().Text(_WindowProperties.WindowName());
+            }
             WindowRenamer().IsOpen(false);
             _renamerPressedEnter = false;
         }

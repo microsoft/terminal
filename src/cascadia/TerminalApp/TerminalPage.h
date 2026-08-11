@@ -337,6 +337,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _renamerLayoutUpdatedRevoker;
         int _renamerLayoutCount{ 0 };
         bool _renamerPressedEnter{ false };
+        winrt::weak_ref<Tab> _tabToRename{ nullptr };
 
         TerminalApp::WindowProperties _WindowProperties{ nullptr };
         PaneResources _paneResources;
@@ -577,6 +578,7 @@ namespace winrt::TerminalApp::implementation
         HRESULT _OnNewConnection(const winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection& connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
+        void _OpenWindowRenamer();
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);
         void _RequestWindowRename(const winrt::hstring& newName);
         void _WindowRenamerKeyDown(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
