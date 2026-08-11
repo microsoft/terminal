@@ -9,10 +9,14 @@
 #include "handle.h"
 #include "_stream.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
+// Prefer Microsoft::Console::Utils over the host-global Utils class for pipe helpers.
+using Microsoft::Console::Utils::GetOverlappedResultSameThread;
+using Microsoft::Console::Utils::HandleWantsOverlappedIo;
 
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
@@ -26,6 +30,16 @@ PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _consoleConnected{ false }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+
+    if (HandleWantsOverlappedIo(_hFile.get()))
+    {
+        _overlappedEvent.reset(CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS));
+        if (_overlappedEvent)
+        {
+            _overlapped.hEvent = _overlappedEvent.get();
+            _overlappedPtr = &_overlapped;
+        }
+    }
 }
 
 PtySignalInputThread::~PtySignalInputThread()
@@ -265,22 +279,40 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     }
 
     DWORD dwRead = 0;
-    if (FALSE == ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, nullptr))
+    if (_overlappedPtr)
     {
-        if (const auto err = GetLastError(); err != ERROR_BROKEN_PIPE)
+        // Manual-reset events must be reset before each overlapped operation.
+        LOG_IF_WIN32_BOOL_FALSE(ResetEvent(_overlappedPtr->hEvent));
+    }
+
+    if (ReadFile(_hFile.get(), pBuffer, cbBuffer, &dwRead, _overlappedPtr))
+    {
+        return dwRead == cbBuffer;
+    }
+
+    auto err = GetLastError();
+    if (_overlappedPtr && err == ERROR_IO_PENDING)
+    {
+        const auto hr = GetOverlappedResultSameThread(_overlappedPtr, &dwRead);
+        if (SUCCEEDED(hr))
         {
-            LOG_WIN32(err);
+            return dwRead == cbBuffer;
+        }
+
+        if (hr != HRESULT_FROM_WIN32(ERROR_BROKEN_PIPE))
+        {
+            LOG_HR(hr);
         }
         _hFile.reset();
         return false;
     }
 
-    if (dwRead != cbBuffer)
+    if (err != ERROR_BROKEN_PIPE)
     {
-        return false;
+        LOG_WIN32(err);
     }
-
-    return true;
+    _hFile.reset();
+    return false;
 }
 
 // Method Description:

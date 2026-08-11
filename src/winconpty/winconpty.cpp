@@ -28,9 +28,35 @@ typedef struct _SYSTEM_CONSOLE_INFORMATION
 NTSYSCALLAPI NTSTATUS NTAPI NtSetSystemInformation(SYSTEM_INFORMATION_CLASS Class, PVOID Info, ULONG Length);
 #endif // __INSIDE_WINDOWS
 
+#include "../types/inc/utils.hpp"
+
 #pragma warning(push)
 #pragma warning(disable : 4273) // inconsistent dll linkage (we are exporting things kernel32 also exports)
 #pragma warning(disable : 26485) // array-to-pointer decay is virtually impossible to avoid when we can't use STL.
+
+// Writes a ConPTY signal packet to an overlapped signal pipe handle.
+static HRESULT _WritePseudoConsoleSignal(_In_ HANDLE hSignal, _In_reads_bytes_(cbBuffer) const void* buffer, const DWORD cbBuffer) noexcept
+{
+    wil::unique_event overlappedEvent;
+    overlappedEvent.reset(CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS));
+    RETURN_LAST_ERROR_IF(!overlappedEvent);
+
+    OVERLAPPED overlapped{ .hEvent = overlappedEvent.get() };
+    if (WriteFile(hSignal, buffer, cbBuffer, nullptr, &overlapped))
+    {
+        return S_OK;
+    }
+
+    const auto gle = GetLastError();
+    if (gle != ERROR_IO_PENDING)
+    {
+        return HRESULT_FROM_WIN32(gle);
+    }
+
+    DWORD written = 0;
+    RETURN_IF_FAILED(Microsoft::Console::Utils::GetOverlappedResultSameThread(&overlapped, &written));
+    return S_OK;
+}
 
 // Function Description:
 // - Returns the path to conhost.exe as a process heap string.
@@ -154,16 +180,17 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
                                                  L"\\Reference",
                                                  FALSE));
 
-    wil::unique_handle signalPipeConhostSide;
-    wil::unique_handle signalPipeOurSide;
+    // Use an overlapped anonymous pipe so both ends support asynchronous IO.
+    // PIPE_ACCESS_INBOUND: server=read (conhost), client=write (our signal handle).
+    Microsoft::Console::Utils::Pipe signalPipe;
+    try
+    {
+        signalPipe = Microsoft::Console::Utils::CreateOverlappedPipe(PIPE_ACCESS_INBOUND, 0);
+    }
+    CATCH_RETURN();
 
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
-    sa.bInheritHandle = FALSE;
-    sa.lpSecurityDescriptor = nullptr;
-
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
+    wil::unique_hfile signalPipeConhostSide{ std::move(signalPipe.server) };
+    wil::unique_hfile signalPipeOurSide{ std::move(signalPipe.client) };
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
     const auto inheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) ? L"--inheritcursor " : L"";
@@ -297,8 +324,7 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
     signalPacket[1] = size.X;
     signalPacket[2] = size.Y;
 
-    const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
-    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    return _WritePseudoConsoleSignal(pPty->hSignal, signalPacket, sizeof(signalPacket));
 }
 
 // Function Description:
@@ -319,8 +345,7 @@ static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL ke
     signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
     signalPacket[1] = keepCursorRow ? 1 : 0;
 
-    const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
-    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    return _WritePseudoConsoleSignal(pPty->hSignal, signalPacket, sizeof(signalPacket));
 }
 
 // Function Description:
@@ -342,8 +367,7 @@ HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL 
     signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
     signalPacket[1] = show ? 1 : 0;
 
-    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
-    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    return _WritePseudoConsoleSignal(pPty->hSignal, signalPacket, sizeof(signalPacket));
 }
 
 // - Sends a message to the pseudoconsole informing it that it should use the
@@ -378,9 +402,7 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
         PTY_SIGNAL_REPARENT_WINDOW,
         (uint64_t)(newParent),
     };
-    const auto fSuccess = WriteFile(pPty->hSignal, &data, sizeof(data), nullptr, nullptr);
-
-    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+    return _WritePseudoConsoleSignal(pPty->hSignal, &data, sizeof(data));
 }
 
 // Function Description:

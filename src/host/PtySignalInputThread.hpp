@@ -75,6 +75,9 @@ namespace Microsoft::Console
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
+        wil::unique_event _overlappedEvent;
+        OVERLAPPED _overlapped{};
+        OVERLAPPED* _overlappedPtr = nullptr;
         DWORD _dwThreadId;
         bool _consoleConnected;
         std::optional<ResizeWindowData> _earlyResize;
