@@ -1673,7 +1673,7 @@ void AdaptDispatch::PrecedingPage(const VTInt pageCount)
 // - page - Destination page
 void AdaptDispatch::PagePositionAbsolute(const VTInt page)
 {
-    _pages.MoveTo(page, _modes.test(Mode::PageCursorCoupling));
+    _pages.MoveTo(page, _modes.test(Mode::PageCursorCoupling), _modes.test(Mode::Origin));
 }
 
 // Routine Description:
@@ -1683,7 +1683,7 @@ void AdaptDispatch::PagePositionAbsolute(const VTInt page)
 // - pageCount - Number of pages to move
 void AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 {
-    _pages.MoveRelative(pageCount, _modes.test(Mode::PageCursorCoupling));
+    _pages.MoveRelative(pageCount, _modes.test(Mode::PageCursorCoupling), _modes.test(Mode::Origin));
 }
 
 // Routine Description:
@@ -1693,7 +1693,7 @@ void AdaptDispatch::PagePositionRelative(const VTInt pageCount)
 // - pageCount - Number of pages to move
 void AdaptDispatch::PagePositionBack(const VTInt pageCount)
 {
-    _pages.MoveRelative(-pageCount, _modes.test(Mode::PageCursorCoupling));
+    _pages.MoveRelative(-pageCount, _modes.test(Mode::PageCursorCoupling), _modes.test(Mode::Origin));
 }
 
 // Routine Description:
@@ -1829,7 +1829,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _modes.set(Mode::PageCursorCoupling, enable);
         if (enable)
         {
-            _pages.MakeActivePageVisible();
+            _pages.MakeActivePageVisible(_modes.test(Mode::Origin));
         }
         break;
     case DispatchTypes::ModeParams::DECNKM_NumericKeypadMode:

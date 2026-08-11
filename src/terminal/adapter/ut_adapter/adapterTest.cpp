@@ -4000,6 +4000,44 @@ public:
         _pDispatch->PagePositionAbsolute(1);
     }
 
+    TEST_METHOD(PageMovementWithOriginModeTest)
+    {
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 80, 24 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
+        _testGetSet->_viewport = { 0, 0, 80, 24 };
+
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetTopBottomScrollingMargins(2, 20);
+        _pDispatch->SetLeftRightScrollingMargins(3, 60);
+        _pDispatch->PagePositionAbsolute(2);
+        _pDispatch->SetTopBottomScrollingMargins(5, 12);
+        _pDispatch->SetLeftRightScrollingMargins(10, 20);
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->SetMode(DispatchTypes::DECOM_OriginMode);
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+
+        const auto getCursorPosition = [&]() { return _pDispatch->_pages.ActivePage().Cursor().GetPosition(); };
+        _pDispatch->CursorPosition(3, 4);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(12, 6), getCursorPosition(), L"PPA preserves margin-relative coordinates");
+        _pDispatch->PagePositionAbsolute(1);
+        VERIFY_ARE_EQUAL(til::point(5, 3), getCursorPosition(), L"PPA preserves coordinates in both directions");
+
+        _pDispatch->CursorPosition(10, 40);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(19, 11), getCursorPosition(), L"PPA clamps to smaller margins");
+        _pDispatch->PagePositionAbsolute(1);
+
+        _pDispatch->SetMode(DispatchTypes::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->CursorPosition(3, 4);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(12, 6), getCursorPosition(), L"Coupled PPA preserves margin-relative coordinates");
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->CursorPosition(10, 40);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(19, 11), getCursorPosition(), L"Coupled PPA clamps to smaller margins");
+    }
+
     TEST_METHOD(PageMarginsAreIndependentTest)
     {
         _testGetSet->PrepData();
