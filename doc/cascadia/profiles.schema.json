@@ -24,6 +24,10 @@
       "pattern": "^(-?\\d+)?(,\\s?(-?\\d+)?)?$",
       "type": "string"
     },
+    "Dimensions": {
+      "pattern": "^(\\d+)?(,\\s?(\\d+)?)?$",
+      "type": "string"
+    },
     "CSSLengthPercentage": {
       "pattern": "^[+-]?\\d+(?:\\.\\d+)?(?:%|ch|pt|px)?$",
       "type": [
@@ -2548,6 +2552,10 @@
         "initialPosition": {
           "$ref": "#/$defs/Coordinates",
           "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), the window will be maximized on the monitor specified by those coordinates."
+        },
+        "minimumWindowSize": {
+          "$ref": "#/$defs/Dimensions",
+          "description": "The minimum size of the window client area in pixels, as \"width, height\". Values smaller than the built-in minimum size are ignored. Either width or height may be omitted."
         },
         "initialRows": {
           "default": 30,

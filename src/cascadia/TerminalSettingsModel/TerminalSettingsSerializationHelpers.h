@@ -379,6 +379,40 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::WindowSize>
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::WindowSize FromJson(const Json::Value& json)
+    {
+        return WindowSizeFromString(json.asString());
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isString();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::WindowSize& val)
+    {
+        std::stringstream ss;
+        if (val.Width)
+        {
+            ss << val.Width.Value();
+        }
+        ss << ",";
+        if (val.Height)
+        {
+            ss << val.Height.Value();
+        }
+        return ss.str();
+    }
+
+    std::string TypeDescription() const
+    {
+        return "width, height";
+    }
+};
+
 struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<float>
 {
     float FromJson(const Json::Value& json)

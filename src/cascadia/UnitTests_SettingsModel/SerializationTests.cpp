@@ -113,6 +113,7 @@ namespace SettingsModelUnitTests
                 "initialRows": 30,
                 "initialCols": 120,
                 "initialPosition": ",",
+                "minimumWindowSize": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
                 "copyOnSelect": false,

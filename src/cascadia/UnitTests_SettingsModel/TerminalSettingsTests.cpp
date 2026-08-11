@@ -54,6 +54,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
         TEST_METHOD(TestInitialPositionParsing);
+        TEST_METHOD(TestMinimumWindowSizeParsing);
     };
 
     // CascadiaSettings::_normalizeCommandLine abuses some aspects from CommandLineToArgvW
@@ -936,6 +937,52 @@ namespace SettingsModelUnitTests
             const auto pos = LaunchPositionFromString("abc");
             VERIFY_IS_TRUE(pos.X == nullptr);
             VERIFY_IS_TRUE(pos.Y == nullptr);
+        }
+    }
+
+    void TerminalSettingsTests::TestMinimumWindowSizeParsing()
+    {
+        {
+            const auto size = WindowSizeFromString("800");
+            VERIFY_IS_TRUE(size.Width.Value());
+            VERIFY_IS_TRUE(size.Height.Value());
+            VERIFY_ARE_EQUAL(800, static_cast<int32_t>(size.Width.Value()));
+            VERIFY_ARE_EQUAL(800, static_cast<int32_t>(size.Height.Value()));
+        }
+
+        {
+            const auto size = WindowSizeFromString("800,");
+            VERIFY_IS_TRUE(size.Width.Value());
+            VERIFY_ARE_EQUAL(800, static_cast<int32_t>(size.Width.Value()));
+            VERIFY_IS_TRUE(size.Height == nullptr);
+        }
+
+        {
+            const auto size = WindowSizeFromString(",600");
+            VERIFY_IS_TRUE(size.Width == nullptr);
+            VERIFY_IS_TRUE(size.Height.Value());
+            VERIFY_ARE_EQUAL(600, static_cast<int32_t>(size.Height.Value()));
+        }
+
+        {
+            const auto size = WindowSizeFromString("800,600");
+            VERIFY_IS_TRUE(size.Width.Value());
+            VERIFY_ARE_EQUAL(800, static_cast<int32_t>(size.Width.Value()));
+            VERIFY_IS_TRUE(size.Height.Value());
+            VERIFY_ARE_EQUAL(600, static_cast<int32_t>(size.Height.Value()));
+        }
+
+        {
+            const auto size = WindowSizeFromString("abc,600");
+            VERIFY_IS_TRUE(size.Width == nullptr);
+            VERIFY_IS_TRUE(size.Height.Value());
+            VERIFY_ARE_EQUAL(600, static_cast<int32_t>(size.Height.Value()));
+        }
+
+        {
+            const auto size = WindowSizeFromString("abc");
+            VERIFY_IS_TRUE(size.Width == nullptr);
+            VERIFY_IS_TRUE(size.Height == nullptr);
         }
     }
 }

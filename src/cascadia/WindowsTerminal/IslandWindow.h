@@ -65,6 +65,8 @@ public:
 
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
 
+    void SetMinimumWindowSize(const std::optional<float> width, const std::optional<float> height) noexcept;
+
     void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
@@ -155,12 +157,15 @@ protected:
 
 private:
     // This minimum width allows for width the tabs fit
-    static constexpr float minimumWidth = 460;
+    static constexpr float minimumWidthFloor = 460;
 
     // We run with no height requirement for client area,
     // though the total height will take into account the non-client area
     // and the requirements of components hosted in the client area
-    static constexpr float minimumHeight = 0;
+    static constexpr float minimumHeightFloor = 0;
+
+    float _minimumWidth{ minimumWidthFloor };
+    float _minimumHeight{ minimumHeightFloor };
 
     inline static bool _cursorHidden;
 };

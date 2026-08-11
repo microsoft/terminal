@@ -20,6 +20,12 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int32> Y;
     };
 
+    struct WindowSize
+    {
+        Windows.Foundation.IReference<Int32> Width;
+        Windows.Foundation.IReference<Int32> Height;
+    };
+
     [flags]
     enum LaunchMode
     {
@@ -81,6 +87,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
+        INHERITABLE_SETTING(WindowSize, MinimumWindowSize);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.DefaultInputScope, DefaultInputScope);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);

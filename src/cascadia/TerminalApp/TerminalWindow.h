@@ -133,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         bool GetAlwaysShowNotificationIcon();
 
         bool GetShowTitleInTitlebar();
+        Microsoft::Terminal::Settings::Model::WindowSize GetMinimumWindowSize();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
         void DismissDialog();

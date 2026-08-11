@@ -287,7 +287,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
         // top-right corner etc.), then this means that the width has changed. We thus ask to
         // adjust this new width so that terminal(s) is/are aligned to their character grid(s).
         auto width = clientWidth * dipPerPx;
-        width = std::max(width, minimumWidth);
+        width = std::max(width, _minimumWidth);
         width = _pfnSnapDimensionCallback(true, width);
         clientWidth = lroundf(width * pxPerDip);
     }
@@ -295,7 +295,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     {
         // Analogous to above, but for height.
         auto height = clientHeight * dipPerPx;
-        height = std::max(height, minimumHeight);
+        height = std::max(height, _minimumHeight);
         height = _pfnSnapDimensionCallback(false, height);
         clientHeight = lroundf(height * pxPerDip);
     }
@@ -466,8 +466,8 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
     // We might have been called in WM_CREATE, before we've initialized XAML or
     // our page. That's okay.
-    const auto width = _pfnSnapDimensionCallback(true, minimumWidth);
-    const auto height = _pfnSnapDimensionCallback(false, minimumHeight);
+    const auto width = _pfnSnapDimensionCallback(true, _minimumWidth);
+    const auto height = _pfnSnapDimensionCallback(false, _minimumHeight);
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
     lpMinMaxInfo->ptMinTrackSize.x = lroundf(width * pxPerDip) + nonClientSizeScaled.width;
@@ -1727,6 +1727,12 @@ void IslandWindow::HideWindow()
 void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept
 {
     _minimizeToNotificationArea = MinimizeToNotificationArea;
+}
+
+void IslandWindow::SetMinimumWindowSize(const std::optional<float> width, const std::optional<float> height) noexcept
+{
+    _minimumWidth = std::max(width.value_or(minimumWidthFloor), minimumWidthFloor);
+    _minimumHeight = std::max(height.value_or(minimumHeightFloor), minimumHeightFloor);
 }
 
 // Method Description:

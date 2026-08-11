@@ -66,6 +66,7 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _IsQuakeWindowChanged(nullptr, nullptr);
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
+    _updateMinimumWindowSize();
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = [this](auto&& PH1, auto&& PH2) { _HandleCreateWindow(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
@@ -1082,7 +1083,24 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
+    _updateMinimumWindowSize();
     _updateTheme();
+}
+
+void AppHost::_updateMinimumWindowSize()
+{
+    const auto size = _windowLogic.GetMinimumWindowSize();
+    std::optional<float> width;
+    std::optional<float> height;
+    if (size.Width)
+    {
+        width = static_cast<float>(size.Width.Value());
+    }
+    if (size.Height)
+    {
+        height = static_cast<float>(size.Height.Value());
+    }
+    _window->SetMinimumWindowSize(width, height);
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,

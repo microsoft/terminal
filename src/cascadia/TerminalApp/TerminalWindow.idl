@@ -104,6 +104,7 @@ namespace TerminalApp
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
+        Microsoft.Terminal.Settings.Model.WindowSize GetMinimumWindowSize();
 
         // These already have accessors as a part of IWindowProperties, but we
         // also want to be able to set them.

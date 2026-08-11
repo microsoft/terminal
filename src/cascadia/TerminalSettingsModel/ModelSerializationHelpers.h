@@ -75,6 +75,17 @@ _TIL_INLINEPREFIX ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition 
 }
 
 // See: ParseCommaSeparatedPair
+_TIL_INLINEPREFIX ::winrt::Microsoft::Terminal::Settings::Model::WindowSize WindowSizeFromString(const std::string& string)
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::WindowSize windowSize;
+    ParseCommaSeparatedPair(
+        string,
+        [&windowSize](int32_t left) { windowSize.Width = left; },
+        [&windowSize](int32_t right) { windowSize.Height = right; });
+    return windowSize;
+}
+
+// See: ParseCommaSeparatedPair
 _TIL_INLINEPREFIX ::til::size SizeFromString(const std::string& string)
 {
     til::size size{};

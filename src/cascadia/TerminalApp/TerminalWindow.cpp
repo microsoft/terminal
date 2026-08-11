@@ -310,6 +310,11 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
 
+    Microsoft::Terminal::Settings::Model::WindowSize TerminalWindow::GetMinimumWindowSize()
+    {
+        return _settings.GlobalSettings().MinimumWindowSize();
+    }
+
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
         return _settings.GlobalSettings().CurrentTheme();
