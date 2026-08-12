@@ -136,20 +136,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         FolderEntryViewModel(Model::FolderEntry folderEntry, Model::CascadiaSettings settings);
-        explicit FolderEntryViewModel(Model::FolderEntry folderEntry);
+
+        hstring Name() const { return _FolderEntry.Name(); }
+        void Name(const hstring& value);
+
+        bool AllowEmpty() const { return _FolderEntry.AllowEmpty(); }
+        void AllowEmpty(bool value);
 
         bool Inlining() const;
         void Inlining(bool value);
 
         hstring Icon() const { return _FolderEntry.Icon().Path(); }
-        void Icon(const hstring& value)
-        {
-            _FolderEntry.Icon(Model::MediaResourceHelper::FromString(value));
-            _NotifyChanges(L"Icon");
-        }
-
-        GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
-        GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);
+        void Icon(const hstring& value);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>, Entries);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Model::FolderEntry, FolderEntry, nullptr);

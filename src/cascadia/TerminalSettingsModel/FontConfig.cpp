@@ -12,6 +12,8 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view FontInfoKey{ "font" };
+static constexpr std::string_view FontAxesKey{ "axes" };
+static constexpr std::string_view FontFeaturesKey{ "features" };
 static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
@@ -25,29 +27,11 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
 {
     auto fontInfo{ winrt::make_self<FontConfig>(std::move(sourceProfile)) };
 
-#define FONT_SETTINGS_COPY(type, name, jsonKey, ...) \
-    fontInfo->_##name = source->_##name;
-    MTSM_FONT_SETTINGS(FONT_SETTINGS_COPY)
-#undef FONT_SETTINGS_COPY
+    fontInfo->_json = source->_json;
 
-    // We cannot simply copy the font axes and features with `fontInfo->_FontAxes = source->_FontAxes;`
-    // since that'll just create a reference; we have to manually copy the values.
-    static constexpr auto cloneFontMap = [](const IFontFeatureMap& map) {
-        std::map<winrt::hstring, float> fontAxes;
-        for (const auto& [k, v] : map)
-        {
-            fontAxes.emplace(k, v);
-        }
-        return winrt::single_threaded_map(std::move(fontAxes));
-    };
-    if (source->_FontAxes)
-    {
-        fontInfo->_FontAxes = cloneFontMap(*source->_FontAxes);
-    }
-    if (source->_FontFeatures)
-    {
-        fontInfo->_FontFeatures = cloneFontMap(*source->_FontFeatures);
-    }
+    // FontAxes and FontFeatures are now JSON-backed — handled by _json copy above.
+    // No manual deep-copy needed; the JSON-backed getter returns a fresh deserialized
+    // collection each time.
 
     return fontInfo;
 }
@@ -56,12 +40,56 @@ Json::Value FontConfig::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
+    // MTSM font settings: copy from _json (the source of truth)
 #define FONT_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    JsonUtils::CopyKeyIfPresent(_json, json, jsonKey);
     MTSM_FONT_SETTINGS(FONT_SETTINGS_TO_JSON)
 #undef FONT_SETTINGS_TO_JSON
 
     return json;
+}
+
+bool FontConfig::HasSetting(FontSettingKey key) const
+{
+    switch (key)
+    {
+#define _FONT_HAS_SETTING(type, name, jsonKey, ...) \
+    case FontSettingKey::name:                      \
+        return Has##name();
+        MTSM_FONT_SETTINGS(_FONT_HAS_SETTING)
+#undef _FONT_HAS_SETTING
+    default:
+        return false;
+    }
+}
+
+void FontConfig::ClearSetting(FontSettingKey key)
+{
+    switch (key)
+    {
+#define _FONT_CLEAR_SETTING(type, name, jsonKey, ...) \
+    case FontSettingKey::name:                        \
+        Clear##name();                                \
+        break;
+        MTSM_FONT_SETTINGS(_FONT_CLEAR_SETTING)
+#undef _FONT_CLEAR_SETTING
+    default:
+        break;
+    }
+}
+
+std::vector<FontSettingKey> FontConfig::CurrentSettings() const
+{
+    std::vector<FontSettingKey> result;
+    for (auto i = 0; i < static_cast<int>(FontSettingKey::SETTINGS_SIZE); i++)
+    {
+        const auto key = static_cast<FontSettingKey>(i);
+        if (HasSetting(key))
+        {
+            result.push_back(key);
+        }
+    }
+    return result;
 }
 
 // Method Description:
@@ -83,26 +111,45 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...)     \
-    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name); \
-    _logSettingIfSet(jsonKey, _##name.has_value());
+
+        // Merge the font sub-object into stored _json (font-object shape).
+        JsonUtils::MergeJsonKeys(fontInfoJson, _json);
+
+        // MTSM font settings are now JSON-backed (including FontAxes/FontFeatures).
+        // Values are already in _json. We only need to log which settings were set.
+#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    _logSettingIfSet(jsonKey, fontInfoJson.isMember(jsonKey) && !fontInfoJson[jsonKey].isNull());
 
         MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
     else
     {
-        // No font object is defined
+        // No font object is defined — normalize legacy flat keys into font-object shape.
+        if (json.isMember(JsonKey(LegacyFontFaceKey)))
+        {
+            _json["face"] = json[JsonKey(LegacyFontFaceKey)];
+        }
+        if (json.isMember(JsonKey(LegacyFontSizeKey)))
+        {
+            _json["size"] = json[JsonKey(LegacyFontSizeKey)];
+        }
+        if (json.isMember(JsonKey(LegacyFontWeightKey)))
+        {
+            _json["weight"] = json[JsonKey(LegacyFontWeightKey)];
+        }
+
         // Log settings as if they were a part of the font object
-        JsonUtils::GetValueForKey(json, LegacyFontFaceKey, _FontFace);
-        _logSettingIfSet("face", _FontFace.has_value());
-
-        JsonUtils::GetValueForKey(json, LegacyFontSizeKey, _FontSize);
-        _logSettingIfSet("size", _FontSize.has_value());
-
-        JsonUtils::GetValueForKey(json, LegacyFontWeightKey, _FontWeight);
-        _logSettingIfSet("weight", _FontWeight.has_value());
+        _logSettingIfSet("face", json.isMember(JsonKey(LegacyFontFaceKey)));
+        _logSettingIfSet("size", json.isMember(JsonKey(LegacyFontSizeKey)));
+        _logSettingIfSet("weight", json.isMember(JsonKey(LegacyFontWeightKey)));
     }
+
+    _ValidateThisLayer();
+}
+
+void FontConfig::_ValidateThisLayer() const {
+    MTSM_FONT_SETTINGS(MTSM_VALIDATE_SETTING)
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
@@ -112,16 +159,16 @@ winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
 
 void FontConfig::_logSettingSet(const std::string_view& setting)
 {
-    if (setting == "axes" && _FontAxes.has_value())
+    if (setting == FontAxesKey && HasFontAxes())
     {
-        for (const auto& [mapKey, _] : _FontAxes.value())
+        for (const auto& [mapKey, _] : FontAxes())
         {
             _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
         }
     }
-    else if (setting == "features" && _FontFeatures.has_value())
+    else if (setting == FontFeaturesKey && HasFontFeatures())
     {
-        for (const auto& [mapKey, _] : _FontFeatures.value())
+        for (const auto& [mapKey, _] : FontFeatures())
         {
             _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, til::u16u8(mapKey)));
         }

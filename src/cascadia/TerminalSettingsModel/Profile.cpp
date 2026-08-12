@@ -37,9 +37,9 @@ static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMa
 static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
 static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
 
-Profile::Profile(guid guid) noexcept :
-    _Guid(guid)
+Profile::Profile(guid guid)
 {
+    Guid(guid);
 }
 
 void Profile::CreateUnfocusedAppearance()
@@ -105,25 +105,22 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Deleted = _Deleted;
     profile->_Orphaned = _Orphaned;
     profile->_Updates = _Updates;
-    profile->_Guid = _Guid;
-    profile->_Name = _Name;
-    profile->_Source = _Source;
-    profile->_Hidden = _Hidden;
-    profile->_TabColor = _TabColor;
-    profile->_Padding = _Padding;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
     profile->_DefaultAppearance = *defaultAppearance;
+    profile->_json = _json;
 
-#define PROFILE_SETTINGS_COPY(type, name, jsonKey, ...) \
-    profile->_##name = _##name;
-    MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
-#undef PROFILE_SETTINGS_COPY
+    // JSON-backed settings (Name, Source, Hidden, Guid, Padding, TabColor, MTSM settings)
+    // all live in _json, which is already deep-copied above. No per-setting copy needed.
 
+    // Complex/mutable settings — backing fields for resolution lifecycle.
+    // _json (copied above) is the source of truth; backing fields hold resolved runtime state.
+    profile->_Icon = _Icon;
+
+    // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
     if (_BellSound)
     {
-        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
         profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
     }
 
@@ -169,6 +166,10 @@ winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Prof
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
+    // Merge incoming JSON keys into stored _json (key-wise, not replacement).
+    // This preserves keys from earlier LayerJson calls that aren't in the new JSON.
+    JsonUtils::MergeJsonKeys(json, _json);
+
     // Appearance Settings
     auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
     defaultAppearanceImpl->LayerJson(json);
@@ -177,36 +178,52 @@ void Profile::LayerJson(const Json::Value& json)
     auto fontInfoImpl = winrt::get_self<implementation::FontConfig>(_FontInfo);
     fontInfoImpl->LayerJson(json);
 
-    // Profile-specific Settings
-    JsonUtils::GetValueForKey(json, NameKey, _Name);
+    // Profile-specific settings: now JSON-backed. Values are already in _json
+    // from the merge step above. Only need to handle non-JSON fields and logging.
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
-    JsonUtils::GetValueForKey(json, GuidKey, _Guid);
+
+    // Normalize Padding: allow integer → string coercion (e.g. "padding": 8 → "8")
+    if (_json.isMember(JsonKey(PaddingKey)) && _json[JsonKey(PaddingKey)].isInt())
+    {
+        _json[JsonKey(PaddingKey)] = std::to_string(_json[JsonKey(PaddingKey)].asInt());
+    }
 
     // Make sure Source is before Hidden! We use that to exclude false positives from the settings logger!
-    JsonUtils::GetValueForKey(json, SourceKey, _Source);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
-    _logSettingIfSet(HiddenKey, _Hidden.has_value());
-
-    // Padding was never specified as an integer, but it was a common working mistake.
-    // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
-    _logSettingIfSet(PaddingKey, _Padding.has_value());
-
-    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-    _logSettingIfSet(TabColorKey, _TabColor.has_value());
+    _logSettingIfSet(HiddenKey, HasHidden());
+    _logSettingIfSet(PaddingKey, HasPadding());
+    _logSettingIfSet(TabColorKey, HasTabColor());
 
     // Try to load some legacy keys, to migrate them.
-    // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
-    JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
-    JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
-    JsonUtils::GetValueForKey(json, LegacyRightClickContextMenuKey, _RightClickContextMenu);
+    // Normalize legacy keys into canonical _json keys so JSON-backed getters find them.
+    // Done _before_ the MTSM_PROFILE_SETTINGS logging, which have the updated keys.
+    static constexpr std::pair<std::string_view, std::string_view> legacyKeyMappings[] = {
+        { LegacyShowMarksKey, "showMarksOnScrollbar" },
+        { LegacyAutoMarkPromptsKey, "autoMarkPrompts" },
+        { LegacyRightClickContextMenuKey, "rightClickContextMenu" },
+    };
+    for (const auto& [legacyKey, canonicalKey] : legacyKeyMappings)
+    {
+        if (json.isMember(JsonKey(legacyKey)))
+        {
+            _json[JsonKey(canonicalKey)] = json[JsonKey(legacyKey)];
+        }
+    }
 
+    // MTSM settings are now JSON-backed (no backing fields).
+    // Values are already in _json from the merge step above.
+    // We only need to log which settings were set in this layer.
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
-    _logSettingIfSet(jsonKey, _##name.has_value());
+    _logSettingIfSet(jsonKey, json.isMember(jsonKey) && !json[jsonKey].isNull());
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
+
+    // Complex/mutable settings — backing fields populated from _json for runtime resolution.
+    // _json is the source of truth for serialization; backing fields are for resolution lifecycle.
+    JsonUtils::GetValueForKey(json, "icon", _Icon);
+    _logSettingIfSet("icon", _Icon.has_value());
+    JsonUtils::GetValueForKey(json, "bellSound", _BellSound);
+    _logSettingIfSet("bellSound", _BellSound.has_value());
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -223,6 +240,21 @@ void Profile::LayerJson(const Json::Value& json)
 
         _logSettingSet(UnfocusedAppearanceKey);
     }
+
+    _ValidateThisLayer();
+}
+
+void Profile::_ValidateThisLayer() const
+{
+    MTSM_PROFILE_SETTINGS(MTSM_VALIDATE_SETTING)
+
+    // Settings declared outside MTSM_PROFILE_SETTINGS that are still JSON-backed.
+    std::ignore = _getNameFromThisLayer();
+    std::ignore = _getSourceFromThisLayer();
+    std::ignore = _getHiddenFromThisLayer();
+    std::ignore = _getPaddingFromThisLayer();
+    std::ignore = _getTabColorFromThisLayer();
+    std::ignore = _getGuidFromThisLayer();
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
@@ -332,24 +364,43 @@ Json::Value Profile::ToJson() const
     // GH #9962:
     //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
     //   This caused us to serialize empty profiles "{}" on accident.
-    const auto writeBasicSettings{ !Source().empty() };
+    const auto writeBasicSettings{ HasSource() };
 
-    // Profile-specific Settings
-    JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);
-    JsonUtils::SetValueForKey(json, GuidKey, writeBasicSettings ? Guid() : _Guid);
-    JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
-    JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
+    // Profile-specific Settings (JSON-backed)
+    if (writeBasicSettings)
+    {
+        // Dynamic profiles: write resolved values so defaults are materialized
+        JsonUtils::SetValueForKey(json, NameKey, Name());
+        JsonUtils::SetValueForKey(json, GuidKey, Guid());
+        JsonUtils::SetValueForKey(json, HiddenKey, Hidden());
+        JsonUtils::SetValueForKey(json, SourceKey, Source());
+    }
+    else
+    {
+        // User-defined profiles: copy local layer from _json
+        for (const auto& key : { NameKey, GuidKey, HiddenKey, SourceKey })
+        {
+            JsonUtils::CopyKeyIfPresent(_json, json, key);
+        }
+    }
 
-    // PermissiveStringConverter is unnecessary for serialization
-    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+    // Padding: copy from _json
+    JsonUtils::CopyKeyIfPresent(_json, json, PaddingKey);
 
-    JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
+    // TabColor: nullable — key presence matters (explicit null is valid)
+    JsonUtils::CopyKeyIfPresent(_json, json, TabColorKey);
 
+    // MTSM profile settings: copy from _json (the source of truth)
 #define PROFILE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    JsonUtils::CopyKeyIfPresent(_json, json, jsonKey);
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
+
+    // Complex/mutable settings with backing fields (runtime resolution)
+    // Read from _json (source of truth), not from backing fields
+    JsonUtils::CopyKeyIfPresent(_json, json, "icon");
+    JsonUtils::CopyKeyIfPresent(_json, json, "bellSound");
 
     if (auto fontJSON = winrt::get_self<FontConfig>(_FontInfo)->ToJson(); !fontJSON.empty())
     {
@@ -362,6 +413,89 @@ Json::Value Profile::ToJson() const
     }
 
     return json;
+}
+
+bool Profile::HasSetting(ProfileSettingKey key) const
+{
+    switch (key)
+    {
+#define _PROFILE_HAS_SETTING(type, name, jsonKey, ...) \
+    case ProfileSettingKey::name:                      \
+        return Has##name();
+        MTSM_PROFILE_SETTINGS(_PROFILE_HAS_SETTING)
+#undef _PROFILE_HAS_SETTING
+    case ProfileSettingKey::_Name:
+        return HasName();
+    case ProfileSettingKey::_Guid:
+        return HasGuid();
+    case ProfileSettingKey::_Source:
+        return HasSource();
+    case ProfileSettingKey::_Hidden:
+        return HasHidden();
+    case ProfileSettingKey::_Padding:
+        return HasPadding();
+    case ProfileSettingKey::_TabColor:
+        return HasTabColor();
+    case ProfileSettingKey::_Icon:
+        return HasIcon();
+    case ProfileSettingKey::_BellSound:
+        return HasBellSound();
+    default:
+        return false;
+    }
+}
+
+void Profile::ClearSetting(ProfileSettingKey key)
+{
+    switch (key)
+    {
+#define _PROFILE_CLEAR_SETTING(type, name, jsonKey, ...) \
+    case ProfileSettingKey::name:                        \
+        Clear##name();                                   \
+        break;
+        MTSM_PROFILE_SETTINGS(_PROFILE_CLEAR_SETTING)
+#undef _PROFILE_CLEAR_SETTING
+    case ProfileSettingKey::_Name:
+        ClearName();
+        break;
+    case ProfileSettingKey::_Guid:
+        ClearGuid();
+        break;
+    case ProfileSettingKey::_Source:
+        ClearSource();
+        break;
+    case ProfileSettingKey::_Hidden:
+        ClearHidden();
+        break;
+    case ProfileSettingKey::_Padding:
+        ClearPadding();
+        break;
+    case ProfileSettingKey::_TabColor:
+        ClearTabColor();
+        break;
+    case ProfileSettingKey::_Icon:
+        ClearIcon();
+        break;
+    case ProfileSettingKey::_BellSound:
+        ClearBellSound();
+        break;
+    default:
+        break;
+    }
+}
+
+std::vector<ProfileSettingKey> Profile::CurrentSettings() const
+{
+    std::vector<ProfileSettingKey> result;
+    for (auto i = 0; i < static_cast<int>(ProfileSettingKey::SETTINGS_SIZE); i++)
+    {
+        const auto key = static_cast<ProfileSettingKey>(i);
+        if (HasSetting(key))
+        {
+            result.push_back(key);
+        }
+    }
+    return result;
 }
 
 // Given a commandLine like the following:
@@ -502,13 +636,13 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
 
         // Exclude some false positives from userDefaults.json
         // NOTE: we can't use the OriginTag here because it hasn't been set yet!
-        const bool isWinPow = _Guid.has_value() && *_Guid == DEFAULT_WINDOWS_POWERSHELL_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Windows PowerShell");
-        const bool isCmd = _Guid.has_value() && *_Guid == DEFAULT_COMMAND_PROMPT_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Command Prompt");
-        const bool isACS = _Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Azure Cloud Shell");
-        const bool isWTDynamicProfile = _Source.has_value() && til::starts_with(*_Source, L"Windows.Terminal");
-        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && _Hidden.has_value() && _Hidden == false;
-        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
-        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
+        const bool isWinPow = HasGuid() && Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID;
+        const bool isCmd = HasGuid() && Guid() == DEFAULT_COMMAND_PROMPT_GUID;
+        const bool isACS = HasName() && til::equals_insensitive_ascii(Name(), L"Azure Cloud Shell");
+        const bool isWTDynamicProfile = HasSource() && til::starts_with(Source(), L"Windows.Terminal");
+        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && HasHidden() && Hidden() == false;
+        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && HasCommandline() && til::equals_insensitive_ascii(Commandline(), L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && HasCommandline() && til::equals_insensitive_ascii(Commandline(), L"%SystemRoot%\\System32\\cmd.exe");
         // clang-format off
         if (!(isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
             && !(isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
@@ -541,7 +675,7 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
             auto newIcon{ MediaResource::FromString(icon->Path()) };
             const std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
             newIcon.Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
-            iconSource->_Icon = std::move(newIcon);
+            iconSource->Icon(std::move(newIcon));
         }
     }
 

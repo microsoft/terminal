@@ -7,6 +7,7 @@ import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
 import "NewTabMenuEntry.idl";
+import "NewTabMenu.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -108,7 +109,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
-        INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
@@ -127,6 +127,10 @@ namespace Microsoft.Terminal.Settings.Model
         void AddTheme(Theme theme);
         INHERITABLE_SETTING(ThemePair, Theme);
         Theme CurrentTheme { get; };
+
+        NewTabMenu NewTabMenu { get; };
+        Boolean HasNewTabMenu { get; };
+        void ClearNewTabMenu();
 
         Boolean ShouldUsePersistedLayout();
     }

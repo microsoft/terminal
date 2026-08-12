@@ -25,6 +25,9 @@
     <ClInclude Include="NewTabMenuEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="NewTabMenu.h">
+      <DependentUpon>NewTabMenu.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SeparatorEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
@@ -83,6 +86,7 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="JsonSyncCollections.h" />
     <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
@@ -180,6 +184,9 @@
     <ClCompile Include="NewTabMenuEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="NewTabMenu.cpp">
+      <DependentUpon>NewTabMenu.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SeparatorEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
@@ -218,6 +225,7 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="NewTabMenuEntry.idl" />
+    <Midl Include="NewTabMenu.idl" />
     <Midl Include="Theme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />

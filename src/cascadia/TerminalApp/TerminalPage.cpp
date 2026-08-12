@@ -1027,7 +1027,7 @@ namespace winrt::TerminalApp::implementation
         // Create profile entries from the NewTabMenu configuration using a
         // recursive helper function. This returns a std::vector of FlyoutItemBases,
         // that we then add to our Flyout.
-        auto entries = _settings.GlobalSettings().NewTabMenu();
+        auto entries = _settings.GlobalSettings().NewTabMenu().Entries();
         auto items = _CreateNewTabFlyoutItems(entries);
         for (const auto& item : items)
         {
@@ -1147,7 +1147,7 @@ namespace winrt::TerminalApp::implementation
     // - For a given list of tab menu entries, this method will create the corresponding
     //   list of flyout items. This is a recursive method that calls itself when it comes
     //   across a folder entry.
-    std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVector<NewTabMenuEntry> entries)
+    std::vector<WUX::Controls::MenuFlyoutItemBase> TerminalPage::_CreateNewTabFlyoutItems(IVectorView<NewTabMenuEntry> entries)
     {
         std::vector<WUX::Controls::MenuFlyoutItemBase> items;
 
@@ -1186,7 +1186,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Recursively generate flyout items
-                auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries);
+                auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries.GetView());
 
                 // If the folder should auto-inline and there is only one item, do so.
                 if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntryItems.size() == 1)
