@@ -136,13 +136,6 @@
       -->
       <DisableSpecificWarnings>4201;4312;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <!--
-        Enable the new STL hardening and destructor tombstones (for Canary only, for now).
-
-        Hardening prevents the misuse of containers more strictly than Container Debug and Iterator Debug.
-        Tombstoning prevents use-after-free by filling deleted pointers with a sentintel value.
-      -->
-      <PreprocessorDefinitions Condition="'$(WindowsTerminalBranding)'=='Canary'">_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
