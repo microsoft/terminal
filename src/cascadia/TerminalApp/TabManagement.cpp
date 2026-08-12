@@ -1242,6 +1242,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
                                          const IInspectable& /*eventArgs*/)
     {
+        _hideTabContentSplitOverlay(true);
+
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
 

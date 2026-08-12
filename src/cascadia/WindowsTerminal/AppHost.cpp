@@ -1414,6 +1414,10 @@ void AppHost::_handleReceiveContent(const winrt::Windows::Foundation::IInspectab
 {
     if (const auto target = _windowManager->GetWindowById(args.SourceWindow()))
     {
-        target->_windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(), args.TargetWindow(), args.TabIndex() });
+        target->_windowLogic.SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs{ args.SourceWindow(),
+                                                                                                args.TargetWindow(),
+                                                                                                args.TabIndex(),
+                                                                                                args.AttachAsPane(),
+                                                                                                args.SplitDirection() });
     }
 }
