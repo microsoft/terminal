@@ -50,15 +50,14 @@
                     <Thickness x:Key="TabViewItemBorderThickness">1,1,1,0</Thickness>
 
                     <!--
-                        Disable the EntranceThemeTransition for our muxc:TabView, which would slowly slide in the tabs
-                        while the window opens. The difference is especially noticeable if window fade-in transitions are
-                        disabled system-wide. On my system this shaves off about 10% of the startup cost and looks better.
+                        Disable the EntranceThemeTransition and AddDeleteThemeTransition for our muxc:TabView.
+                        The former slowly slides in tabs while the window opens, and the latter delays a newly
+                        created tab's appearance when system animations are enabled.
                     -->
                     <Style TargetType="primitives:TabViewListView">
                         <Setter Property="ItemContainerTransitions">
                             <Setter.Value>
                                 <TransitionCollection>
-                                    <AddDeleteThemeTransition />
                                     <ContentThemeTransition />
                                     <ReorderThemeTransition />
                                 </TransitionCollection>
