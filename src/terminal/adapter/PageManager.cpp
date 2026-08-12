@@ -179,11 +179,8 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
     const auto visibleTop = visibleViewport.top;
     const auto wasVisible = _activePageNumber == _visiblePageNumber;
     const auto newPageNumber = std::min(std::max(pageNumber, 1), MAX_PAGES);
-    const auto oldTop = wasVisible ? visibleTop : 0;
-    auto& oldBuffer = wasVisible ? visibleBuffer : _getBuffer(_activePageNumber, pageSize);
-    const auto oldPosition = oldBuffer.GetCursor().GetPosition();
-    const auto oldMargins = getEffectiveMargins(oldBuffer, pageSize);
-    const auto cursorTransferRequired = _activePageNumber != newPageNumber || (makeVisible && !wasVisible);
+    // This must be captured before a visible page swap replaces the margins in visibleBuffer.
+    const auto oldMargins = getEffectiveMargins(wasVisible ? visibleBuffer : _getBuffer(_activePageNumber, pageSize), pageSize);
     auto redrawRequired = false;
 
     // If we're changing the visible page, what we do is swap out the current
@@ -212,6 +209,7 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
     // there is no need to update any buffer properties, because we'll have
     // been using the main buffer in both cases.
     const auto isVisible = newPageNumber == _visiblePageNumber;
+    auto& oldBuffer = wasVisible ? visibleBuffer : _getBuffer(_activePageNumber, pageSize);
     auto& newBuffer = isVisible ? visibleBuffer : _getBuffer(newPageNumber, pageSize);
     if (!wasVisible || !isVisible)
     {
@@ -234,18 +232,21 @@ void PageManager::MoveTo(const til::CoordType pageNumber, const bool makeVisible
         }
     }
 
-    if (cursorTransferRequired)
+    // Adjust the cursor when changing the active page, or when transferring an
+    // unchanged active page from its backing buffer into the visible buffer.
+    if (_activePageNumber != newPageNumber || (makeVisible && !wasVisible))
     {
+        const auto oldTop = wasVisible ? visibleTop : 0;
         const auto newTop = isVisible ? visibleTop : 0;
-        auto position = oldPosition;
+        auto position = oldBuffer.GetCursor().GetPosition();
         position.y = position.y - oldTop + newTop;
         if (originMode)
         {
             const auto newMargins = getEffectiveMargins(newBuffer, pageSize);
             position.x += newMargins.left - oldMargins.left;
             position.y += newMargins.top - oldMargins.top;
-            position.x = std::clamp(position.x, newMargins.left, newMargins.right);
-            position.y = std::clamp(position.y, newTop + newMargins.top, newTop + newMargins.bottom);
+            position.x = std::min(position.x, newMargins.right);
+            position.y = std::min(position.y, newTop + newMargins.bottom);
         }
         newBuffer.GetCursor().SetPosition(position);
     }
