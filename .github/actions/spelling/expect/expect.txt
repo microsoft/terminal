@@ -1692,9 +1692,7 @@ TMAE
 TMPF
 tmultiple
 tofrom
-tombstoning
 Tombstoning
-TOMBSTONING
 toolbars
 TOOLINFO
 TOOLWINDOW
