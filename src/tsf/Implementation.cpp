@@ -647,6 +647,11 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
+            // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
+            // In other words, don't put text that's in the middle between two active compositions into the finalized string.
+            const auto isActiveComposition = composing || activeCompositionEncountered;
+            auto& target = isActiveComposition ? activeComposition : finalizedString;
+
             size_t totalLen = 0;
             for (;;)
             {
@@ -658,17 +663,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
-                // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
-                // In other words, don't put text that's in the middle between two active compositions into the finalized string.
-                if (!composing && !activeCompositionEncountered)
-                {
-                    finalizedString.append(buf, len);
-                }
-                else
-                {
-                    activeComposition.append(buf, len);
-                }
-
+                target.append(buf, len);
                 totalLen += len;
 
                 if (len < bufCap)
@@ -677,8 +672,10 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
-            const auto attr = _textAttributeFromAtom(atom);
-            activeCompositionRanges.emplace_back(totalLen, attr);
+            if (isActiveComposition)
+            {
+                activeCompositionRanges.emplace_back(totalLen, _textAttributeFromAtom(atom));
+            }
 
             activeCompositionEncountered |= composing;
         }
