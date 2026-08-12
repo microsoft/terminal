@@ -8,6 +8,7 @@ class BaseWindow
 {
 public:
     static constexpr UINT CM_UPDATE_TITLE = WM_USER + 0;
+    static constexpr UINT CM_UIA_SELECT_TAB_RANGE = WM_USER + 1;
 
     static T* GetThisFromHandle(HWND const window) noexcept
     {

@@ -85,7 +85,31 @@ HRESULT RunOnUIThread(const TFunction& function)
 
     auto asyncAction = d.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
                                   [&invokeResult, &function]() {
-                                      invokeResult = WEX::SafeInvoke([&]() -> bool { function(); return true; });
+                                      try
+                                      {
+                                          function();
+                                          invokeResult = S_OK;
+                                      }
+                                      catch (const winrt::hresult_error& ex)
+                                      {
+                                          invokeResult = ex.code();
+                                          WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
+                                              L"RunOnUIThread caught winrt::hresult_error: 0x%08x (%s)",
+                                              static_cast<unsigned int>(invokeResult),
+                                              ex.message().c_str()));
+                                      }
+                                      catch (const std::exception& ex)
+                                      {
+                                          invokeResult = E_FAIL;
+                                          WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
+                                              L"RunOnUIThread caught std::exception: %hs",
+                                              ex.what()));
+                                      }
+                                      catch (...)
+                                      {
+                                          invokeResult = E_UNEXPECTED;
+                                          WEX::Logging::Log::Comment(L"RunOnUIThread caught unknown exception");
+                                      }
                                   });
 
     asyncAction.Completed([&completedEvent](auto&&, auto&&) {

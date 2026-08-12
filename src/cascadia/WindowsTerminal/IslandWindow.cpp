@@ -200,6 +200,11 @@ void IslandWindow::SetSnapDimensionCallback(std::function<float(bool, float)> pf
     _pfnSnapDimensionCallback = pfn;
 }
 
+void IslandWindow::SetUiaSelectTabRangeCallback(std::function<bool(uint32_t, uint32_t)> pfn) noexcept
+{
+    _pfnUiaSelectTabRangeCallback = std::move(pfn);
+}
+
 // Method Description:
 // - Handles a WM_CREATE message. Calls our create callback, if one's been set.
 // Arguments:
@@ -491,6 +496,15 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     case WM_CREATE:
     {
         _HandleCreateWindow(wparam, lparam);
+        return 0;
+    }
+    case CM_UIA_SELECT_TAB_RANGE:
+    {
+        if (_pfnUiaSelectTabRangeCallback)
+        {
+            return _pfnUiaSelectTabRangeCallback(gsl::narrow_cast<uint32_t>(wparam),
+                                                 gsl::narrow_cast<uint32_t>(static_cast<UINT_PTR>(lparam))) ? 1 : 0;
+        }
         return 0;
     }
     case WM_ENABLE:

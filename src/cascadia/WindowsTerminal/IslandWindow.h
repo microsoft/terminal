@@ -45,6 +45,7 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const til::rect&)> pfn) noexcept;
 
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
+    void SetUiaSelectTabRangeCallback(std::function<bool(uint32_t startIndex, uint32_t endIndex)> pfn) noexcept;
 
     void FocusModeChanged(const bool focusMode);
     void FullscreenChanged(const bool fullscreen);
@@ -102,6 +103,7 @@ protected:
 
     std::function<void(const HWND, const til::rect&)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
+    std::function<bool(uint32_t, uint32_t)> _pfnUiaSelectTabRangeCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
