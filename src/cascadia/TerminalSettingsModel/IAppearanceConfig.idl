@@ -33,8 +33,6 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
 
-        void ClearAllSettings();
-
         INHERITABLE_APPEARANCE_SETTING(String, DarkColorSchemeName);
         INHERITABLE_APPEARANCE_SETTING(String, LightColorSchemeName);
 

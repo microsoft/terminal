@@ -201,7 +201,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         # Extract Uid
         if ($null -eq $settingContainer.Uid)
         {
-            # SettingsCard/SettingsExpander without x:Uid are not indexable — skip silently
+            # Skip: SettingsCard/SettingsExpander without x:Uid are not indexable
             continue
         }
         elseif ($ProhibitedUids -contains $settingContainer.Uid)
