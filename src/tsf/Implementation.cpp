@@ -42,9 +42,15 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 //   while this method is called. The keyboard layout will be adjusted when the
 //   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
 // - TF_TMAE_CONSOLE: A text service is activated for console usage.
-//   Some IMEs are known to use this as a hint. Particularly a Korean IME can benefit
-//   from this, because Korean relies on "recomposing" previously finished compositions.
-//   That can't work in a terminal, since we submit composed text to the shell immediately.
+//   TSF uses this flag in CInputContextAdapter (adapts TSF3 TIPs to TSF1 or IMM clients),
+//   flags the client as IMM-style, and disables "single character composition" for Korean IMEs.
+//   The latter would cause every syllable to be an "interim character": not marked as composing,
+//   yet still being rewritten by the IME. Since we send any non-composing text to the shell and
+//   can't unsend it, this would break the IME. We could fix that by recognizing `fInterimChar`
+//   and only finalizing the text in front of it of course, and conhost v1 did just that
+//   (see _IsInterimSelection/_MakeInterimString). But it also set TF_TMAE_CONSOLE, so there
+//   were no interim characters in the first place (lol).
+//   To test this, type "gksks" in a Korean IME: 하난 is correct, 하나ㄴ is broken.
 //
 // ...with the exception of, for the following reason:
 // - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
