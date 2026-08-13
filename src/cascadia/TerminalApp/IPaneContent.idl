@@ -21,6 +21,8 @@ namespace TerminalApp
     {
         String Title { get; };
         String Body { get; };
+        Microsoft.Terminal.Control.OutputNotificationStyle Style { get; };
+        Boolean AlwaysNotify { get; };
     };
 
     interface IPaneContent
@@ -31,7 +33,7 @@ namespace TerminalApp
         Windows.Foundation.Size MinimumSize { get; };
 
         String Title { get; };
-        UInt64 TaskbarState { get; };
+        Microsoft.Terminal.Control.TaskbarState TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
         Boolean ReadOnly { get; };
         String Icon { get; };

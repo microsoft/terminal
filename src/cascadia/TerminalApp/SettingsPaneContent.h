@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(const BuildStartupKind kind) const;
 
         winrt::hstring Title() { return RS_(L"SettingsTab"); }
-        uint64_t TaskbarState() { return 0; }
+        winrt::Microsoft::Terminal::Control::TaskbarState TaskbarState() { return winrt::Microsoft::Terminal::Control::TaskbarState::Clear; }
         uint64_t TaskbarProgress() { return 0; }
         bool ReadOnly() { return false; }
         winrt::hstring Icon() const;

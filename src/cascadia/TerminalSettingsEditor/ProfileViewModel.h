@@ -48,6 +48,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
+        // notify on activity bits
+        hstring NotifyOnActivityPreview() const;
+        bool IsNotifyOnActivityFlagSet(const uint32_t flag);
+        void SetNotifyOnActivityTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityNotification(winrt::Windows::Foundation::IReference<bool> on);
+
+        // notify on next prompt bits
+        hstring NotifyOnNextPromptPreview() const;
+        bool IsNotifyOnNextPromptFlagSet(const uint32_t flag);
+        void SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on);
+
         hstring BellSoundPreview();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
@@ -148,6 +164,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnActivity);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnNextPrompt);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnActivityThreshold);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnNextPromptThreshold);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AutoDetectRunningCommand);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

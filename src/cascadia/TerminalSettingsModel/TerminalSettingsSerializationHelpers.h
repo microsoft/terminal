@@ -139,6 +139,37 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     }
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::OutputNotificationStyle)
+{
+    static constexpr std::array<pair_type, 6> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "taskbar", ValueType::Taskbar },
+        pair_type{ "audible", ValueType::Audible },
+        pair_type{ "tab", ValueType::Tab },
+        pair_type{ "notification", ValueType::Notification },
+        pair_type{ "all", AllSet },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Tab : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Control::OutputNotificationStyle& style)
+    {
+        return BaseFlagMapper::ToJson(style);
+    }
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
     // reduce repetition

@@ -198,6 +198,84 @@
                 </StackPanel>
             </local:SettingContainer>
 
+            <!--  Notify On Activity  -->
+            <local:SettingContainer x:Name="NotifyOnActivity"
+                                    x:Uid="Profile_NotifyOnActivity"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnActivity}"
+                                    CurrentValue="{x:Bind Profile.NotifyOnActivityPreview, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnActivity, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnActivityOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel>
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTaskbar"
+                              IsChecked="{x:Bind Profile.IsNotifyOnActivityFlagSet(1), BindBack=Profile.SetNotifyOnActivityTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleAudible"
+                              IsChecked="{x:Bind Profile.IsNotifyOnActivityFlagSet(2), BindBack=Profile.SetNotifyOnActivityAudible, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTab"
+                              IsChecked="{x:Bind Profile.IsNotifyOnActivityFlagSet(4), BindBack=Profile.SetNotifyOnActivityTab, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleNotification"
+                              IsChecked="{x:Bind Profile.IsNotifyOnActivityFlagSet(8), BindBack=Profile.SetNotifyOnActivityNotification, Mode=TwoWay}" />
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Notify On Activity Minimum Duration  -->
+            <local:SettingContainer x:Name="NotifyOnActivityThreshold"
+                                    x:Uid="Profile_NotifyOnActivityThreshold"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnActivityThreshold}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnActivityThreshold, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnActivityThresholdOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox AutomationProperties.Name="{Binding ElementName=NotifyOnActivityThreshold, Path=Header}"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Profile.NotifyOnActivityThreshold, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Notify On Next Prompt  -->
+            <local:SettingContainer x:Name="NotifyOnNextPrompt"
+                                    x:Uid="Profile_NotifyOnNextPrompt"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnNextPrompt}"
+                                    CurrentValue="{x:Bind Profile.NotifyOnNextPromptPreview, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnNextPrompt, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnNextPromptOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel>
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTaskbar"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(1), BindBack=Profile.SetNotifyOnNextPromptTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleAudible"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(2), BindBack=Profile.SetNotifyOnNextPromptAudible, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTab"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(4), BindBack=Profile.SetNotifyOnNextPromptTab, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleNotification"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(8), BindBack=Profile.SetNotifyOnNextPromptNotification, Mode=TwoWay}" />
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Notify On Next Prompt Minimum Duration  -->
+            <local:SettingContainer x:Name="NotifyOnNextPromptThreshold"
+                                    x:Uid="Profile_NotifyOnNextPromptThreshold"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnNextPromptThreshold}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnNextPromptThreshold, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnNextPromptThresholdOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox AutomationProperties.Name="{Binding ElementName=NotifyOnNextPromptThreshold, Path=Header}"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Profile.NotifyOnNextPromptThreshold, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Auto Detect Running Command  -->
+            <local:SettingContainer x:Name="AutoDetectRunningCommand"
+                                    x:Uid="Profile_AutoDetectRunningCommand"
+                                    ClearSettingValue="{x:Bind Profile.ClearAutoDetectRunningCommand}"
+                                    HasSettingValue="{x:Bind Profile.HasAutoDetectRunningCommand, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AutoDetectRunningCommandOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AutoDetectRunningCommand, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  RightClickContextMenu  -->
             <local:SettingContainer x:Name="RightClickContextMenu"
                                     x:Uid="Profile_RightClickContextMenu"

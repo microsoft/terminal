@@ -106,7 +106,7 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     if (_windowLogic)
     {
         const auto state = _windowLogic.TaskbarState();
-        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
+        _window->SetTaskbarProgress(state.State(),
                                     gsl::narrow_cast<size_t>(state.Progress()));
     }
 }
