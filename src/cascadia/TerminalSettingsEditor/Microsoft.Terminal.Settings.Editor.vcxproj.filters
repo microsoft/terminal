@@ -55,10 +55,10 @@
     <Page Include="EditAction.xaml" />
     <Page Include="SettingsControlsStyle.xaml" />
     <Page Include="SettingsControlsImplicitStyles.xaml" />
-    <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />
     <Page Include="IconPicker.xaml" />
     <Page Include="NewTabMenu.xaml" />
+    <Page Include="Profiles.xaml" />
   </ItemGroup>
 </Project>
