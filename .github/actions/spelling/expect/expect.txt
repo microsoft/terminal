@@ -171,6 +171,7 @@ changelists
 CHARSETINFO
 chshdng
 CHT
+CInput
 CLASSSTRING
 cleartype
 CLICKACTIVE
@@ -689,6 +690,7 @@ GHIJKL
 gitcheckin
 gitfilters
 gitlab
+gksks
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -1786,6 +1788,7 @@ unk
 unknwn
 UNORM
 unparseable
+unsend
 untextured
 UPDATEDISPLAY
 UPDOWN
@@ -1981,8 +1984,8 @@ WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
 wrkstr
-WRL
 wrl
+WRL
 wrp
 WRunoff
 WSLENV

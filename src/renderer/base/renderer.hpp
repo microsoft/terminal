@@ -96,7 +96,7 @@ namespace Microsoft::Console::Render
         bool _CheckViewportAndScroll();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        ROW* _PaintBufferOutputComposition(TextBuffer& buffer, const ROW& r, const Composition& activeComposition);
+        void _PaintBufferOutputComposition(const ROW& r, ROW& scratch, const Composition& activeComposition) const;
         void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
