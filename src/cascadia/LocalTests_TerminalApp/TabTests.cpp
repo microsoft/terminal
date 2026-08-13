@@ -245,7 +245,7 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
             projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = initialSettings;
+            page->SetSettings(initialSettings, false);
         });
         VERIFY_SUCCEEDED(result);
 
@@ -1133,7 +1133,7 @@ namespace TerminalAppLocalTests
         // The Disabled tab switcher mode uses direct index-based switching
         // without the command palette, so it works in the test environment.
         Log::Comment(L"Change the tab switch order to not use the tab switcher (which is in-order always)");
-        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::Disabled);
+        page->_settings.WindowSettingsDefaults().TabSwitcherMode(TabSwitcherMode::Disabled);
 
         Log::Comment(L"Switch to the next in-order tab: Tab[2]");
         TestOnUIThread([&page]() {
