@@ -113,7 +113,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_baseWindowSettings = _baseWindowSettings->Copy();
 
-        // Copy the per-window-name settings, otherwise saving from the settings
+        // Copy the per-window-name settings; otherwise saving from the settings
         // UI would drop the entire "windows"
         settings->_windows = winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>();
         for (const auto& [name, window] : _windows)
