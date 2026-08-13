@@ -206,6 +206,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settingsSource = settings;
         _settingsClone = settings.Copy();
         _windowSettingsSource = windowSettings;
+        // NOTE: explicitly using the default window settings for the settings editor.
+        // The settings editor isn't really per-window-name aware currently. We can fix that in the future.
         _windowSettingsClone = _settingsClone.WindowSettingsDefaults();
 
         _UpdateBackgroundForMica();
@@ -578,7 +580,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == interactionTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings(), _settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == renderingTag)

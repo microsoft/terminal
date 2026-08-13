@@ -41,6 +41,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasUnparsedDefaultProfile() const;
         void ClearUnparsedDefaultProfile();
 
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
         // Delegate all MTSM_WINDOW_SETTINGS to GlobalAppSettings via inline methods.
 #define WINDOW_SETTINGS_DELEGATE(type, name, ...)            \
     type name() const { return _globals->name(); }           \

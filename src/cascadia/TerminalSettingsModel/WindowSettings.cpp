@@ -51,6 +51,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _globals->ClearUnparsedDefaultProfile();
     }
 
+    void WindowSettings::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+    {
+        _globals->LogSettingChanges(changes, context);
+    }
+
     // The MTSM_WINDOW_SETTINGS delegate methods are defined inline
     // in WindowSettings.h via the WINDOW_SETTINGS_DELEGATE macro.
 

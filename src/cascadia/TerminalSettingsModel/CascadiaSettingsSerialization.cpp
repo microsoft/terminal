@@ -1913,6 +1913,7 @@ void CascadiaSettings::LogSettingChanges(bool isJsonLoad) const
     std::set<std::string> changes;
     static constexpr std::string_view globalContext{ "global" };
     _globals->LogSettingChanges(changes, globalContext);
+    _windowSettings->LogSettingChanges(changes, globalContext);
 
     // Actions are not expected to change when loaded from the settings UI
     static constexpr std::string_view actionContext{ "action" };
