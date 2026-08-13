@@ -48,9 +48,9 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 //   yet still being rewritten by the IME. Since we send any non-composing text to the shell and
 //   can't unsend it, this would break the IME. We could fix that by recognizing `fInterimChar`
 //   and only finalizing the text in front of it of course, and conhost v1 did just that
-//   (see _IsInterimSelection/_MakeInterimString). But it also set TF_TMAE_CONSOLE, so there
-//   were no interim characters in the first place (lol).
-//   To test this, type "gksks" in a Korean IME: 하난 is correct, 하나ㄴ is broken.
+//   (see _IsInterimSelection/_MakeInterimString). But it also set TF_TMAE_CONSOLE,
+//   so there were no interim characters in the first place (lol).
+//   To test this, type "gksks" with a Korean IME: 하난 is correct, 하나ㄴ is wrong.
 //
 // ...with the exception of, for the following reason:
 // - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
