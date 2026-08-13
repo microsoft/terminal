@@ -60,12 +60,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::WindowSettings, hstring, UnparsedDefaultProfile, L"");
 
 #define WINDOW_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::WindowSettings, type, name, ##__VA_ARGS__)
+    INHERITABLE_SETTING_WITH_LOGGING(Model::WindowSettings, type, name, jsonKey, ##__VA_ARGS__)
         MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_INITIALIZE)
 #undef WINDOW_SETTINGS_INITIALIZE
 
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
     private:
         winrt::guid _defaultProfile;
+        std::set<std::string> _changeLog;
+
+        void _logSettingSet(const std::string_view& setting);
+        void _logSettingIfSet(const std::string_view& setting, bool isSet);
     };
 
     struct Docking : DockingT<Docking>

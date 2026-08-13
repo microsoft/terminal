@@ -91,7 +91,7 @@ namespace winrt::TerminalApp::implementation
             // When the user activates (clicks) the toast, fire the callback.
             if (activatedFunc)
             {
-                toast.Activated([activatedFunc](const auto& /*sender*/, const auto& /*eventArgs*/) {
+                toast.Activated([activatedFunc = std::move(activatedFunc)](const auto& /*sender*/, const auto& /*eventArgs*/) {
                     activatedFunc();
                 });
             }

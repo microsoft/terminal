@@ -92,6 +92,10 @@ INewContentArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
+    if (!_content)
+    {
+        return nullptr;
+    }
     return _content.GetNewTerminalArgs(kind);
 }
 

@@ -1200,7 +1200,7 @@ const wchar_t* Utils::FindActionableControlCharacter(const wchar_t* beg, const s
             goto plainSearch;
         }
 
-        const auto wch = vld1q_u16(it);
+        const auto wch = vld1q_u16(reinterpret_cast<const uint16_t*>(it));
         const auto a = vcleq_u16(wch, vdupq_n_u16(0x1f));
         const auto b = vcleq_u16(vsubq_u16(wch, vdupq_n_u16(0x7f)), vdupq_n_u16(0x20));
         const auto c = vorrq_u16(a, b);

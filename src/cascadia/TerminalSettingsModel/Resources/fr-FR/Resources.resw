@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Réinitialiser le nom de la fenêtre</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Ouvrir un espace de travail « {0} »</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Ouvrir un espace de travail</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Renommer la fenêtre...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Ouvrir le répertoire de travail actif</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Espaces de travail...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Fermer l’onglet</value>

@@ -29,6 +29,7 @@ allocing
 alpc
 ALTERNATENAME
 ALTF
+ALTGR
 ALTNUMPAD
 ALWAYSTIP
 ansicpg
@@ -76,6 +77,7 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZERTY
 azurecr
 backgrounded
 Backgrounder
@@ -841,6 +843,8 @@ kinda
 KIYEOK
 KKP
 KLF
+klid
+KLLF
 KLMNO
 KOK
 KPRIORITY
@@ -1104,6 +1108,7 @@ NOSELECTION
 NOSENDCHANGING
 NOSIZE
 NOSNAPSHOT
+NOTELLSHELL
 NOTHOUSANDS
 NOTICKS
 notif
@@ -1139,7 +1144,7 @@ nullopts
 NUMSCROLL
 NUnit
 nupkg
-NVIDIA
+nvidia
 NVT
 OACR
 ocolor
@@ -1758,6 +1763,7 @@ UPKEY
 upss
 uregex
 URegular
+urxvt
 usebackq
 USECALLBACK
 USECOLOR

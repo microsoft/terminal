@@ -21,15 +21,15 @@ Author(s):
 // These are truly global settings - they apply to the entire application,
 // not to any specific window.
 #define MTSM_GLOBAL_SETTINGS(X)                                                                                                    \
-    X(hstring, Language, "language")                                                                                                \
+    X(hstring, Language, "language")                                                                                               \
     X(bool, InputServiceWarning, "warning.inputService", true)                                                                     \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)          \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)         \
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                           \
     X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                  \
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
-    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)  \
-    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                    \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                       \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr) \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                   \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                      \
     X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)
 
 // These are per-window settings - different windows can have different values.
@@ -115,6 +115,7 @@ Author(s):
     X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
+    X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
@@ -168,7 +169,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
-    X(bool, UseMica, "useMica", false)
+    X(bool, UseMica, "useMica", false)                                                                                             \
+    X(bool, ShowWorkspacesButton, "showWorkspacesButton", true)
 
 #define MTSM_THEME_SETTINGS_SETTINGS(X) \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)

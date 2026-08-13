@@ -245,7 +245,7 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
             projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = initialSettings;
+            page->SetSettings(initialSettings, false);
         });
         VERIFY_SUCCEEDED(result);
 

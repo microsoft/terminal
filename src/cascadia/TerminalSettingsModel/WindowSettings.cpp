@@ -126,7 +126,8 @@ void WindowSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
 #define WINDOW_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
+    _logSettingIfSet(jsonKey, _##name.has_value());
     MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_LAYER_JSON)
 #undef WINDOW_SETTINGS_LAYER_JSON
 }
@@ -169,10 +170,31 @@ Json::Value WindowSettings::ToJson()
     return json;
 }
 
+void WindowSettings::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void WindowSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        _logSettingSet(setting);
+    }
+}
+
+void WindowSettings::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
+}
+
 // Set up anything that we need that's quake-mode specific.
 void WindowSettings::InitializeForQuakeMode()
 {
-    LaunchMode(LaunchMode::FocusMode);
+    _LaunchMode = LaunchMode::FocusMode;
 
     auto dockSettings{ winrt::make_self<Docking>() };
     dockSettings->Side(Model::DockPosition::Top);
