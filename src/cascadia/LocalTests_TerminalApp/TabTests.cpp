@@ -94,6 +94,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewCommitScheme);
         TEST_METHOD(TestPreviewDismissScheme);
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
+        TEST_METHOD(TabRowAcrylicUsesSolidTitlebarWhenTerminalUsesInAppAcrylic);
 
         TEST_METHOD(TestClampSwitchToTab);
 
@@ -1472,6 +1473,61 @@ namespace TerminalAppLocalTests
             const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, backgroundColor);
         });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+    }
+
+    void TabTests::TabRowAcrylicUsesSolidTitlebarWhenTerminalUsesInAppAcrylic()
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
+        static constexpr std::wstring_view settingsJson0{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "showTabsInTitlebar": true,
+            "useAcrylicInTabRow": true,
+            "compatibility.enableUnfocusedAcrylic": true,
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "closeOnExit": "never",
+                    "useAcrylic": true,
+                    "opacity": 82
+                }
+            ]
+        })" };
+
+        CascadiaSettings settings0{ settingsJson0, {} };
+        VERIFY_IS_NOT_NULL(settings0);
+
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
+
+        TestOnUIThread([&page]() {
+            page->WindowActivated(false);
+
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            const auto terminalBrush{ activeControl.BackgroundBrush() };
+            VERIFY_IS_NOT_NULL(terminalBrush);
+
+            const auto terminalAcrylicBrush{ terminalBrush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>() };
+            VERIFY_IS_NOT_NULL(terminalAcrylicBrush);
+            VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::Media::AcrylicBackgroundSource::Backdrop, terminalAcrylicBrush.BackgroundSource());
+
+            page->_updateThemeColors();
+
+            const auto titlebarBrush{ page->TitlebarBrush() };
+            VERIFY_IS_NOT_NULL(titlebarBrush);
+            VERIFY_IS_NULL(titlebarBrush.try_as<winrt::Windows::UI::Xaml::Media::AcrylicBrush>());
+            VERIFY_IS_NOT_NULL(titlebarBrush.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>());
+        });
+
         Log::Comment(L"Sleep to let events propagate");
         Sleep(250);
     }
