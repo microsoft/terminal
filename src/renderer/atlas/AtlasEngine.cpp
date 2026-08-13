@@ -475,6 +475,41 @@ try
 }
 CATCH_RETURN()
 
+void AtlasEngine::_remapColorBitmapRowToVisualOrder(const u16 row) noexcept
+{
+    const auto& map = _p.rows[row]->visualCellMap;
+    if (map.empty())
+    {
+        return;
+    }
+
+    const auto width = static_cast<size_t>(_p.s->viewportCellCount.x);
+    const auto rowOffset = static_cast<size_t>(row) * _p.colorBitmapRowStride;
+    std::vector<u32> logical(width);
+
+    for (size_t plane = 0; plane < 3; ++plane)
+    {
+        auto bitmap = _p.colorBitmap.begin() + plane * _p.colorBitmapDepthStride + rowOffset;
+        std::copy_n(bitmap, width, logical.begin());
+
+        bool changed = false;
+        for (size_t logicalColumn = 0; logicalColumn < width && logicalColumn < map.size(); ++logicalColumn)
+        {
+            const auto visualColumn = map[logicalColumn];
+            if (visualColumn < width && bitmap[visualColumn] != logical[logicalColumn])
+            {
+                bitmap[visualColumn] = logical[logicalColumn];
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            _p.colorBitmapGenerations[plane].bump();
+        }
+    }
+}
+
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(std::span<const Cluster> clusters, til::point coord, const bool fTrimLeft) noexcept
 try
 {
@@ -620,8 +655,13 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
-        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        const auto row = _p.rows[top];
+        const auto shift = gsl::narrow_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
         auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
+        if (left >= 0 && static_cast<size_t>(left) < row->visualColumnMap.size())
+        {
+            left = row->visualColumnMap[static_cast<size_t>(left)];
+        }
         auto right = left + cursorWidth;
 
         left <<= shift;
@@ -658,6 +698,13 @@ try
 
     if (!isSettingDefaultBrushes)
     {
+        const auto bidirectionalText = renderSettings.GetRenderMode(RenderSettings::Mode::BidirectionalText);
+        if (_api.bidirectionalText != bidirectionalText)
+        {
+            _flushBufferLine();
+            _api.bidirectionalText = bidirectionalText;
+        }
+
         auto attributes = FontRelevantAttributes::None;
         WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsBold(renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold)));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
@@ -778,6 +825,8 @@ void AtlasEngine::_recreateCellCountDependentResources()
     _api.bufferLineColumn.reserve(projectedTextSize + 1);
 
     _api.analysisResults = std::vector<TextAnalysisSinkResult>{};
+    _api.bidiResults = std::vector<BidiAnalysisSinkResult>{};
+    _api.bidiResults.reserve(16);
     _api.clusterMap = Buffer<u16>{ projectedTextSize };
     _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ projectedTextSize };
     _api.glyphIndices = Buffer<u16>{ projectedGlyphSize };
@@ -824,6 +873,102 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+    row.visualColumnMap.clear();
+    row.visualCellMap.clear();
+
+    if (_api.bidirectionalText)
+    {
+        _api.bidiResults.clear();
+        TextAnalysisSource source{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<u32>(_api.bufferLine.size()) };
+        TextAnalysisSink sink{ _api.bidiResults };
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&source, 0, gsl::narrow<u32>(_api.bufferLine.size()), &sink));
+
+        // Unicode Bidirectional Algorithm L2, as used by Mozilla's nsBidi::ReorderVisual:
+        // reverse each sequence at descending embedding levels. The text buffer itself remains
+        // untouched so selection, cursor positioning, and copy continue to use logical cells.
+        auto runs = _api.bidiResults;
+        if (!runs.empty())
+        {
+            uint8_t highest = 0;
+            uint8_t lowestOdd = UINT8_MAX;
+            for (const auto& run : runs)
+            {
+                highest = std::max(highest, run.resolvedLevel);
+                if (run.resolvedLevel & 1)
+                {
+                    lowestOdd = std::min(lowestOdd, run.resolvedLevel);
+                }
+            }
+
+            if (lowestOdd != UINT8_MAX)
+            {
+                for (auto level = highest;; --level)
+                {
+                    for (size_t i = 0; i < runs.size();)
+                    {
+                        if (runs[i].resolvedLevel < level)
+                        {
+                            ++i;
+                            continue;
+                        }
+                        const auto first = i++;
+                        while (i < runs.size() && runs[i].resolvedLevel >= level)
+                        {
+                            ++i;
+                        }
+                        std::reverse(runs.begin() + first, runs.begin() + i);
+                    }
+                    if (level == lowestOdd)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            row.visualColumnMap.resize(static_cast<size_t>(_p.s->viewportCellCount.x) + 1);
+            for (size_t column = 0; column < row.visualColumnMap.size(); ++column)
+            {
+                row.visualColumnMap[column] = gsl::narrow_cast<u16>(column);
+            }
+            row.visualCellMap.resize(static_cast<size_t>(_p.s->viewportCellCount.x));
+            for (size_t column = 0; column < row.visualCellMap.size(); ++column)
+            {
+                row.visualCellMap[column] = gsl::narrow_cast<u16>(column);
+            }
+
+            auto visualColumn = _api.bufferLineColumn.front();
+            for (const auto& run : runs)
+            {
+                const auto colBeg = _api.bufferLineColumn[run.textPosition];
+                const auto colEnd = _api.bufferLineColumn[run.textPosition + run.textLength];
+                const auto colWidth = gsl::narrow_cast<u16>(colEnd - colBeg);
+                if (colEnd < row.visualColumnMap.size())
+                {
+                    for (auto column = colBeg; column <= colEnd; ++column)
+                    {
+                        row.visualColumnMap[column] = (run.resolvedLevel & 1) ?
+                                                          gsl::narrow_cast<u16>(visualColumn + colEnd - column) :
+                                                          gsl::narrow_cast<u16>(visualColumn + column - colBeg);
+                    }
+                }
+                if (colEnd <= row.visualCellMap.size())
+                {
+                    for (auto column = colBeg; column < colEnd; ++column)
+                    {
+                        row.visualCellMap[column] = (run.resolvedLevel & 1) ?
+                                                        gsl::narrow_cast<u16>(visualColumn + colEnd - 1 - column) :
+                                                        gsl::narrow_cast<u16>(visualColumn + column - colBeg);
+                    }
+                }
+                visualColumn += colWidth;
+                _mapRegularText(run.textPosition, run.textPosition + run.textLength, (run.resolvedLevel & 1) != 0);
+            }
+            _remapColorBitmapRowToVisualOrder(gsl::narrow_cast<u16>(_api.lastPaintBufferLineCoord.y));
+            return;
+        }
+    }
+
     const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
     const auto len = _api.bufferLine.size();
@@ -869,9 +1014,18 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
+void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd, bool rightToLeft)
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
+
+    struct MappedRun
+    {
+        u32 textPosition = 0;
+        u32 textLength = 0;
+        wil::com_ptr<IDWriteFontFace2> fontFace;
+    };
+
+    std::vector<MappedRun> mappedRuns;
 
     for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
@@ -880,10 +1034,19 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
         _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
+        mappedRuns.emplace_back(idx, mappedLength, std::move(mappedFontFace));
+    }
+
+    const auto mapRun = [this, &row, rightToLeft](const MappedRun& run) {
+        const auto idx = run.textPosition;
+        const auto mappedLength = run.textLength;
+        const auto mappedEnd = idx + mappedLength;
+        const auto& mappedFontFace = run.fontFace;
+
         if (!mappedFontFace)
         {
             _mapReplacementCharacter(idx, mappedEnd, row);
-            continue;
+            return;
         }
 
         const auto initialIndicesCount = row.glyphIndices.size();
@@ -901,13 +1064,13 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
             _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
         }
 
-        if (_p.s->font->fontFeatures.empty())
+        if (_p.s->font->fontFeatures.empty() && !rightToLeft)
         {
             // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-            for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+            for (u32 simpleIdx = idx, complexityLength = 0; simpleIdx < mappedEnd; simpleIdx += complexityLength)
             {
                 BOOL isTextSimple = FALSE;
-                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
+                THROW_IF_FAILED(_p.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + simpleIdx, mappedEnd - simpleIdx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
                 if (isTextSimple)
                 {
@@ -916,8 +1079,8 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
 
                     for (size_t i = 0; i < complexityLength; ++i)
                     {
-                        const auto col1 = _api.bufferLineColumn[idx + i + 0];
-                        const auto col2 = _api.bufferLineColumn[idx + i + 1];
+                        const auto col1 = _api.bufferLineColumn[simpleIdx + i + 0];
+                        const auto col2 = _api.bufferLineColumn[simpleIdx + i + 1];
                         const auto glyphAdvance = (col2 - col1) * _p.s->font->cellSize.x;
                         const auto fg = colors[static_cast<size_t>(col1) << shift];
                         row.glyphIndices.emplace_back(_api.glyphIndices[i]);
@@ -928,13 +1091,13 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
                 }
                 else
                 {
-                    _mapComplex(mappedFontFace.get(), idx, complexityLength, row);
+                    _mapComplex(mappedFontFace.get(), simpleIdx, complexityLength, row, rightToLeft);
                 }
             }
         }
         else
         {
-            _mapComplex(mappedFontFace.get(), idx, mappedLength, row);
+            _mapComplex(mappedFontFace.get(), idx, mappedLength, row, rightToLeft);
         }
 
         const auto indicesCount = row.glyphIndices.size();
@@ -944,12 +1107,27 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
             // it can also repeatedly return the same font face again and again. :)
             if (row.mappings.empty() || row.mappings.back().fontFace != mappedFontFace)
             {
-                row.mappings.emplace_back(std::move(mappedFontFace), gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
+                row.mappings.emplace_back(mappedFontFace, gsl::narrow_cast<u32>(initialIndicesCount), gsl::narrow_cast<u32>(indicesCount));
             }
             else
             {
                 row.mappings.back().glyphsTo = gsl::narrow_cast<u32>(indicesCount);
             }
+        }
+    };
+
+    if (rightToLeft)
+    {
+        for (auto it = mappedRuns.rbegin(); it != mappedRuns.rend(); ++it)
+        {
+            mapRun(*it);
+        }
+    }
+    else
+    {
+        for (const auto& run : mappedRuns)
+        {
+            mapRun(run);
         }
     }
 }
@@ -1029,7 +1207,7 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
     assert(scale == 1);
 }
 
-void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
+void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row, bool rightToLeft)
 {
     _api.analysisResults.clear();
 
@@ -1037,8 +1215,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
     TextAnalysisSink analysisSink{ _api.analysisResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
 
-    for (const auto& a : _api.analysisResults)
-    {
+    const auto mapAnalysisRun = [this, mappedFontFace, &row, rightToLeft](const TextAnalysisSinkResult& a) {
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -1076,7 +1253,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
+                /* isRightToLeft       */ rightToLeft,
                 /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
@@ -1128,7 +1305,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
+            /* isRightToLeft       */ rightToLeft,
             /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
@@ -1143,36 +1320,138 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
+        std::vector<u32> glyphColors(actualGlyphCount, colors[_api.bufferLineColumn[a.textPosition] << shift]);
 
-        for (size_t i = 1; i <= a.textLength; ++i)
+        if (!rightToLeft)
         {
-            const auto nextCluster = _api.clusterMap[i];
-            if (prevCluster == nextCluster)
+            for (size_t i = 1; i <= a.textLength; ++i)
             {
-                continue;
+                const auto nextCluster = _api.clusterMap[i];
+                if (prevCluster == nextCluster)
+                {
+                    continue;
+                }
+
+                const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
+                const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
+                const auto fg = colors[col1 << shift];
+                const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+                f32 actualAdvance = 0;
+                for (auto j = prevCluster; j < nextCluster; ++j)
+                {
+                    actualAdvance += _api.glyphAdvances[j];
+                    glyphColors[j] = fg;
+                }
+                _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
+
+                prevCluster = nextCluster;
+                beg = i;
+            }
+        }
+        else
+        {
+            // Gecko shapes RTL text in logical order with an RTL shaping direction, then makes
+            // placement explicitly RTL-aware when drawing. The atlas backends have a simpler
+            // contract: row glyphs are consumed from left to right and baselineX only advances
+            // positively. DirectWrite's RTL shaping output is therefore converted to the
+            // backend contract by reversing the shaped glyph clusters, preserving glyph order
+            // within each cluster so marks/ligatures remain intact.
+            std::vector<u16> reorderedGlyphIndices;
+            std::vector<f32> reorderedGlyphAdvances;
+            std::vector<DWRITE_GLYPH_OFFSET> reorderedGlyphOffsets;
+            std::vector<u32> reorderedGlyphColors;
+            reorderedGlyphIndices.reserve(actualGlyphCount);
+            reorderedGlyphAdvances.reserve(actualGlyphCount);
+            reorderedGlyphOffsets.reserve(actualGlyphCount);
+            reorderedGlyphColors.reserve(actualGlyphCount);
+
+            std::vector<u16> clusterStarts;
+            clusterStarts.reserve(static_cast<size_t>(a.textLength) + 2);
+            clusterStarts.emplace_back(u16{ 0 });
+            clusterStarts.emplace_back(gsl::narrow_cast<u16>(actualGlyphCount));
+            for (u32 i = 0; i < a.textLength; ++i)
+            {
+                const auto cluster = _api.clusterMap[i];
+                if (cluster <= actualGlyphCount)
+                {
+                    clusterStarts.emplace_back(cluster);
+                }
             }
 
-            const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
-            const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = colors[col1 << shift];
+            std::sort(clusterStarts.begin(), clusterStarts.end());
+            clusterStarts.erase(std::unique(clusterStarts.begin(), clusterStarts.end()), clusterStarts.end());
 
+            for (size_t i = 1; i <= a.textLength; ++i)
+            {
+                const auto nextCluster = _api.clusterMap[i];
+                if (prevCluster == nextCluster)
+                {
+                    continue;
+                }
+
+                const auto col1 = _api.bufferLineColumn[a.textPosition + beg];
+                const auto fg = colors[col1 << shift];
+                for (auto glyph = prevCluster; glyph < nextCluster; ++glyph)
+                {
+                    glyphColors[glyph] = fg;
+                }
+
+                prevCluster = nextCluster;
+                beg = i;
+            }
+
+            for (auto cluster = clusterStarts.size() - 1; cluster > 0; --cluster)
+            {
+                const auto from = clusterStarts[cluster - 1];
+                const auto to = clusterStarts[cluster];
+                for (auto glyph = from; glyph < to; ++glyph)
+                {
+                    reorderedGlyphIndices.emplace_back(_api.glyphIndices[glyph]);
+                    reorderedGlyphAdvances.emplace_back(_api.glyphAdvances[glyph]);
+                    reorderedGlyphOffsets.emplace_back(_api.glyphOffsets[glyph]);
+                    reorderedGlyphColors.emplace_back(glyphColors[glyph]);
+                }
+            }
+
+            std::copy(reorderedGlyphIndices.begin(), reorderedGlyphIndices.end(), _api.glyphIndices.begin());
+            std::copy(reorderedGlyphAdvances.begin(), reorderedGlyphAdvances.end(), _api.glyphAdvances.begin());
+            std::copy(reorderedGlyphOffsets.begin(), reorderedGlyphOffsets.end(), _api.glyphOffsets.begin());
+            glyphColors = std::move(reorderedGlyphColors);
+
+            const auto col1 = _api.bufferLineColumn[a.textPosition];
+            const auto col2 = _api.bufferLineColumn[a.textPosition + a.textLength];
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
-            for (auto j = prevCluster; j < nextCluster; ++j)
+            for (u32 i = 0; i < actualGlyphCount; ++i)
             {
-                actualAdvance += _api.glyphAdvances[j];
+                actualAdvance += _api.glyphAdvances[i];
             }
-            _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
-
-            row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
-
-            prevCluster = nextCluster;
-            beg = i;
+            if (actualGlyphCount)
+            {
+                _api.glyphAdvances[actualGlyphCount - 1] += expectedAdvance - actualAdvance;
+            }
         }
+
+        row.colors.insert(row.colors.end(), glyphColors.begin(), glyphColors.end());
 
         row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
         row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
+    };
+
+    if (rightToLeft)
+    {
+        for (auto it = _api.analysisResults.rbegin(); it != _api.analysisResults.rend(); ++it)
+        {
+            mapAnalysisRun(*it);
+        }
+    }
+    else
+    {
+        for (const auto& a : _api.analysisResults)
+        {
+            mapAnalysisRun(a);
+        }
     }
 }
 

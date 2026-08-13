@@ -158,6 +158,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     auto& renderSettings = GetRenderSettings();
 
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
+    renderSettings.SetRenderMode(RenderSettings::Mode::BidirectionalText, appearance.BidirectionalText());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
     // If AIC is set to Automatic,

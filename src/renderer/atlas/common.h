@@ -315,6 +315,13 @@ namespace Microsoft::Console::Render::Atlas
         DWRITE_SCRIPT_ANALYSIS analysis;
     };
 
+    struct BidiAnalysisSinkResult
+    {
+        uint32_t textPosition;
+        uint32_t textLength;
+        uint8_t resolvedLevel;
+    };
+
     enum class GraphicsAPI
     {
         Automatic,
@@ -472,6 +479,8 @@ namespace Microsoft::Console::Render::Atlas
             glyphAdvances.clear();
             glyphOffsets.clear();
             colors.clear();
+            visualColumnMap.clear();
+            visualCellMap.clear();
             bitmap.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
@@ -490,6 +499,10 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<DWRITE_GLYPH_OFFSET> glyphOffsets;
         // Same size as glyphIndices.
         std::vector<u32> colors;
+        // Maps logical cell boundaries to visual cell boundaries for bidi cursor painting.
+        std::vector<u16> visualColumnMap;
+        // Maps logical cells to visual cells for bidi color/selection painting.
+        std::vector<u16> visualCellMap;
 
         Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;

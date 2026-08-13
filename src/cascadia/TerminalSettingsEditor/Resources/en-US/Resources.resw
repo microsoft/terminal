@@ -1069,6 +1069,12 @@
     <value>When enabled, Emoji are displayed in full color.</value>
     <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
   </data>
+  <data name="Globals_BidirectionalText.Header" xml:space="preserve">
+    <value>Bidirectional text rendering</value>
+  </data>
+  <data name="Globals_BidirectionalText.HelpText" xml:space="preserve">
+    <value>Render Arabic and other right-to-left text in visual reading order. This changes display only; terminal cell contents and copied text remain in logical order.</value>
+  </data>
   <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Font weight</value>
     <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>

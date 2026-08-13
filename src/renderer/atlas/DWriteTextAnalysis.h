@@ -35,6 +35,7 @@ namespace Microsoft::Console::Render::Atlas
     struct TextAnalysisSink final : IDWriteTextAnalysisSink
     {
         TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results) noexcept;
+        TextAnalysisSink(std::vector<BidiAnalysisSinkResult>& results) noexcept;
 #ifndef NDEBUG
         ~TextAnalysisSink();
 #endif
@@ -48,7 +49,8 @@ namespace Microsoft::Console::Render::Atlas
         HRESULT __stdcall SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept override;
 
     private:
-        std::vector<TextAnalysisSinkResult>& _results;
+        std::vector<TextAnalysisSinkResult>* _scriptResults = nullptr;
+        std::vector<BidiAnalysisSinkResult>* _bidiResults = nullptr;
 #ifndef NDEBUG
         ULONG _refCount = 1;
 #endif

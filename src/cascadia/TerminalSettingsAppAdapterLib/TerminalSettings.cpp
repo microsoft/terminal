@@ -377,6 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _GraphicsAPI = globalSettings.GraphicsAPI();
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
+        _BidirectionalText = globalSettings.BidirectionalText();
         _TextMeasurement = globalSettings.TextMeasurement();
         _AmbiguousWidth = globalSettings.AmbiguousWidth();
         _DefaultInputScope = globalSettings.DefaultInputScope();

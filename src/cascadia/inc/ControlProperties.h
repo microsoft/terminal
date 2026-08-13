@@ -13,6 +13,7 @@
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
+    X(bool, BidirectionalText, false)                                                                                      \
     X(bool, IntenseIsBright, true)                                                                                        \
     X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic)
 
