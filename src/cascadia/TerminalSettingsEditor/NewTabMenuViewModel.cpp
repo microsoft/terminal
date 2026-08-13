@@ -227,7 +227,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return nullptr;
         }
-        // IconWUX sets the icon width/height to 32 by default
         auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(_CurrentFolder.Icon());
         icon.Width(16);
         icon.Height(16);

@@ -990,7 +990,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
+        auto profileIcon = UI::IconPathConverter::IconWUX(profile.EvaluatedIcon());
+        profileIcon.Width(16);
+        profileIcon.Height(16);
+        profileNavItem.Icon(profileIcon);
         WUX::Controls::ToolTipService::SetToolTip(profileNavItem, box_value(profile.Name()));
 
         if (profile.Orphaned())
@@ -1010,7 +1013,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
                 if (args.PropertyName() == L"Icon")
                 {
-                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
+                    auto updatedIcon = UI::IconPathConverter::IconWUX(tag.EvaluatedIcon());
+                    updatedIcon.Width(16);
+                    updatedIcon.Height(16);
+                    menuItem.Icon(updatedIcon);
                 }
                 else if (args.PropertyName() == L"Name")
                 {

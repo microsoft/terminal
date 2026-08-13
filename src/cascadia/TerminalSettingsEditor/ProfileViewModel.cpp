@@ -558,7 +558,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Xaml::Controls::IconElement ProfileViewModel::IconPreview() const
     {
-        // IconWUX sets the icon width/height to 32 by default
         auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(EvaluatedIcon());
         icon.Width(16);
         icon.Height(16);
