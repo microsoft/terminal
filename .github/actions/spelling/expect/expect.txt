@@ -1,8 +1,8 @@
 aaaaabbb
+ABANDONFONT
 abbcc
 abcc
 abgr
-ABANDONFONT
 ABORTIFHUNG
 ACCESSTOKEN
 acidev
@@ -166,6 +166,7 @@ changelist
 CHARSETINFO
 chshdng
 CHT
+CInput
 CLASSSTRING
 cleartype
 CLICKACTIVE
@@ -665,6 +666,7 @@ GHIJK
 GHIJKL
 gitcheckin
 gitfilters
+gksks
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -1079,7 +1081,6 @@ NOCONTEXTHELP
 NOCOPYBITS
 nodiscard
 NODUP
-NODEFAULT
 noexcepts
 NOFONT
 NOHIDDENTEXT
@@ -1111,7 +1112,6 @@ NOSNAPSHOT
 NOTELLSHELL
 NOTHOUSANDS
 NOTICKS
-notif
 NOTIMEOUTIFNOTHUNG
 NOTIMPL
 NOTOPMOST
@@ -1568,7 +1568,6 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
-SND
 snk
 SOLIDBOX
 Solutiondir
@@ -1757,6 +1756,7 @@ Unittesting
 unittests
 unknwn
 UNORM
+unsend
 untextured
 UPDATEDISPLAY
 UPDOWN
