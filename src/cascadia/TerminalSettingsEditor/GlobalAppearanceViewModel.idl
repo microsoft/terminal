@@ -27,6 +27,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsFullscreen);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowPaneHeaders);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTitleInTitlebar);

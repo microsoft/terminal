@@ -75,6 +75,13 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
+        <!--  Show pane headers  -->
+        <local:SettingContainer x:Name="ShowPaneHeaders"
+                                x:Uid="Globals_ShowPaneHeaders">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowPaneHeaders, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingContainer>
+
         <!--  Show Acrylic in Tab Row  -->
         <local:SettingContainer x:Name="AcrylicTabRow"
                                 x:Uid="Globals_AcrylicTabRow">

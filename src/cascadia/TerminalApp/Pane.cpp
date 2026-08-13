@@ -31,10 +31,14 @@ Pane::Pane(IPaneContent content, const bool lastFocused) :
     _lastActive{ lastFocused }
 {
     _setPaneContent(std::move(content));
-    _root.Children().Append(_borderFirst);
+    _CreatePaneHeader();
 
     const auto& control{ _content.GetRoot() };
-    _borderFirst.Child(control);
+
+    // Set up leaf layout: header in _root row 0, content in _borderFirst row 1.
+    // The TermControl stays as the direct child of _borderFirst (no Grid wrapper)
+    // so the SwapChainPanel renders correctly.
+    _SetupLeafLayout(control);
 
     // Register an event with the control to have it inform us when it gains focus.
     if (control)
@@ -1232,6 +1236,12 @@ void Pane::UpdateVisuals()
     const auto& brush{ _ComputeBorderColor() };
     _borderFirst.BorderBrush(brush);
     _borderSecond.BorderBrush(brush);
+
+    // Update pane header color to match focus state
+    if (_paneHeaderBorder && _paneHeaderBorder.Visibility() == winrt::Windows::UI::Xaml::Visibility::Visible)
+    {
+        _paneHeaderBorder.Background(brush);
+    }
 }
 
 // Method Description:
@@ -1437,6 +1447,15 @@ void Pane::_CloseChild(const bool closeFirst)
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
 
+        // Remember whether the surviving child's pane header was visible. We
+        // recreate our own header collapsed below (see _CreatePaneHeader), so we
+        // must restore this state; otherwise a pane promoted to a leaf during a
+        // close would lose its header even though multiple panes still remain
+        // (this can happen for closes in an inactive subtree that don't trigger
+        // an active-pane update in the Tab).
+        const auto showPaneHeader = remainingChild->_paneHeaderBorder &&
+                                    remainingChild->_paneHeaderBorder.Visibility() == winrt::Windows::UI::Xaml::Visibility::Visible;
+
         // If we or either of our children was focused, we want to take that
         // focus from them.
         _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
@@ -1454,9 +1473,9 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.RowDefinitions().Clear();
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_borderFirst);
+        _CreatePaneHeader();
         const auto& control{ _content.GetRoot() };
-        _borderFirst.Child(control);
+        _SetupLeafLayout(control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -1470,6 +1489,14 @@ void Pane::_CloseChild(const bool closeFirst)
             _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ContentGotFocusHandler });
             _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ContentLostFocusHandler });
         }
+
+        // Restore the pane header visibility captured above (our rebuilt header
+        // starts collapsed). Do this *before* focusing below: focusing raises
+        // GotFocus, which makes the Tab re-evaluate header visibility and
+        // correctly hide the header if the tab has collapsed to a single pane.
+        // For closes in an inactive subtree (where no GotFocus fires and the tab
+        // still has multiple panes) this restore is the final state.
+        ShowPaneHeaders(showPaneHeader);
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
@@ -1736,6 +1763,7 @@ void Pane::_SetupChildCloseHandlers()
 IPaneContent Pane::_takePaneContent()
 {
     _closeRequestedRevoker.revoke();
+    _titleChangedRevoker.revoke();
     return std::move(_content);
 }
 
@@ -1759,7 +1787,105 @@ void Pane::_setPaneContent(IPaneContent content)
 }
 
 // Method Description:
-// - Sets up row/column definitions for this pane. There are three total
+// - Creates the pane header UI elements (title bar shown above the content).
+//   The header is initially collapsed and only shown via ShowPaneHeaders().
+void Pane::_CreatePaneHeader()
+{
+    namespace WUX = winrt::Windows::UI::Xaml;
+
+    _paneHeaderText = Controls::TextBlock{};
+    _paneHeaderText.FontSize(12);
+    _paneHeaderText.Padding({ 8, 2, 8, 2 });
+    _paneHeaderText.IsTextSelectionEnabled(false);
+    _paneHeaderText.TextTrimming(WUX::TextTrimming::CharacterEllipsis);
+    if (_content)
+    {
+        _paneHeaderText.Text(_content.Title());
+        // Capture the content and header TextBlock by value (both are
+        // independently ref-counted WinRT objects) instead of the raw Pane
+        // `this`. The Pane may be closed and destroyed before the queued
+        // dispatcher callback runs; capturing `this` would be a use-after-free.
+        // auto_revoke removes the subscription when this Pane (and its revoker
+        // member) is destroyed, so there's no reference cycle.
+        const auto content = _content;
+        const auto headerText = _paneHeaderText;
+        _titleChangedRevoker = _content.TitleChanged(winrt::auto_revoke, [content, headerText](auto&&, auto&&) {
+            // TitleChanged may arrive off the UI thread, so hop back onto it
+            // before touching XAML.
+            headerText.Dispatcher().RunAsync(
+                winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+                [content, headerText]() {
+                    headerText.Text(content.Title());
+                });
+        });
+    }
+
+    _paneHeaderBorder = Controls::Border{};
+    _paneHeaderBorder.Padding({ 0, 0, 0, 0 });
+    _paneHeaderBorder.Child(_paneHeaderText);
+    _paneHeaderBorder.Visibility(WUX::Visibility::Collapsed);
+
+    // Focus this pane when its header is tapped. Without this, the tap bubbles
+    // up to the parent pane's border handler, which would focus the parent's
+    // first child (the wrong pane). _borderTappedHandler focuses this leaf and
+    // marks the event handled so it doesn't bubble.
+    _paneHeaderBorder.Tapped({ this, &Pane::_borderTappedHandler });
+}
+
+// Method Description:
+// - Sets up the leaf pane layout in _root: a header row (auto-sized) and a
+//   content row (star-sized). The TermControl stays as the direct child of
+//   _borderFirst so the SwapChainPanel renders correctly.
+void Pane::_SetupLeafLayout(const winrt::Windows::UI::Xaml::UIElement& control)
+{
+    auto headerRow = Controls::RowDefinition{};
+    headerRow.Height(GridLengthHelper::Auto());
+    auto contentRow = Controls::RowDefinition{};
+    contentRow.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+    _root.RowDefinitions().Append(headerRow);
+    _root.RowDefinitions().Append(contentRow);
+
+    Controls::Grid::SetRow(_paneHeaderBorder, 0);
+    Controls::Grid::SetRow(_borderFirst, 1);
+
+    _root.Children().Append(_paneHeaderBorder);
+    _root.Children().Append(_borderFirst);
+
+    if (control)
+    {
+        _borderFirst.Child(control);
+    }
+}
+
+// Method Description:
+// - Show or hide the pane header title bar on all leaf panes in the tree.
+//   Called by Tab when the number of panes changes.
+void Pane::ShowPaneHeaders(bool show)
+{
+    if (_IsLeaf())
+    {
+        if (_paneHeaderBorder)
+        {
+            namespace WUX = winrt::Windows::UI::Xaml;
+            _paneHeaderBorder.Visibility(show ? WUX::Visibility::Visible : WUX::Visibility::Collapsed);
+
+            if (show)
+            {
+                const auto& brush = _ComputeBorderColor();
+                _paneHeaderBorder.Background(brush);
+                _paneHeaderText.Foreground(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::White()));
+            }
+        }
+    }
+    else
+    {
+        _firstChild->ShowPaneHeaders(show);
+        _secondChild->ShowPaneHeaders(show);
+    }
+}
+
+// Method Description:
+// - Sets up row/column definitions for this pane.There are three total
 //   row/cols. The middle one is for the separator. The first and third are for
 //   each of the child panes, and are given a size in pixels, based off the
 //   available space, and the percent of the space they respectively consume,
@@ -2324,6 +2450,10 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _root.ColumnDefinitions().Clear();
     _root.RowDefinitions().Clear();
     _CreateRowColDefinitions();
+
+    // Reset Grid.Row on _borderFirst — it may have been set to row 1 in the
+    // leaf layout (header=row0, content=row1).
+    Controls::Grid::SetRow(_borderFirst, 0);
 
     _borderFirst.Child(_firstChild->GetRootElement());
     _borderSecond.Child(_secondChild->GetRootElement());

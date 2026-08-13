@@ -150,6 +150,7 @@ public:
     bool ContainsReadOnly() const;
 
     void EnableBroadcast(bool enabled);
+    void ShowPaneHeaders(bool show);
     void BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
     void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
     void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
@@ -235,6 +236,11 @@ private:
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
 
+    // Per-pane title header (visible when there are split panes)
+    winrt::Windows::UI::Xaml::Controls::Border _paneHeaderBorder{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::TextBlock _paneHeaderText{ nullptr };
+    winrt::TerminalApp::IPaneContent::TitleChanged_revoker _titleChangedRevoker;
+
     PaneResources _themeResources;
 
 #pragma region Properties that need to be transferred between child / parent panes upon splitting / closing
@@ -266,6 +272,8 @@ private:
     void _SetupChildCloseHandlers();
     winrt::TerminalApp::IPaneContent _takePaneContent();
     void _setPaneContent(winrt::TerminalApp::IPaneContent content);
+    void _CreatePaneHeader();
+    void _SetupLeafLayout(const winrt::Windows::UI::Xaml::UIElement& control);
     bool _HasChild(const std::shared_ptr<Pane> child);
     winrt::TerminalApp::TerminalPaneContent _getTerminalContent() const;
 
