@@ -168,7 +168,7 @@
                                             Click="BellSoundAudioPreview_Click"
                                             IsEnabled="{x:Bind FileExists, Mode=OneWay}"
                                             Style="{StaticResource BrowseButtonStyle}"
-                                            Tag="{Binding Mode=OneWay}">
+                                            Tag="{x:Bind}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE767;" />
                                     </Button>
@@ -178,7 +178,7 @@
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundDelete_Click"
                                             Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{Binding Mode=OneWay}">
+                                            Tag="{x:Bind}">
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE74D;" />
                                     </Button>
