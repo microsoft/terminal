@@ -190,7 +190,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastLightSchemeName;
-        bool _settingSchemePair{ false };
+        // Set while the dark and light scheme names are written as one
+        // operation, so the divergence check between the two writes is skipped.
+        bool _suppressSchemeDivergenceCheck{ false };
         std::optional<FontFaceDependentsData> _fontFaceDependents;
     };
 

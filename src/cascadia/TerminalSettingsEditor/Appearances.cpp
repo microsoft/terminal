@@ -254,7 +254,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // make sure the split light/dark UI is showing. Skip the
                 // check while both names are being written as one operation:
                 // the divergence between the two writes is transient.
-                if (!_settingSchemePair && DarkColorSchemeName() != LightColorSchemeName())
+                if (!_suppressSchemeDivergenceCheck && DarkColorSchemeName() != LightColorSchemeName())
                 {
                     UseSeparateLightColorScheme(true);
                 }
@@ -1041,10 +1041,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::ClearColorScheme()
     {
-        _settingSchemePair = true;
+        _suppressSchemeDivergenceCheck = true;
         ClearDarkColorSchemeName();
         ClearLightColorSchemeName();
-        _settingSchemePair = false;
+        _suppressSchemeDivergenceCheck = false;
         UseSeparateLightColorScheme(DarkColorSchemeName() != LightColorSchemeName());
         _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
     }
@@ -1078,10 +1078,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return;
         }
-        _settingSchemePair = true;
+        _suppressSchemeDivergenceCheck = true;
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
-        _settingSchemePair = false;
+        _suppressSchemeDivergenceCheck = false;
     }
 
     Editor::ColorSchemeViewModel AppearanceViewModel::CurrentDarkColorScheme() const
