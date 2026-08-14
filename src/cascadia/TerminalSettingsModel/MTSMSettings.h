@@ -76,6 +76,7 @@ Author(s):
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
+    X(bool, EnableTabDragDrop, "enableTabDragDrop", true)                                                                                                                                             \
     X(bool, ShowTabsFullscreen, "showTabsFullscreen", false)
 
 // MTSM_GLOBAL_SETTINGS is the union of global-only and window settings.
