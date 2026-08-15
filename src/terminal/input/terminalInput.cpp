@@ -318,6 +318,16 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         }
     }
 
+    // KKP> Additionally, with [ReportAllKeysAsEscapeCodes], events for pressing modifier keys are reported.
+    //
+    // Put differently, if the mode is reset, we can early-return on modifier key events.
+    if (WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
+        ((key.virtualKey >= VK_SHIFT && key.virtualKey <= VK_MENU) ||
+         (key.virtualKey >= VK_LSHIFT && key.virtualKey <= VK_RMENU)))
+    {
+        return _makeNoOutput();
+    }
+
     // There's a bunch of early returns we can place on key-up events,
     // before we run our more complex encoding logic below.
     if (!key.keyDown)
@@ -342,8 +352,12 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         //
         // KKP> NOTE: The Enter, Tab and Backspace keys will not have release
         // KKP> events unless Report all keys as escape codes is also set [...].
+        //
+        // Note that we have to differentiate between regular Return and Numpad Return.
         if (WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
-            (key.virtualKey == VK_RETURN || key.virtualKey == VK_TAB || key.virtualKey == VK_BACK))
+            ((key.virtualKey == VK_RETURN && WI_IsFlagClear(key.controlKeyState, ENHANCED_KEY)) ||
+             key.virtualKey == VK_TAB ||
+             key.virtualKey == VK_BACK))
         {
             return _makeNoOutput();
         }
@@ -1245,8 +1259,11 @@ bool TerminalInput::_formatEncodingHelper(EncodingHelper& enc, const SanitizedKe
 
 void TerminalInput::_formatFallback(KeyboardHelper& kbd, const SanitizedKeyEvent& key, std::wstring& seq) const
 {
-    // If this is a modifier, it won't produce output, so we can return early.
-    if (key.virtualKey >= VK_SHIFT && key.virtualKey <= VK_MENU)
+    // With KKP ReportEventTypes set, we'll handle key up events.
+    // If the KKP logic fails to map a key it'll fall back to this function.
+    // -> This function may be called with key up events and we don't send anything for those.
+    // This happens primarily for dead keys. getKittyBaseKey fails to map it and so we get here.
+    if (!key.keyDown)
     {
         return;
     }
