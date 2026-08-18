@@ -27,9 +27,7 @@ class WindowEmperor;
 // (CWinRTActivationStoreCatalog) implicated in the 0xc0000005 / 0x80010105
 // failures. Complex results cross the wire as JSON (BSTR)
 struct __declspec(uuid(__CLSID_TerminalProtocolServer))
-TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
-                                Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>,
-                                ITerminalProtocol>
+TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalProtocol>
 {
     // ── ITerminalProtocol ──
     STDMETHODIMP GetActivePane(BSTR* json) override;
@@ -54,6 +52,5 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<
     static HRESULT s_StopListening();
 
 private:
-
     static WindowEmperor* s_emperor;
 };

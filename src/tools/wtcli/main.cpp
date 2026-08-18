@@ -254,10 +254,16 @@ int main()
     auto* listWindowsCmd = app.add_subcommand("list-windows", "List all windows")->alias("lsw");
     listWindowsCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         Json::Value windows;
         auto hr = CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows);
-        if (FAILED(hr)) { fprintf(stderr, "ListWindows failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "ListWindows failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
         {
             Json::Value arr(Json::objectValue);
@@ -276,7 +282,8 @@ int main()
     listTabsCmd->add_option("-w,--window-id", listTabsWindowId, "Window ID");
     listTabsCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         uint64_t wid = 0;
         if (listTabsWindowId.empty())
         {
@@ -298,7 +305,12 @@ int main()
         }
         Json::Value tabs;
         auto hr = CallJson([&](BSTR* j) { return server->ListTabs(wid, j); }, tabs);
-        if (FAILED(hr)) { fprintf(stderr, "ListTabs failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "ListTabs failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
         {
             Json::Value arr(Json::objectValue);
@@ -318,7 +330,8 @@ int main()
     listPanesCmd->add_option("-w,--window-id", listPanesWindowId, "Window ID");
     listPanesCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         uint64_t wid = 0;
         if (!listPanesWindowId.empty() && !TryParseU64(listPanesWindowId, wid))
         {
@@ -360,7 +373,12 @@ int main()
         }
         Json::Value panes;
         auto hr = CallJson([&](BSTR* j) { return server->ListPanes(wid, tid, j); }, panes);
-        if (FAILED(hr)) { fprintf(stderr, "ListPanes failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "ListPanes failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
         {
             Json::Value arr(Json::objectValue);
@@ -377,10 +395,16 @@ int main()
     auto* activePaneCmd = app.add_subcommand("active-pane", "Show the currently active pane");
     activePaneCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         Json::Value info;
         auto hr = CallJson([&](BSTR* j) { return server->GetActivePane(j); }, info);
-        if (FAILED(hr)) { fprintf(stderr, "GetActivePane failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "GetActivePane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
             PrintJson(info);
         else
@@ -394,16 +418,21 @@ int main()
     auto* capturePaneCmd = app.add_subcommand("capture-pane", "Capture pane output")->alias("capturep");
     capturePaneCmd->add_option("-t,--target", capturePaneTarget, "Session ID (GUID)");
     capturePaneCmd->add_option("-l,--max-lines", captureMaxLines, "Max lines");
-    capturePaneCmd->add_flag("--last-prompt", captureLastPrompt,
-        "Only return the most recent completed shell prompt (command + output, requires OSC 133 shell integration)");
+    capturePaneCmd->add_flag("--last-prompt", captureLastPrompt, "Only return the most recent completed shell prompt (command + output, requires OSC 133 shell integration)");
     capturePaneCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         auto sessionId = ResolveSessionId(server.get(), capturePaneTarget);
         wil::unique_bstr src{ Bstr(captureLastPrompt ? "last_prompt" : "scrollback") };
         Json::Value output;
         auto hr = CallJson([&](BSTR* j) { return server->ReadPaneOutput(sessionId, src.get(), captureMaxLines, j); }, output);
-        if (FAILED(hr)) { fprintf(stderr, "ReadPaneOutput failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "ReadPaneOutput failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
             PrintJson(output);
         else
@@ -416,11 +445,17 @@ int main()
     paneStatusCmd->add_option("-t,--target", paneStatusTarget, "Session ID (GUID)");
     paneStatusCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         auto sessionId = ResolveSessionId(server.get(), paneStatusTarget);
         Json::Value status;
         auto hr = CallJson([&](BSTR* j) { return server->GetProcessStatus(sessionId, j); }, status);
-        if (FAILED(hr)) { fprintf(stderr, "GetProcessStatus failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "GetProcessStatus failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
             PrintJson(status);
         else
@@ -435,13 +470,19 @@ int main()
     newTabCmd->add_option("-d,--cwd", newTabCwd, "Starting directory");
     newTabCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         wil::unique_bstr profile{ Bstr("") }, command{ Bstr(newTabCommand) }, title{ Bstr(newTabTitle) }, cwd{ Bstr(newTabCwd) };
         Json::Value result;
         auto hr = CallJson([&](BSTR* j) {
             return server->CreateTab(0, profile.get(), command.get(), title.get(), cwd.get(), false, true, j);
         }, result);
-        if (FAILED(hr)) { fprintf(stderr, "CreateTab failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "CreateTab failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
             PrintJson(result);
         else
@@ -461,7 +502,8 @@ int main()
     splitPaneCmd->add_option("-c,--command", splitPaneCommand, "Command to run");
     splitPaneCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         auto sessionId = ResolveSessionId(server.get(), splitPaneTarget);
         std::string dir;
         if (!splitPaneDirection.empty())
@@ -477,7 +519,12 @@ int main()
         auto hr = CallJson([&](BSTR* j) {
             return server->SplitPane(sessionId, dirB.get(), static_cast<float>(splitSize), profile.get(), command.get(), true, j);
         }, result);
-        if (FAILED(hr)) { fprintf(stderr, "SplitPane failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "SplitPane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
             PrintJson(result);
         else
@@ -490,10 +537,16 @@ int main()
     killPaneCmd->add_option("-t,--target", killPaneTarget, "Session ID (GUID)");
     killPaneCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         auto sessionId = ResolveSessionId(server.get(), killPaneTarget);
         auto hr = server->ClosePane(sessionId);
-        if (FAILED(hr)) { fprintf(stderr, "ClosePane failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "ClosePane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
         {
             Json::Value v;
@@ -513,10 +566,16 @@ int main()
     focusPaneCmd->add_option("-t,--target", focusPaneTarget, "Session ID (GUID)");
     focusPaneCmd->callback([&]() {
         auto server = connect();
-        if (!server) return;
+        if (!server)
+            return;
         auto sessionId = ResolveSessionId(server.get(), focusPaneTarget);
         auto hr = server->FocusPane(sessionId);
-        if (FAILED(hr)) { fprintf(stderr, "FocusPane failed: 0x%08X\n", static_cast<uint32_t>(hr)); exitCode = 1; return; }
+        if (FAILED(hr))
+        {
+            fprintf(stderr, "FocusPane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            exitCode = 1;
+            return;
+        }
         if (jsonMode)
         {
             Json::Value v;

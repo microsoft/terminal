@@ -22,7 +22,6 @@ struct TerminalProtocolComServer;
 
 class WindowEmperor
 {
-
 public:
     enum UserMessages : UINT
     {

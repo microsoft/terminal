@@ -331,9 +331,7 @@ namespace winrt::TerminalApp::implementation
 
         if (sourceRoute == ProtocolParsing::PaneOutputSource::Screen)
         {
-            const auto startIdx = lines.size() > static_cast<size_t>(viewHeight)
-                                      ? lines.size() - viewHeight
-                                      : 0;
+            const auto startIdx = lines.size() > static_cast<size_t>(viewHeight) ? lines.size() - viewHeight : 0;
 
             std::string content;
             int lineCount = 0;

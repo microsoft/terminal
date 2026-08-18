@@ -708,5 +708,3 @@ try
     return E_FAIL;
 }
 CATCH_RETURN()
-
-
