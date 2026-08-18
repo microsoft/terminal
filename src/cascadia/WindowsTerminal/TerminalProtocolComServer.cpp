@@ -7,6 +7,9 @@
 #include "WindowEmperor.h"
 #include "AppHost.h"
 
+#include <WtExeUtils.h>
+#include "../../types/inc/utils.hpp"
+
 #include <json/json.h>
 #include <til/io.h>
 #include "../TerminalProtocol/ProtocolParsing.h"
@@ -26,6 +29,23 @@ namespace Protocol = winrt::Microsoft::Terminal::Protocol;
 
 // Static state — set once before registration, never mutated.
 WindowEmperor* TerminalProtocolComServer::s_emperor = nullptr;
+
+// Returns the CLSID to register/activate the protocol server.
+// Packaged: the compile-time per-brand CLSID (unique by package identity).
+// Unpackaged/portable: a per-install-path v5 UUID so that multiple portable
+// installations in different directories don't share the same registration.
+static const GUID& _protocolClsid() noexcept
+{
+    if (IsPackaged())
+        return __uuidof(TerminalProtocolComServer);
+
+    static const GUID portableClsid = []() {
+        std::filesystem::path dir{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+        dir.remove_filename();
+        return ::Microsoft::Console::Utils::CreateV5Uuid(__uuidof(TerminalProtocolComServer), std::as_bytes(std::span{ dir.native() }));
+    }();
+    return portableClsid;
+}
 
 static DWORD g_comRegistration = 0;
 static std::shared_mutex g_mtx;
@@ -69,7 +89,7 @@ try
             if (SUCCEEDED(regHr))
             {
                 regHr = CoRegisterClassObject(
-                    __uuidof(TerminalProtocolComServer),
+                    _protocolClsid(),
                     unk.Get(),
                     CLSCTX_LOCAL_SERVER,
                     REGCLS_MULTIPLEUSE,

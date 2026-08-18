@@ -4,6 +4,11 @@
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
 
+#include <appmodel.h>
+#include <bcrypt.h>
+#include <wil/stl.h>
+#include <wil/win32_helpers.h>
+
 #include "Formatting.h"
 
 // Classic-COM Terminal protocol. Generated from
@@ -17,9 +22,11 @@
 
 #include <wil/resource.h>
 
+#include <array>
 #include <charconv>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -37,10 +44,63 @@ static constexpr CLSID CLSID_TerminalProtocol = { 0x264DE65B, 0xF597, 0x4183, { 
 static constexpr CLSID CLSID_TerminalProtocol = { 0xAD9425AA, 0x1722, 0x4E7B, { 0xA4, 0x51, 0xAA, 0x1D, 0x09, 0x10, 0x6E, 0x83 } };
 #endif
 
+static bool _isPackaged() noexcept
+{
+    static const bool packaged = []() noexcept {
+        UINT32 n = 0;
+        return GetCurrentPackageId(&n, nullptr) != APPMODEL_ERROR_NO_PACKAGE;
+    }();
+    return packaged;
+}
+
+// Derive a per-install-path CLSID using the same v5 UUID formula as the server,
+// so that unpackaged/portable clients find the correct matching server instance.
+static GUID _portableClsid(const GUID& brandClsid)
+{
+    const GUID brand = brandClsid; // copy before static capture
+    static const GUID clsid = [brand]() {
+        // Endian-swap the namespace GUID to network byte order (RFC4122)
+        auto swapEndian = [](const GUID& g) {
+            GUID r = g;
+            r.Data1 = _byteswap_ulong(g.Data1);
+            r.Data2 = _byteswap_ushort(g.Data2);
+            r.Data3 = _byteswap_ushort(g.Data3);
+            return r;
+        };
+        const auto ns = swapEndian(brand);
+
+        std::filesystem::path dir{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        dir.remove_filename();
+        const auto& pathBytes = dir.native();
+
+        BCRYPT_HASH_HANDLE hashHandle = nullptr;
+        BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hashHandle, nullptr, 0, nullptr, 0, 0);
+        BCryptHashData(hashHandle, reinterpret_cast<PUCHAR>(const_cast<GUID*>(&ns)), sizeof(GUID), 0);
+        BCryptHashData(hashHandle, reinterpret_cast<PUCHAR>(const_cast<wchar_t*>(pathBytes.data())), static_cast<ULONG>(pathBytes.size() * sizeof(wchar_t)), 0);
+
+        std::array<uint8_t, 20> buf{};
+        BCryptFinishHash(hashHandle, buf.data(), static_cast<ULONG>(buf.size()), 0);
+        BCryptDestroyHash(hashHandle);
+
+        buf[6] = (buf[6] & 0x0F) | 0x50; // version 5
+        buf[8] = (buf[8] & 0x3F) | 0x80; // variant 2
+
+        GUID result{};
+        memcpy_s(&result, sizeof(GUID), buf.data(), sizeof(GUID));
+        // Swap back to host byte order
+        result.Data1 = _byteswap_ulong(result.Data1);
+        result.Data2 = _byteswap_ushort(result.Data2);
+        result.Data3 = _byteswap_ushort(result.Data3);
+        return result;
+    }();
+    return clsid;
+}
+
 static winrt::com_ptr<ITerminalProtocol> ConnectToTerminal(std::string* outVersion = nullptr)
 {
+    const auto clsid = _isPackaged() ? CLSID_TerminalProtocol : _portableClsid(CLSID_TerminalProtocol);
     winrt::com_ptr<ITerminalProtocol> server;
-    auto hr = CoCreateInstance(CLSID_TerminalProtocol, nullptr, CLSCTX_LOCAL_SERVER, __uuidof(ITerminalProtocol), server.put_void());
+    auto hr = CoCreateInstance(clsid, nullptr, CLSCTX_LOCAL_SERVER, __uuidof(ITerminalProtocol), server.put_void());
     if (FAILED(hr))
     {
         fprintf(stderr, "[wtcli] Connection failed: 0x%08X\n", static_cast<uint32_t>(hr));

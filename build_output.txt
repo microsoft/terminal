@@ -1,0 +1,195 @@
+Build started at 10:43 AM...
+1>------ Build started: Project: wtcli, Configuration: Debug x64 ------
+2>------ Build started: Project: WindowsTerminal, Configuration: Debug x64 ------
+1>  dev/pabhoj/wtcli
+1>  main.cpp
+2>  TerminalProtocolComServer.cpp
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  Microsoft (R) Manifest Tool
+2>
+2>  Copyright (c) Microsoft Corporation.
+2>
+2>  All rights reserved.
+2>
+2>  WindowsTerminal.vcxproj -> C:\Users\pabhojwa\source\repos\terminal\bin\x64\Debug\WindowsTerminal\WindowsTerminal.exe
+1>C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\resource.h(3660,13): error C2039: 'get': is not a member of 'std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>'
+1>              WI_ASSERT(m_value.get());
+1>              ^ (compiling source file 'main.cpp')
+1>      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\xstring(589,7):
+1>      see declaration of 'std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>'
+1>      class basic_string { // null-terminated transparent array of elements
+1>            ^
+1>      C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\resource.h(3660,13):
+1>      the template instantiation context (the oldest one first) is
+1>                  WI_ASSERT(m_value.get());
+1>                  ^
+1>          C:\Users\pabhojwa\source\repos\terminal\src\tools\wtcli\main.cpp(71,41):
+1>          see reference to function template instantiation 'string_type wil::GetModuleFileNameW<std::wstring,128>(HMODULE)' being compiled
+1>          with
+1>          [
+1>              string_type=std::wstring
+1>          ]
+1>                  std::filesystem::path dir{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+1>                                                  ^
+1>          C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(617,5):
+1>          see reference to function template instantiation 'HRESULT wil::GetModuleFileNameW<std::wstring,128>(HMODULE,string_type &) noexcept' being compiled
+1>          with
+1>          [
+1>              string_type=std::wstring
+1>          ]
+1>              THROW_IF_FAILED((wil::GetModuleFileNameW<string_type, initialBufferLength>(module, result)));
+1>              ^
+1>          C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(538,17):
+1>          see reference to function template instantiation 'HRESULT wil::K32GetModuleFileNameExW<std::wstring,128>(HANDLE,HMODULE,string_type &) noexcept' being compiled
+1>          with
+1>          [
+1>              string_type=std::wstring
+1>          ]
+1>              return wil::GetModuleFileNameExW<string_type, initialBufferLength>(nullptr, module, path);
+1>                          ^
+1>          C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(528,17):
+1>          see reference to function template instantiation 'HRESULT wil::AdaptFixedSizeToAllocatedResult<std::wstring,128>(string_type &,wistd::function<HRESULT (PWSTR,size_t,size_t *)>) noexcept' being compiled
+1>          with
+1>          [
+1>              string_type=std::wstring
+1>          ]
+1>              return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(path, wistd::move(adapter));
+1>                          ^
+1>          C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(345,40):
+1>          see reference to class template instantiation 'wil::details::string_maker<std::wstring>' being compiled
+1>              details::string_maker<string_type> maker;
+1>                                                 ^
+1>          C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\resource.h(3658,18):
+1>          while compiling class template member function 'wchar_t *wil::details::string_maker<std::wstring>::buffer(void)'
+1>                  wchar_t* buffer()
+1>                           ^
+1>              C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(367,13):
+1>              see the first reference to 'wil::details::string_maker<std::wstring>::buffer' in 'wil::AdaptFixedSizeToAllocatedResult'
+1>                          RETURN_IF_FAILED_EXPECTED(callback(maker.buffer(), bufferLength, &valueLengthNeededWithNull));
+1>                          ^
+1>              C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(528,17):
+1>              see the first reference to 'wil::AdaptFixedSizeToAllocatedResult' in 'wil::K32GetModuleFileNameExW'
+1>                  return wil::AdaptFixedSizeToAllocatedResult<string_type, initialBufferLength>(path, wistd::move(adapter));
+1>                              ^
+1>              C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(538,17):
+1>              see the first reference to 'wil::K32GetModuleFileNameExW' in 'wil::GetModuleFileNameW'
+1>                  return wil::GetModuleFileNameExW<string_type, initialBufferLength>(nullptr, module, path);
+1>                              ^
+1>              C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\win32_helpers.h(617,5):
+1>              see the first reference to 'wil::GetModuleFileNameW' in 'wil::GetModuleFileNameW'
+1>                  THROW_IF_FAILED((wil::GetModuleFileNameW<string_type, initialBufferLength>(module, result)));
+1>                  ^
+1>C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\include\wil\resource.h(3661,28): error C2039: 'get': is not a member of 'std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>'
+1>              return m_value.get();
+1>                             ^ (compiling source file 'main.cpp')
+1>      C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.51.36231\include\xstring(589,7):
+1>      see declaration of 'std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>'
+1>      class basic_string { // null-terminated transparent array of elements
+1>            ^
+2>  I2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  2>  3>------ Build started: Project: CascadiaPackage, Configuration: Debug x64 ------
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/WindowMinimizeButton/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/WindowMaximizeButton/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/WindowCloseButton/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/TerminalPage_PaneMovedAnnouncement_ExistingWindow'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/QuitDialog/Title'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/QuitDialog/PrimaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/QuitDialog/CloseButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/Quit'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/PlainText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/LegacyGlobalsPropertyHrefUrl'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/LegacyGlobalsPropertyHrefLabel'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/LegacyGlobalsProperty'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/KeyboardServiceDisabledDialog/Title'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/KeyboardServiceDisabledDialog/PrimaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/FeedbackUriValue'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/FeedbackMenuItem'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/ExportSuccess'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/ExportFailure'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/CouldNotOpenUriDialog/PrimaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/CloseAllDialog/Title'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/CloseAllDialog/PrimaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/CloseAllDialog/CloseButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/CloseAll'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/Cancel'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'TerminalApp/Resources/AboutDialog_GettingStartedLink/Content'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Rename/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_PaddingSlider/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconTypeNone'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconTypeImage'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconTypeFontIcon'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconTypeEmoji'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconType/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconEmojiBox/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconEmojiBox/PlaceholderText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconBrowse/Content'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_IconBox/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_HideIconCheckbox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_HideIconCheckbox/Content'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_General/Header'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_BuiltInIcon/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_BellStyleVisual/Content'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Profile_BellSoundBrowse/Content'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/NullableColorPicker_ColorPickerContentDialog/Title'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/NullableColorPicker_ColorPickerContentDialog/SecondaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/NullableColorPicker_ColorPickerContentDialog/PrimaryButtonText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_LaunchMode/HelpText'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_LaunchMode/Header'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_KeybindingsDisclaimer/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_InitialPosY/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_InitialPosX/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/Globals_DisableAnimations/Header'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_TerminalColorsHeader/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_SystemColorsHeader/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_RenameDisclaimerInBox'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_EditButton/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_DeleteDisclaimerInBox'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_DeleteButtonDisclaimerInBox/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/ColorScheme_DeleteButton2/Text'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/AddProfile_DuplicateButton/Tag'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Settings.Editor/Resources/AddProfile_AddNewButton/Tag'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Control/Resources/UnexpectedRendererError'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Control/Resources/SearchBox_NoMatches'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Control/Resources/SearchBox_MatchesAvailable'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>GENERATEPROJECTPRIFILE : warning : PRI263: 0xdef01051 - No default or neutral resource given for 'Microsoft.Terminal.Control/Resources/NoticeFontNotFound'. The application may throw an exception for certain user configurations when retrieving the resources.
+3>C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\v18.0\AppxPackage\Microsoft.AppXPackage.Targets(2839,5): warning APPX1707: No implementation file was provided for the .winmd file 'C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.WindowsPackageManager.ComInterop.1.8.1911\lib\Microsoft.Management.Deployment.winmd'. To generate registration information in the app manifest, specify the 'Implementation' metadata on the .winmd reference item in the project file.
+3>C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\v18.0\AppxPackage\Microsoft.AppXPackage.Targets(2839,5): warning APPX1707: No implementation file was provided for the .winmd file 'C:\Users\pabhojwa\source\repos\terminal\packages\Microsoft.Web.WebView2.1.0.1661.34\lib\Microsoft.Web.WebView2.Core.winmd'. To generate registration information in the app manifest, specify the 'Implementation' metadata on the .winmd reference item in the project file.
+3>Package-Dev.appxmanifest : error APPX0703: Manifest references file 'wtdcli.exe' which is not part of the payload.
+========== Build: 1 succeeded, 2 failed, 38 up-to-date, 0 skipped ==========
+========== Build completed at 10:44 AM and took 38.478 seconds ==========
+========== Deploy: 0 succeeded, 0 failed, 0 skipped ==========
+========== Deploy completed at 10:44 AM and took 38.478 seconds ==========
