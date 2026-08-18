@@ -348,6 +348,34 @@ class SelectionTests
         VERIFY_ARE_EQUAL(srOriginal.left + sDeltaLeft, srSelection.left);
         VERIFY_ARE_EQUAL(srOriginal.right + sDeltaRight, srSelection.right);
     }
+
+    // GH#20152: verify Alt+Shift+<digit> ("search the selection and color all matches") colors
+    // every character of each match, including the last one.
+    TEST_METHOD(TestColorSelectionSearchAndColorAllMatches)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        auto& screenInfo = gci.GetActiveOutputBuffer();
+        auto& textBuffer = screenInfo.GetTextBuffer();
+
+        RowWriteState state{ .text = L"foo bar foo" };
+        textBuffer.GetMutableRowByOffset(0).Reset(TextAttribute{});
+        textBuffer.Replace(0, TextAttribute{}, state);
+
+        // Select the first "foo" (columns 0-2, inclusive)
+        m_pSelection->SelectNewRegion({ 0, 0 }, { 2, 0 });
+
+        // Simulate Alt+Shift+'1'
+        INPUT_KEY_INFO keyInfo{ static_cast<WORD>('1'), LEFT_ALT_PRESSED | SHIFT_PRESSED };
+        VERIFY_IS_TRUE(m_pSelection->_HandleColorSelection(&keyInfo));
+
+        // Both occurrences of "foo" (columns 0-2 and 8-10) should be fully colored
+        for (til::CoordType x = 0; x < 15; ++x)
+        {
+            const auto isColored = textBuffer.GetCellDataAt({ x, 0 })->TextAttr() != TextAttribute{};
+            const auto shouldBeColored = (x >= 0 && x <= 2) || (x >= 8 && x <= 10);
+            VERIFY_ARE_EQUAL(shouldBeColored, isColored, NoThrowString().Format(L"column %d", x));
+        }
+    }
 };
 
 class SelectionInputTests
