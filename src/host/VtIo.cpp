@@ -206,11 +206,14 @@ bool VtIo::IsUsingVt() const
             writer.Submit();
         }
 
+        // NOTE: The PTY host may not be a terminal and may never respond
+        // to our DA1 request. It's better to not wait for a response.
+        if (_lookingForCursorPosition)
         {
             // Allow the input thread to momentarily gain the console lock.
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto suspension = gci.SuspendLock();
-            _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+            _deviceAttributes = _pVtInputThread->WaitUntilDA1(1000);
         }
     }
 

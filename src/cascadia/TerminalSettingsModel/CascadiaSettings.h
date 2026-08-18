@@ -25,6 +25,7 @@ Author(s):
 
 #include "GlobalAppSettings.h"
 #include "Profile.h"
+#include "WindowSettings.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {

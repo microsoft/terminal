@@ -67,6 +67,19 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <!--
+    Enable the new STL hardening and destructor tombstones (for Canary/Dev only, for now).
+    We do this here rather than in pre.props so that we read the computed branding.
+
+    Hardening prevents the misuse of containers more strictly than Container Debug and Iterator Debug.
+    Tombstoning prevents use-after-free by filling deleted pointers with a sentinel value.
+  -->
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='Canary' or '$(WindowsTerminalBranding)'=='Dev' or '$(WindowsTerminalBranding)'==''">
+    <ClCompile>
+      <PreprocessorDefinitions>_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
