@@ -485,14 +485,31 @@ void CascadiaSettings::_validateAllSchemesExist()
         {
             if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
             {
-                // Clear the user set dark color scheme. We'll just fallback instead.
-                appearance.ClearDarkColorSchemeName();
+                // If the leaf owns the bad name, clear it so the system default
+                // takes effect. If the name was inherited from a parent (fragment,
+                // defaults.json, etc.), the clear would be a no-op because the
+                // leaf's optional is already nullopt. In that case we must
+                // explicitly shadow the parent's value with the system default.
+                if (appearance.HasDarkColorSchemeName())
+                {
+                    appearance.ClearDarkColorSchemeName();
+                }
+                else
+                {
+                    appearance.DarkColorSchemeName(L"Campbell");
+                }
                 foundInvalidDarkScheme = true;
             }
             if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
             {
-                // Clear the user set light color scheme. We'll just fallback instead.
-                appearance.ClearLightColorSchemeName();
+                if (appearance.HasLightColorSchemeName())
+                {
+                    appearance.ClearLightColorSchemeName();
+                }
+                else
+                {
+                    appearance.LightColorSchemeName(L"Campbell");
+                }
                 foundInvalidLightScheme = true;
             }
         }

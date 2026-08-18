@@ -35,6 +35,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestLayeringNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
+        TEST_METHOD(TestInvalidColorSchemeNameFromFragmentFallsBack);
         TEST_METHOD(TestHelperFunctions);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
@@ -741,6 +742,43 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().DarkColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().LightColorSchemeName());
         }
+    }
+
+    void DeserializationTests::TestInvalidColorSchemeNameFromFragmentFallsBack()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting a profile's scheme to a nonexistent scheme via a fragment causes a warning and falls back correctly."));
+
+        static constexpr std::string_view userJson{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0"
+                }
+            ]
+        })" };
+
+        static constexpr std::string_view fragmentJson{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "colorScheme": "InvalidSchemeName"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ userJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(L"fragment", {}, fragmentJson);
+        loader.FinalizeLayering();
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        auto profile = settings->AllProfiles().GetAt(0);
+
+        VERIFY_ARE_EQUAL(1u, settings->Warnings().Size());
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::UnknownColorScheme, settings->Warnings().GetAt(0));
+
+        VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().DarkColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().LightColorSchemeName());
     }
 
     void DeserializationTests::ValidateColorSchemeInCommands()
