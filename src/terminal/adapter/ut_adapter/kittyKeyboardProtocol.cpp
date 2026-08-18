@@ -228,9 +228,12 @@ namespace
 
         // Enter/Tab/Backspace release without AllKeys: no output
         { L"D|E Enter press", L"\r", D | E, true, VK_RETURN, 0x1C, L'\r', 0 },
-        { L"D|E Enter release (no AllKeys)", L"", D | E, false, VK_RETURN, 0x1C, L'\r', 0 },
+        { L"D|E Enter release", L"", D | E, false, VK_RETURN, 0x1C, L'\r', 0 },
+        { L"D|E Keypad Enter release", L"\x1b[57414;1:3u", D | E, false, VK_RETURN, 0x1C, L'\r', ENHANCED_KEY },
 
         // Modifier key press/release
+        { L"D|E Left Shift press", L"", D | E, true, VK_SHIFT, 0x2A, 0, Shift },
+        { L"D|E Left Shift release", L"", D | E, false, VK_SHIFT, 0x2A, 0, 0 },
         { L"E|K Left Shift press", L"\x1b[57441;2u", E | K, true, VK_SHIFT, 0x2A, 0, Shift },
         { L"E|K Left Shift release", L"\x1b[57441;1:3u", E | K, false, VK_SHIFT, 0x2A, 0, 0 },
 
@@ -317,5 +320,11 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0));
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[98u"), process(input, true, 'B', 0x30, L'b', 0)); // different key
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0)); // not repeat
+    }
+
+    TEST_METHOD(IgnoreDeadKey)
+    {
+        auto input = createInput(E);
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L""), process(input, false, VK_OEM_6, 0x0D, L'¨', SHIFT_PRESSED));
     }
 };
