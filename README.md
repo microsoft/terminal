@@ -381,6 +381,10 @@ Invoke-OpenConsoleBuild
 bcz
 ```
 
+See [doc/building.md](./doc/building.md) for more details, including how to
+build & deploy the Terminal package itself from the command line, and
+troubleshooting for common command-line build failures.
+
 ## Running & Debugging
 
 To debug the Windows Terminal in VS, right click on `CascadiaPackage` (in the
