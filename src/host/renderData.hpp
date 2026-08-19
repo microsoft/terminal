@@ -33,7 +33,7 @@ public:
     std::wstring GetHyperlinkCustomId(uint16_t id) const override;
     std::vector<size_t> GetPatternId(const til::point location) const override;
 
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) noexcept override;
     bool IsSelectionActive() const override;
     bool IsBlockSelection() const override;
     void ClearSelection() override;

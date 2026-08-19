@@ -194,6 +194,7 @@ codepages
 coinit
 colorizing
 COLORONCOLOR
+colorref
 COLORREFs
 colorschemes
 colorspaces

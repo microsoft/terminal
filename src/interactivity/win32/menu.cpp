@@ -295,7 +295,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
 [[nodiscard]] HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO* const pStateInfo)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& ScreenInfo = gci.GetActiveOutputBuffer();
     LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetBufferSize().Dimensions(), pStateInfo->ScreenBufferSize));
     LOG_IF_FAILED(til::unwrap_coord_size_hr(ScreenInfo.GetViewport().Dimensions(), pStateInfo->WindowSize));

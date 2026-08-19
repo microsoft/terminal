@@ -321,9 +321,9 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ til::size* pcoordSize,
                                                     _Out_ PWORD pwAttributes,
                                                     _Out_ til::size* pcoordMaximumWindowSize,
                                                     _Out_ PWORD pwPopupAttributes,
-                                                    _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const
+                                                    _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     *pcoordSize = GetBufferSize().Dimensions();
 
     *pcoordCursorPosition = _textBuffer->GetCursor().GetPosition();

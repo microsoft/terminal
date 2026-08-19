@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 #include "inc/colorTable.hpp"
+
+#include <DirectXMath.h>
+
+#include "inc/ColorFix.hpp"
 #include "til/static_map.h"
 
 using namespace Microsoft::Console;
@@ -219,18 +223,6 @@ std::span<const til::color> Utils::CampbellColorTable() noexcept
     return std::span{ campbellColorTable };
 }
 
-// Function Description:
-// - Fill up to 256 entries of a given color table with the default values
-// Arguments:
-// - table: a color table to be filled
-// Return Value:
-// - <none>
-void Utils::InitializeColorTable(const std::span<COLORREF> table) noexcept
-{
-    InitializeANSIColorTable(table);
-    InitializeExtendedColorTable(table);
-}
-
 void Utils::InitializeANSIColorTable(const std::span<COLORREF> table) noexcept
 {
     if (table.size() >= campbellColorTable.size())
@@ -279,6 +271,100 @@ void Utils::InitializeExtendedColorTable(const std::span<COLORREF> table, const 
             const auto l = gsl::narrow_cast<uint8_t>(i * 10 + 8);
             til::at(table, i + 232) = til::color{ l, l, l };
         }
+    }
+}
+
+// Based on the proposal at:
+//   https://gist.github.com/jake-stewart/0a8ea46159a7da2c808e5be2177e1783
+// this generates the 256 color LUT based on the indexed 16 colors.
+void Utils::InitializeExtendedColorTableDynamic(const std::span<COLORREF> table, const COLORREF defaultBackground, const COLORREF defaultForeground) noexcept
+{
+    using namespace DirectX;
+
+    static constexpr XMVECTORF32 g_02 = { { { 0.2f, 0.2f, 0.2f, 0.2f } } };
+    static constexpr XMVECTORF32 g_004 = { { { 0.04f, 0.04f, 0.04f, 0.04f } } };
+
+    if (table.size() < 256)
+    {
+        return;
+    }
+
+    // NOTE: The `lab` array is 4KiB large. Still fits comfortably on the stack.
+    XMVECTOR lab[256];
+
+    // Get the first 8 base colors which are used to generate the rest of the 256-indexed table.
+    {
+        COLORREF corners[8];
+
+        // As per the proposal we're using the default background/foreground colors,
+        // not the black/white colors, for the first/last corner.
+        corners[0] = defaultBackground;
+        std::copy_n(&table[1], 6, &corners[1]);
+        corners[7] = defaultForeground;
+
+        // Map to OkLab
+        for (size_t i = 0; i < 8; i++)
+        {
+            lab[i] = std::bit_cast<XMVECTOR>(ColorFix::ColorrefToOklab(corners[i]));
+        }
+    }
+
+    // Now we do the trilinear interpolation.
+    // But instead of doing a lerp(t, a, b), like in the original code,
+    // we precompute the step and accumulate with additions (forward differences).
+    // float precision is entirely sufficient for this.
+    size_t idx = 16;
+
+    // 6x6x6 color cube (indices 16-231)
+    const auto dc0 = (lab[1] - lab[0]) * g_02;
+    const auto dc1 = (lab[3] - lab[2]) * g_02;
+    const auto dc2 = (lab[5] - lab[4]) * g_02;
+    const auto dc3 = (lab[7] - lab[6]) * g_02;
+    auto c0 = lab[0];
+    auto c1 = lab[2];
+    auto c2 = lab[4];
+    auto c3 = lab[6];
+    for (int r = 0; r < 6; r++)
+    {
+        const auto dc4 = (c1 - c0) * g_02;
+        const auto dc5 = (c3 - c2) * g_02;
+        auto c4 = c0;
+        auto c5 = c2;
+
+        for (int g = 0; g < 6; g++)
+        {
+            const auto dc6 = (c5 - c4) * g_02;
+            auto c6 = c4;
+
+            for (int b = 0; b < 6; b++)
+            {
+                lab[idx++] = c6;
+                c6 += dc6;
+            }
+
+            c4 += dc4;
+            c5 += dc5;
+        }
+
+        c0 += dc0;
+        c1 += dc1;
+        c2 += dc2;
+        c3 += dc3;
+    }
+
+    // Grayscale ramp (indices 232-255)
+    const auto dg = (lab[7] - lab[0]) * g_004;
+    auto g = lab[0];
+    for (int i = 0; i < 24; i++)
+    {
+        g += dg;
+        lab[idx++] = g;
+    }
+
+    // Map back to COLORREF
+    for (size_t i = 16; i < 256; i++)
+    {
+        table[i] = ColorFix::OklabToColorref(std::bit_cast<ColorFix::Lab>(lab[i]));
     }
 }
 
