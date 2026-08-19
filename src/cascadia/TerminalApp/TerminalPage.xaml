@@ -144,15 +144,21 @@
                        Grid.Row="2"
                        x:Load="False"
                        DefaultButton="Close">
-            <TextBlock IsTextSelectionEnabled="True"
-                       TextWrapping="WrapWholeWords">
-                <TextBlock.ContextFlyout>
-                    <mtu:TextMenuFlyout />
-                </TextBlock.ContextFlyout>
-                <Run x:Name="CouldNotOpenUriReason" /> <LineBreak /> <LineBreak />
-                <Run x:Name="UnopenedUri"
-                     FontFamily="Cascadia Mono" />
-            </TextBlock>
+            <StackPanel>
+                <TextBlock IsTextSelectionEnabled="True"
+                           TextWrapping="WrapWholeWords">
+                    <TextBlock.ContextFlyout>
+                        <mtu:TextMenuFlyout />
+                    </TextBlock.ContextFlyout>
+                    <Run x:Name="CouldNotOpenUriReason" /> <LineBreak /> <LineBreak />
+                    <Run x:Name="UnopenedUri"
+                         FontFamily="Cascadia Mono" />
+                </TextBlock>
+                <CheckBox x:Name="RememberUriSchemeCheckBox"
+                          x:Uid="RememberUriSchemeCheckBox"
+                          Margin="0,16,0,0"
+                          Visibility="Collapsed" />
+            </StackPanel>
         </ContentDialog>
 
         <local:CommandPalette x:Name="CommandPaletteElement"
