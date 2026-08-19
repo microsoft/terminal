@@ -214,9 +214,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
+    // - suppressWhitespaceOnly: don't raise a clipboard event if the selected plain text is empty or only whitespace
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
                                                         bool withControlSequences,
-                                                        const CopyFormat formats)
+                                                        const CopyFormat formats,
+                                                        const bool suppressWhitespaceOnly)
     {
         if (_core)
         {
@@ -232,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Mark the current selection as copied
             _selectionNeedsToBeCopied = false;
 
-            return _core->CopySelectionToClipboard(singleLine, withControlSequences, formats);
+            return _core->CopySelectionToClipboard(singleLine, withControlSequences, formats, suppressWhitespaceOnly);
         }
 
         return false;
@@ -500,7 +502,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // IMPORTANT!
             // DO NOT clear the selection here!
             // Otherwise, the selection will be cleared immediately after you make it.
-            CopySelectionToClipboard(false, false, _core->Settings().CopyFormatting());
+            // Mark the gesture as handled even if whitespace-only text is not copied.
+            // This preserves copyOnSelect's right-click-always-pastes behavior.
+            CopySelectionToClipboard(false, false, _core->Settings().CopyFormatting(), true);
         }
 
         _singleClickTouchdownPos = std::nullopt;
