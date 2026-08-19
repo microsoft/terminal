@@ -78,6 +78,33 @@ CATCH_RETURN();
     CATCH_RETURN();
 }
 
+// Routine Description:
+// - Raises a UIA notification event so that screen readers speak the given text
+// Arguments:
+// - text: the text to be announced
+// Return Value:
+// - S_OK, or a suitable HRESULT on failure
+[[nodiscard]] HRESULT WindowUiaProvider::SignalAnnouncement(const std::wstring_view text) noexcept
+try
+{
+    // Raise the announcement on the text area because
+    // that's the element screen readers are actually reading from
+    RETURN_HR_IF_NULL(E_POINTER, _pScreenInfoProvider.Get());
+
+    const wil::unique_bstr announcement{ SysAllocStringLen(text.data(), gsl::narrow<UINT>(text.size())) };
+    RETURN_IF_NULL_ALLOC(announcement);
+
+    static const auto activityId = wil::make_bstr_nothrow(L"ConhostSearchResultAnnouncement");
+    RETURN_IF_NULL_ALLOC(activityId);
+
+    return UiaRaiseNotificationEvent(_pScreenInfoProvider.Get(),
+                                     NotificationKind_ActionCompleted,
+                                     NotificationProcessing_ImportantMostRecent,
+                                     announcement.get(),
+                                     activityId.get());
+}
+CATCH_RETURN();
+
 #pragma region IRawElementProviderSimple
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
