@@ -211,6 +211,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
+        _setUseSeparateLightColorScheme(appearance.DarkColorSchemeName() != appearance.LightColorSchemeName());
+
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
         //  unique view model members.
@@ -248,7 +250,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
             {
-                _NotifyChanges(L"CurrentColorScheme");
+                // If the two scheme names diverged (e.g. via inheritance),
+                // make sure the split light/dark UI is showing. Skip the
+                // check while both names are being written as one operation:
+                // the divergence between the two writes is transient.
+                if (!_suppressSchemeDivergenceCheck && DarkColorSchemeName() != LightColorSchemeName())
+                {
+                    UseSeparateLightColorScheme(true);
+                }
+                _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
+            }
+            else if (viewModelProperty == L"UseSeparateLightColorScheme")
+            {
+                if (!UseSeparateLightColorScheme())
+                {
+                    // Unchecking collapses back down to a single scheme for
+                    // both themes. The divergence guard keeps ClearColorScheme's
+                    // reset from writing the inherited name back as an override.
+                    if (DarkColorSchemeName() != LightColorSchemeName())
+                    {
+                        _lastLightSchemeName = LightColorSchemeName();
+                        LightColorSchemeName(DarkColorSchemeName());
+                    }
+                }
+                else if (!_lastLightSchemeName.empty() && DarkColorSchemeName() == LightColorSchemeName())
+                {
+                    // Re-checking restores the light scheme that unchecking
+                    // collapsed, mirroring how _lastBgImagePath restores the
+                    // background image path.
+                    LightColorSchemeName(_lastLightSchemeName);
+                }
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
@@ -1010,13 +1041,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::ClearColorScheme()
     {
+        _suppressSchemeDivergenceCheck = true;
         ClearDarkColorSchemeName();
-        _NotifyChanges(L"CurrentColorScheme");
+        ClearLightColorSchemeName();
+        _suppressSchemeDivergenceCheck = false;
+        UseSeparateLightColorScheme(DarkColorSchemeName() != LightColorSchemeName());
+        _NotifyChanges(L"CurrentColorScheme", L"CurrentDarkColorScheme", L"CurrentLightColorScheme", L"HasColorScheme");
     }
 
-    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
+    Editor::ColorSchemeViewModel AppearanceViewModel::_schemeWithName(const winrt::hstring& schemeName) const
     {
-        const auto schemeName{ DarkColorSchemeName() };
         const auto allSchemes{ SchemesList() };
         for (const auto& scheme : allSchemes)
         {
@@ -1030,10 +1064,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return allSchemes.GetAt(0);
     }
 
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
+    {
+        return _schemeWithName(DarkColorSchemeName());
+    }
+
     void AppearanceViewModel::CurrentColorScheme(const ColorSchemeViewModel& val)
     {
+        // A ComboBox pushes a null SelectedItem through a TwoWay binding while
+        // it's being unloaded; writing while the split UI owns the scheme names
+        // would clobber the user's separate dark/light selections.
+        if (!val || UseSeparateLightColorScheme())
+        {
+            return;
+        }
+        _suppressSchemeDivergenceCheck = true;
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
+        _suppressSchemeDivergenceCheck = false;
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentDarkColorScheme() const
+    {
+        return _schemeWithName(DarkColorSchemeName());
+    }
+
+    void AppearanceViewModel::CurrentDarkColorScheme(const ColorSchemeViewModel& val)
+    {
+        // The pair combo boxes stay TwoWay-bound while collapsed; ignore their
+        // writes (including the null a ComboBox pushes during teardown) unless
+        // the split UI is the active mode.
+        if (!val || !UseSeparateLightColorScheme())
+        {
+            return;
+        }
+        DarkColorSchemeName(val.Name());
+    }
+
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentLightColorScheme() const
+    {
+        return _schemeWithName(LightColorSchemeName());
+    }
+
+    void AppearanceViewModel::CurrentLightColorScheme(const ColorSchemeViewModel& val)
+    {
+        if (!val || !UseSeparateLightColorScheme())
+        {
+            return;
+        }
+        LightColorSchemeName(val.Name());
+    }
+
+    bool AppearanceViewModel::HasColorScheme() const
+    {
+        return HasDarkColorSchemeName() || HasLightColorSchemeName();
     }
 
     static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
@@ -1384,6 +1468,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else if (settingName == L"DarkColorSchemeName" || settingName == L"LightColorSchemeName")
                 {
                     PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentDarkColorScheme" });
+                    PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentLightColorScheme" });
                 }
                 else if (settingName == L"BackgroundImageStretchMode")
                 {
@@ -1455,6 +1541,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentDarkColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentLightColorScheme" });
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"UseSeparateLightColorScheme" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
             _UpdateBIAlignmentControl(static_cast<int32_t>(appearance.BackgroundImageAlignment()));
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });

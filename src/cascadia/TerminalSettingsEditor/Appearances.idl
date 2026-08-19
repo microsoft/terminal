@@ -46,6 +46,10 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void ClearColorScheme();
         ColorSchemeViewModel CurrentColorScheme;
+        ColorSchemeViewModel CurrentDarkColorScheme;
+        ColorSchemeViewModel CurrentLightColorScheme;
+        Boolean UseSeparateLightColorScheme;
+        Boolean HasColorScheme { get; };
         IObservableVector<ColorSchemeViewModel> SchemesList;
 
         Windows.UI.Color ForegroundPreview { get; };

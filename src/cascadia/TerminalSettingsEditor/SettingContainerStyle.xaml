@@ -461,7 +461,7 @@
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <ContentPresenter Grid.Column="1"
-                                                  MaxWidth="248"
+                                                  MaxWidth="{TemplateBinding CurrentValueMaxWidth}"
                                                   Margin="0,0,-16,0"
                                                   HorizontalAlignment="Right"
                                                   VerticalAlignment="Center"

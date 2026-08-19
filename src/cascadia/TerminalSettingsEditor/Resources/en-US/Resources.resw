@@ -922,6 +922,26 @@
     <value>Expand to override the foreground, background, and selection background.</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
+  <data name="Profile_ColorSchemeDarkComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Dark color scheme</value>
+    <comment>Accessible name for a control to select the color scheme used while the app is using the dark theme.</comment>
+  </data>
+  <data name="Profile_ColorSchemeDarkLabel.Text" xml:space="preserve">
+    <value>Dark</value>
+    <comment>Label for a control to select the color scheme used while the app is using the dark theme.</comment>
+  </data>
+  <data name="Profile_ColorSchemeLightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Light color scheme</value>
+    <comment>Accessible name for a control to select the color scheme used while the app is using the light theme.</comment>
+  </data>
+  <data name="Profile_ColorSchemeLightLabel.Text" xml:space="preserve">
+    <value>Light</value>
+    <comment>Label for a control to select the color scheme used while the app is using the light theme.</comment>
+  </data>
+  <data name="Profile_ColorSchemeUseSeparateLight.Content" xml:space="preserve">
+    <value>Separate light and dark mode</value>
+    <comment>Label for a checkbox. When checked, the profile uses one color scheme while the app is using the dark theme and a different one while the app is using the light theme.</comment>
+  </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Command line</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>

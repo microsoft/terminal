@@ -27,6 +27,9 @@ namespace Microsoft.Terminal.Settings.Editor
         String CurrentValueAccessibleName;
         static Windows.UI.Xaml.DependencyProperty CurrentValueAccessibleNameProperty { get; };
 
+        Double CurrentValueMaxWidth;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueMaxWidthProperty { get; };
+
         Boolean HasSettingValue;
         static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };
 
