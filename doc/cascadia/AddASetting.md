@@ -34,7 +34,7 @@ The `defaultArgs` are optional.
 
 Most profile settings use the standard `MTSM_PROFILE_SETTINGS` pattern.
 
-1. Add the setting to `MTSM_PROFILE_SETTINGS` in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`.
+- Add the setting to `MTSM_PROFILE_SETTINGS` in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`.
 
 For example:
 
@@ -42,7 +42,7 @@ For example:
 X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)
 ```
 
-2. Add the corresponding property to `src/cascadia/TerminalSettingsModel/Profile.idl` with `INHERITABLE_PROFILE_SETTING`.
+- Add the corresponding property to `src/cascadia/TerminalSettingsModel/Profile.idl` with `INHERITABLE_PROFILE_SETTING`.
 
 ```c++
 INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
@@ -50,23 +50,13 @@ INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
 
 The IDL type must use the spelling appropriate for `Profile.idl`.
 
-3. Do not add the normal copy, JSON layering, or JSON serialization code to `Profile.cpp` manually.
+- Do not add the normal copy, JSON layering, or JSON serialization code to `Profile.cpp` manually.
 
 `Profile.cpp` applies `MTSM_PROFILE_SETTINGS` to generate the common copy, JSON layering, and JSON serialization logic for settings in the list.
 
-4. If the setting requires custom JSON handling, follow the implementation of an existing setting with similar requirements.
+- If the setting requires custom JSON handling, follow the implementation of an existing setting with similar requirements.
 
-Settings that do not fit the standard `MTSM_PROFILE_SETTINGS` pattern may require setting-specific handling in `Profile.h` and/or `Profile.cpp`. Examples include settings that are optional or require custom parsing.
-
-Examples of settings with special handling include:
-
-- `Name`
-- `Source`
-- `Hidden`
-- `Guid`
-- `Padding`
-- `TabColor`
-- `UnfocusedAppearance`
+Settings that do not fit the standard `MTSM_PROFILE_SETTINGS` pattern may require setting-specific handling in `Profile.h` and/or `Profile.cpp`.
 
 Do not add special-case settings to `MTSM_PROFILE_SETTINGS` unless their implementation follows the standard settings-list pattern.
 
@@ -74,14 +64,8 @@ Do not add special-case settings to `MTSM_PROFILE_SETTINGS` unless their impleme
 
 Global and per-window settings are maintained by the settings lists in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`.
 
-- Add a global-only setting to `MTSM_GLOBAL_ONLY_SETTINGS`.
-- Add a per-window setting to `MTSM_WINDOW_SETTINGS`.
-
-`MTSM_GLOBAL_SETTINGS` is the union of those two lists and is currently used by `GlobalAppSettings`.
-
-Expose the setting in `src/cascadia/TerminalSettingsModel/GlobalAppSettings.idl` with `INHERITABLE_SETTING`.
-
-For standard settings, the corresponding settings list provides the metadata used by the common settings-model implementation. Do not add duplicate copy or JSON serialization code when the common machinery already handles the setting.
+- For a global-only setting, add it to `MTSM_GLOBAL_ONLY_SETTINGS` and expose it in `GlobalAppSettings.idl` with `INHERITABLE_SETTING`.
+- For a per-window setting, add it to `MTSM_WINDOW_SETTINGS` and expose it in `WindowSettings` with `INHERITABLE_SETTING`.
 
 ### Adding an Action
 
