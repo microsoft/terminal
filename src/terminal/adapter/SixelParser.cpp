@@ -284,7 +284,7 @@ bool SixelParser::_initTextBufferBoundaries()
         // be inside the horizontal margins and above the bottom margin, else
         // nothing will be rendered.
         const auto [topMargin, bottomMargin] = _dispatcher._GetVerticalMargins(page, true);
-        const auto [leftMargin, rightMargin] = _dispatcher._GetHorizontalMargins(page.Width());
+        const auto [leftMargin, rightMargin] = _dispatcher._GetHorizontalMargins(page, page.Width());
         _textMargins = til::rect{ leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 };
         _textCursor = page.Cursor().GetPosition();
         _availablePixelWidth = (_textMargins.right - _textCursor.x) * _cellSize.width;
