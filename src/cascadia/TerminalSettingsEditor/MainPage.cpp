@@ -459,6 +459,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+
+    void MainPage::OpenSettingsFolder_Click(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        OpenJson.raise(nullptr, SettingsTarget::Directory);
+    }
     void MainPage::_PreNavigateHelper()
     {
         _profileViewModelChangedRevoker.revoke();
