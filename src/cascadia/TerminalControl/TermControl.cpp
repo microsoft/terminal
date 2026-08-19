@@ -2001,6 +2001,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             const auto cursorPosition = point.Position();
+            if (point.Properties().IsMiddleButtonPressed() && !_core.IsVtMouseModeEnabled())
+            {
+                const auto action = _core.Settings().MiddleClickAction();
+                if (action == Control::MiddleClickAction::Pan)
+                {
+                    _isPanning = true;
+                    _panningAnchorPos = cursorPosition;
+                }
+            }
             _interactivity.PointerPressed(point.PointerId(),
                                           TermControl::GetPressedMouseButtons(point),
                                           TermControl::GetPointerUpdateKind(point),
@@ -2025,7 +2034,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        RestorePointerCursor.raise(*this, nullptr);
+        if (!_isPanning)
+        {
+            RestorePointerCursor.raise(*this, nullptr);
+        }
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
@@ -2047,11 +2059,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                        ControlKeyStates(args.KeyModifiers()),
                                                                        pixelPosition);
 
+            if (_isPanning && _panningAnchorPos)
+            {
+                const auto dy = cursorPosition.Y - _panningAnchorPos->Y;
+                constexpr auto MinPanDist = 5.0;
+
+                if (const auto window = CoreWindow::GetForCurrentThread())
+                {
+                    if (std::abs(dy) > MinPanDist)
+                    {
+                        window.PointerCursor(CoreCursor(CoreCursorType::SizeNorthSouth, 1));
+                    }
+                    else
+                    {
+                        window.PointerCursor(CoreCursor(CoreCursorType::SizeAll, 1));
+                    }
+                }
+
+                if (std::abs(dy) > MinPanDist)
+                {
+                    const auto scrollDist = dy > 0 ? (dy - MinPanDist) : (dy + MinPanDist);
+                    const auto newVelocity = _GetAutoScrollSpeed(std::abs(scrollDist)) * (dy > 0 ? 1.0 : -1.0);
+                    _TryStartAutoScroll(point, newVelocity);
+                }
+                else
+                {
+                    _TryStopAutoScroll(ptr.PointerId());
+                }
+            }
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
             // outside the terminal control, drag into the padding, and trick us
             // into starting to scroll.
-            if (!suppressFurtherHandling && _focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
+            else if (!suppressFurtherHandling && _focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
             {
                 // We want to find the distance relative to the bounds of the
                 // SwapChainPanel, not the entire control. If they drag out of
@@ -2128,6 +2168,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             _interactivity.TouchReleased();
+        }
+
+        if (_isPanning)
+        {
+            _isPanning = false;
+            _panningAnchorPos = std::nullopt;
+            if (const auto window = CoreWindow::GetForCurrentThread())
+            {
+                window.PointerCursor(CoreCursor(CoreCursorType::IBeam, 1));
+            }
         }
 
         _TryStopAutoScroll(ptr.PointerId());
