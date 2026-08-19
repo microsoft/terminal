@@ -6,83 +6,66 @@ Adding a setting to Windows Terminal is fairly straightforward. This guide serve
 
 The Terminal Settings Model (`Microsoft.Terminal.Settings.Model`) is responsible for (de)serializing and exposing settings.
 
-### `INHERITABLE_SETTING` macro
+### `INHERITABLE_SETTING` and `INHERITABLE_PROFILE_SETTING` macros
 
-The `INHERITABLE_SETTING` macro can be used to implement inheritance for your new setting and store the setting in the settings model. It takes three parameters:
-- `type`: the type that the setting will be stored as
-- `name`: the name of the variable for storage
-- `defaultValue`: the value to use if the user does not define the setting anywhere
+The Terminal Settings Model uses inheritable settings to expose properties that can be overridden by a more specific settings object.
+
+There are two related macros with different purposes:
+
+- `INHERITABLE_SETTING(Type, Name)` is defined in `IInheritable.idl.h` and is used in IDL to expose a setting property together with its `Has<Name>()` and `Clear<Name>()` methods.
+- `INHERITABLE_SETTING(projectedType, type, name, ...)` is defined in `IInheritable.h` and provides the C++ implementation for an inheritable setting.
+
+Profile settings use `INHERITABLE_PROFILE_SETTING(Type, Name)` in `Profile.idl`. This is a specialized profile-setting macro that exposes the setting and its override source.
+
+The standard profile settings are listed in the `MTSM_PROFILE_SETTINGS` X-macro in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`. Each entry uses the following format:
+
+```text
+(type, name, jsonKey, defaultArgs)
+```
+
+The `defaultArgs` are optional.
+
+`Profile.idl` and `MTSM_PROFILE_SETTINGS` have different roles:
+
+- `Profile.idl` defines the WinRT API surface for the setting.
+- `MTSM_PROFILE_SETTINGS` provides the metadata used by the common C++ settings-model implementation.
 
 ### Adding a Profile setting
 
-This tutorial will add `CloseOnExitMode CloseOnExit` as a profile setting.
+Most profile settings use the standard `MTSM_PROFILE_SETTINGS` pattern.
 
-1. In `Profile.h`, declare/define the setting:
+- Add the setting to `MTSM_PROFILE_SETTINGS` in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`.
 
-```c++
-INHERITABLE_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful)
-```
-
-2. In `Profile.idl`, expose the setting via WinRT:
+For example:
 
 ```c++
-Boolean HasCloseOnExit();
-void ClearCloseOnExit();
-CloseOnExitMode CloseOnExit;
+X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)
 ```
 
-3. In `Profile.cpp`, add (de)serialization and copy logic:
+- Add the corresponding property to `src/cascadia/TerminalSettingsModel/Profile.idl` with `INHERITABLE_PROFILE_SETTING`.
 
 ```c++
-// Top of file:
-// - Add the serialization key
-static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
-
-// CopySettings() or Copy():
-// - The setting is exposed in the Settings UI
-profile->_CloseOnExit = source->_CloseOnExit;
-
-// LayerJson():
-// - get the value from the JSON
-JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
-
-// ToJson():
-// - write the value to the JSON
-JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
+INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
 ```
 
-  - If the setting is not a primitive type, in `TerminalSettingsSerializationHelpers.h` add (de)serialization logic for the accepted values:
+The IDL type must use the spelling appropriate for `Profile.idl`.
 
-```c++
-// For enum values...
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
-{
-    JSON_MAPPINGS(3) = {
-        pair_type{ "always", ValueType::Always },
-        pair_type{ "graceful", ValueType::Graceful },
-        pair_type{ "never", ValueType::Never },
-    };
-};
+- Do not add the normal copy, JSON layering, or JSON serialization code to `Profile.cpp` manually.
 
-// For enum flag values...
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
-{
-    JSON_MAPPINGS(5) = {
-        pair_type{ "none", AllClear },
-        pair_type{ "html", ValueType::HTML },
-        pair_type{ "rtf", ValueType::RTF },
-        pair_type{ "all", AllSet },
-    };
-};
+`Profile.cpp` applies `MTSM_PROFILE_SETTINGS` to generate the common copy, JSON layering, and JSON serialization logic for settings in the list.
 
-// NOTE: This is also where you can add functionality for...
-// - overloaded type support (i.e. accept a bool and an enum)
-// - custom (de)serialization logic (i.e. coordinates)
-```
+- If the setting requires custom JSON handling, follow the implementation of an existing setting with similar requirements.
 
-### Adding a Global setting
+Settings that do not fit the standard `MTSM_PROFILE_SETTINGS` pattern may require setting-specific handling in `Profile.h` and/or `Profile.cpp`.
 
-Follow the "adding a Profile setting" instructions above, but do it on the `GlobalAppSettings` files.
+Do not add special-case settings to `MTSM_PROFILE_SETTINGS` unless their implementation follows the standard settings-list pattern.
+
+### Adding a Global or Window setting
+
+Global and per-window settings are maintained by the settings lists in `src/cascadia/TerminalSettingsModel/MTSMSettings.h`.
+
+- For a global-only setting, add it to `MTSM_GLOBAL_ONLY_SETTINGS` and expose it in `GlobalAppSettings.idl` with `INHERITABLE_SETTING`.
+- For a per-window setting, add it to `MTSM_WINDOW_SETTINGS` and expose it in `WindowSettings` with `INHERITABLE_SETTING`.
 
 ### Adding an Action
 
@@ -199,7 +182,7 @@ Both have access to a `CascadiaSettings` object, for you to read the loaded sett
 
 ### Terminal-level settings
 
-Terminal-level settings are settings that affect a shell session. Generally, these tend to be profile settings. The `TerminalApp` project is responsible for packaging this settings from the Terminal Settings Model to the terminal instance. There are two kinds of settings here:
+Terminal-level settings are settings that affect a shell session. Generally, these tend to be profile settings. The `TerminalApp` project is responsible for packaging these settings from the Terminal Settings Model to the terminal instance. There are two kinds of settings here:
 - `IControlSettings`:
   - These are settings that affect the `TerminalControl` (a XAML control that hosts a shell session).
   - Examples include background image customization, interactivity behavior (i.e. selection), acrylic and font customization.
@@ -209,18 +192,34 @@ Terminal-level settings are settings that affect a shell session. Generally, the
   - Examples include initial size, history size, and cursor customization.
   - The `TerminalCore` project has access to these settings via a saved `ICoreSettings` member.
 
-`TerminalApp` packages these settings into a `TerminalSettings : IControlSettings, ICoreSettings` object upon creating a new terminal instance. To do so, you must submit the following changes:
-- Declare the setting in `IControlSettings.idl` or `ICoreSettings.idl` (whichever is relevant to your setting). If your setting is an enum setting, declare the enum here instead of in the `TerminalSettingsModel` project.
-- In `TerminalSettings.h`, declare/define the setting...
+`TerminalApp` packages these settings into a `TerminalSettings : IControlSettings, ICoreSettings` object when creating a new terminal instance.
+
+When a new setting is terminal-facing:
+- Declare the setting in `IControlSettings.idl` or `ICoreSettings.idl`, whichever is relevant.
+- Add the setting to the corresponding `CONTROL_SETTINGS` or `CORE_SETTINGS` list in `src/cascadia/inc/ControlProperties.h`. These lists are consumed by `TerminalSettings.h`.
+- For profile settings, update `TerminalSettings::_ApplyProfileSettings` in `src/cascadia/TerminalSettingsAppAdapterLib/TerminalSettings.cpp`.
+- For window settings, update `TerminalSettings::_ApplyWindowSettings` in `src/cascadia/TerminalSettingsAppAdapterLib/TerminalSettings.cpp`.
+- If additional processing or type conversion is necessary, perform it in `TerminalSettings.cpp`.
+
+For example, a control-facing setting can be exposed in `IControlSettings.idl` as:
+
 ```c++
-// The WINRT_PROPERTY macro declares/defines a getter setter for the setting.
-// Like INHERITABLE_SETTING, it takes in a type, name, and defaultValue.
-WINRT_PROPERTY(bool, UseAcrylic, false);
+String DragDropDelimiter { get; };
 ```
-- In `TerminalSettings.cpp`...
-  - update `_ApplyProfileSettings` for profile settings
-  - update `_ApplyGlobalSettings` for global settings
-  - If additional processing is necessary, that would happen here. For example, `backgroundImageAlignment` is stored as a `ConvergedAlignment` in the Terminal Settings Model, but converted into XAML's separate horizontal and vertical alignment enums for packaging.
+
+and added to the control settings list in `ControlProperties.h` as:
+
+```c++
+X(winrt::hstring, DragDropDelimiter, L" ")
+```
+
+The profile value is then passed to `TerminalSettings` from `TerminalSettings.cpp`:
+
+```c++
+_DragDropDelimiter = profile.DragDropDelimiter();
+```
+
+`TerminalControl` can then read the setting from its `IControlSettings` object.
 
 ### Actions
 
@@ -375,22 +374,22 @@ Continue to reference `CommonResources.xaml` for appropriate styling and wrap th
 
 #### Profile Settings
 
-If you are specifically adding a Profile setting, in addition to the steps above, you need to make the setting observable by modifying the `Profiles` files...
+If you are specifically adding a Profile setting, in addition to the steps above, you need to make the setting observable by modifying the `ProfileViewModel` files.
 ```c++
-// Profiles.idl --> ProfileViewModel
-// - this declares the setting as observable using the type and the name of the setting
-OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
+// ProfileViewModel.idl
+// - declare the setting as observable using the profile-setting projection macro
+OBSERVABLE_PROJECTED_PROFILE_SETTING(String, DragDropDelimiter);
 
-// Profiles.h --> ProfileViewModel
-// - this defines the setting as observable off of the _profile object
-OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
+// ProfileViewModel.h
+// - project the setting from the _profile object
+OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
 
-// Profiles.h --> ProfileViewModel
-// - if the setting cannot be inherited by another profile (aka missing the Clear() function), use the following macro instead:
+// ProfileViewModel.h
+// - use the permanent variant for a setting that cannot be inherited by another profile
 PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
 ```
 
-The `ProfilePageNavigationState` holds a `ProfileViewModel`, which wraps the `Profile` object from the Terminal Settings Model. The `ProfileViewModel` makes all of the profile settings observable.
+The `ProfilePageNavigationState` holds a `ProfileViewModel`, which wraps the `Profile` object from the Terminal Settings Model. The `ProfileViewModel` exposes the profile settings to the Settings UI.
 
 ### Actions
 
