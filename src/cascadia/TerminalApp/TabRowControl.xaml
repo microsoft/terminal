@@ -26,6 +26,7 @@
     -->
 
     <mux:TabView x:Name="TabView"
+                 Margin="0,1,0,-1"
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
                  AllowDropTabs="True"
