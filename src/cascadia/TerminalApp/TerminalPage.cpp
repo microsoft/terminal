@@ -1681,7 +1681,7 @@ namespace winrt::TerminalApp::implementation
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
-            if (Utils::IsValidDirectory(workingDirectory.c_str()))
+            if (!workingDirectory.empty())
             {
                 controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
             }
@@ -3801,7 +3801,7 @@ namespace winrt::TerminalApp::implementation
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
                 controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, _currentWindowSettings(), profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
-                if (Utils::IsValidDirectory(workingDirectory.c_str()))
+                if (!workingDirectory.empty())
                 {
                     controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
                 }
