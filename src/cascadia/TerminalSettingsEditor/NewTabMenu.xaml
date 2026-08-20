@@ -405,7 +405,8 @@
                                Style="{StaticResource TextBlockSubHeaderStyle}" />
                     <!--  Name  -->
                     <local:SettingsExpander x:Name="CurrentFolderName"
-                                            x:Uid="NewTabMenu_CurrentFolderName">
+                                            x:Uid="NewTabMenu_CurrentFolderName"
+                                            AutomationProperties.Name="{x:Bind ViewModel.CurrentFolderNameAccessibleName, Mode=OneWay}">
                         <local:SettingsExpander.Content>
                             <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                        Text="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}" />

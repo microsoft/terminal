@@ -45,6 +45,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetAcrylicOpacityPercentageValue(Double value);
 
         String BellStylePreview { get; };
+        String BellStyleAccessibleName { get; };
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
@@ -52,6 +53,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
         String BellSoundPreview { get; };
+        String BellSoundAccessibleName { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
         void RequestAddBellSound(String path);
         void RequestDeleteBellSound(BellSoundViewModel vm);
@@ -69,6 +71,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Double TopPadding { get; set; };
         Double RightPadding { get; set; };
         Double BottomPadding { get; set; };
+        String PaddingAccessibleName { get; };
 
         IInspectable CurrentPathTranslationStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
@@ -99,6 +102,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
+        String AnswerbackMessageAccessibleName { get; };
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };
 

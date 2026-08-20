@@ -501,7 +501,7 @@
                                    MinHeight="{TemplateBinding MinHeight}"
                                    HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                   AutomationProperties.AccessibilityView="Raw"
+                                   AutomationProperties.Name="{TemplateBinding AutomationProperties.Name}"
                                    CornerRadius="{TemplateBinding CornerRadius}"
                                    IsExpanded="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                    Style="{StaticResource SettingsExpanderExpanderStyle}">

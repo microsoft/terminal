@@ -76,7 +76,8 @@
 
             <!--  Answerback Message  -->
             <local:SettingsExpander x:Name="AnswerbackMessage"
-                                    x:Uid="Profile_AnswerbackMessage">
+                                    x:Uid="Profile_AnswerbackMessage"
+                                    AutomationProperties.Name="{x:Bind Profile.AnswerbackMessageAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                Text="{x:Bind Profile.AnswerbackMessagePreview, Mode=OneWay}" />

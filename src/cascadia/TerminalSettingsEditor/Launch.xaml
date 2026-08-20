@@ -197,7 +197,8 @@
 
             <!--  Launch Size  -->
             <local:SettingsExpander x:Name="LaunchSize"
-                                    x:Uid="Globals_LaunchSize">
+                                    x:Uid="Globals_LaunchSize"
+                                    AutomationProperties.Name="{x:Bind ViewModel.LaunchSizeAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                Text="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}" />
@@ -224,7 +225,8 @@
 
             <!--  Launch Parameters  -->
             <local:SettingsExpander x:Name="LaunchParameters"
-                                    x:Uid="Globals_LaunchParameters">
+                                    x:Uid="Globals_LaunchParameters"
+                                    AutomationProperties.Name="{x:Bind ViewModel.LaunchParametersAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                Text="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}" />

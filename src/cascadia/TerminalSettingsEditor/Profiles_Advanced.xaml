@@ -84,7 +84,8 @@
 
             <!--  Bell Style  -->
             <local:SettingsExpander x:Name="BellStyle"
-                                    x:Uid="Profile_BellStyle">
+                                    x:Uid="Profile_BellStyle"
+                                    AutomationProperties.Name="{x:Bind Profile.BellStyleAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                Text="{x:Bind Profile.BellStylePreview, Mode=OneWay}" />
@@ -107,7 +108,8 @@
 
             <!--  Bell Sound  -->
             <local:SettingsExpander x:Name="BellSound"
-                                    x:Uid="Profile_BellSound">
+                                    x:Uid="Profile_BellSound"
+                                    AutomationProperties.Name="{x:Bind Profile.BellSoundAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                Text="{x:Bind Profile.BellSoundPreview, Mode=OneWay}" />

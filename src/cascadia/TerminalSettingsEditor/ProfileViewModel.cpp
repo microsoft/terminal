@@ -71,6 +71,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"IsBellStyleFlagSet", L"BellStylePreview");
             }
+            else if (viewModelProperty == L"BellStylePreview")
+            {
+                _NotifyChanges(L"BellStyleAccessibleName");
+            }
             else if (viewModelProperty == L"ScrollState")
             {
                 _NotifyChanges(L"CurrentScrollState");
@@ -98,6 +102,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _MarkDuplicateBellSoundDirectories();
                 _NotifyChanges(L"BellSoundPreview", L"HasBellSound");
             }
+            else if (viewModelProperty == L"BellSoundPreview")
+            {
+                _NotifyChanges(L"BellSoundAccessibleName");
+            }
             else if (viewModelProperty == L"BellSound")
             {
                 _InitializeCurrentBellSounds();
@@ -109,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Padding")
             {
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
-                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
+                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding", L"PaddingAccessibleName");
             }
             else if (viewModelProperty == L"TabTitle")
             {
@@ -118,6 +126,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"AnswerbackMessage")
             {
                 _NotifyChanges(L"AnswerbackMessagePreview");
+            }
+            else if (viewModelProperty == L"AnswerbackMessagePreview")
+            {
+                _NotifyChanges(L"AnswerbackMessageAccessibleName");
             }
             else if (viewModelProperty == L"TabColor")
             {
@@ -213,6 +225,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _parsedPadding.Bottom;
     }
+
+    hstring ProfileViewModel::PaddingAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_Padding/Header"), Padding());
+    }
+
     Control::IControlSettings ProfileViewModel::TermSettings() const
     {
         // This may look pricey, but it only resolves resources that have not been visited
@@ -364,6 +382,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return answerbackMessage;
         }
         return RS_(L"Profile_AnswerbackMessageNone");
+    }
+
+    hstring ProfileViewModel::AnswerbackMessageAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_AnswerbackMessage/Header"), AnswerbackMessagePreview());
     }
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
@@ -618,6 +641,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return result;
     }
 
+    hstring ProfileViewModel::BellStyleAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellStyle/Header"), BellStylePreview());
+    }
+
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)
     {
         return (WI_EnumValue(BellStyle()) & flag) == flag;
@@ -759,6 +787,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         return RS_(L"Profile_BellSoundNotFound");
+    }
+
+    hstring ProfileViewModel::BellSoundAccessibleName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellSound/Header"), BellSoundPreview());
     }
 
     void ProfileViewModel::RequestAddBellSound(hstring path)

@@ -120,7 +120,8 @@
                         Style="{StaticResource PivotStackStyle}">
                 <!--  Padding  -->
                 <local:SettingsExpander x:Name="Padding"
-                                        x:Uid="Profile_Padding">
+                                        x:Uid="Profile_Padding"
+                                        AutomationProperties.Name="{x:Bind Profile.PaddingAccessibleName, Mode=OneWay}">
                     <local:SettingsExpander.Content>
                         <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                    Text="{x:Bind Profile.Padding, Mode=OneWay}" />

@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // bell style bits
         hstring BellStylePreview() const;
+        hstring BellStyleAccessibleName() const;
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
@@ -49,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
+        hstring BellSoundAccessibleName();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
 
@@ -65,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         double RightPadding() const noexcept;
         void BottomPadding(double value) noexcept;
         double BottomPadding() const noexcept;
+        hstring PaddingAccessibleName() const;
 
         winrt::hstring EvaluatedIcon() const
         {
@@ -103,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Orphaned() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
+        hstring AnswerbackMessageAccessibleName() const;
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;
 
