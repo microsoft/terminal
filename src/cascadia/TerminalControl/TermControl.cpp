@@ -2884,20 +2884,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the absolute minimum size that this control can be resized to and
-    //   still have 1x1 character visible. This includes the space needed for
+    //   still have 2x2 characters visible. This includes the space needed for
     //   the scrollbar and the padding.
+    //   2x2 is the VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell
+    //   viewport can hang TextBuffer::Reflow on a wide glyph (GH#19996).
     // Arguments:
     // - <none>
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
-    //   have a visible character.
+    //   have a usable character grid.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSizeInDips();
-            auto width = fontSize.Width;
-            auto height = fontSize.Height;
+            auto width = fontSize.Width * 2;
+            auto height = fontSize.Height * 2;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
