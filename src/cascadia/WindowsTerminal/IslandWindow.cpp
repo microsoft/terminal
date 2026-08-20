@@ -242,6 +242,47 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
 //   (it's a ref parameter).
 // Return Value:
 // - <none>
+// For docked windows, prevent resizing on sides that are pinned.
+static bool _preventSizingForDocked(const IslandWindow& window, const WPARAM wParam, const LPARAM lParam)
+{
+    const auto settings = window.DockSettings();
+    if (!settings)
+    {
+        return false;
+    }
+
+    auto winRect = reinterpret_cast<LPRECT>(lParam);
+    const auto side = settings.Side();
+
+    // For each dock position, only allow resizing on the "open" side.
+    // Top: only WMSZ_BOTTOM
+    // Bottom: only WMSZ_TOP
+    // Left: only WMSZ_RIGHT
+    // Right: only WMSZ_LEFT
+    bool suppress = false;
+    switch (side)
+    {
+    case ::winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+        suppress = (wParam != WMSZ_BOTTOM);
+        break;
+    case ::winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+        suppress = (wParam != WMSZ_TOP);
+        break;
+    case ::winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+        suppress = (wParam != WMSZ_RIGHT);
+        break;
+    case ::winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+        suppress = (wParam != WMSZ_LEFT);
+        break;
+    }
+
+    if (suppress)
+    {
+        ::GetWindowRect(window.GetHandle(), winRect);
+    }
+    return suppress;
+}
+
 LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 {
     if (!_pfnSnapDimensionCallback)
@@ -253,13 +294,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 
     auto winRect = reinterpret_cast<LPRECT>(lParam);
 
-    // If we're the quake window, prevent resizing on all sides except the
-    // bottom. This also applies to resizing with the Alt+Space menu
-    if (IsQuakeWindow() && wParam != WMSZ_BOTTOM)
+    // If we're a docked window, prevent resizing on pinned sides.
+    if (_preventSizingForDocked(*this, wParam, lParam))
     {
-        // Stuff our current window size into the lParam, and return true. This
-        // will tell User32 to use our current dimensions to resize to.
-        ::GetWindowRect(_window.get(), winRect);
         return true;
     }
 
@@ -353,9 +390,9 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 {
     auto winRect = reinterpret_cast<LPRECT>(lParam);
 
-    // If we're the quake window, prevent moving the window. If we don't do
+    // If we're a docked window, prevent moving the window. If we don't do
     // this, then Alt+Space...Move will still be able to move the window.
-    if (IsQuakeWindow())
+    if (_docked())
     {
         // Stuff our current window into the lParam, and return true. This
         // will tell User32 to use our current position to move to.
@@ -520,7 +557,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
         if (_autoHideWindow && !activated)
         {
-            if (_isQuakeWindow || _minimizeToNotificationArea)
+            if (_minimizeToNotificationArea)
             {
                 HideWindow();
             }
@@ -569,7 +606,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         if (wparam == SIZE_MINIMIZED)
         {
             WindowVisibilityChanged.raise(false);
-            if (_isQuakeWindow)
+            if (_minimizeToNotificationArea)
             {
                 ShowWindow(GetHandle(), SW_HIDE);
                 return 0;
@@ -641,9 +678,9 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         return 0;
     case WM_WINDOWPOSCHANGING:
     {
-        // GH#10274 - if the quake window gets moved to another monitor via aero
+        // GH#10274 - if the docked window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
-        if (IsQuakeWindow())
+        if (_docked())
         {
             // Retrieve the suggested dimensions and make a rect and size.
             auto lpwpos = (LPWINDOWPOS)lparam;
@@ -679,7 +716,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             if (til::rect{ proposedInfo.rcMonitor } !=
                 til::rect{ currentInfo.rcMonitor })
             {
-                const auto newWindowRect{ _getQuakeModeSize(proposed) };
+                const auto newWindowRect{ _getDockedSize(proposed) };
 
                 // Inform User32 that we want to be placed at the position
                 // and dimensions that _getQuakeModeSize returned. When we
@@ -1322,10 +1359,15 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 //   the height, from bottom to top.
 // Return Value:
 // - <none>
-void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool down)
+void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool appearing)
 {
     til::rect fullWindowSize{ GetWindowRect() };
+    const auto fullWidth = fullWindowSize.width();
     const auto fullHeight = fullWindowSize.height();
+
+    // Determine which axis to animate based on the dock side.
+    const auto side = _dockingSettings ? _dockingSettings.Side() : winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top;
+    const bool horizontal = (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left || side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right);
 
     const double animationDuration = dropdownDuration; // use floating-point math throughout
     const auto start = std::chrono::system_clock::now();
@@ -1343,12 +1385,42 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
             break;
         }
 
-        // If going down, increase the height over time. If going up, decrease the height.
-        const auto currentHeight = ::base::saturated_cast<int>(
-            down ? ((dt / animationDuration) * fullHeight) :
-                   ((1.0 - (dt / animationDuration)) * fullHeight));
+        const auto progress = dt / animationDuration;
+        // When appearing, animate from 0 to full. When disappearing, animate from full to 0.
+        const auto fraction = appearing ? progress : (1.0 - progress);
 
-        wil::unique_hrgn rgn{ CreateRectRgn(0, 0, fullWindowSize.width(), currentHeight) };
+        int left = 0, top = 0, right = fullWidth, bottom = fullHeight;
+
+        if (horizontal)
+        {
+            const auto currentWidth = ::base::saturated_cast<int>(fraction * fullWidth);
+            if (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left)
+            {
+                // Grow from left edge
+                right = currentWidth;
+            }
+            else // Right
+            {
+                // Grow from right edge
+                left = fullWidth - currentWidth;
+            }
+        }
+        else
+        {
+            const auto currentHeight = ::base::saturated_cast<int>(fraction * fullHeight);
+            if (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top)
+            {
+                // Grow from top edge
+                bottom = currentHeight;
+            }
+            else // Bottom
+            {
+                // Grow from bottom edge
+                top = fullHeight - currentHeight;
+            }
+        }
+
+        wil::unique_hrgn rgn{ CreateRectRgn(left, top, right, bottom) };
         SetWindowRgn(_interopWindowHandle, rgn.get(), true);
 
         // Go immediately into another frame. This prevents the window from
@@ -1614,31 +1686,31 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
                      currentWindowRect.height(),
                      SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
-        // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
+        // GH#10274, GH#10182: Re-evaluate the size of the docked window when we
         // move to another monitor.
-        if (IsQuakeWindow())
-        {
-            _enterQuakeMode();
-        }
+        _applyDocking();
     }
 }
 
-bool IslandWindow::IsQuakeWindow() const noexcept
+Docking IslandWindow::DockSettings() const noexcept
 {
-    return _isQuakeWindow;
+    return _dockingSettings;
 }
 
-void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
+void IslandWindow::DockSettings(Docking settings, const bool centered) noexcept
 {
-    if (_isQuakeWindow != isQuakeWindow)
+    _dockingSettings = settings;
+    _centered = centered;
+    // Don't apply docking if we don't have an HWND yet
+    if (_docked() && _window)
     {
-        _isQuakeWindow = isQuakeWindow;
-        // Don't enter quake mode if we don't have an HWND yet
-        if (IsQuakeWindow() && _window)
-        {
-            _enterQuakeMode();
-        }
+        _applyDocking();
     }
+}
+
+bool IslandWindow::_docked() const noexcept
+{
+    return _dockingSettings != nullptr && _dockingSettings.Side() != winrt::Microsoft::Terminal::Settings::Model::DockPosition::None;
 }
 
 void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
@@ -1647,15 +1719,15 @@ void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
 }
 
 // Method Description:
-// - Enter quake mode for the monitor this window is currently on. This involves
-//   resizing it to the top half of the monitor.
+// - Apply docking for the monitor this window is currently on. This involves
+//   resizing it according to the dock settings.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void IslandWindow::_enterQuakeMode()
+void IslandWindow::_applyDocking()
 {
-    if (!_window)
+    if (!_window || !_docked())
     {
         return;
     }
@@ -1664,7 +1736,7 @@ void IslandWindow::_enterQuakeMode()
     auto hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
 
     // Get the size and position of the window that we should occupy
-    const auto newRect{ _getQuakeModeSize(hmon) };
+    const auto newRect{ _getDockedSize(hmon) };
 
     SetWindowPos(GetHandle(),
                  HWND_TOP,
@@ -1676,45 +1748,115 @@ void IslandWindow::_enterQuakeMode()
 }
 
 // Method Description:
-// - Get the size and position of the window that a "quake mode" should occupy
+// - Get the size and position of the window that a docked window should occupy
 //   on the given monitor.
-// - The window will occupy the top half of the monitor.
+// - The window position is determined by the dock side, width/height settings,
+//   and whether it should be centered.
 // Arguments:
-// - <none>
+// - hmon: the monitor to dock on.
 // Return Value:
-// - <none>
-til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
+// - The rect for the docked window.
+til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;
 
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96. I think it can only fail for
-    // bad parameters, which we won't have, so no big deal.
     LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
     nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
-    // Get monitor dimensions:
     GetMonitorInfo(hmon, &nearestMonitorInfo);
-    const til::size desktopDimensions{ (nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
-                                       (nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+    const til::rect workArea{ nearestMonitorInfo.rcWork };
+    const til::size desktopDimensions{ workArea.width(), workArea.height() };
 
     // If we just use rcWork by itself, we'll fail to account for the invisible
     // space reserved for the resize handles. So retrieve that size here.
     const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
     const auto availableSpace = desktopDimensions + ncSize;
 
-    // GH#10201 - The borders are still visible in quake mode, so make us 1px
+    const auto side = _dockingSettings.Side();
+    const auto widthFraction = _dockingSettings.Width();
+    const auto heightFraction = _dockingSettings.Height();
+
+    // GH#10201 - The borders are still visible in docked mode, so make us 1px
     // smaller on either side to account for that, so they don't hang onto
     // adjacent monitors.
-    const til::point origin{
-        ::base::ClampSub(nearestMonitorInfo.rcWork.left, (ncSize.width / 2)) + 1,
-        (nearestMonitorInfo.rcWork.top)
-    };
-    const til::size dimensions{
-        availableSpace.width - 2,
-        availableSpace.height / 2
-    };
+    const auto halfNcWidth = ncSize.width / 2;
+    const auto halfNcHeight = ncSize.height / 2;
+
+    til::point origin;
+    til::size dimensions;
+
+    switch (side)
+    {
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+    {
+        const auto w = _centered ? static_cast<til::CoordType>(availableSpace.width * widthFraction) : availableSpace.width - 2;
+        const auto h = static_cast<til::CoordType>(availableSpace.height * heightFraction);
+        dimensions = { w, h };
+        if (_centered)
+        {
+            origin = { workArea.left + (desktopDimensions.width - w) / 2, workArea.top };
+        }
+        else
+        {
+            origin = { workArea.left - halfNcWidth + 1, workArea.top };
+        }
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+    {
+        const auto w = _centered ? static_cast<til::CoordType>(availableSpace.width * widthFraction) : availableSpace.width - 2;
+        const auto h = static_cast<til::CoordType>(availableSpace.height * heightFraction);
+        dimensions = { w, h };
+        if (_centered)
+        {
+            origin = { workArea.left + (desktopDimensions.width - w) / 2, workArea.bottom - h };
+        }
+        else
+        {
+            origin = { workArea.left - halfNcWidth + 1, workArea.bottom - h };
+        }
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+    {
+        const auto w = static_cast<til::CoordType>(availableSpace.width * widthFraction);
+        const auto h = _centered ? static_cast<til::CoordType>(availableSpace.height * heightFraction) : availableSpace.height - 2;
+        dimensions = { w, h };
+        if (_centered)
+        {
+            origin = { workArea.left, workArea.top + (desktopDimensions.height - h) / 2 };
+        }
+        else
+        {
+            origin = { workArea.left, workArea.top - halfNcHeight + 1 };
+        }
+        break;
+    }
+    case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+    {
+        const auto w = static_cast<til::CoordType>(availableSpace.width * widthFraction);
+        const auto h = _centered ? static_cast<til::CoordType>(availableSpace.height * heightFraction) : availableSpace.height - 2;
+        dimensions = { w, h };
+        if (_centered)
+        {
+            origin = { workArea.right - w, workArea.top + (desktopDimensions.height - h) / 2 };
+        }
+        else
+        {
+            origin = { workArea.right - w, workArea.top - halfNcHeight + 1 };
+        }
+        break;
+    }
+    default:
+    {
+        // Fallback: full work area
+        origin = workArea.origin();
+        dimensions = desktopDimensions;
+        break;
+    }
+    }
 
     return { origin, dimensions };
 }
