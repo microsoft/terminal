@@ -46,9 +46,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
-        MainPage(const Model::CascadiaSettings& settings);
+        MainPage(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings);
 
-        void UpdateSettings(const Model::CascadiaSettings& settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings);
 
         safe_void_coroutine SettingsSearchBox_TextChanged(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs& args);
         void SettingsSearchBox_QuerySubmitted(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs& args);
@@ -82,6 +82,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
+        Model::WindowSettings _windowSettingsSource{ nullptr };
+        Model::WindowSettings _windowSettingsClone{ nullptr };
 
         std::optional<HWND> _hostingHwnd;
 

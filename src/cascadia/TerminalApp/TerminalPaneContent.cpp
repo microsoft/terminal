@@ -307,7 +307,8 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings,
+                                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& /*windowSettings*/)
     {
         // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
         const auto profile{ settings.FindProfile(_profile.Guid()) };

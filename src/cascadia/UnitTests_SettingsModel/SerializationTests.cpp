@@ -1391,16 +1391,16 @@ namespace SettingsModelUnitTests
         const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson) };
 
         // Verify initial values
-        VERIFY_ARE_EQUAL(30, settings->GlobalSettings().InitialRows());
-        VERIFY_ARE_EQUAL(false, settings->GlobalSettings().AlwaysOnTop());
+        VERIFY_ARE_EQUAL(30, settings->WindowSettingsDefaults().InitialRows());
+        VERIFY_ARE_EQUAL(false, settings->WindowSettingsDefaults().AlwaysOnTop());
 
         // Modify global settings
-        settings->GlobalSettings().InitialRows(50);
-        settings->GlobalSettings().AlwaysOnTop(true);
+        settings->WindowSettingsDefaults().InitialRows(50);
+        settings->WindowSettingsDefaults().AlwaysOnTop(true);
 
         // Verify in-memory changes
-        VERIFY_ARE_EQUAL(50, settings->GlobalSettings().InitialRows());
-        VERIFY_ARE_EQUAL(true, settings->GlobalSettings().AlwaysOnTop());
+        VERIFY_ARE_EQUAL(50, settings->WindowSettingsDefaults().InitialRows());
+        VERIFY_ARE_EQUAL(true, settings->WindowSettingsDefaults().AlwaysOnTop());
 
         // Serialize and verify
         const auto result{ settings->ToJson() };

@@ -280,6 +280,19 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         {
             gci.Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
         }
+
+        // NOTE: Initializing a TSF on WM_ACTIVATE (or earlier) ensures that we don't get a
+        // redundant, implicit IMM32 TSF client, which would unnecessarily bloat the process.
+        // (It is implicitly created during DefWindowProcW(WM_ACTIVATE).)
+        if (!g.tsf)
+        {
+            // The TSF implementation doesn't care per-se if it's STA or MTA,
+            // but it does require it to be initialized. STA because we're the UI thread.
+            CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+            g.tsf = TSF::Handle::Create();
+            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
+        }
+
         goto CallDefWin;
         break;
     }
@@ -292,12 +305,6 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
         {
             renderer->AllowCursorVisibility(Render::InhibitionSource::Host, true);
-        }
-
-        if (!g.tsf)
-        {
-            g.tsf = TSF::Handle::Create();
-            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
         }
 
         // set the text area to have focus for accessibility consumers

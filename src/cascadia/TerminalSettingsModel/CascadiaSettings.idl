@@ -38,6 +38,9 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
+        WindowSettings WindowSettingsDefaults();
+        WindowSettings WindowSettings(String windowName);
+
         Profile ProfileDefaults { get; };
 
         IObservableVector<Profile> AllProfiles { get; };

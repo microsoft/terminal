@@ -490,7 +490,19 @@ try
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
-CATCH_RETURN()
+catch (...)
+{
+    // I found it useful during renderer development when exceptions aren't always silently caught and retried.
+    // Sometimes, the error goes away on the retry, but not for good reason. Catching such errors may be useful.
+#ifndef NDEBUG
+    if (IsDebuggerPresent())
+    {
+        __debugbreak();
+    }
+#endif
+
+    RETURN_CAUGHT_EXCEPTION();
+}
 
 // NOTE: You must be holding the console lock when calling this function.
 void Renderer::SynchronizedOutputChanged() noexcept
@@ -1027,6 +1039,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // relative to the entire buffer.
     const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
     const auto& activeComposition = _pData->GetActiveComposition();
+    auto& buffer = _pData->GetTextBuffer();
+    auto& scratchRow = buffer.GetScratchpadRow();
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
@@ -1056,8 +1070,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // we need to walk through line-by-line and repaint onto the screen.
         const auto redraw = Viewport::Intersect(dirty, _viewport);
 
-        // Retrieve the text buffer so we can read information out of it.
-        auto& buffer = _pData->GetTextBuffer();
         // Now walk through each row of text that we need to redraw.
         for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
@@ -1069,17 +1081,16 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Draw the active composition.
             // We have to use some tricks here with const_cast, because the code after it relies on TextBufferCellIterator,
             // which isn't compatible with the scratchpad row. This forces us to back up and modify the actual row `r`.
-            ROW* rowBackup = nullptr;
-            if (row == compositionRow)
-            {
-                rowBackup = _PaintBufferOutputComposition(buffer, r, activeComposition);
-            }
             const auto restore = wil::scope_exit([&] {
-                if (rowBackup)
+                if (row == compositionRow)
                 {
-                    const_cast<ROW&>(r).CopyFrom(*rowBackup);
+                    const_cast<ROW&>(r).CopyFrom(scratchRow);
                 }
             });
+            if (row == compositionRow)
+            {
+                _PaintBufferOutputComposition(r, scratchRow, activeComposition);
+            }
 
             // Convert the screen coordinates of the line to an equivalent
             // range of buffer cells, taking line rendition into account.
@@ -1112,9 +1123,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     }
 }
 
-ROW* Renderer::_PaintBufferOutputComposition(TextBuffer& buffer, const ROW& r, const Composition& activeComposition)
+void Renderer::_PaintBufferOutputComposition(const ROW& r, ROW& scratch, const Composition& activeComposition) const
 {
-    auto& scratch = buffer.GetScratchpadRow();
     scratch.CopyFrom(r);
 
     // *Overwrite* the original text with the active composition...
@@ -1142,7 +1152,7 @@ ROW* Renderer::_PaintBufferOutputComposition(TextBuffer& buffer, const ROW& r, c
                 attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
             }
 
-            state.text = text.substr(off, len);
+            state.text = til::safe_slice_len(text, off, len);
             state.columnBegin = state.columnEnd;
             const_cast<ROW&>(r).ReplaceText(state);
             const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
@@ -1209,8 +1219,6 @@ ROW* Renderer::_PaintBufferOutputComposition(TextBuffer& buffer, const ROW& r, c
             i = spanEnd;
         }
     }
-
-    return &scratch;
 }
 
 static bool _IsAllSpaces(const std::wstring_view v)
