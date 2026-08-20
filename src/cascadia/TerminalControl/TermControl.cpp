@@ -2463,6 +2463,78 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _automationPeer.UpdateControlBounds();
         }
+
+        // Show the resize overlay with the new columns x rows. Ignore transient
+        // zero-sized layout passes (e.g. when the control is detached from the
+        // visual tree during a tab switch): the core clamps the terminal to a
+        // minimum of 1x1, so ViewWidth()/ViewHeight() would report 1x1 rather
+        // than 0 and we'd otherwise record a bogus size. Check the raw panel
+        // size here to skip those.
+        if (newSize.Width > 0 && newSize.Height > 0)
+        {
+            _ShowResizeOverlay();
+        }
+    }
+
+    // Method Description:
+    // - Shows a centered overlay with the current terminal dimensions (columns x rows).
+    //   Used during window resize and font size changes. Skipped for disabled controls
+    //   (e.g. the Settings preview terminal) to avoid visual noise.
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto cols = coreImpl->ViewWidth();
+        const auto rows = coreImpl->ViewHeight();
+
+        // Ignore spurious/transient size updates (e.g. a control being detached
+        // from the visual tree reports a 0x0 size). Don't record these, so they
+        // can't corrupt the last-known dimensions used for change detection below.
+        if (cols <= 0 || rows <= 0)
+        {
+            return;
+        }
+
+        // Only show the overlay when the dimensions actually change. This avoids
+        // flashing it for size-changed notifications that don't reflect a real
+        // resize, such as switching between tabs (the control is re-attached at
+        // the same size). We also suppress the very first layout so the overlay
+        // doesn't appear when a tab/window is initially created.
+        if (cols == _lastResizeOverlayCols && rows == _lastResizeOverlayRows)
+        {
+            return;
+        }
+
+        const auto isInitialSize = _lastResizeOverlayCols == 0 || _lastResizeOverlayRows == 0;
+        _lastResizeOverlayCols = cols;
+        _lastResizeOverlayRows = rows;
+        if (isInitialSize)
+        {
+            return;
+        }
+
+        ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), cols, rows));
+        ResizeOverlay().Visibility(Visibility::Visible);
+
+        if (!_resizeOverlayTimer)
+        {
+            _resizeOverlayTimer.emplace();
+            _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+            _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto self = weakThis.get())
+                {
+                    self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                    self->_resizeOverlayTimer->Stop();
+                }
+            });
+        }
+
+        _resizeOverlayTimer->Start();
     }
 
     // Method Description:
@@ -3674,6 +3746,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _searchScrollOffset = _calculateSearchScrollOffset();
+
+        // GH#2833: A font size change (e.g. Ctrl+= zoom) changes the number of
+        // columns/rows without changing the swap chain's pixel size, so
+        // _SwapChainSizeChanged does not fire and we have to show the resize
+        // overlay from here instead.
+        //
+        // The core raises FontSizeChanged while holding its write lock and
+        // *before* it has resized the viewport (see ControlCore::_updateFont,
+        // which runs prior to _refreshSizeUnderLock). Reading the dimensions now
+        // would therefore return stale values (and take the read lock while the
+        // write lock is held). Defer to the dispatcher so _ShowResizeOverlay runs
+        // after the lock is released and the viewport reflects the new size.
+        //
+        // _ShowResizeOverlay only shows the overlay when the dimensions actually
+        // change, so a font "refresh" that keeps the same size (e.g. on tab
+        // switch) will correctly not display anything.
+        if (const auto dispatcher = Dispatcher())
+        {
+            dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis = get_weak()]() {
+                if (const auto self = weakThis.get())
+                {
+                    self->_ShowResizeOverlay();
+                }
+            });
+        }
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
