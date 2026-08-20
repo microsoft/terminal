@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings
 {
     winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
-    void ExpandAncestorsAndBringIntoView(const winrt::Windows::UI::Xaml::FrameworkElement& root, const winrt::Windows::UI::Xaml::Controls::Control& control);
+    safe_void_coroutine ExpandAncestorsAndBringIntoView(winrt::Windows::UI::Xaml::FrameworkElement root, winrt::Windows::UI::Xaml::Controls::Control control);
 }
 
 // BODGY!
