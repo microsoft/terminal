@@ -304,11 +304,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            uint32_t insertPosition = _tabs.Size();
-            if (_currentWindowSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
-            {
-                insertPosition = tab.TabViewIndex() + 1;
-            }
+            const auto insertPosition = tab.TabViewIndex() + 1;
             _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr), insertPosition);
 
             const auto runtimeTabText{ tab.GetTabText() };
