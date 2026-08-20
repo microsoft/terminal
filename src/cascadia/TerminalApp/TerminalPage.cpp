@@ -5193,11 +5193,24 @@ namespace winrt::TerminalApp::implementation
                 bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
             }
 
-            const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylicBrush.FallbackColor(bgColor);
-            acrylicBrush.TintColor(bgColor);
-            acrylicBrush.TintOpacity(0.5);
+            // GH#14384: a HostBackdrop tab row over a terminal's in-app
+            // Backdrop acrylic flickers; match the terminal's source instead.
+            const auto termAcrylic = terminalBrush.try_as<Media::AcrylicBrush>();
+            const auto tabRowSource = termAcrylic && termAcrylic.BackgroundSource() == Media::AcrylicBackgroundSource::Backdrop ?
+                                          Media::AcrylicBackgroundSource::Backdrop :
+                                          Media::AcrylicBackgroundSource::HostBackdrop;
+
+            // Reuse the brush unless the source or tint changed; recreating it
+            // on every BackgroundBrush event rebuilds the acrylic and flickers.
+            auto acrylicBrush = TitlebarBrush().try_as<Media::AcrylicBrush>();
+            if (acrylicBrush == nullptr || acrylicBrush.BackgroundSource() != tabRowSource || til::color{ acrylicBrush.TintColor() } != bgColor)
+            {
+                acrylicBrush = Media::AcrylicBrush();
+                acrylicBrush.BackgroundSource(tabRowSource);
+                acrylicBrush.TintOpacity(0.5);
+                acrylicBrush.FallbackColor(bgColor);
+                acrylicBrush.TintColor(bgColor);
+            }
 
             TitlebarBrush(acrylicBrush);
         }
