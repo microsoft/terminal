@@ -28,7 +28,7 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
-// Keyboard auto-repeat is ~30Hz. Each applied resize relayouts every terminal
+// Keyboard auto-repeat is ~30Hz. Each applied resize reflows every terminal
 // under the splitter. The live gap tracks recent UI cost and stays between
 // key-repeat (don't outrun input) and a still-moving floor.
 constexpr auto PaneResizeLayoutMinInterval = std::chrono::milliseconds{ 32 };
@@ -252,7 +252,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
 // - Adjusts the separation amount by 5%. The grid is updated at a capped rate
-//   so key auto-repeat cannot queue a relayout of every pane under the splitter.
+//   so key auto-repeat cannot queue a layout of every pane under the splitter.
 // - Does nothing if the direction doesn't match our current split direction
 // Arguments:
 // - direction: the direction to move our separator. If it's down or right,
@@ -285,7 +285,7 @@ bool Pane::_Resize(const ResizeDirection& direction)
     _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
     // Always accept the new percentage so a held key still progresses. Apply
-    // the grid at the current interval so auto-repeat cannot queue relayouts.
+    // the grid at the current interval so auto-repeat cannot queue layouts.
     if (std::chrono::steady_clock::now() - _lastSplitLayoutAt < _splitLayoutInterval)
     {
         _ScheduleSplitLayout();
@@ -1859,7 +1859,7 @@ void Pane::_ApplySplitLayoutNow()
     }
 
     // A no-op (position unchanged, e.g. held key at the clamp boundary) costs
-    // nothing: don't refresh the cooldown, so the next real move applies
+    // nothing: don't refresh the interval clock, so the next real move applies
     // immediately instead of waiting out a stale interval.
     if (_lastAppliedSplitPosition == _desiredSplitPosition)
     {
