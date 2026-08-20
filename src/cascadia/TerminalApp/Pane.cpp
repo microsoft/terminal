@@ -1396,6 +1396,9 @@ void Pane::_CloseChild(const bool closeFirst)
         return;
     }
 
+    _borderFirst.Clip(nullptr);
+    _borderSecond.Clip(nullptr);
+
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
     auto closedChildClosedToken = closeFirst ? _firstClosedToken : _secondClosedToken;
@@ -1594,125 +1597,90 @@ void Pane::_CloseChild(const bool closeFirst)
 void Pane::_CloseChildRoutine(const bool closeFirst)
 {
     // This will query if animations are enabled via the "Show animations in
-    // Windows" setting in the OS
+    // Windows" setting in the OS. AllowDependentAnimations is also used as the
+    // application-wide animation setting, even though this animation is independent.
     winrt::Windows::UI::ViewManagement::UISettings uiSettings;
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
     const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
     // GH#7252: If either child is zoomed, just skip the animation. It won't work.
     const auto eitherChildZoomed = _firstChild->_zoomed || _secondChild->_zoomed;
-    // If animations are disabled, just skip this and go straight to
-    // _CloseChild. Curiously, the pane opening animation doesn't need this,
-    // and will skip straight to Completed when animations are disabled, but
-    // this one doesn't seem to.
+    // If animations are disabled, skip this and go straight to _CloseChild.
     if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
     {
         _CloseChild(closeFirst);
         return;
     }
 
-    // Set up the animation
-
-    auto removedChild = closeFirst ? _firstChild : _secondChild;
-    auto remainingChild = closeFirst ? _secondChild : _firstChild;
+    const auto removedChild = closeFirst ? _firstChild : _secondChild;
+    const auto removedBorder = closeFirst ? _borderFirst : _borderSecond;
     const auto splitWidth = _splitState == SplitState::Vertical;
-
-    Size removedOriginalSize{
-        static_cast<float>(removedChild->_root.ActualWidth()),
-        static_cast<float>(removedChild->_root.ActualHeight())
+    const Size removedOriginalSize{
+        static_cast<float>(removedBorder.ActualWidth()),
+        static_cast<float>(removedBorder.ActualHeight())
     };
-    Size remainingOriginalSize{
-        static_cast<float>(remainingChild->_root.ActualWidth()),
-        static_cast<float>(remainingChild->_root.ActualHeight())
-    };
-
-    // Remove both children from the grid
-    _borderFirst.Child(nullptr);
-    _borderSecond.Child(nullptr);
-
-    if (_splitState == SplitState::Vertical)
+    const auto animatedDimension = splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height;
+    if (animatedDimension <= 0)
     {
-        Controls::Grid::SetColumn(_borderFirst, 0);
-        Controls::Grid::SetColumn(_borderSecond, 1);
-    }
-    else if (_splitState == SplitState::Horizontal)
-    {
-        Controls::Grid::SetRow(_borderFirst, 0);
-        Controls::Grid::SetRow(_borderSecond, 1);
+        _CloseChild(closeFirst);
+        return;
     }
 
-    // Create the dummy grid. This grid will be the one we actually animate,
-    // in the place of the closed pane.
-    Controls::Grid dummyGrid;
-    // GH#603 - we can safely add a BG here, as the control is gone right
-    // away, to fill the space as the rest of the pane expands.
-    dummyGrid.Background(_themeResources.unfocusedBorderBrush);
-    // It should be the size of the closed pane.
-    dummyGrid.Width(removedOriginalSize.Width);
-    dummyGrid.Height(removedOriginalSize.Height);
+    const auto root = _root;
+    const auto background = removedChild->_GetBackgroundBrush();
 
-    _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
-    _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
+    // Collapse the pane tree first, so all surviving controls immediately get
+    // their final size. The overlay preserves the closing pane's backdrop while
+    // its clip moves toward the outside edge.
+    _CloseChild(closeFirst);
 
-    // Set up the rows/cols as auto/auto, so they'll only use the size of
-    // the elements in the grid.
-    //
-    // * For the closed pane, we want to make that row/col "auto" sized, so
-    //   it takes up as much space as is available.
-    // * For the remaining pane, we'll make that row/col "*" sized, so it
-    //   takes all the remaining space. As the dummy grid is resized down,
-    //   the remaining pane will expand to take the rest of the space.
-    _root.ColumnDefinitions().Clear();
-    _root.RowDefinitions().Clear();
-    if (_splitState == SplitState::Vertical)
+    Controls::Border overlay;
+    overlay.Background(background ? background : _themeResources.unfocusedBorderBrush);
+    overlay.IsHitTestVisible(false);
+    Controls::Grid::SetColumnSpan(overlay, std::max(1, gsl::narrow_cast<int32_t>(root.ColumnDefinitions().Size())));
+    Controls::Grid::SetRowSpan(overlay, std::max(1, gsl::narrow_cast<int32_t>(root.RowDefinitions().Size())));
+
+    if (splitWidth)
     {
-        auto firstColDef = Controls::ColumnDefinition();
-        auto secondColDef = Controls::ColumnDefinition();
-        firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        _root.ColumnDefinitions().Append(firstColDef);
-        _root.ColumnDefinitions().Append(secondColDef);
+        overlay.Width(removedOriginalSize.Width);
+        overlay.HorizontalAlignment(closeFirst ? HorizontalAlignment::Left : HorizontalAlignment::Right);
+        overlay.VerticalAlignment(VerticalAlignment::Stretch);
     }
-    else if (_splitState == SplitState::Horizontal)
+    else
     {
-        auto firstRowDef = Controls::RowDefinition();
-        auto secondRowDef = Controls::RowDefinition();
-        firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
-        _root.RowDefinitions().Append(firstRowDef);
-        _root.RowDefinitions().Append(secondRowDef);
+        overlay.Height(removedOriginalSize.Height);
+        overlay.HorizontalAlignment(HorizontalAlignment::Stretch);
+        overlay.VerticalAlignment(closeFirst ? VerticalAlignment::Top : VerticalAlignment::Bottom);
     }
 
-    // Animate the dummy grid from its current size down to 0
+    RectangleGeometry clip;
+    clip.Rect({ 0, 0, removedOriginalSize.Width, removedOriginalSize.Height });
+    TranslateTransform clipTransform;
+    clip.Transform(clipTransform);
+    overlay.Clip(clip);
+    root.Children().Append(overlay);
+
     Media::Animation::DoubleAnimation animation{};
     animation.Duration(AnimationDuration);
-    animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
-    animation.To(0.0);
-    // This easing is the same as the entrance animation.
+    animation.From(0.0);
+    animation.To(closeFirst ? -animatedDimension : animatedDimension);
     animation.EasingFunction(Media::Animation::QuadraticEase{});
-    animation.EnableDependentAnimation(true);
 
     Media::Animation::Storyboard s;
     s.Duration(AnimationDuration);
     s.Children().Append(animation);
-    s.SetTarget(animation, dummyGrid);
-    s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+    s.SetTarget(animation, clipTransform);
+    s.SetTargetProperty(animation, splitWidth ? L"X" : L"Y");
 
-    // Start the animation.
-    s.Begin();
-
-    std::weak_ptr<Pane> weakThis{ shared_from_this() };
-
-    // When the animation is completed, reparent the child's content up to
-    // us, and remove the child nodes from the tree.
-    animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
-        if (auto pane{ weakThis.lock() })
+    animation.Completed([root, overlay](auto&&, auto&&) {
+        uint32_t index = 0;
+        if (root.Children().IndexOf(overlay, index))
         {
-            // We don't need to manually undo any of the above trickiness.
-            // We're going to re-parent the child's content into us anyways
-            pane->_CloseChild(closeFirst);
+            root.Children().RemoveAt(index);
         }
     });
+
+    s.Begin();
 }
 
 // Method Description:
@@ -1880,6 +1848,37 @@ Borders Pane::_GetCommonBorders()
     return _firstChild->_GetCommonBorders() & _secondChild->_GetCommonBorders();
 }
 
+Media::Brush Pane::_GetBackgroundBrush() const
+{
+    if (_content)
+    {
+        return _content.BackgroundBrush();
+    }
+
+    if (_firstChild && _firstChild->_HasFocusedChild())
+    {
+        if (const auto brush = _firstChild->_GetBackgroundBrush())
+        {
+            return brush;
+        }
+    }
+    if (_secondChild && _secondChild->_HasFocusedChild())
+    {
+        if (const auto brush = _secondChild->_GetBackgroundBrush())
+        {
+            return brush;
+        }
+    }
+    if (_firstChild)
+    {
+        if (const auto brush = _firstChild->_GetBackgroundBrush())
+        {
+            return brush;
+        }
+    }
+    return _secondChild ? _secondChild->_GetBackgroundBrush() : nullptr;
+}
+
 // Method Description:
 // - Sets the row/column of our child UI elements, to match our current split type.
 // - In case the split definition or parent borders were changed, this recursively
@@ -1918,13 +1917,14 @@ void Pane::_ApplySplitDefinitions()
 }
 
 // Method Description:
-// - Create a pair of animations when a new control enters this pane. This
+// - Create an animation when a new control enters this pane. This
 //   should _ONLY_ be called in _Split, AFTER the first and second child panes
 //   have been set up.
-void Pane::_SetupEntranceAnimation()
+void Pane::_SetupEntranceAnimation(const bool newPaneIsFirst)
 {
     // This will query if animations are enabled via the "Show animations in
-    // Windows" setting in the OS
+    // Windows" setting in the OS. AllowDependentAnimations is also used as the
+    // application-wide animation setting, even though this animation is independent.
     winrt::Windows::UI::ViewManagement::UISettings uiSettings;
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
     const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
@@ -1939,135 +1939,61 @@ void Pane::_SetupEntranceAnimation()
         return;
     }
 
-    // Use the unfocused border color as the pane background, so an actual color
-    // appears behind panes as we animate them sliding in.
-    //
-    // GH#603 - We set only the background of the new pane, while it animates
-    // in. Once the animation is done, we'll remove that background, so if the
-    // user wants vintage opacity, they'll be able to see what's under the
-    // window.
-    // * If we don't give it a background, then the BG will be entirely transparent.
-    // * If we give the parent (us) root BG a color, then a transparent pane
-    //   will flash opaque during the animation, then back to transparent, which
-    //   looks bad.
-    _secondChild->_root.Background(_themeResources.unfocusedBorderBrush);
-
     const auto [firstSize, secondSize] = _CalcChildrenSizes(static_cast<float>(totalSize));
+    const auto animatedSize = newPaneIsFirst ? firstSize : secondSize;
+    const auto newPaneBorder = newPaneIsFirst ? _borderFirst : _borderSecond;
+    const auto oldPane = newPaneIsFirst ? _secondChild : _firstChild;
 
-    // This is safe to capture this, because it's only being called in the
-    // context of this method (not on another thread)
-    auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
-        auto child = isFirstChild ? _firstChild : _secondChild;
-        auto childGrid = child->_root;
-        // If we are splitting a parent pane this may be null
-        auto control = child->_content ? child->_content.GetRoot() : nullptr;
-        // Build up our animation:
-        // * it'll take as long as our duration (200ms)
-        // * it'll change the value of our property from 0 to secondSize
-        // * it'll animate that value using a quadratic function (like f(t) = t^2)
-        // * IMPORTANT! We'll manually tell the animation that "yes we know what
-        //   we're doing, we want an animation here."
-        Media::Animation::DoubleAnimation animation{};
-        animation.Duration(AnimationDuration);
-        if (isFirstChild)
-        {
-            // If we're animating the first pane, the size should decrease, from
-            // the full size down to the given size.
-            animation.From(totalSize);
-            animation.To(size);
-        }
-        else
-        {
-            // Otherwise, we want to show the pane getting larger, so animate
-            // from 0 to the requested size.
-            animation.From(0.0);
-            animation.To(size);
-        }
-        animation.EasingFunction(Media::Animation::QuadraticEase{});
-        animation.EnableDependentAnimation(true);
+    Controls::Border backdrop;
+    const auto background = oldPane->_GetBackgroundBrush();
+    backdrop.Background(background ? background : _themeResources.unfocusedBorderBrush);
+    backdrop.IsHitTestVisible(false);
+    if (splitWidth)
+    {
+        Controls::Grid::SetColumn(backdrop, newPaneIsFirst ? 0 : 1);
+    }
+    else
+    {
+        Controls::Grid::SetRow(backdrop, newPaneIsFirst ? 0 : 1);
+    }
+    _root.Children().InsertAt(0, backdrop);
 
-        // Now we're going to set up the Storyboard. This is a unit that uses the
-        // Animation from above, and actually applies it to a property.
-        // * we'll set it up for the same duration as the animation we have
-        // * Apply the animation to the grid of the new pane we're adding to the tree.
-        // * apply the animation to the Width or Height property.
-        Media::Animation::Storyboard s;
-        s.Duration(AnimationDuration);
-        s.Children().Append(animation);
-        s.SetTarget(animation, childGrid);
-        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
-
-        // BE TRICKY:
-        // We're animating the width or height of our child pane's grid.
-        //
-        // We DON'T want to change the size of the control itself, because the
-        // terminal has to reflow the buffer every time the control changes size. So
-        // what we're going to do there is manually set the control's size to how
-        // big we _actually know_ the control will be.
-        //
-        // We're also going to be changing alignment of our child pane and the
-        // control. This way, we'll be able to have the control stick to the inside
-        // of the child pane's grid (the side that's moving), while we also have the
-        // pane's grid stick to "outside" of the grid (the side that's not moving)
-        if (splitWidth)
-        {
-            // If we're animating the first child, then stick to the top/left of
-            // the parent pane; otherwise, use the bottom/right. This is always
-            // the "outside" of the parent pane.
-            childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
-            if (control)
-            {
-                control.HorizontalAlignment(HorizontalAlignment::Left);
-                control.Width(isFirstChild ? totalSize : size);
-            }
-
-            // When the animation is completed, undo the trickiness from before, to
-            // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                childGrid.Width(NAN);
-                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                if (control)
-                {
-                    control.Width(NAN);
-                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                }
-                root.Background(nullptr);
-            });
-        }
-        else
-        {
-            // If we're animating the first child, then stick to the top/left of
-            // the parent pane; otherwise, use the bottom/right. This is always
-            // the "outside" of the parent pane.
-            childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
-            if (control)
-            {
-                control.VerticalAlignment(VerticalAlignment::Top);
-                control.Height(isFirstChild ? totalSize : size);
-            }
-
-            // When the animation is completed, undo the trickiness from before, to
-            // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                childGrid.Height(NAN);
-                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                if (control)
-                {
-                    control.Height(NAN);
-                    control.VerticalAlignment(VerticalAlignment::Stretch);
-                }
-                root.Background(nullptr);
-            });
-        }
-
-        // Start the animation.
-        s.Begin();
+    const auto rootSize = Size{
+        gsl::narrow_cast<float>(_root.ActualWidth()),
+        gsl::narrow_cast<float>(_root.ActualHeight())
     };
+    RectangleGeometry clip;
+    clip.Rect({ 0, 0, splitWidth ? animatedSize : rootSize.Width, splitWidth ? rootSize.Height : animatedSize });
+    TranslateTransform clipTransform;
+    clip.Transform(clipTransform);
+    newPaneBorder.Clip(clip);
 
-    // TODO: GH#7365 - animating the first child right now doesn't _really_ do
-    // anything. We could do better though.
-    setupAnimation(firstSize, true);
-    setupAnimation(secondSize, false);
+    Media::Animation::DoubleAnimation animation{};
+    animation.Duration(AnimationDuration);
+    animation.From(newPaneIsFirst ? -animatedSize : animatedSize);
+    animation.To(0.0);
+    animation.EasingFunction(Media::Animation::QuadraticEase{});
+
+    Media::Animation::Storyboard s;
+    s.Duration(AnimationDuration);
+    s.Children().Append(animation);
+    s.SetTarget(animation, clipTransform);
+    s.SetTargetProperty(animation, splitWidth ? L"X" : L"Y");
+
+    animation.Completed([newPaneBorder, clip, root = _root, backdrop](auto&&, auto&&) {
+        if (newPaneBorder.Clip() == clip)
+        {
+            newPaneBorder.Clip(nullptr);
+        }
+
+        uint32_t index = 0;
+        if (root.Children().IndexOf(backdrop, index))
+        {
+            root.Children().RemoveAt(index);
+        }
+    });
+
+    s.Begin();
 }
 
 // Method Description:
@@ -2291,6 +2217,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
     _root.Children().Clear();
+    _borderFirst.Clip(nullptr);
+    _borderSecond.Clip(nullptr);
     _borderFirst.Child(nullptr);
     _borderSecond.Child(nullptr);
 
@@ -2339,7 +2267,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 
     _lastActive = false;
 
-    _SetupEntranceAnimation();
+    _SetupEntranceAnimation(splitType == SplitDirection::Up || splitType == SplitDirection::Left);
 
     // Clear out our ID, only leaves should have IDs
     _id = {};

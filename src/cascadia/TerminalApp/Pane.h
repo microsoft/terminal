@@ -276,9 +276,10 @@ private:
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
-    void _SetupEntranceAnimation();
+    void _SetupEntranceAnimation(bool newPaneIsFirst);
     void _UpdateBorders();
     Borders _GetCommonBorders();
+    winrt::Windows::UI::Xaml::Media::Brush _GetBackgroundBrush() const;
     winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
