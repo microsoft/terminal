@@ -6,6 +6,7 @@
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
+using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -26,6 +27,17 @@ static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 // flow, but not too quick to see
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
+
+// Keyboard auto-repeat is ~30Hz. Each applied resize relayouts every terminal
+// under the splitter. The live gap tracks recent UI cost and stays between
+// key-repeat (don't outrun input) and a still-moving floor.
+constexpr auto PaneResizeLayoutMinInterval = std::chrono::milliseconds{ 32 };
+constexpr auto PaneResizeLayoutMaxInterval = std::chrono::milliseconds{ 250 };
+
+// Two key-repeat steps (5% each). Bounds how far one applied layout may move
+// the splitter; anything more means input piled up during a UI stall and
+// would land as one huge jump.
+constexpr auto PaneResizeMaxSplitDeltaPerLayout = 0.10f;
 
 Pane::Pane(IPaneContent content, const bool lastFocused) :
     _lastActive{ lastFocused }
@@ -239,7 +251,8 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 // Method Description:
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
-// - Adjusts the separation amount by 5%
+// - Adjusts the separation amount by 5%. The grid is updated at a capped rate
+//   so key auto-repeat cannot queue a relayout of every pane under the splitter.
 // - Does nothing if the direction doesn't match our current split direction
 // Arguments:
 // - direction: the direction to move our separator. If it's down or right,
@@ -271,8 +284,16 @@ bool Pane::_Resize(const ResizeDirection& direction)
 
     _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
-    // Resize our columns to match the new percentages.
-    _CreateRowColDefinitions();
+    // Always accept the new percentage so a held key still progresses. Apply
+    // the grid at the current interval so auto-repeat cannot queue relayouts.
+    if (std::chrono::steady_clock::now() - _lastSplitLayoutAt < _splitLayoutInterval)
+    {
+        _ScheduleSplitLayout();
+    }
+    else
+    {
+        _ApplySplitLayoutNow();
+    }
 
     return true;
 }
@@ -1011,6 +1032,12 @@ void Pane::Close()
 //   and connections beneath it.
 void Pane::Shutdown()
 {
+    if (_splitLayoutTimer)
+    {
+        _splitLayoutTimer.Stop();
+        _splitLayoutTimer = nullptr;
+    }
+
     if (_IsLeaf())
     {
         _setPaneContent(nullptr);
@@ -1774,36 +1801,144 @@ void Pane::_CreateRowColDefinitions()
 {
     const auto first = _desiredSplitPosition * 100.0f;
     const auto second = 100.0f - first;
+    const auto firstLen = GridLengthHelper::FromValueAndType(first, GridUnitType::Star);
+    const auto secondLen = GridLengthHelper::FromValueAndType(second, GridUnitType::Star);
     if (_splitState == SplitState::Vertical)
     {
-        _root.ColumnDefinitions().Clear();
+        const auto columns = _root.ColumnDefinitions();
+        if (columns.Size() == 2)
+        {
+            columns.GetAt(0).Width(firstLen);
+            columns.GetAt(1).Width(secondLen);
+        }
+        else
+        {
+            columns.Clear();
 
-        // Create two columns in this grid: one for each pane
+            auto firstColDef = Controls::ColumnDefinition();
+            firstColDef.Width(firstLen);
 
-        auto firstColDef = Controls::ColumnDefinition();
-        firstColDef.Width(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
+            auto secondColDef = Controls::ColumnDefinition();
+            secondColDef.Width(secondLen);
 
-        auto secondColDef = Controls::ColumnDefinition();
-        secondColDef.Width(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
-
-        _root.ColumnDefinitions().Append(firstColDef);
-        _root.ColumnDefinitions().Append(secondColDef);
+            columns.Append(firstColDef);
+            columns.Append(secondColDef);
+        }
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        _root.RowDefinitions().Clear();
+        const auto rows = _root.RowDefinitions();
+        if (rows.Size() == 2)
+        {
+            rows.GetAt(0).Height(firstLen);
+            rows.GetAt(1).Height(secondLen);
+        }
+        else
+        {
+            rows.Clear();
 
-        // Create two rows in this grid: one for each pane
+            auto firstRowDef = Controls::RowDefinition();
+            firstRowDef.Height(firstLen);
 
-        auto firstRowDef = Controls::RowDefinition();
-        firstRowDef.Height(GridLengthHelper::FromValueAndType(first, GridUnitType::Star));
+            auto secondRowDef = Controls::RowDefinition();
+            secondRowDef.Height(secondLen);
 
-        auto secondRowDef = Controls::RowDefinition();
-        secondRowDef.Height(GridLengthHelper::FromValueAndType(second, GridUnitType::Star));
-
-        _root.RowDefinitions().Append(firstRowDef);
-        _root.RowDefinitions().Append(secondRowDef);
+            rows.Append(firstRowDef);
+            rows.Append(secondRowDef);
+        }
     }
+
+    _lastAppliedSplitPosition = _desiredSplitPosition;
+}
+
+void Pane::_ApplySplitLayoutNow()
+{
+    if (_IsLeaf() || _splitState == SplitState::None)
+    {
+        return;
+    }
+
+    // A no-op (position unchanged, e.g. held key at the clamp boundary) costs
+    // nothing: don't refresh the cooldown, so the next real move applies
+    // immediately instead of waiting out a stale interval.
+    if (_lastAppliedSplitPosition == _desiredSplitPosition)
+    {
+        return;
+    }
+
+    // Cap each applied move and drop the excess (a held key simply travels a
+    // little less). Never binds at the normal 1-2 steps per apply.
+    if (_lastAppliedSplitPosition)
+    {
+        _desiredSplitPosition = std::clamp(_desiredSplitPosition,
+                                           *_lastAppliedSplitPosition - PaneResizeMaxSplitDeltaPerLayout,
+                                           *_lastAppliedSplitPosition + PaneResizeMaxSplitDeltaPerLayout);
+    }
+
+    const auto startedAt = std::chrono::steady_clock::now();
+    _CreateRowColDefinitions();
+    _lastSplitLayoutAt = startedAt;
+
+    // Sample after this pump (and typical XAML layout). Cost is the real
+    // machine+tree price.
+    if (const auto dispatcher = DispatcherQueue::GetForCurrentThread())
+    {
+        dispatcher.TryEnqueue(DispatcherQueuePriority::Low, [weak = weak_from_this(), startedAt]() {
+            if (auto self = weak.lock())
+            {
+                self->_AdoptSplitLayoutCost(std::chrono::steady_clock::now() - startedAt);
+            }
+        });
+    }
+}
+
+void Pane::_AdoptSplitLayoutCost(const std::chrono::steady_clock::duration cost)
+{
+    using ms = std::chrono::milliseconds;
+    // 2x headroom so the next apply starts after the UI has recovered.
+    auto target = std::chrono::duration_cast<ms>(cost) * 2;
+    if (target < PaneResizeLayoutMinInterval)
+    {
+        target = PaneResizeLayoutMinInterval;
+    }
+    else if (target > PaneResizeLayoutMaxInterval)
+    {
+        target = PaneResizeLayoutMaxInterval;
+    }
+    _splitLayoutInterval = (_splitLayoutInterval * 3 + target) / 4;
+}
+
+void Pane::_ScheduleSplitLayout()
+{
+    const auto dispatcher = DispatcherQueue::GetForCurrentThread();
+    if (!dispatcher)
+    {
+        _ApplySplitLayoutNow();
+        return;
+    }
+
+    if (!_splitLayoutTimer)
+    {
+        _splitLayoutTimer = dispatcher.CreateTimer();
+        _splitLayoutTimer.IsRepeating(false);
+        _splitLayoutTimer.Tick([weak = weak_from_this()](auto&&, auto&&) {
+            if (auto self = weak.lock())
+            {
+                self->_ApplySplitLayoutNow();
+            }
+        });
+    }
+
+    if (_splitLayoutTimer.IsRunning())
+    {
+        return;
+    }
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - _lastSplitLayoutAt);
+    const auto delay = elapsed >= _splitLayoutInterval ? std::chrono::milliseconds{ 0 } : (_splitLayoutInterval - elapsed);
+
+    _splitLayoutTimer.Interval(delay);
+    _splitLayoutTimer.Start();
 }
 
 // Method Description:
