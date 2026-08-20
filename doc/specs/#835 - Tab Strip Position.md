@@ -27,8 +27,9 @@ Closes microsoft/terminal #835 ("Feature request: Enable customization for
 tabs on bottom/right/left") and resolves the long-standing duplicate
 backlog (#9082, #9100, #10939, #18837).
 
-The architecture is adopted from @zadjii-msft's `dev/migrie/fhl-spring-2026/side-tabs`
-FHL prototype, with finishing touches for runtime mutation, Settings UI, and
+The architecture is adopted from @zadjii-msft's
+`dev/migrie/fhl-spring-2026/side-tabs` prototype, with finishing touches for
+runtime mutation, Settings UI, and
 full four-position localization.
 
 ## Inspiration
@@ -55,7 +56,7 @@ the same shape. The pain points users cite are:
 Prior art the feature is modeled on:
 
 * **Microsoft Edge.** The vertical-tabs button in the title bar collapses the
-  tabs into a left-edge rail. Edge popularized the affordance on Windows in
+  tabs into a left-edge rail. Edge popularized this interaction on Windows in
   early 2021 and the visual style of a left-side strip with selection accent
   bar is the closest analogue.
 * **Visual Studio Code.** `workbench.editor.tabs.placement` exposes top /
@@ -112,8 +113,8 @@ access or an additional indirection that buys no clarity.
    `WindowTheme` means a user can have a horizontal-tab Light theme and a
    vertical-tab Dark theme, switched by the system, without any extra
    plumbing.
-3. **Not a profile concern.** Tab position is a window-level affordance, not
-   a per-shell affordance. Putting it on `Profile` would either be ignored
+3. **Not a profile concern.** Tab position is a window-level setting, not
+   a per-shell setting. Putting it on `Profile` would either be ignored
    (only one profile's setting can win per window) or would cause confusing
    reflow when switching tabs.
 
@@ -162,8 +163,8 @@ four parallel XAML layouts. The function reads the active theme's
   overlays cover the content area, not the tab row.
 * **Left and Right.** The root grid is reset to **three columns**:
   `tabStripCol` (200 px, clamped 100–400), `splitterCol` (Auto-width), and
-  `contentCol` (`*`). For `Left` the order is `[tabstrip | splitter |
-  content]`; for `Right` it's `[content | splitter | tabstrip]`. The
+  `contentCol` (`*`). For `Left` the order is `[tab strip | splitter |
+  content]`; for `Right` it's `[content | splitter | tab strip]`. The
   InfoBars and TabContent are combined into an inner `Grid` that lives in
   the content column. The `mux:TabView` is then re-styled by inserting the
   `VerticalTabViewStyle` and `VerticalTabViewItemStyle` resources into the
@@ -176,7 +177,7 @@ For `Left` and `Right`, a 4-pixel `Border` is created and placed in the
 splitter column. It registers four pointer event handlers:
 
 * `PointerEntered` / `PointerExited` — swap the `CoreWindow` cursor between
-  `SizeWestEast` and `Arrow` so the user gets a visual affordance.
+  `SizeWestEast` and `Arrow` to provide visual feedback.
 * `PointerPressed` — capture the pointer, record start X and starting tab
   strip column width.
 * `PointerMoved` — while dragging, compute the delta, clamp the new column
@@ -319,7 +320,7 @@ fill. The "new tab" SplitButton in the strip footer reads "+ New tab"
 (label + glyph) rather than just "+" — vertical real estate makes the label
 read naturally.
 
-**Right (vertical).** Mirror of Left: `[content | splitter | tabstrip]`. The
+**Right (vertical).** Mirror of Left: `[content | splitter | tab strip]`. The
 content area is on the left and the tab strip is on the right. The accent bar
 on the selected tab is currently hardcoded to `HorizontalAlignment="Left"` in
 the `VerticalTabViewItemStyle` resource (inside `VerticalTabViewStyle.xaml`,
@@ -501,7 +502,7 @@ follow-up.
 ### Splitter clamp range is fixed
 
 Tab strip width is clamped to `[100, 400]` pixels. Users with 4K or
-ultrawide displays may want a wider strip; users on tablet-sized devices
+ultra-wide displays may want a wider strip; users on tablet-sized devices
 may want narrower. Exposing the bounds as theme properties is a
 straightforward future addition but was deliberately left out of v1 to
 keep the surface small.
@@ -510,7 +511,7 @@ keep the surface small.
 
 ### Edge-style collapsible sidebar
 
-The most-requested follow-up. Edge ships a pinnable/collapsible sidebar
+The most-requested follow-up. Edge ships a sidebar that can be pinned or collapsed
 where the rail collapses to icons-only and expands on hover or on click.
 Scope to add to Terminal:
 
