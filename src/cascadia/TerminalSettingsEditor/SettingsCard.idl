@@ -41,6 +41,5 @@ namespace Microsoft.Terminal.Settings.Editor
 
     [default_interface] runtimeclass SettingsCardAutomationPeer : Windows.UI.Xaml.Automation.Peers.ButtonBaseAutomationPeer
     {
-        SettingsCardAutomationPeer(SettingsCard owner);
     };
 }

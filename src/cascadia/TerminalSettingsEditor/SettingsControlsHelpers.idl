@@ -35,12 +35,12 @@ namespace Microsoft.Terminal.Settings.Editor
     // Filter a CornerRadius down to only its top/bottom corners. Used
     // by the SettingsExpander template so the header and items panel visually
     // stitch together with rounded outer corners only.
-    [default_interface] runtimeclass TopCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    runtimeclass TopCornerRadiusFilterConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         TopCornerRadiusFilterConverter();
     }
 
-    [default_interface] runtimeclass BottomCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    runtimeclass BottomCornerRadiusFilterConverter : [default] Windows.UI.Xaml.Data.IValueConverter
     {
         BottomCornerRadiusFilterConverter();
     }

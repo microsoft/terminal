@@ -29,8 +29,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsExpander::_ItemTemplateProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemContainerStyleSelectorProperty{ nullptr };
 
-    static constexpr std::wstring_view PART_ItemsHost{ L"PART_ItemsHost" };
-
     SettingsExpander::SettingsExpander()
     {
         _InitializeProperties();
@@ -142,6 +140,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsExpander::OnApplyTemplate()
     {
+        base_type::OnApplyTemplate();
+
         // Same implicit-styles injection as SettingsCard so a ToggleSwitch /
         // Slider / ComboBox / TextBox placed directly as SettingsExpander.Content
         // gets the same Windows 11 defaults.
@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Drop the prior template's host before locating the new one.
         _itemsHost = nullptr;
 
-        if (const auto child{ GetTemplateChild(hstring{ PART_ItemsHost }) })
+        if (const auto child{ GetTemplateChild(hstring{ L"PART_ItemsHost" }) })
         {
             _itemsHost = child.try_as<Controls::ItemsControl>();
         }

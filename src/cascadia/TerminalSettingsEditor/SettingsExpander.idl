@@ -47,8 +47,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     [default_interface] runtimeclass SettingsExpanderAutomationPeer : Windows.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer
     {
-        SettingsExpanderAutomationPeer(SettingsExpander owner);
-
         void RaiseExpandedChangedEvent(Boolean newValue);
     };
 
