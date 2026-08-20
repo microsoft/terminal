@@ -691,6 +691,11 @@ void CascadiaSettings::_validateMediaResources()
     }
 
     _globals->ResolveMediaResources(mediaResourceResolver);
+    _baseWindowSettings->ResolveMediaResources(mediaResourceResolver);
+    for (const auto& [_, window] : _windows)
+    {
+        winrt::get_self<implementation::WindowSettings>(window)->ResolveMediaResources(mediaResourceResolver, false);
+    }
 
     if (Feature_WarnOnInvalidSettingsMediaResources::IsEnabled())
     {

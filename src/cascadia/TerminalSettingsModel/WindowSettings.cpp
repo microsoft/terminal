@@ -47,6 +47,7 @@ winrt::com_ptr<WindowSettings> WindowSettings::Copy() const
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
+    globals->SourceBasePath = SourceBasePath;
 
 #define WINDOW_SETTINGS_COPY(type, name, jsonKey, ...) \
     globals->_##name = _##name;
@@ -130,6 +131,16 @@ void WindowSettings::LayerJson(const Json::Value& json)
     _logSettingIfSet(jsonKey, _##name.has_value());
     MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_LAYER_JSON)
 #undef WINDOW_SETTINGS_LAYER_JSON
+
+    // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values.
+    if (HasInitialCols())
+    {
+        InitialCols(std::clamp(InitialCols(), 1, 999));
+    }
+    if (HasInitialRows())
+    {
+        InitialRows(std::clamp(InitialRows(), 1, 999));
+    }
 }
 
 // Method Description:
@@ -168,6 +179,28 @@ Json::Value WindowSettings::ToJson()
 #undef WINDOW_SETTINGS_TO_JSON
 
     return json;
+}
+
+void WindowSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver, const bool resolveParents)
+{
+    if (_NewTabMenu)
+    {
+        for (const auto& entry : *_NewTabMenu)
+        {
+            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
+            {
+                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+            }
+        }
+    }
+
+    if (resolveParents)
+    {
+        for (auto& parent : _parents)
+        {
+            parent->ResolveMediaResources(resolver);
+        }
+    }
 }
 
 void WindowSettings::_logSettingSet(const std::string_view& setting)

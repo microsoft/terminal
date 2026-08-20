@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson();
 
         void InitializeForQuakeMode();
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver, bool resolveParents = true);
 
         // This DefaultProfile() setter is called by CascadiaSettings,
         // when it parses UnparsedDefaultProfile in _finalizeSettings().
@@ -65,6 +66,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef WINDOW_SETTINGS_INITIALIZE
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
+        winrt::hstring SourceBasePath;
 
     private:
         winrt::guid _defaultProfile;

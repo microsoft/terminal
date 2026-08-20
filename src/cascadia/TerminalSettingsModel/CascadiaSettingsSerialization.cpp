@@ -1303,6 +1303,11 @@ try
     winrt::hstring baseUserSettingsPath{ GetBaseSettingsPath().native() };
     loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
     loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.baseWindowSettings->SourceBasePath = baseUserSettingsPath;
+    for (auto& [_, window] : loader.userSettings.windowsByName)
+    {
+        window->SourceBasePath = baseUserSettingsPath;
+    }
     for (auto&& userProfile : loader.userSettings.profiles)
     {
         userProfile->SourceBasePath = baseUserSettingsPath;
