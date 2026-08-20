@@ -1,0 +1,20 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Tab.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass OverviewPane : Windows.UI.Xaml.Controls.UserControl
+    {
+        OverviewPane();
+        void UpdateTabContent(Windows.Foundation.Collections.IVector<Tab> tabs, Int32 focusedIndex);
+        void ClearTabContent();
+        Int32 SelectedIndex;
+        Boolean UseMica;
+        String ControlName { get; };
+
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.IReference<Int32> > TabSelected;
+        event Windows.Foundation.TypedEventHandler<Object, Object> Dismissed;
+    }
+}

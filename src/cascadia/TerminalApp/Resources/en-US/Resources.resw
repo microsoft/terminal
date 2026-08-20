@@ -606,6 +606,10 @@
   <data name="CommandPaletteControlName" xml:space="preserve">
     <value>Command palette</value>
   </data>
+  <data name="OverviewPaneControlName" xml:space="preserve">
+    <value>Tab Overview</value>
+    <comment>The name announced by assistive technologies (e.g. Narrator) when the tab overview pane receives focus.</comment>
+  </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>Tab switcher</value>
   </data>

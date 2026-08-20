@@ -155,6 +155,12 @@
             </TextBlock>
         </ContentDialog>
 
+        <local:OverviewPane x:Name="OverviewPaneElement"
+                            Grid.Row="2"
+                            x:Load="False"
+                            PreviewKeyDown="_KeyDownHandler"
+                            Visibility="Collapsed" />
+
         <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
                               VerticalAlignment="Stretch"
