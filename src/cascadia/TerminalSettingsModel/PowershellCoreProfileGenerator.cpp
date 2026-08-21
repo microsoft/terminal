@@ -281,6 +281,24 @@ static std::vector<PowerShellInstance> _collectPowerShellInstances()
     _accumulatePwshExeInDirectory(L"%USERPROFILE%\\.dotnet\\tools", PowerShellFlags::Dotnet, versions);
     _accumulatePwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
 
+    // Check for custom Scoop directories via environment variables
+    // SCOOP is for user-installed apps, SCOOP_GLOBAL is for globally installed apps
+    const auto scoopEnv = wil::TryGetEnvironmentVariableW(L"SCOOP");
+    if (scoopEnv)
+    {
+        const std::filesystem::path scoopPath{ scoopEnv.get() };
+        const auto scoopShimsPath = scoopPath / L"shims";
+        _accumulatePwshExeInDirectory(scoopShimsPath.native(), PowerShellFlags::Scoop, versions);
+    }
+
+    const auto scoopGlobalEnv = wil::TryGetEnvironmentVariableW(L"SCOOP_GLOBAL");
+    if (scoopGlobalEnv)
+    {
+        const std::filesystem::path scoopGlobalPath{ scoopGlobalEnv.get() };
+        const auto scoopGlobalShimsPath = scoopGlobalPath / L"shims";
+        _accumulatePwshExeInDirectory(scoopGlobalShimsPath.native(), PowerShellFlags::Scoop, versions);
+    }
+
     std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
 
     return versions;
