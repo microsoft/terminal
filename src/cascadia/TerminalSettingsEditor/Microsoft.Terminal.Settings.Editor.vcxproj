@@ -170,8 +170,14 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="SettingContainer.h">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
+    <ClInclude Include="SettingsCard.h">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsExpander.h">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsControlsHelpers.h">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
@@ -249,7 +255,10 @@
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="SettingContainerStyle.xaml">
+    <Page Include="SettingsControlsStyle.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
+    <Page Include="SettingsControlsImplicitStyles.xaml">
       <Type>DefaultStyle</Type>
     </Page>
   </ItemGroup>
@@ -382,8 +391,14 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="SettingContainer.cpp">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
+    <ClCompile Include="SettingsCard.cpp">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsExpander.cpp">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsControlsHelpers.cpp">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
@@ -489,7 +504,13 @@
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="SettingContainer.idl">
+    <Midl Include="SettingsCard.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsExpander.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsControlsHelpers.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
