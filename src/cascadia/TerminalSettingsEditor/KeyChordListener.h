@@ -13,6 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         KeyChordListener();
 
+        void FocusInput();
+
         void KeyChordTextBox_KeyDown(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
         DEPENDENCY_PROPERTY(Control::KeyChord, Keys);
