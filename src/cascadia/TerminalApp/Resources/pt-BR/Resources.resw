@@ -131,6 +131,10 @@
     <value>Foi encontrado um perfil com um "colorScheme" inválido. Padronize esse perfil com as cores padrão. Certifique-se de que ao definir um "colorScheme", o valor corresponda ao "name" de um esquema de cores na lista "schemes".</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>Nenhum perfil foi encontrado nas suas configurações.</value>
   </data>

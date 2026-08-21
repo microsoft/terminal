@@ -131,6 +131,10 @@
     <value>找到一个带有无效 "colorScheme" 的配置文件。将该配置文件默认为默认颜色。确保设置 "colorScheme" 时，该值与 "schemes" 列表中的配色方案的 "name" 相匹配。</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>未在你的设置中找到任何配置文件。</value>
   </data>

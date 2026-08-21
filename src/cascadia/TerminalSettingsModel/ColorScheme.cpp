@@ -77,7 +77,8 @@ winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
 // Arguments:
 // - json: an object which should be a serialization of a ColorScheme object.
 // Return Value:
-// - Returns nullptr for invalid JSON.
+// - Returns nullptr for invalid JSON. Accepts incomplete color schemes by
+//   filling missing colors with Campbell defaults.
 winrt::com_ptr<ColorScheme> ColorScheme::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<ColorScheme>(uninitialized_t{});
@@ -116,7 +117,13 @@ bool ColorScheme::_layerJson(const Json::Value& json)
         }
     }
 
-    isValid &= (colorCount == 16); // Valid schemes should have exactly 16 colors
+    // We now accept incomplete color schemes. If the scheme has fewer than 16 colors,
+    // we'll fill in the missing ones with Campbell defaults (which were already set in
+    // the constructor). This prevents incomplete schemes from being rejected entirely.
+    // isValid &= (colorCount == 16); // Valid schemes should have exactly 16 colors
+
+    // Only require at least one color to be present for a scheme to be valid
+    isValid &= (colorCount > 0);
 
     return isValid;
 }
@@ -170,4 +177,33 @@ bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<Colo
     // We do not care about the cursor color or the selection background, as the main reason we are
     // doing equivalence merging is to replace old, poorly-specified versions of those two properties.
     return _table == other->_table && _Background == other->_Background && _Foreground == other->_Foreground;
+}
+
+// Method Description:
+// - Checks if this color scheme is incomplete (has fewer than 16 colors defined).
+// - Since we now accept incomplete schemes, this method is used to warn users.
+// - We'll consider a scheme incomplete if the name doesn't start with "Campbell"
+//   and still has Campbell-like colors (indicating it wasn't fully specified).
+// Return Value:
+// - true if the scheme appears to be incomplete, false otherwise.
+bool ColorScheme::IsIncomplete() const noexcept
+{
+    // If the scheme is actually named Campbell, it's not incomplete
+    if (_Name == L"Campbell" || _Name == L"Campbell Powershell")
+    {
+        return false;
+    }
+
+    const auto campbellTable = Utils::CampbellColorTable();
+    // Count how many colors match Campbell defaults
+    size_t matchingCampbellCount = 0;
+    for (size_t i = 0; i < _table.size(); ++i)
+    {
+        if (_table[i] == campbellTable[i])
+        {
+            matchingCampbellCount++;
+        }
+    }
+    // Consider it incomplete if most colors still match Campbell (wasn't fully specified)
+    return matchingCampbellCount > _table.size() / 2;
 }

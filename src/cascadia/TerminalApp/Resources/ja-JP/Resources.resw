@@ -131,6 +131,10 @@
     <value>無効な "colorScheme" を含むプロファイルが見つかりました。そのプロファイルを既定の色に設定します。"colorScheme" を設定するときに、この値が "schemes" リストの配色の "name" と一致することを確認してください。</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>設定でプロファイルが見つかりませんでした。</value>
   </data>

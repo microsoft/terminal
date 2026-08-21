@@ -41,6 +41,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
+    USES_RESOURCE(L"IncompleteColorSchemeText"),
     USES_RESOURCE(L"InvalidMediaResource"),
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),

@@ -131,6 +131,10 @@
     <value>Обнаружен профиль с недопустимым объектом "colorScheme". По умолчанию для профиля используются цвета по умолчанию. Убедитесь, что значение, заданное для "colorScheme", соответствует "name" цветовой схемы в списке "schemes".</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>Профили не найдены в параметрах.</value>
   </data>

@@ -473,11 +473,26 @@ void CascadiaSettings::_validateSettings()
 // - <none>
 // - Appends a SettingsLoadWarnings::UnknownColorScheme to our list of warnings if
 //   we find any such duplicate.
+// - Appends a SettingsLoadWarnings::IncompleteColorScheme if we find any incomplete schemes.
 void CascadiaSettings::_validateAllSchemesExist()
 {
     const auto colorSchemes = _globals->ColorSchemes();
     auto foundInvalidDarkScheme = false;
     auto foundInvalidLightScheme = false;
+    auto foundIncompleteScheme = false;
+
+    // Check for incomplete color schemes
+    for (const auto& entry : colorSchemes)
+    {
+        const auto schemeImpl = winrt::get_self<implementation::ColorScheme>(entry.Value());
+        // A scheme is considered incomplete if it appears to have been incompletely specified
+        // (has many Campbell default colors but isn't actually Campbell)
+        if (schemeImpl && schemeImpl->IsIncomplete())
+        {
+            foundIncompleteScheme = true;
+            break;
+        }
+    }
 
     for (const auto& profile : _allProfiles)
     {
@@ -501,6 +516,11 @@ void CascadiaSettings::_validateAllSchemesExist()
     if (foundInvalidDarkScheme || foundInvalidLightScheme)
     {
         _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
+    }
+
+    if (foundIncompleteScheme)
+    {
+        _warnings.Append(SettingsLoadWarnings::IncompleteColorScheme);
     }
 }
 

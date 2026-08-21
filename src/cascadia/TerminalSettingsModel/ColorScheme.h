@@ -50,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
         bool IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept;
+        bool IsIncomplete() const noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);

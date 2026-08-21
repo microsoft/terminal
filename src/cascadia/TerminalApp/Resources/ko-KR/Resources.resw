@@ -131,6 +131,10 @@
     <value>잘못된 "colorScheme" 프로필을 찾았습니다. 해당 프로필을 기본 색상으로 설정합니다. "colorScheme" 을 설정할 때 값이 "schemes" 목록의 색상 구성표의 "name" 과 일치하는지 확인합니다.</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>설정에 프로필이 없습니다.</value>
   </data>

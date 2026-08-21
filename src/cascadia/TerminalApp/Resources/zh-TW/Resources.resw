@@ -131,6 +131,10 @@
     <value>找到含有無效「"colorScheme"」的設定檔。將該設定檔預設為預設色彩。設定「"colorScheme"」時，請確認這個值符合「"schemes"」清單中色彩配置的「"name"」。</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found an incomplete color scheme in your settings. Missing colors will be filled with default values. For best results, ensure all 16 colors are defined in your color scheme.</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>在您的設定中找不到設定檔。</value>
   </data>
