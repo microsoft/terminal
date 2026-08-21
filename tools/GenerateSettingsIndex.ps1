@@ -18,14 +18,22 @@ param(
 
 # Prohibited UIDs (exact match, case-insensitive by default)
 $ProhibitedUids = @(
+    "ColorScheme_ColorsHeader",
+    "ColorScheme_InboxSchemeDuplicate",
+    "ColorScheme_Rename",
+    "Extensions_ComplexPackageNavigator",
+    "Extensions_ComplexPackageNavigatorFontIcon",
+    "Extensions_DefaultPackageNavigator",
+    "Extensions_FragmentColorSchemeNavigator",
+    "Extensions_FragmentProfileNavigator",
     "Extensions_Scope",
+    "Profile_AdvancedNavigator",
+    "Profile_AppearanceNavigator",
+    "Profile_DeleteProfile",
     "Profile_MissingFontFaces",
     "Profile_ProportionalFontFaces",
-    "ColorScheme_InboxSchemeDuplicate",
-    "ColorScheme_ColorsHeader",
-    "ColorScheme_Rename",
     "Profile_ResetProfile",
-    "Profile_DeleteProfile"
+    "Profile_TerminalNavigator"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
@@ -201,7 +209,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         # Extract Uid
         if ($null -eq $settingContainer.Uid)
         {
-            # Skip: SettingsCard/SettingsExpander without x:Uid are not indexable
+            Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander in file $filename. Skipping entry."
             continue
         }
         elseif ($ProhibitedUids -contains $settingContainer.Uid)

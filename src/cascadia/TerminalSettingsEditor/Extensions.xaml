@@ -127,7 +127,8 @@
 
             <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
-                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                <local:SettingsCard x:Uid="Extensions_DefaultPackageNavigator"
+                                    AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Header="{x:Bind Package.Source}"
                                     IsClickEnabled="True"
@@ -145,7 +146,8 @@
 
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
-                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                <local:SettingsCard x:Uid="Extensions_ComplexPackageNavigator"
+                                    AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Description="{x:Bind Package.Source}"
                                     Header="{x:Bind Package.DisplayName}"
@@ -164,7 +166,8 @@
 
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplateWithFontIcon"
                           x:DataType="local:ExtensionPackageViewModel">
-                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                <local:SettingsCard x:Uid="Extensions_ComplexPackageNavigatorFontIcon"
+                                    AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Description="{x:Bind Package.Source}"
                                     Header="{x:Bind Package.DisplayName}"
@@ -183,7 +186,8 @@
 
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
                           x:DataType="local:FragmentProfileViewModel">
-                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                <local:SettingsCard x:Uid="Extensions_FragmentProfileNavigator"
+                                    AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="NavigateToProfile_Click"
                                     IsClickEnabled="True"
                                     Tag="{x:Bind Profile.Guid}">
@@ -359,7 +363,8 @@
 
             <DataTemplate x:Key="FragmentColorSchemeViewModelTemplate"
                           x:DataType="local:FragmentColorSchemeViewModel">
-                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                <local:SettingsCard x:Uid="Extensions_FragmentColorSchemeNavigator"
+                                    AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="NavigateToColorScheme_Click"
                                     IsClickEnabled="True"
                                     Tag="{x:Bind ColorSchemeVM}">

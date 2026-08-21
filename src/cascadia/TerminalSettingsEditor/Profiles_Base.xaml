@@ -176,12 +176,15 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <local:SettingsCard x:Name="AppearanceNavigator"
+                                x:Uid="Profile_AppearanceNavigator"
                                 Click="Appearance_Click"
                                 IsClickEnabled="True" />
             <local:SettingsCard x:Name="TerminalNavigator"
+                                x:Uid="Profile_TerminalNavigator"
                                 Click="Terminal_Click"
                                 IsClickEnabled="True" />
             <local:SettingsCard x:Name="AdvancedNavigator"
+                                x:Uid="Profile_AdvancedNavigator"
                                 Click="Advanced_Click"
                                 IsClickEnabled="True" />
         </StackPanel>
