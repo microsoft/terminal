@@ -9,25 +9,10 @@ git submodule update --init --recursive
 
 OpenConsole.slnx may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
-When using Visual Studio, be sure to set up the path for code formatting. The repository no longer
-pulls a clang-format NuGet package; it uses the clang-format that ships with Visual Studio. To locate
-the version installed with your Visual Studio installation and format the code, run:
-
-```powershell
-Import-Module .\tools\OpenConsole.psm1
-Set-MsbuildDevEnvironment
-Invoke-CodeFormat
-```
-
-`Invoke-CodeFormat` discovers clang-format via `vswhere` (see `tools\OpenConsole.psm1`) and formats
-all C++/XAML sources in `src\`. If you prefer to configure Visual Studio's own formatting integration,
-open Tools > Options > Text Editor > C++ > Formatting, check "Use custom clang-format.exe file", and
-browse to the `clang-format.exe` that ships with your Visual Studio installation. You can locate it
-with the same search the module uses:
-
-```powershell
-& 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -prerelease -find "**\x64\bin\clang-format.exe"
-```
+Code formatting uses the clang-format that ships with Visual Studio (Clang 19, VS 2022 17.14+).
+`Invoke-CodeFormat` (in `tools\OpenConsole.psm1`) locates it via vswhere and formats all C++/XAML
+sources under `src\`; run it before submitting. VS's own C++ formatting already uses this same
+clang-format, so no additional setup is required.
 
 ### Building in PowerShell
 
