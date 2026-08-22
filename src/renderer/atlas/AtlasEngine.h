@@ -12,6 +12,7 @@
 namespace Microsoft::Console::Render::Atlas
 {
     struct TextAnalysisSinkResult;
+    struct TextAnalysisBidiRun;
 
     class AtlasEngine final : public IRenderEngine
     {
@@ -144,6 +145,8 @@ namespace Microsoft::Console::Render::Atlas
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
+            std::vector<u8> bidiLevels;
+            std::vector<TextAnalysisBidiRun> bidiRuns;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
