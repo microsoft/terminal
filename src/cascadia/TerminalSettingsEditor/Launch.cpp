@@ -27,13 +27,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             FindName(L"DefaultTerminalDropdown");
         }
 
-        Automation::AutomationProperties::SetName(LaunchModeComboBox(), RS_(L"Globals_LaunchModeSetting/Text"));
-        Automation::AutomationProperties::SetHelpText(LaunchModeComboBox(), RS_(L"Globals_LaunchModeSetting/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(PosXBox(), RS_(L"Globals_InitialPosXBox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(PosYBox(), RS_(L"Globals_InitialPosYBox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(UseDefaultLaunchPositionCheckbox(), RS_(L"Globals_DefaultLaunchPositionCheckbox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-        Automation::AutomationProperties::SetName(CenterOnLaunchToggle(), RS_(L"Globals_CenterOnLaunch/Text"));
-        Automation::AutomationProperties::SetHelpText(CenterOnLaunchToggle(), RS_(L"Globals_CenterOnLaunch/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
     }
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)

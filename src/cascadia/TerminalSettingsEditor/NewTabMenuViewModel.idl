@@ -34,6 +34,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.Profile SelectedProfile;
 
         String CurrentFolderName;
+        String CurrentFolderNameAccessibleName { get; };
         Boolean CurrentFolderInlining;
         Boolean CurrentFolderAllowEmpty;
         String ProfileMatcherName;

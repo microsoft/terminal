@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -132,7 +132,7 @@
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>この配色は、組み込みの設定またはインストールされている拡張機能の一部です</value>
   </data>
-  <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
+  <data name="ColorScheme_InboxSchemeDuplicate.Description" xml:space="preserve">
     <value>この配色パターンを変更するには、コピーを作成する必要があります。</value>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
@@ -143,7 +143,7 @@
     <value>配色を既定として設定する</value>
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
-  <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
+  <data name="ColorScheme_SetAsDefault.Description" xml:space="preserve">
     <value>既定ですべてのプロファイルにこの配色を適用します。個々のプロファイルは、引き続き独自の配色を選択できます。</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
@@ -235,7 +235,7 @@
     <value>言語 (再起動が必要)</value>
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
-  <data name="Globals_Language.HelpText" xml:space="preserve">
+  <data name="Globals_Language.Description" xml:space="preserve">
     <value>アプリケーションの表示言語を選択します。 これにより、既定の Windows インターフェイス言語が上書きされます。</value>
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
@@ -247,7 +247,7 @@
     <value>既定の IME 入力モード</value>
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
-  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
     <value>既定で使用する言語を IME に通知します。IME に依存し、既定ではラテン文字を使用しない言語では、スタートアップ時に英語入力を強制するためにこの設定を使用できます。</value>
   </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
@@ -260,7 +260,7 @@
     <value>常にタブを表示する</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
-  <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
     <value>無効にすると、新しいタブが作成されたときにタブ バーが表示されます。[タイトル バーを非表示にする] が [オン] の間は無効にできません。</value>
     <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
@@ -268,7 +268,7 @@
     <value>新しく作成したタブの位置</value>
     <comment>Header for a control to select position of newly created tabs.</comment>
   </data>
-  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+  <data name="Globals_NewTabPosition.Description" xml:space="preserve">
     <value>タブ行に新しいタブを表示する場所を指定します。</value>
     <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
@@ -292,7 +292,7 @@
     <value>"Web の検索" アクションに使用する既定の URL</value>
     <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
-  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+  <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>プレースホルダー "%s" は検索クエリに置き換えられます。</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
@@ -308,7 +308,7 @@
     <value>既定のプロファイル</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
     <value>[+] アイコンをクリックするか、新しい tab キーのバインドを入力すると表示されるプロファイルです。</value>
     <comment>A description for what the default profile is and when it's used.</comment>
   </data>
@@ -316,7 +316,7 @@
     <value>既定のターミナル アプリケーション</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
-  <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
     <value>[スタート] メニューや [ファイル名を指定して実行] ダイアログなど、既存のセッションなしでコマンドライン アプリケーションを実行したときに起動するターミナル アプリケーション。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
@@ -324,7 +324,7 @@
     <value>グラフィックス API</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+  <data name="Globals_GraphicsAPI.Description" xml:space="preserve">
     <value>Direct3D 11 はよりパフォーマンスが高く、機能が豊富なエクスペリエンスを提供しますが、Direct2D はより安定しています。既定のオプション [自動] では、グラフィックス ハードウェアに最適な API が選択されます。重大な問題が発生した場合は、Direct2D の使用を検討してください。</value>
   </data>
   <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
@@ -341,7 +341,7 @@
     <value>部分的なスワップ チェーンの無効化を無効にする</value>
     <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
   </data>
-  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
     <value>既定では、テキスト レンダラーは FLIP_SEQUENTIAL Swap Chain を使用し、Present1 API を介してダーティ四角形を宣言します。この設定を有効にすると、代わりに FLIP_DISCARD スワップ チェーンが使用され、ダーティ四角形は宣言されません。どちらか一方が望ましいかどうかは、お使いのハードウェアとその他のさまざまな要因によって異なります。</value>
     <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
@@ -349,7 +349,7 @@
     <value>ソフトウェア レンダリングを使用する (WARP)</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
     <value>有効にすると、ターミナルはソフトウェア ラスターライザー (WARP) を使用します。この設定は、ほとんどの状況で無効のままにする必要があります。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
@@ -357,7 +357,7 @@
     <value>テキスト測定モード</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+  <data name="Globals_TextMeasurement.Description" xml:space="preserve">
     <value>入力したテキストをセルにグループ化する方法を変更します。"Grapheme clusters" オプションは最も新しく Unicode で正しい方法ですが、UNIX では "wcswidth" は一般的な方法であり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要です。この設定は、その中から起動されたアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
@@ -375,7 +375,7 @@
     <value>あいまいな文字の幅</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+  <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
     <value>東アジアのあいまいな文字に使用する幅を設定します。[幅を狭くする] (既定) は互換性を優先し、[幅を広くする] は多くの CJK フォントでの読みやすさを優先します。[幅を広くする] モードでは、一部のアプリケーションが正しく動作せず、カーソルの動きが不安定になることがあります。この設定を変更するには、Windows ターミナルの再起動が必要で、Windows ターミナル内から起動したアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
@@ -386,11 +386,11 @@
     <value>広い</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_InitialCols.Text" xml:space="preserve">
+  <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>列</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialRows.Text" xml:space="preserve">
+  <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>行</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
@@ -438,7 +438,7 @@
     <value>ターミナルの起動時</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
   </data>
-  <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
+  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
     <value>最初のターミナルの作成時に何が表示されるべきでしょうか。</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
@@ -461,17 +461,13 @@
     <value>起動パラメーター</value>
     <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
-  <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchParameters.Description" xml:space="preserve">
     <value>ターミナルの起動方法を制御する設定</value>
     <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
-  <data name="Globals_LaunchModeSetting.Text" xml:space="preserve">
+  <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>起動モード</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
-  </data>
-  <data name="Globals_LaunchModeSetting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>ターミナルが起動時にどのように表示されるか。フォーカスすると、タブとタイトル バーが非表示になります。</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
   <data name="Globals_LaunchModeDefault.Content" xml:space="preserve">
     <value>既定</value>
@@ -489,7 +485,7 @@
     <value>新しいインスタンスの動作</value>
     <comment>Header for a control to select how new app instances are handled.</comment>
   </data>
-  <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
+  <data name="Globals_WindowingBehavior.Description" xml:space="preserve">
     <value>新しい端末インスタンスを既存のウィンドウにアタッチする方法を制御します。</value>
     <comment>A description for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
   </data>
@@ -509,7 +505,7 @@
     <value>タイトル バーを非表示にする (再起動が必要)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
     <value>無効にすると、タイトル バーがタブの上に表示されます。</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
@@ -521,7 +517,7 @@
     <value>アクティブなターミナルのタイトルをアプリケーションのタイトルとして使用</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
     <value>無効にすると、タイトル バーは 'ターミナル' になります。</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
@@ -529,7 +525,7 @@
     <value>ウィンドウをサイズ変更して文字グリッドにスナップする</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
   </data>
-  <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
+  <data name="Globals_SnapToGridOnResize.Description" xml:space="preserve">
     <value>無効にすると、ウィンドウがスムーズにサイズ変更されます。</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
@@ -537,21 +533,17 @@
     <value>コンピューターのスタートアップ時に起動</value>
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
+  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>Windows にログインすると、ターミナルが自動的に起動します。</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>中央揃え</value>
-    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Text".</comment>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
   </data>
-  <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
+  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
     <value>起動時に中央</value>
     <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
-  </data>
-  <data name="Globals_CenterOnLaunch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>有効にすると、起動時にウィンドウが画面の中央に配置されます。</value>
-    <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>常に手前に表示</value>
@@ -589,15 +581,15 @@
     <value>デバッグ機能を有効にする</value>
     <comment>Header for a control to toggle debug features.</comment>
   </data>
-  <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
+  <data name="Globals_AlwaysOnTop.Description" xml:space="preserve">
     <value>ターミナルは常にデスクトップの最上位ウィンドウになります。</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
-  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+  <data name="Profile_ForceVTInput.Description" xml:space="preserve">
     <value>この設定を有効にすると、一部のアプリケーションでキーボード入力が正しく動作しなくなる可能性があります。</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
-  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+  <data name="Globals_AllowHeadless.Description" xml:space="preserve">
     <value>これにより、ウィンドウが開かなくても、グローバル デコレーションや Quake モードのアクションなどのアクションを実行できます。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
@@ -605,7 +597,7 @@
     <value>タブ幅モード</value>
     <comment>Header for a control to choose how wide the tabs are.</comment>
   </data>
-  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
+  <data name="Globals_TabWidthMode.Description" xml:space="preserve">
     <value>コンパクトは、非アクティブなタブをアイコンのサイズに縮小します。</value>
     <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
@@ -653,7 +645,7 @@
     <value>単語の区切り文字</value>
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
-  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
+  <data name="Globals_WordDelimiters.Description" xml:space="preserve">
     <value>これらの記号は、ターミナル内のテキストをダブルクリックするか、"マーク モード".をアクティブにするときに使用されます。</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
@@ -717,7 +709,7 @@
     <value>背景の不透明度</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
-  <data name="Profile_Opacity.HelpText" xml:space="preserve">
+  <data name="Profile_Opacity.Description" xml:space="preserve">
     <value>ウィンドウの不透明度を設定します。</value>
     <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
   </data>
@@ -733,7 +725,7 @@
     <value>AltGr エイリアス</value>
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
-  <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
+  <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
     <value>既定では、WindowsはCtrl+Altを AltGr のエイリアスとして扱います。この設定は、Windowsの既定の動作をオーバーライドします。</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
@@ -745,7 +737,7 @@
     <value>テキストのアンチエイリアシング</value>
     <comment>Header for a control to select the graphical anti-aliasing format of text.</comment>
   </data>
-  <data name="Profile_AntialiasingMode.HelpText" xml:space="preserve">
+  <data name="Profile_AntialiasingMode.Description" xml:space="preserve">
     <value>レンダラーでテキストをアンチエイリアスする方法を制御します。</value>
     <comment>A description for what the "antialiasing mode" setting does. Presented near "Profile_AntialiasingMode.Header".</comment>
   </data>
@@ -777,7 +769,7 @@
     <value>背景画像のパス</value>
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImage.Description" xml:space="preserve">
     <value>ウィンドウの背景として使用されるイメージのファイルの場所を指定します。</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
@@ -789,7 +781,7 @@
     <value>背景画像の配置</value>
     <comment>Header for a control to choose the visual alignment of the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignment.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.Description" xml:space="preserve">
     <value>背景画像をウィンドウの境界に合わせる方法を設定します。</value>
     <comment>A description for what the "background image alignment" setting does. Presented near "Profile_BackgroundImageAlignment".</comment>
   </data>
@@ -858,7 +850,7 @@
     <value>背景画像の不透明度</value>
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageOpacity.Description" xml:space="preserve">
     <value>背景画像の不透明度を設定します。</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
   </data>
@@ -870,7 +862,7 @@
     <value>背景画像の伸縮モード</value>
     <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
-  <data name="Profile_BackgroundImageStretchMode.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageStretchMode.Description" xml:space="preserve">
     <value>背景画像のサイズをウィンドウに合わせて変更する方法を設定します。</value>
     <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
   </data>
@@ -918,7 +910,7 @@
     <value>配色</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
-  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+  <data name="Profile_ColorScheme.Description" xml:space="preserve">
     <value>展開して、前景、背景、選択の背景をオーバーライドします。</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
@@ -934,7 +926,7 @@
     <value>コマンド ライン</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
   </data>
-  <data name="Profile_Commandline.HelpText" xml:space="preserve">
+  <data name="Profile_Commandline.Description" xml:space="preserve">
     <value>プロファイルで使用される実行可能ファイル。</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
@@ -946,7 +938,7 @@
     <value>カーソルの高さ</value>
     <comment>Header for a control to determine the height of the text cursor.</comment>
   </data>
-  <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
+  <data name="Profile_CursorHeight.Description" xml:space="preserve">
     <value>カーソルの下部からの高さの割合を設定します。ビンテージ カーソルの形に対してのみ機能します。</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
   </data>
@@ -1006,7 +998,7 @@
     <value>フォント スタイル</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
-  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+  <data name="Profile_FontFace.Description" xml:space="preserve">
     <value>複数のフォントを使用するには、複数のフォントを ASCII コンマで区切ります。</value>
   </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
@@ -1017,7 +1009,7 @@
     <value>フォント サイズ</value>
     <comment>Name for a control to determine the size of the text in the app.</comment>
   </data>
-  <data name="Profile_FontSize.HelpText" xml:space="preserve">
+  <data name="Profile_FontSize.Description" xml:space="preserve">
     <value>フォントのサイズ (ポイント単位)。</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
@@ -1037,11 +1029,11 @@
     <value>セルの幅</value>
     <comment>Header for a control that sets the text character width.</comment>
   </data>
-  <data name="Profile_LineHeight.HelpText" xml:space="preserve">
+  <data name="Profile_LineHeight.Description" xml:space="preserve">
     <value>ターミナルの行の高さをオーバーライドします。フォント サイズの倍数として測定されます。 既定値はフォントによって異なりますが、通常は約 1.2 です。</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
-  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+  <data name="Profile_CellWidth.Description" xml:space="preserve">
     <value>ターミナルのセル幅をオーバーライドします。フォント サイズの倍数として計測されます。既定値はフォントによって異なり、通常は 0.6 前後です。</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
@@ -1057,7 +1049,7 @@
     <value>組み込みグリフ</value>
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
-  <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
+  <data name="Profile_EnableBuiltinGlyphs.Description" xml:space="preserve">
     <value>有効にすると、ターミナルは、フォントを使用する代わりに、ブロック要素とボックス描画文字のカスタム グリフを描画します。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
@@ -1065,7 +1057,7 @@
     <value>フル カラーの絵文字</value>
     <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
   </data>
-  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+  <data name="Profile_EnableColorGlyphs.Description" xml:space="preserve">
     <value>有効にすると、絵文字がフル カラーで表示されます。</value>
     <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
   </data>
@@ -1081,7 +1073,7 @@
     <value>フォントの太さ</value>
     <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
   </data>
-  <data name="Profile_FontWeight.HelpText" xml:space="preserve">
+  <data name="Profile_FontWeight.Description" xml:space="preserve">
     <value>指定されたフォントの太さ （ストロークの軽さまたは重さ） を設定します。</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
@@ -1113,7 +1105,7 @@
     <value>ドロップダウンからプロファイルを非表示にする</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.HelpText" xml:space="preserve">
+  <data name="Profile_Hidden.Description" xml:space="preserve">
     <value>有効にした場合、プロファイルはプロファイルの一覧に表示されません。これを使用すると、既定のプロファイルや動的に生成されたプロファイルを設定ファイルに残したまま非表示にすることができます。</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
@@ -1121,7 +1113,7 @@
     <value>このプロファイルを管理者として実行する</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+  <data name="Profile_Elevate.Description" xml:space="preserve">
     <value>有効にすると、プロファイルは自動的にターミナル ウィンドウ管理開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
@@ -1133,7 +1125,7 @@
     <value>履歴のサイズ</value>
     <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
   </data>
-  <data name="Profile_HistorySize.HelpText" xml:space="preserve">
+  <data name="Profile_HistorySize.Description" xml:space="preserve">
     <value>画面に表示されている行の上にスクロールして戻すことができる行数です。</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
   </data>
@@ -1153,7 +1145,7 @@
     <value>アイコン</value>
     <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
-  <data name="Profile_Icon.HelpText" xml:space="preserve">
+  <data name="Profile_Icon.Description" xml:space="preserve">
     <value>プロファイルで使用されるアイコンの絵文字またはイメージ ファイルの場所です。</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
@@ -1165,7 +1157,7 @@
     <value>パディング</value>
     <comment>Header for a control to determine the amount of space between text in a terminal and the edge of the window. The space can be any combination of the top, bottom, left, and right side of the window.</comment>
   </data>
-  <data name="Profile_Padding.HelpText" xml:space="preserve">
+  <data name="Profile_Padding.Description" xml:space="preserve">
     <value>ウィンドウ内のテキストの周囲のスペースを設定します。</value>
     <comment>A description for what the "padding" setting does. Presented near "Profile_Padding".</comment>
   </data>
@@ -1173,7 +1165,7 @@
     <value>レトロ ターミナルの効果</value>
     <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
   </data>
-  <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
+  <data name="Profile_RetroTerminalEffect.Description" xml:space="preserve">
     <value>光彩テキストやスキャン ラインなどのレトロ ターミナル効果を表示します。</value>
     <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect". "Retro" is a common English prefix that suggests a nostalgic, dated appearance.</comment>
   </data>
@@ -1181,7 +1173,7 @@
     <value>見分けがつかないテキストの明るさを自動的に調整する</value>
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
   </data>
-  <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
+  <data name="Profile_AdjustIndistinguishableColors.Description" xml:space="preserve">
     <value>テキストを自動的に明るくまたは暗くして見やすくします。この調整が有効になっている場合でも、前景色と背景色の組み合わせによってコントラストが低下する場合にのみこの調整が行われます。</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
@@ -1221,7 +1213,7 @@
     <value>開始ディレクトリ</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
+  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
     <value>プロファイルが読み込まれたときに開始されるディレクトリです。</value>
     <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
   </data>
@@ -1241,7 +1233,7 @@
     <value>タイトルの変更を表示しない</value>
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
-  <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
+  <data name="Profile_SuppressApplicationTitle.Description" xml:space="preserve">
     <value>タイトルの変更要求を無視します (OSC 2)。</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
@@ -1253,7 +1245,7 @@
     <value>タブタイトル名</value>
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
-  <data name="Profile_TabTitle.HelpText" xml:space="preserve">
+  <data name="Profile_TabTitle.Description" xml:space="preserve">
     <value>起動時にシェルに渡すタイトルとして、プロファイル名を置き換えます。</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
@@ -1273,7 +1265,7 @@
     <value>アクリル素材を有効にする</value>
     <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
+  <data name="Profile_UseAcrylic.Description" xml:space="preserve">
     <value>半透明のテクスチャをウィンドウの背景に適用します。</value>
     <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
@@ -1337,7 +1329,7 @@
     <value>ベル通知スタイル</value>
     <comment>Header for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
-  <data name="Profile_BellStyle.HelpText" xml:space="preserve">
+  <data name="Profile_BellStyle.Description" xml:space="preserve">
     <value>アプリケーションがBEL文字を生成する場合の動作を制御します。</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
@@ -1345,7 +1337,7 @@
     <value>新しい環境ブロックを使用してこのアプリケーションを起動します</value>
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
-  <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
+  <data name="Profile_ReloadEnvVars.Description" xml:space="preserve">
     <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはペインを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
@@ -1353,7 +1345,7 @@
     <value>右クリックでメニューを表示する</value>
     <comment>This controls how a right-click behaves in the terminal</comment>
   </data>
-  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+  <data name="Profile_RightClickContextMenu.Description" xml:space="preserve">
     <value>有効にすると、ターミナルは右クリックでメニューを表示します。無効にすると、右クリックすると選択したテキストがコピーされます (選択されていない場合は貼り付けます)。</value>
     <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
   </data>
@@ -1361,7 +1353,7 @@
     <value>スクロール バーにマークを表示する</value>
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
-  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+  <data name="Profile_ShowMarks.Description" xml:space="preserve">
     <value>有効にすると、ターミナルでテキストを検索するとき、またはシェル統合が有効になっているときに、スクロール バーにマークが表示されます。</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
@@ -1369,7 +1361,7 @@
     <value>Enter キーを押したときにプロンプトを自動的にマークする</value>
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
-  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+  <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
     <value>有効にすると、ターミナルは Enter キーを押したときにコマンドの終了位置を示すマークを自動的に追加します。</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
@@ -1377,7 +1369,7 @@
     <value>試験段階: マウスのクリックでカーソルの位置を変更する</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
-  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+  <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
     <value>有効にすると、プロンプト内をクリック時にカーソルがその位置に移動します。これを行うには、シェルでシェル統合を有効にし、期待どおりに動作させる必要があります。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
@@ -1545,17 +1537,13 @@
     <value>起動サイズ</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
-  <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchSize.Description" xml:space="preserve">
     <value>最初の読み込み時にウィンドウに表示される行と列の数。文字数で計測されます。</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
-  <data name="Globals_LaunchPosition.Text" xml:space="preserve">
+  <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>起動位置</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
-  </data>
-  <data name="Globals_LaunchPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>スタートアップ時のターミナル ウィンドウの初期位置。最大化、全画面表示、または [起動時に中央] を有効にして起動する場合、これは目的のモニターをターゲットにするために使用されます。</value>
-    <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>すべて</value>
@@ -1593,7 +1581,7 @@
     <value>プロファイルの削除</value>
     <comment>Button label that deletes the current profile that is being viewed.</comment>
   </data>
-  <data name="Profile_Name.HelpText" xml:space="preserve">
+  <data name="Profile_Name.Description" xml:space="preserve">
     <value>ドロップダウンに表示されるプロファイルの名前です。</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
   </data>
@@ -1677,7 +1665,7 @@
     <value>タブ スイッチャー インターフェイス スタイル</value>
     <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
-  <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
+  <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
     <value>キーボードを使用してタブを切り替えるときに使用するインターフェイスを選択します。</value>
     <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
@@ -2201,7 +2189,7 @@
     <value>ウィンドウを自動的に非表示にする</value>
     <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
   </data>
-  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+  <data name="Globals_AutoHideWindow.Description" xml:space="preserve">
     <value>有効にすると、別のウィンドウに切り替えるとすぐにターミナルが非表示になります。</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
@@ -2221,7 +2209,7 @@
     <value>閉じるときに警告する</value>
     <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
   </data>
-  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+  <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
     <value>タブまたはウィンドウを閉じる前に確認ダイアログを表示するタイミングを制御します。[常に] を選択すると、ウィンドウを閉じるときにダイアログが表示されます。</value>
     <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
   </data>
@@ -2246,7 +2234,7 @@
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>改行を貼り付ける際に警告する</value>
   </data>
-  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+  <data name="Globals_WarnAboutMultiLinePaste.Description" xml:space="preserve">
     <value>シェルが ”角かっこで囲まれた貼り付け” モードをサポートしていない場合は、セキュリティ上の理由からこれを [常に] に設定することをお勧めします。</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
   </data>
@@ -2290,7 +2278,7 @@
     <value>ベルの音</value>
     <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
-  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+  <data name="Profile_BellSound.Description" xml:space="preserve">
     <value>アプリケーションが BEL 文字を出力するときに再生されるサウンドを制御します。"ベル通知スタイル" には "Audible" を含める必要があります。</value>
     <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
   </data>
@@ -2341,19 +2329,19 @@
     <value>カーソルの色</value>
     <comment>Header for a control to determine the color of the cursor.</comment>
   </data>
-  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+  <data name="Profile_Foreground.Description" xml:space="preserve">
     <value>配色から前景色をオーバーライドします。</value>
     <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
   </data>
-  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+  <data name="Profile_CursorColor.Description" xml:space="preserve">
     <value>配色からカーソルの色をオーバーライドします。</value>
     <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
   </data>
-  <data name="Profile_Background.HelpText" xml:space="preserve">
+  <data name="Profile_Background.Description" xml:space="preserve">
     <value>配色の背景色をオーバーライドします。</value>
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
-  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+  <data name="Profile_SelectionBackground.Description" xml:space="preserve">
     <value>選択した背景色を配色からオーバーライドします。</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
@@ -2437,11 +2425,11 @@
     <value>残りのプロファイル</value>
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
-  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_AddMatchProfiles.Description" xml:space="preserve">
     <value>定義された正規表現プロパティの少なくとも 1 つに一致するプロファイルのグループを追加します</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
-  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
     <value>"残りのプロファイル" エントリは 1 つしか指定できません</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
@@ -2521,7 +2509,7 @@
     <value>インライン化を許可する</value>
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
-  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
     <value>有効にすると、フォルダーに 1 つのエントリしかない場合、エントリは直接表示され、フォルダーは表示されません。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
@@ -2529,7 +2517,7 @@
     <value>空を許可する</value>
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
-  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
     <value>有効にすると、フォルダーにエントリがない場合でも表示されます。それ以外の場合、フォルダーは表示されません。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
@@ -2593,11 +2581,11 @@
     <value>ENQ (Request Terminal Status) 応答</value>
     <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
   </data>
-  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+  <data name="Profile_AnswerbackMessage.Description" xml:space="preserve">
     <value>ENQ 制御シーケンスを受信したときに送信される応答です。</value>
     <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
   </data>
-  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+  <data name="Globals_DebugFeaturesEnabled.Description" xml:space="preserve">
     <value>ターミナルのトラブルシューティングや開発に役立ちます。</value>
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
@@ -2609,7 +2597,7 @@
     <value>試験段階: 選択した色のテキストにキー バインドを追加する</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
-  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+  <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
     <value>これらのキー バインドは、選択したテキスト、または選択したテキストのすべてのインスタンスを指定された色で強調表示できます。</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
@@ -2625,7 +2613,7 @@
     <value>全画面表示でタブを表示</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
     <value>有効にすると、アプリが全画面表示のときにタブ バーが表示されます。</value>
     <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
@@ -2637,7 +2625,7 @@
     <value>パスの変換</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
-  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+  <data name="Profile_PathTranslationStyle.Description" xml:space="preserve">
     <value>ドラッグ アンド ドロップ操作中にファイルパスとディレクトリ パスを変換する方法を制御します。</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
@@ -2664,13 +2652,13 @@
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
     <value>プロファイルは検出されなくなりました</value>
   </data>
-  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+  <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
     <value>この自動的に検出されたプロファイルはアンインストールされた可能性があります。行った変更は保存されますが、再インストールされるまでは使用できません。</value>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>元のソース</value>
   </data>
-  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+  <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>このプロファイルを最初に作成したソフトウェアを示します。</value>
   </data>
   <data name="Profile_TabTitleNone" xml:space="preserve">
@@ -2745,7 +2733,7 @@
   <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
     <value>キャッシュのクリア</value>
   </data>
-  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+  <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
     <value>キャッシュには、保存されたセッションと自動生成されたプロファイルに関連するデータが格納されます。</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
@@ -2788,7 +2776,7 @@
     <value>ドラッグ アンド ドロップ区切り記号</value>
     <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
   </data>
-  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+  <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
     <value>このテキストは、ターミナルにドロップされた複数のファイルのパスの間に挿入されます。</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>
