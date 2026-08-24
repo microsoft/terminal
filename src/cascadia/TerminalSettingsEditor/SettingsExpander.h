@@ -17,7 +17,6 @@ Author(s):
 #pragma once
 
 #include "SettingsExpander.g.h"
-#include "SettingsExpanderAutomationPeer.g.h"
 #include "SettingsExpanderItemStyleSelector.g.h"
 #include "Utils.h"
 
@@ -65,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // AutomationPeer for SettingsExpander. Reports class name and falls back to
     // Header text for the name when AutomationProperties.Name is unset.
-    struct SettingsExpanderAutomationPeer : SettingsExpanderAutomationPeerT<SettingsExpanderAutomationPeer>
+    struct SettingsExpanderAutomationPeer : Windows::UI::Xaml::Automation::Peers::FrameworkElementAutomationPeerT<SettingsExpanderAutomationPeer>
     {
     public:
         SettingsExpanderAutomationPeer(const Editor::SettingsExpander& owner);
@@ -73,8 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::Automation::Peers::AutomationControlType GetAutomationControlTypeCore() const;
         hstring GetClassNameCore() const;
         hstring GetNameCore() const;
-
-        void RaiseExpandedChangedEvent(bool newValue);
     };
 
     // StyleSelector used by SettingsExpander to choose between a clickable vs.

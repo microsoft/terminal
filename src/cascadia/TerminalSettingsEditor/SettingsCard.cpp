@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SettingsCard.h"
 #include "SettingsCard.g.cpp"
-#include "SettingsCardAutomationPeer.g.cpp"
 #include "SettingsControlsHelpers.h"
 
 using namespace winrt::Windows::Foundation;
@@ -642,7 +641,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     SettingsCardAutomationPeer::SettingsCardAutomationPeer(const Editor::SettingsCard& owner) :
-        SettingsCardAutomationPeerT<SettingsCardAutomationPeer>(owner)
+        ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>(owner)
     {
     }
 

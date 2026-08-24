@@ -45,11 +45,6 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<SettingsExpander, Object> Collapsed;
     };
 
-    [default_interface] runtimeclass SettingsExpanderAutomationPeer : Windows.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer
-    {
-        void RaiseExpandedChangedEvent(Boolean newValue);
-    };
-
     [default_interface] runtimeclass SettingsExpanderItemStyleSelector : Windows.UI.Xaml.Controls.StyleSelector
     {
         SettingsExpanderItemStyleSelector();

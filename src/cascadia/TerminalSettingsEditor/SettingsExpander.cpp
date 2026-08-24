@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SettingsExpander.h"
 #include "SettingsExpander.g.cpp"
-#include "SettingsExpanderAutomationPeer.g.cpp"
 #include "SettingsExpanderItemStyleSelector.g.cpp"
 #include "SettingsControlsHelpers.h"
 
@@ -284,9 +283,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newValue = unbox_value_or<bool>(e.NewValue(), false);
 
         // Notify the automation peer so screen readers see the expand/collapse state change.
-        if (const auto peer{ FrameworkElementAutomationPeer::FromElement(obj).try_as<Editor::SettingsExpanderAutomationPeer>() })
+        if (const auto peer{ FrameworkElementAutomationPeer::FromElement(obj) })
         {
-            peer.RaiseExpandedChangedEvent(newValue);
+            // Mirrors the toolkit's SettingsExpanderAutomationPeer.RaiseExpandedChangedEvent.
+            // Narrator doesn't actually announce this today (microsoft/microsoft-ui-xaml#3469),
+            // but other AT can subscribe and we keep parity with the toolkit.
+            const auto newState = newValue ? ExpandCollapseState::Expanded : ExpandCollapseState::Collapsed;
+            const auto oldState = newValue ? ExpandCollapseState::Collapsed : ExpandCollapseState::Expanded;
+            peer.RaisePropertyChangedEvent(ExpandCollapsePatternIdentifiers::ExpandCollapseStateProperty(), box_value(oldState), box_value(newState));
         }
 
         if (newValue)
@@ -300,7 +304,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     SettingsExpanderAutomationPeer::SettingsExpanderAutomationPeer(const Editor::SettingsExpander& owner) :
-        SettingsExpanderAutomationPeerT<SettingsExpanderAutomationPeer>(owner)
+        FrameworkElementAutomationPeerT<SettingsExpanderAutomationPeer>(owner)
     {
     }
 
@@ -328,16 +332,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return {};
-    }
-
-    void SettingsExpanderAutomationPeer::RaiseExpandedChangedEvent(bool newValue)
-    {
-        // Mirrors the toolkit's SettingsExpanderAutomationPeer.RaiseExpandedChangedEvent.
-        // Narrator doesn't actually announce this today (microsoft/microsoft-ui-xaml#3469),
-        // but other AT can subscribe and we keep parity with the toolkit.
-        const auto newState = newValue ? ExpandCollapseState::Expanded : ExpandCollapseState::Collapsed;
-        const auto oldState = newValue ? ExpandCollapseState::Collapsed : ExpandCollapseState::Expanded;
-        RaisePropertyChangedEvent(ExpandCollapsePatternIdentifiers::ExpandCollapseStateProperty(), box_value(oldState), box_value(newState));
     }
 
     Windows::UI::Xaml::Style SettingsExpanderItemStyleSelector::SelectStyleCore(const winrt::Windows::Foundation::IInspectable& /*item*/, const Windows::UI::Xaml::DependencyObject& container)

@@ -38,8 +38,4 @@ namespace Microsoft.Terminal.Settings.Editor
         SettingsCardContentAlignment ContentAlignment;
         static Windows.UI.Xaml.DependencyProperty ContentAlignmentProperty { get; };
     };
-
-    [default_interface] runtimeclass SettingsCardAutomationPeer : Windows.UI.Xaml.Automation.Peers.ButtonBaseAutomationPeer
-    {
-    };
 }

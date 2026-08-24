@@ -17,7 +17,6 @@ Author(s):
 #pragma once
 
 #include "SettingsCard.g.h"
-#include "SettingsCardAutomationPeer.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -84,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // AutomationPeer for SettingsCard. Mirrors the Community Toolkit's
     // SettingsCardAutomationPeer: only exposes Invoke + Button control type when
     // the card has IsClickEnabled=true; otherwise reports as a Group.
-    struct SettingsCardAutomationPeer : SettingsCardAutomationPeerT<SettingsCardAutomationPeer>
+    struct SettingsCardAutomationPeer : Windows::UI::Xaml::Automation::Peers::ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>
     {
     public:
         SettingsCardAutomationPeer(const Editor::SettingsCard& owner);
