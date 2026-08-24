@@ -28,7 +28,7 @@
                    TargetType="muxc:NumberBox">
                 <Setter Property="SmallChange" Value="1" />
                 <Setter Property="LargeChange" Value="10" />
-                <Setter Property="Minimum" Value="1" />
+                <Setter Property="Minimum" Value="2" />
             </Style>
             <Style x:Key="LaunchPositionNumberBoxStyle"
                    BasedOn="{StaticResource NumberBoxSettingStyle}"
@@ -208,7 +208,7 @@
                                         x:Uid="Globals_InitialCols">
                         <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                         Maximum="999"
-                                        Minimum="1"
+                                        Minimum="2"
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                     </local:SettingsCard>
@@ -216,7 +216,7 @@
                                         x:Uid="Globals_InitialRows">
                         <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                         Maximum="999"
-                                        Minimum="1"
+                                        Minimum="2"
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                     </local:SettingsCard>
