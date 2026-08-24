@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "GlobalAppSettings.h"
+#include <DefaultSettings.h>
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
@@ -191,11 +192,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // otherwise we could end up setting defaults that get persisted
     if (this->HasInitialCols())
     {
-        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
+        this->InitialCols(std::clamp(this->InitialCols(), MINIMUM_VISIBLE_CELLS, 999));
     }
     if (this->HasInitialRows())
     {
-        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
+        this->InitialRows(std::clamp(this->InitialRows(), MINIMUM_VISIBLE_CELLS, 999));
     }
     LayerActionsFrom(json, origin, true);
 

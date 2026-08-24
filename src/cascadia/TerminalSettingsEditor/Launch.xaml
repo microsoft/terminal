@@ -28,7 +28,7 @@
                    TargetType="muxc:NumberBox">
                 <Setter Property="SmallChange" Value="1" />
                 <Setter Property="LargeChange" Value="10" />
-                <Setter Property="Minimum" Value="1" />
+                <Setter Property="Minimum" Value="2" />
             </Style>
             <Style x:Key="LaunchPositionNumberBoxStyle"
                    BasedOn="{StaticResource NumberBoxSettingStyle}"
@@ -219,7 +219,7 @@
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
                                     Maximum="999"
-                                    Minimum="1"
+                                    Minimum="2"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                     <TextBlock x:Uid="Globals_InitialRows"
@@ -232,7 +232,7 @@
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
                                     Maximum="999"
-                                    Minimum="1"
+                                    Minimum="2"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                 </Grid>
