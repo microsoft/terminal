@@ -304,6 +304,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
+            // Duplicate tabs intentionally ignore NewTabPosition() and always open next to the source tab.
             const auto insertPosition = tab.TabViewIndex() + 1;
             _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr), insertPosition);
 
