@@ -251,6 +251,7 @@ conterm
 contsf
 contypes
 conwinuserrefs
+cooldown
 COPYCOLOR
 COPYDATA
 COPYDATASTRUCT
