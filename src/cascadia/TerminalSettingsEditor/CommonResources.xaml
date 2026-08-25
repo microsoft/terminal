@@ -209,6 +209,21 @@
         <Setter x:Uid="TextBoxSettingStyle_PlaceholderText" Property="PlaceholderText" Value="None" />
     </Style>
 
+    <!--  Check Box  -->
+    <Style x:Key="CheckBoxSettingStyle"
+           BasedOn="{StaticResource DefaultCheckBoxStyle}"
+           TargetType="CheckBox">
+        <!--
+            The default style sets a MinWidth and has a 2nd column for content.
+            Our design doesn't use that column because we'd rather place a label on the SettingsCard/Expander.
+            This styling makes adjustments to align the check box with the other controls on the right side of the card.
+        -->
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
     <!--  Text Block  -->
     <Style x:Key="TextBlockSettingStyle"
            BasedOn="{StaticResource BodyTextBlockStyle}"

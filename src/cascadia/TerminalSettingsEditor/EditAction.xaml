@@ -326,10 +326,10 @@
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <CheckBox HorizontalAlignment="Right"
-                              AutomationProperties.Name="{x:Bind Name}"
+                    <CheckBox AutomationProperties.Name="{x:Bind Name}"
                               IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
-                              IsThreeState="True" />
+                              IsThreeState="True"
+                              Style="{StaticResource CheckBoxSettingStyle}" />
                 </local:SettingsCard>
             </DataTemplate>
 
