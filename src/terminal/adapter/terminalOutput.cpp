@@ -8,10 +8,12 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
+TerminalOutput::TerminalOutput(const bool grEnabled, const VTID drcsId, const std::wstring_view drcsTranslationTable) noexcept :
     _upssId{ VTID("A") },
     _upssTranslationTable{ Latin1 },
-    _grTranslationEnabled{ grEnabled }
+    _grTranslationEnabled{ grEnabled },
+    _drcsId{ drcsId },
+    _drcsTranslationTable{ drcsTranslationTable }
 {
     // By default we set all of the G-sets to ASCII, so if someone accidentally
     // triggers a locking shift, they won't end up with UPSS in the GL table,
@@ -29,13 +31,30 @@ TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
     _gsetIds.at(1) = VTID("B");
     _gsetIds.at(2) = grId;
     _gsetIds.at(3) = grId;
+
+    // If this class is being reconstructed from a Soft Reset, then we may be
+    // inheriting a DRCS set. And if that set replaced ASCII or the default GR
+    // ID, we'll need to map the translation table into the relevant G-sets.
+    if (_drcsId == VTID("B"))
+    {
+        _gsetTranslationTables.at(0) = _drcsTranslationTable;
+        _gsetTranslationTables.at(1) = _drcsTranslationTable;
+        _glTranslationTable = _drcsTranslationTable;
+    }
+    if (_drcsId == grId)
+    {
+        _gsetTranslationTables.at(2) = _drcsTranslationTable;
+        _gsetTranslationTables.at(3) = _drcsTranslationTable;
+        _grTranslationTable = grEnabled ? _drcsTranslationTable : std::wstring_view{};
+    }
 }
 
 void TerminalOutput::SoftReset() noexcept
 {
     // For a soft reset we want to reinitialize the character set designations,
     // but retain the GR translation functionality if it's currently enabled.
-    *this = { _grTranslationEnabled };
+    // We also need to retain the DRCS character set if there is one applied.
+    *this = { _grTranslationEnabled, _drcsId, _drcsTranslationTable };
 }
 
 void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept

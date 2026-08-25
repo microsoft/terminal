@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-        TerminalOutput(const bool grEnabled = false) noexcept;
+        TerminalOutput(const bool grEnabled = false, const VTID drcsId = 0, const std::wstring_view drcsTranslationTable = {}) noexcept;
 
         void SoftReset() noexcept;
         void RestoreFrom(const TerminalOutput& savedState) noexcept;
