@@ -78,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings
 {
     winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
+    safe_void_coroutine ExpandAncestorsAndBringIntoView(winrt::Windows::UI::Xaml::FrameworkElement root, winrt::Windows::UI::Xaml::Controls::Control control);
 }
 
 // BODGY!
@@ -133,9 +134,8 @@ struct HasScrollViewer
                 {
                     // We need to wait for the page to be loaded
                     // or else the call to StartBringIntoView()
-                    // will end up doing nothing
-                    controlToFocus.StartBringIntoView();
-                    controlToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                    // will end up doing nothing.
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(page.template as<winrt::Windows::UI::Xaml::FrameworkElement>(), controlToFocus);
                 }
                 page->_loadedRevoker.revoke();
             }

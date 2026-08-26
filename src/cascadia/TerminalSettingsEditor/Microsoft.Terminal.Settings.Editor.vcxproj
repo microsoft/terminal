@@ -52,9 +52,6 @@
     <ClInclude Include="EditAction.h">
       <DependentUpon>EditAction.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AddProfile.h">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -119,6 +116,10 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="RenderingViewModel.h">
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -170,8 +171,14 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="SettingContainer.h">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
+    <ClInclude Include="SettingsCard.h">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsExpander.h">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsControlsHelpers.h">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
@@ -184,9 +191,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="EditAction.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="AddProfile.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommonResources.xaml">
@@ -231,6 +235,9 @@
     <Page Include="Profiles_Base.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Profiles_Base_Orphaned.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -249,7 +256,10 @@
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="SettingContainerStyle.xaml">
+    <Page Include="SettingsControlsStyle.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
+    <Page Include="SettingsControlsImplicitStyles.xaml">
       <Type>DefaultStyle</Type>
     </Page>
   </ItemGroup>
@@ -265,9 +275,6 @@
     </ClCompile>
     <ClCompile Include="EditAction.cpp">
       <DependentUpon>EditAction.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="AddProfile.cpp">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -331,6 +338,10 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="RenderingViewModel.cpp">
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -382,8 +393,14 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="SettingContainer.cpp">
-      <DependentUpon>SettingContainer.idl</DependentUpon>
+    <ClCompile Include="SettingsCard.cpp">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsExpander.cpp">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsControlsHelpers.cpp">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
@@ -396,10 +413,6 @@
   <ItemGroup>
     <Midl Include="Actions.idl">
       <DependentUpon>Actions.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="EnumEntry.idl" />
@@ -456,6 +469,10 @@
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
@@ -489,7 +506,13 @@
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="SettingContainer.idl">
+    <Midl Include="SettingsCard.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsExpander.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsControlsHelpers.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

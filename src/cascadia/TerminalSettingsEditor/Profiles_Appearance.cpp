@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
             TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
             TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-            TraceLoggingValue(_Profile.DefaultAppearance().BackgroundImageSettingsVisible(), "HasBackgroundImage", "If the profile has a background image defined"),
+            TraceLoggingValue(_Profile.DefaultAppearance().BackgroundImageSettingsEnabled(), "HasBackgroundImage", "If the profile has a background image defined"),
             TraceLoggingValue(_Profile.HasUnfocusedAppearance(), "HasUnfocusedAppearance", "If the profile has an unfocused appearance defined"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
