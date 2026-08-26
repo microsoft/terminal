@@ -417,8 +417,7 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel Margin="0,36,0,0"
-                    HorizontalAlignment="Stretch"
+        <StackPanel HorizontalAlignment="Stretch"
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Action type (top-most setting on the page)  -->
@@ -438,14 +437,14 @@
             </local:SettingsCard>
 
             <!--  Key bindings  -->
-            <StackPanel x:Name="KeyBindingsContainer"
-                        Spacing="4">
+            <StackPanel x:Name="KeyBindingsContainer">
                 <TextBlock x:Uid="EditAction_KeyBindings"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                 <!--  "New key binding" button  -->
                 <local:SettingsCard x:Name="NewKeyBinding"
-                                    x:Uid="EditAction_NewKeyBinding">
+                                    x:Uid="EditAction_NewKeyBinding"
+                                    Margin="0,0,0,2">
                     <Button x:Uid="EditAction_AddKeyBinding"
                             Click="{x:Bind ViewModel.AddKeybinding_Click}"
                             Style="{StaticResource AccentButtonStyle}" />
@@ -467,7 +466,7 @@
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Vertical"
-                                        Spacing="4" />
+                                        Spacing="2" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
@@ -481,7 +480,7 @@
                 <!--  Action name  -->
                 <local:SettingsCard x:Name="ActionName"
                                     x:Uid="EditAction_ActionName"
-                                    Margin="0,0,0,4">
+                                    Margin="0,0,0,2">
                     <TextBox x:Name="CommandNameTextBox"
                              MinWidth="248"
                              AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
@@ -498,7 +497,7 @@
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel HorizontalAlignment="Stretch"
-                                        Spacing="4" />
+                                        Spacing="2" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
