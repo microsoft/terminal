@@ -177,7 +177,7 @@
     <Style x:Key="SettingsStackStyle"
            TargetType="StackPanel">
         <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
-        <Setter Property="Spacing" Value="4" />
+        <Setter Property="Spacing" Value="2" />
     </Style>
 
     <!--  Used to lay out a setting's control alongside its reset button  -->
