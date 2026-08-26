@@ -1398,7 +1398,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (suppressWhitespaceOnly &&
             std::all_of(payload.plainText.cbegin(), payload.plainText.cend(), [](const wchar_t ch) {
-                return std::iswspace(ch) != 0;
+                return ch <= L' ';
             }))
         {
             return false;
