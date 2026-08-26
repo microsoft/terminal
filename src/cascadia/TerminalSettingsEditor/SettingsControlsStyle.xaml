@@ -492,7 +492,7 @@
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
         <Setter Property="ItemContainerStyleSelector" Value="{StaticResource SettingsExpanderItemStyleSelector}" />
-        <!--  Same C++-side implicit-styles injection as SettingsCard — see comment on that style.  -->
+        <!--  Same C++-side implicit-styles injection as SettingsCard. See comment on that style.  -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingsExpander">
@@ -530,7 +530,7 @@
                                     Use ItemsControl + StackPanel rather than ItemsRepeater so every
                                     Items entry is realized eagerly. ItemsRepeater inside an Expander
                                     inside the Settings page's outer ScrollViewer only realized
-                                    index 0 — the EffectiveViewport propagated through the ScrollViewer
+                                    index 0. The EffectiveViewport propagated through the ScrollViewer
                                     was 0 px at the moment the expand storyboard ran, and StackLayout's
                                     cache length is relative to viewport so 0 * anything is still 0.
                                     Settings expanders rarely hold more than a handful of cards so
