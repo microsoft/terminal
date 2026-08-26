@@ -98,6 +98,7 @@ namespace Microsoft::Console::Render
 
         // Base rendering loop
         static DWORD WINAPI s_renderThread(void*) noexcept;
+        static ULONG CALLBACK s_suspendResumeCallback(void* context, ULONG type, void* setting) noexcept;
         DWORD _renderThread() noexcept;
         void _waitUntilCanRender() noexcept;
 
@@ -147,7 +148,9 @@ namespace Microsoft::Console::Render
         wil::unique_handle _thread;
         wil::slim_event_manual_reset _enable;
         std::atomic<bool> _redraw;
+        std::atomic<bool> _resumeRedrawQueued{ false };
         std::atomic<bool> _threadKeepRunning{ false };
+        HPOWERNOTIFY _suspendResumeNotification = nullptr;
         til::small_vector<IRenderEngine*, 2> _engines;
         til::small_vector<TimerRoutine, 4> _timers;
         size_t _nextTimerId = 0;

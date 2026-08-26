@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
+#include <powrprof.h>
 #include <til/atomic.h>
 
 using namespace Microsoft::Console::Render;
@@ -34,11 +35,38 @@ Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
         renderer._renderSettings.ToggleBlinkRendition();
         renderer.TriggerRedrawAll();
     });
+
+    DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS params{
+        .Callback = &s_suspendResumeCallback,
+        .Context = this,
+    };
+    LOG_IF_WIN32_ERROR(PowerRegisterSuspendResumeNotification(DEVICE_NOTIFY_CALLBACK, &params, &_suspendResumeNotification));
 }
 
 Renderer::~Renderer()
 {
+    // This blocks until any in-flight callback has returned,
+    // so it must happen before we tear the rest of us down.
+    if (_suspendResumeNotification)
+    {
+        LOG_IF_WIN32_ERROR(PowerUnregisterSuspendResumeNotification(_suspendResumeNotification));
+    }
     TriggerTeardown();
+}
+
+// The contents of our swap chain buffers may not survive a suspend/resume cycle, while the
+// driver doesn't necessarily raise a device-loss error either. Engines which only present
+// partial dirty regions would then composite them onto stale, undefined buffer contents.
+// Queue a full invalidation for the next frame instead. (GH#20606)
+ULONG CALLBACK Renderer::s_suspendResumeCallback(void* context, ULONG type, void* /*setting*/) noexcept
+{
+    if (type == PBT_APMRESUMEAUTOMATIC)
+    {
+        const auto renderer = static_cast<Renderer*>(context);
+        renderer->_resumeRedrawQueued.store(true, std::memory_order_relaxed);
+        renderer->NotifyPaintFrame();
+    }
+    return ERROR_SUCCESS;
 }
 
 IRenderData* Renderer::GetRenderData() const noexcept
@@ -401,6 +429,14 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
         // We do it before the remaining code below so that if we do have an
         // intentional call to NotifyPaintFrame(), it triggers a redraw.
         _redraw.store(false, std::memory_order_relaxed);
+
+        if (_resumeRedrawQueued.exchange(false, std::memory_order_relaxed))
+        {
+            for (const auto pEngine : _engines)
+            {
+                LOG_IF_FAILED(pEngine->InvalidateAll());
+            }
+        }
 
         // NOTE: _CheckViewportAndScroll() updates _viewport which is used by all other functions.
         _CheckViewportAndScroll();
