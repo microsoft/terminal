@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         EditAction();
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedFrom(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         til::property_changed_event PropertyChanged;
 

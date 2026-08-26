@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto self{ weakThis.get() })
             {
                 self->_ReindexKeyChordList();
-                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"NameVerticalAlignment", L"DisplayNameAndKeyChordAutomationPropName");
+                self->_NotifyChanges(L"HasNoKeyChords", L"FirstKeyChord", L"FirstKeyChordText", L"NameVerticalAlignment", L"DisplayNameAndKeyChordAutomationPropName");
             }
         });
 
@@ -231,12 +231,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::AddKeybinding_Click()
     {
+        for (const auto& kcVM : _KeyChordList)
+        {
+            // A keyless row is one still waiting for input; reuse it instead of stacking another.
+            if (!kcVM.CurrentKeys())
+            {
+                FocusContainer.raise(*this, kcVM);
+                return;
+            }
+        }
+
         auto kbdVM{ make_self<KeyChordViewModel>(nullptr) };
         kbdVM->Index(gsl::narrow_cast<int32_t>(_KeyChordList.Size()) + 1);
-        kbdVM->IsInEditMode(true);
         _RegisterKeyChordVMEvents(*kbdVM);
         KeyChordList().Append(*kbdVM);
-        FocusContainer.raise(*this, *kbdVM);
+
+        kbdVM->IsInEditMode(true);
+    }
+
+    void CommandViewModel::CancelPendingKeyChordEdit()
+    {
+        if (const auto actionsPageVM{ _actionsPageVM.get() })
+        {
+            get_self<ActionsViewModel>(actionsPageVM)->CancelPendingKeyChordEdit();
+        }
     }
 
     void CommandViewModel::RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude)
@@ -336,6 +354,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto propertyName{ args.PropertyName() };
                 if (propertyName == L"IsInEditMode")
                 {
+                    const auto actionsPageVM{ self->_actionsPageVM.get() };
+                    const auto pageVM{ actionsPageVM ? get_self<ActionsViewModel>(actionsPageVM) : nullptr };
+                    const auto otherEdit{ pageVM ? pageVM->FindKeyChordEditInProgress(senderVM) : nullptr };
+                    if (senderVM.IsInEditMode())
+                    {
+                        // Only one row may be in edit mode at a time, page-wide.
+                        if (otherEdit)
+                        {
+                            otherEdit.CancelChanges();
+                        }
+                    }
+                    else if (otherEdit)
+                    {
+                        // We were cancelled to make way for otherEdit; focus belongs there.
+                        return;
+                    }
                     // Raise FocusContainer on both enter (so the hosting page can
                     // focus the editable KeyChordListener) and leave (so it can
                     // return focus to the pencil).
@@ -1398,6 +1432,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (keys)
         {
             _Settings.ActionMap().DeleteKeyBinding(keys);
+        }
+    }
+
+    // Returns the key chord row currently in edit mode, if any, ignoring "exclude".
+    Editor::KeyChordViewModel ActionsViewModel::FindKeyChordEditInProgress(const Editor::KeyChordViewModel& exclude) const
+    {
+        for (const auto& cmdVM : _CommandList)
+        {
+            if (const auto& chords{ cmdVM.KeyChordList() })
+            {
+                for (const auto& kcVM : chords)
+                {
+                    if (kcVM != exclude && kcVM.IsInEditMode())
+                    {
+                        return kcVM;
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    // Discards an edit the user never accepted. Nothing reached the settings model, so this only
+    // affects the view models: an empty row is deleted, an existing chord just leaves edit mode.
+    void ActionsViewModel::CancelPendingKeyChordEdit()
+    {
+        if (const auto kcVM{ FindKeyChordEditInProgress(nullptr) })
+        {
+            kcVM.CancelChanges();
         }
     }
 

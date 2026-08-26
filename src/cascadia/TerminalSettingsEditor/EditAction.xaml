@@ -420,7 +420,7 @@
         <StackPanel HorizontalAlignment="Stretch"
                     Style="{StaticResource SettingsStackStyle}">
 
-            <!--  Action type (top-most setting on the page)  -->
+            <!--  Action type  -->
             <local:SettingsCard x:Name="ActionType"
                                 x:Uid="EditAction_ActionType">
                 <local:SettingsCard.HeaderIcon>

@@ -183,4 +183,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
+
+    void Actions::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _focusKeyChordContainerRevoker.revoke();
+        _layoutUpdatedRevoker.revoke();
+
+        if (_ViewModel)
+        {
+            get_self<ActionsViewModel>(_ViewModel)->CancelPendingKeyChordEdit();
+        }
+    }
 }

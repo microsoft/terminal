@@ -89,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
+        void CancelPendingKeyChordEdit();
         void RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude);
 
         // UIA text
@@ -276,6 +277,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys);
         void AddCopiedCommand(const Model::Command& newCommand);
         void RegenerateCommandID(const Model::Command& command);
+
+        Editor::KeyChordViewModel FindKeyChordEditInProgress(const Editor::KeyChordViewModel& exclude) const;
+        void CancelPendingKeyChordEdit();
 
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();

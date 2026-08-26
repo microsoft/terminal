@@ -148,38 +148,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Only let this succeed once.
             _layoutUpdatedRevoker.revoke();
 
-            // If we navigated here to edit a specific key chord (its row arrives already in
-            // edit mode), focus that row's KeyChordListener so the user can immediately type a
-            // new chord. Otherwise, focus the command name text box.
-            Editor::KeyChordViewModel chordToEdit{ nullptr };
-            if (const auto& chords = _ViewModel.KeyChordList())
-            {
-                for (const auto& chord : chords)
-                {
-                    if (chord.IsInEditMode())
-                    {
-                        chordToEdit = chord;
-                        break;
-                    }
-                }
-            }
-
-            if (chordToEdit)
-            {
-                KeyChordItems().UpdateLayout();
-                if (const auto& container = KeyChordItems().ContainerFromItem(chordToEdit))
-                {
-                    if (const auto listener = _findKeyChordListener(container.try_as<DependencyObject>()))
-                    {
-                        // Entry focus went to a key chord row, not the box; entry is over.
-                        _isPageEntryFocus = false;
-                        listener.FocusInput();
-                        return;
-                    }
-                }
-            }
-
-            // Default page-entry focus goes to "Shortcut type"
+            // Page-entry focus goes to "Shortcut type". A key chord row is only ever put into
+            // edit mode from this page (via "Add key binding"), which focuses its listener
+            // through the FocusContainer handler above.
             ShortcutActionBox().Focus(FocusState::Programmatic);
         });
 
@@ -189,6 +160,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto currentAction = winrt::unbox_value<winrt::hstring>(_ViewModel.ProposedShortcutActionName());
             ShortcutActionBox().Text(currentAction);
             _lastValidAction = currentAction;
+        }
+    }
+
+    void EditAction::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _focusContainerRevoker.revoke();
+        _propagateWindowRootRevoker.revoke();
+        _layoutUpdatedRevoker.revoke();
+
+        if (_ViewModel)
+        {
+            // A key chord the user started but never accepted was never written to the settings
+            // model. Drop it, so an empty row doesn't linger on the Actions page.
+            get_self<CommandViewModel>(_ViewModel)->CancelPendingKeyChordEdit();
         }
     }
 
