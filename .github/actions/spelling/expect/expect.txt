@@ -46,6 +46,7 @@ APCA
 APCs
 APIENTRY
 apiset
+APMRESUMEAUTOMATIC
 APPBARDATA
 appcontainer
 appletname
@@ -738,6 +739,7 @@ hostlib
 HPA
 hpcon
 hpen
+HPOWERNOTIFY
 HPR
 HProvider
 HREDRAW
