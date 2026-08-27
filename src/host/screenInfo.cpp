@@ -1165,7 +1165,7 @@ void SCREEN_INFORMATION::_CommitViewport(const Viewport& viewport)
     //
     // Technically, this is a hack, and it resulted in regressions. Example: GH#281.
     // But this was changed so long ago, that it's difficult to improve now.
-    // A potential ideal solution would've been the introduction of a "VIEWPORT_EVENT".
+    // A more ideal solution may have been the introduction of a "VIEWPORT_EVENT".
     if (IsActiveScreenBuffer() && IsInVirtualTerminalInputMode() && viewport.Dimensions() != _viewport.Dimensions())
     {
         ScreenBufferSizeChange(GetBufferSize().Dimensions());
