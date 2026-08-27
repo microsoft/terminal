@@ -181,7 +181,13 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
             DWORD processId = 0;
             if (GetWindowThreadProcessId(hwnd, &processId) && processId)
             {
-                AllowSetForegroundWindow(processId);
+                if (!AllowSetForegroundWindow(processId))
+                {
+                    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                                      "EmperorAllowSetForegroundWindowFailed",
+                                      TraceLoggingPid(processId),
+                                      TraceLoggingWinError(GetLastError(), "error"));
+                }
             }
 
             if (SendMessageTimeoutW(hwnd, WM_COPYDATA, 0, reinterpret_cast<LPARAM>(&cds), SMTO_ABORTIFHUNG | SMTO_ERRORONEXIT, 5000, nullptr))

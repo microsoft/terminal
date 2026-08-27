@@ -547,6 +547,16 @@ try
 
     myStartupInfo.wShowWindow = settings.GetShowWindow();
 
+    // Preserve an inherited foreground grant across the COM handoff when the
+    // API is available on this version of Windows.
+    if (IsApiSetImplemented("ext-ms-win-com-ole32-l1-1-1"))
+    {
+        const auto hr = CoAllowSetForegroundWindow(handoff.Get(), nullptr);
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "PtyHandoffAllowSetForegroundWindow",
+                          TraceLoggingHResult(hr));
+    }
+
     wil::unique_handle inPipeOurSide;
     wil::unique_handle outPipeOurSide;
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeOurSide.addressof(),
