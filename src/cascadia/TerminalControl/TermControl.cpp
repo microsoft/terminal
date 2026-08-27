@@ -207,19 +207,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return {};
         }
 
+        // TSF wants screen coordinates, and localOrigin below is relative to the XAML island, which sits at
+        // the origin of our client area. GH#20318: GetWindowRect() is not that origin. _OnNcCalcSize() only
+        // pushes the client area's top edge past the resize borders while the window is maximized, so the
+        // rect would then be a resize handle height too high, which is enough for the IME candidate window
+        // to cover the text being composed.
         const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-        RECT clientRect;
-        GetWindowRect(hwnd, &clientRect);
+        POINT islandOrigin{};
+        ClientToScreen(hwnd, &islandOrigin);
 
-        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        // DisplayInformation::GetForCurrentView() describes the hidden dummy CoreWindow that XAML islands run
+        // on, not necessarily the display we're on. fontSize below is in pixels derived from the SwapChainPanel's
+        // composition scale (see ControlCore::FontSizeInDips), so use that here as well to keep both in sync.
+        const auto scaleFactor = _termControl->SwapChainPanel().CompositionScaleX();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
-        const auto left = clientRect.left + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
-        const auto top = clientRect.top + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto left = islandOrigin.x + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = islandOrigin.y + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
         const auto right = left + fontSize.Width;
         const auto bottom = top + fontSize.Height;
 
