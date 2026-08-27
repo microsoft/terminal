@@ -2146,7 +2146,6 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     {
         UpdateBottom();
     }
-
 }
 
 // Routine Description:

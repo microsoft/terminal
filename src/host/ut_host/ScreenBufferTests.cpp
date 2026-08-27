@@ -7363,19 +7363,19 @@ void ScreenBufferTests::ViewportDimensionChangesGenerateVtWindowEvents()
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    const auto restoreInputMode = wil::scope_exit([&, inputMode = gci.pInputBuffer.InputMode] {
-        gci.pInputBuffer.InputMode = inputMode;
-        gci.pInputBuffer.Flush();
+    const auto restoreInputMode = wil::scope_exit([&, inputMode = gci.pInputBuffer->InputMode] {
+        gci.pInputBuffer->InputMode = inputMode;
+        gci.pInputBuffer->Flush();
     });
-    gci.pInputBuffer.InputMode = ENABLE_WINDOW_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
+    gci.pInputBuffer->InputMode = ENABLE_WINDOW_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
 
     auto& si = gci.GetActiveOutputBuffer();
     const auto dim = si.GetViewport().Dimensions();
     si.SetViewport(Viewport::FromDimensions({ 0, 1 }, dim), false);
-    VERIFY_ARE_EQUAL(0u, gci.pInputBuffer.GetNumberOfReadyEvents());
+    VERIFY_ARE_EQUAL(0u, gci.pInputBuffer->GetNumberOfReadyEvents());
 
     si.SetViewport(Viewport::FromDimensions({}, dim - til::size{ 1, 1 }), false);
-    VERIFY_ARE_EQUAL(1u, gci.pInputBuffer.GetNumberOfReadyEvents());
+    VERIFY_ARE_EQUAL(1u, gci.pInputBuffer->GetNumberOfReadyEvents());
 }
 
 void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
