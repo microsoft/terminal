@@ -62,11 +62,13 @@ try
 {
     std::unique_lock lock{ g_mtx };
 
-    // Register the COM class factory on a dedicated MTA thread so that
-    // incoming COM calls are dispatched to MTA worker threads rather than
-    // the STA/UI thread. This keeps long-running calls off the UI thread —
-    // and is what lets each method co_await onto the UI thread and .get()
-    // without blocking the UI thread.
+    // The class factory must be registered on an MTA thread, not the STA/UI
+    // thread. Every ITerminalProtocol method is a synchronous COM call that
+    // internally creates an IAsyncOperation, calls .get() to block until it
+    // completes, then returns the result. Each coroutine needs to resume on the
+    // UI thread via co_await resume_foreground. If registration were on the
+    // STA/UI thread, .get() would deadlock: the UI thread would be blocked
+    // waiting for the coroutine, while the coroutine waits for the UI thread.
     g_comMtaStop.create(wil::EventOptions::ManualReset);
 
     wil::unique_event ready(wil::EventOptions::ManualReset);
