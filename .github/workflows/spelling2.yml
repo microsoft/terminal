@@ -105,7 +105,7 @@ jobs:
           use_magic_file: 1
           report-timing: 1
           warnings: bad-regex,binary-file,deprecated-feature,ignored-expect-variant,large-file,limited-references,no-newline-at-eof,noisy-file,non-alpha-in-dictionary,token-is-substring,unexpected-line-ending,whitespace-in-dictionary,minified-file,unsupported-configuration,no-files-to-check,unclosed-block-ignore-begin,unclosed-block-ignore-end
-          experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
+          experimental_apply_changes_via_bot: ${{ github.repository_owner == 'microsoft' && 1 }}
           use_sarif: 1
           allow-hunspell: false
           load-config-from: |
@@ -153,7 +153,7 @@ jobs:
         with:
           spell_check_this: microsoft/terminal@main
           task: ${{ needs.spelling.outputs.followup }}
-          experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
+          experimental_apply_changes_via_bot: ${{ github.repository_owner == 'microsoft' && 1 }}
 
   update:
     name: Update PR
@@ -177,6 +177,6 @@ jobs:
       - name: apply spelling updates
         uses: check-spelling/check-spelling@cfb6f7e75bbfc89c71eaa30366d0c166f1bd9c8c # v0.0.26
         with:
-          experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
+          experimental_apply_changes_via_bot: ${{ github.repository_owner == 'microsoft' && 1 }}
           checkout: true
           ssh_key: "${{ secrets.CHECK_SPELLING }}"
