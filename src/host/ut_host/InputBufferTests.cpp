@@ -136,6 +136,20 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 3u);
     }
 
+    TEST_METHOD(InputBufferCoalescesWindowSizeEvents)
+    {
+        InputBuffer inputBuffer;
+
+        inputBuffer.Write(SynthesizeWindowBufferSizeEvent({ 80, 25 }));
+        inputBuffer.Write(SynthesizeWindowBufferSizeEvent({ 100, 40 }));
+        inputBuffer.Write(MakeKeyEvent(true, 1, L'a', 0, L'a', 0));
+        inputBuffer.Write(SynthesizeWindowBufferSizeEvent({ 120, 50 }));
+
+        VERIFY_ARE_EQUAL(3u, inputBuffer.GetNumberOfReadyEvents());
+        VERIFY_ARE_EQUAL(til::size(100, 40), til::wrap_coord_size(inputBuffer._storage.front().Event.WindowBufferSizeEvent.dwSize));
+        VERIFY_ARE_EQUAL(til::size(120, 50), til::wrap_coord_size(inputBuffer._storage.back().Event.WindowBufferSizeEvent.dwSize));
+    }
+
     TEST_METHOD(InputBufferDoesNotCoalesceBulkMouseEvents)
     {
         Log::Comment(L"The input buffer should not coalesce mouse events if more than one event is sent at a time");

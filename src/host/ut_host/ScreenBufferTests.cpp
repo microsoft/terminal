@@ -241,6 +241,7 @@ class ScreenBufferTests
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
     TEST_METHOD(UpdateVirtualBottomWithSetConsoleCursorPosition);
     TEST_METHOD(UpdateVirtualBottomAfterInternalSetViewportSize);
+    TEST_METHOD(ViewportDimensionChangesGenerateVtWindowEvents);
     TEST_METHOD(UpdateVirtualBottomAfterResizeWithReflow);
     TEST_METHOD(DontShrinkVirtualBottomDuringResizeWithReflowAtTop);
     TEST_METHOD(DontChangeVirtualBottomWithOffscreenLinefeed);
@@ -7354,6 +7355,27 @@ void ScreenBufferTests::UpdateVirtualBottomAfterInternalSetViewportSize()
 
     Log::Comment(L"Confirm that the virtual bottom has aligned with the viewport bottom");
     VERIFY_ARE_EQUAL(si._virtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::ViewportDimensionChangesGenerateVtWindowEvents()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    const auto restoreInputMode = wil::scope_exit([&, inputMode = gci.pInputBuffer.InputMode] {
+        gci.pInputBuffer.InputMode = inputMode;
+        gci.pInputBuffer.Flush();
+    });
+    gci.pInputBuffer.InputMode = ENABLE_WINDOW_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+    auto& si = gci.GetActiveOutputBuffer();
+    const auto dim = si.GetViewport().Dimensions();
+    si.SetViewport(Viewport::FromDimensions({ 0, 1 }, dim), false);
+    VERIFY_ARE_EQUAL(0u, gci.pInputBuffer.GetNumberOfReadyEvents());
+
+    si.SetViewport(Viewport::FromDimensions({}, dim - til::size{ 1, 1 }), false);
+    VERIFY_ARE_EQUAL(1u, gci.pInputBuffer.GetNumberOfReadyEvents());
 }
 
 void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
