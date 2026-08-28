@@ -910,7 +910,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler (per GH#6421)
     // Return value:
     // - whether the key was handled
-    bool TerminalWindow::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    bool TerminalWindow::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down)
     {
         if (_root)
         {
@@ -926,7 +926,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto keyListener{ focusedObject.try_as<UI::IDirectKeyListener>() })
                 {
-                    if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
+                    if (keyListener.OnDirectKeyEvent(vkey, scanCode, extended, down))
                     {
                         return true;
                     }
@@ -954,7 +954,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             if (auto keyListener{ _root.try_as<UI::IDirectKeyListener>() })
                             {
-                                return keyListener.OnDirectKeyEvent(vkey, scanCode, down);
+                                return keyListener.OnDirectKeyEvent(vkey, scanCode, extended, down);
                             }
                         }
                     }
