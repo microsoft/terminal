@@ -1958,6 +1958,61 @@ void Pane::_SetupEntranceAnimation(const bool newPaneIsFirst)
     }
     _root.Children().InsertAt(0, backdrop);
 
+    // The real divider is already at its final location because both panes have
+    // their final layout. Cover it while a temporary divider follows the clip.
+    Controls::Border dividerMask;
+    dividerMask.Background(background ? background : _themeResources.unfocusedBorderBrush);
+    dividerMask.IsHitTestVisible(false);
+
+    Controls::Grid divider;
+    divider.IsHitTestVisible(false);
+    Controls::Border firstDividerHalf;
+    Controls::Border secondDividerHalf;
+    firstDividerHalf.Background(newPaneIsFirst ? _themeResources.focusedBorderBrush : _themeResources.unfocusedBorderBrush);
+    secondDividerHalf.Background(newPaneIsFirst ? _themeResources.unfocusedBorderBrush : _themeResources.focusedBorderBrush);
+
+    if (splitWidth)
+    {
+        Controls::Grid::SetColumn(dividerMask, newPaneIsFirst ? 0 : 1);
+        Controls::Grid::SetColumn(divider, newPaneIsFirst ? 0 : 1);
+        dividerMask.Width(CombinedPaneBorderSize);
+        divider.Width(CombinedPaneBorderSize);
+        dividerMask.HorizontalAlignment(newPaneIsFirst ? HorizontalAlignment::Right : HorizontalAlignment::Left);
+        divider.HorizontalAlignment(newPaneIsFirst ? HorizontalAlignment::Right : HorizontalAlignment::Left);
+        dividerMask.Margin(newPaneIsFirst ?
+                               ThicknessHelper::FromLengths(0, 0, -PaneBorderSize, 0) :
+                               ThicknessHelper::FromLengths(-PaneBorderSize, 0, 0, 0));
+        divider.Margin(dividerMask.Margin());
+
+        firstDividerHalf.Width(PaneBorderSize);
+        firstDividerHalf.HorizontalAlignment(HorizontalAlignment::Left);
+        secondDividerHalf.Width(PaneBorderSize);
+        secondDividerHalf.HorizontalAlignment(HorizontalAlignment::Right);
+    }
+    else
+    {
+        Controls::Grid::SetRow(dividerMask, newPaneIsFirst ? 0 : 1);
+        Controls::Grid::SetRow(divider, newPaneIsFirst ? 0 : 1);
+        dividerMask.Height(CombinedPaneBorderSize);
+        divider.Height(CombinedPaneBorderSize);
+        dividerMask.VerticalAlignment(newPaneIsFirst ? VerticalAlignment::Bottom : VerticalAlignment::Top);
+        divider.VerticalAlignment(newPaneIsFirst ? VerticalAlignment::Bottom : VerticalAlignment::Top);
+        dividerMask.Margin(newPaneIsFirst ?
+                               ThicknessHelper::FromLengths(0, 0, 0, -PaneBorderSize) :
+                               ThicknessHelper::FromLengths(0, -PaneBorderSize, 0, 0));
+        divider.Margin(dividerMask.Margin());
+
+        firstDividerHalf.Height(PaneBorderSize);
+        firstDividerHalf.VerticalAlignment(VerticalAlignment::Top);
+        secondDividerHalf.Height(PaneBorderSize);
+        secondDividerHalf.VerticalAlignment(VerticalAlignment::Bottom);
+    }
+
+    divider.Children().Append(firstDividerHalf);
+    divider.Children().Append(secondDividerHalf);
+    _root.Children().Append(dividerMask);
+    _root.Children().Append(divider);
+
     const auto rootSize = Size{
         gsl::narrow_cast<float>(_root.ActualWidth()),
         gsl::narrow_cast<float>(_root.ActualHeight())
@@ -1980,7 +2035,18 @@ void Pane::_SetupEntranceAnimation(const bool newPaneIsFirst)
     s.SetTarget(animation, clipTransform);
     s.SetTargetProperty(animation, splitWidth ? L"X" : L"Y");
 
-    animation.Completed([newPaneBorder, clip, root = _root, backdrop](auto&&, auto&&) {
+    TranslateTransform dividerTransform;
+    divider.RenderTransform(dividerTransform);
+    Media::Animation::DoubleAnimation dividerAnimation{};
+    dividerAnimation.Duration(AnimationDuration);
+    dividerAnimation.From(newPaneIsFirst ? -animatedSize : animatedSize);
+    dividerAnimation.To(0.0);
+    dividerAnimation.EasingFunction(Media::Animation::QuadraticEase{});
+    s.Children().Append(dividerAnimation);
+    s.SetTarget(dividerAnimation, dividerTransform);
+    s.SetTargetProperty(dividerAnimation, splitWidth ? L"X" : L"Y");
+
+    animation.Completed([newPaneBorder, clip, root = _root, backdrop, dividerMask, divider](auto&&, auto&&) {
         if (newPaneBorder.Clip() == clip)
         {
             newPaneBorder.Clip(nullptr);
@@ -1988,6 +2054,14 @@ void Pane::_SetupEntranceAnimation(const bool newPaneIsFirst)
 
         uint32_t index = 0;
         if (root.Children().IndexOf(backdrop, index))
+        {
+            root.Children().RemoveAt(index);
+        }
+        if (root.Children().IndexOf(dividerMask, index))
+        {
+            root.Children().RemoveAt(index);
+        }
+        if (root.Children().IndexOf(divider, index))
         {
             root.Children().RemoveAt(index);
         }
