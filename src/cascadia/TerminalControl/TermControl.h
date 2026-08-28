@@ -313,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
 
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        til::event_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
 
@@ -446,43 +446,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
 
-        struct Revokers
-        {
-            Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
-            Control::ControlCore::WarningBell_revoker WarningBell;
-            Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
-            Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
-            Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
-            Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
-            Control::ControlCore::RaiseNotice_revoker RaiseNotice;
-            Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
-            Control::ControlCore::OutputIdle_revoker OutputIdle;
-            Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
-            Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
-            Control::ControlCore::TitleChanged_revoker TitleChanged;
-            Control::ControlCore::WriteToClipboard_revoker WriteToClipboard;
-            Control::ControlCore::TabColorChanged_revoker TabColorChanged;
-            Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
-            Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
-            Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
-            Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
-            Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
-            Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
-            Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
-            Control::ControlCore::ShowNotification_revoker ShowNotification;
-            Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
-            Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
-
-            // These are set up in _InitializeTerminal
-            Control::ControlCore::RendererWarning_revoker RendererWarning;
-            Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
-            Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
-
-            Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
-            Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
-            Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
-            Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
-        } _revokers{};
+        til::event_revoker_set _revokers;
     };
 }
 

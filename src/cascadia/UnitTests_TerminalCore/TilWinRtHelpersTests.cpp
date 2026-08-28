@@ -42,6 +42,9 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
 
     TEST_METHOD(TestEvent);
 
+    TEST_METHOD(TestEventRevoker);
+    TEST_METHOD(TestEventRevokerSet);
+
     TEST_METHOD(TestTypedEvent);
 
     TEST_METHOD(TestPropertyChanged);
@@ -225,6 +228,128 @@ void TilWinRtHelpersTests::TestEvent()
     MyEvent.raise(42);
     VERIFY_ARE_EQUAL(true, handledOne);
     VERIFY_ARE_EQUAL(true, handledTwo);
+}
+
+void TilWinRtHelpersTests::TestEventRevoker()
+{
+    auto first = winrt::single_threaded_observable_vector<int>();
+    auto second = winrt::single_threaded_observable_vector<int>();
+    int firstCalls = 0;
+    int secondCalls = 0;
+
+    til::event_revoker revoker;
+    VERIFY_IS_FALSE(static_cast<bool>(revoker));
+
+    revoker = first.VectorChanged(winrt::auto_revoke, [&](auto&&, auto&&) {
+        ++firstCalls;
+    });
+    VERIFY_IS_TRUE(static_cast<bool>(revoker));
+
+    first.Append(1);
+    VERIFY_ARE_EQUAL(1, firstCalls);
+
+    // Replacing a generic revoker must revoke the previous event.
+    revoker = second.VectorChanged(winrt::auto_revoke, [&](auto&&, auto&&) {
+        ++secondCalls;
+    });
+    first.Append(2);
+    second.Append(1);
+    VERIFY_ARE_EQUAL(1, firstCalls);
+    VERIFY_ARE_EQUAL(1, secondCalls);
+
+    revoker.revoke();
+    VERIFY_IS_FALSE(static_cast<bool>(revoker));
+    second.Append(2);
+    VERIFY_ARE_EQUAL(1, secondCalls);
+
+    // Destruction must revoke the event too.
+    {
+        til::event_revoker scopedRevoker;
+        scopedRevoker = first.VectorChanged(winrt::auto_revoke, [&](auto&&, auto&&) {
+            ++firstCalls;
+        });
+        first.Append(3);
+        VERIFY_ARE_EQUAL(2, firstCalls);
+    }
+    first.Append(4);
+    VERIFY_ARE_EQUAL(2, firstCalls);
+
+    // Revoking an event can call arbitrary source code. Reentrant replacement
+    // of the same revoker must leave the replacement alive.
+    struct ReentrantContext
+    {
+        til::event_revoker* owner;
+        int oldRevocations = 0;
+        int replacementRevocations = 0;
+    } context{ &revoker };
+    struct CountingRevoker
+    {
+        int* revocations;
+        CountingRevoker(CountingRevoker&& other) noexcept :
+            revocations{ std::exchange(other.revocations, nullptr) }
+        {
+        }
+        ~CountingRevoker() noexcept { revoke(); }
+        void revoke() noexcept
+        {
+            if (const auto count = std::exchange(revocations, nullptr))
+            {
+                ++*count;
+            }
+        }
+        explicit operator bool() const noexcept { return revocations != nullptr; }
+    };
+    struct ReentrantRevoker
+    {
+        ReentrantContext* context;
+        ReentrantRevoker(ReentrantRevoker&& other) noexcept :
+            context{ std::exchange(other.context, nullptr) }
+        {
+        }
+        ~ReentrantRevoker() noexcept { revoke(); }
+        void revoke() noexcept
+        {
+            if (const auto state = std::exchange(context, nullptr))
+            {
+                ++state->oldRevocations;
+                *state->owner = CountingRevoker{ &state->replacementRevocations };
+            }
+        }
+        explicit operator bool() const noexcept { return context != nullptr; }
+    };
+
+    revoker = ReentrantRevoker{ &context };
+    revoker.revoke();
+    VERIFY_ARE_EQUAL(1, context.oldRevocations);
+    VERIFY_IS_TRUE(static_cast<bool>(revoker));
+    revoker.revoke();
+    VERIFY_ARE_EQUAL(1, context.replacementRevocations);
+}
+
+void TilWinRtHelpersTests::TestEventRevokerSet()
+{
+    auto first = winrt::single_threaded_observable_vector<int>();
+    auto second = winrt::single_threaded_observable_vector<int>();
+    int calls = 0;
+
+    til::event_revoker_set revokers;
+    revokers.add(first.VectorChanged(winrt::auto_revoke, [&](auto&&, auto&&) {
+        ++calls;
+    }));
+    revokers.add(second.VectorChanged(winrt::auto_revoke, [&](auto&&, auto&&) {
+        ++calls;
+    }));
+    VERIFY_IS_TRUE(static_cast<bool>(revokers));
+
+    first.Append(1);
+    second.Append(1);
+    VERIFY_ARE_EQUAL(2, calls);
+
+    revokers.revoke();
+    VERIFY_IS_FALSE(static_cast<bool>(revokers));
+    first.Append(2);
+    second.Append(2);
+    VERIFY_ARE_EQUAL(2, calls);
 }
 
 void TilWinRtHelpersTests::TestTypedEvent()

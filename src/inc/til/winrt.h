@@ -76,6 +76,193 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
     using typed_event = til::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>>;
 
+    // C++/WinRT generates a distinct revoker type for every event, which makes
+    // storing them unnecessarily verbose. This move-only type erases those
+    // types while preserving their normal RAII behavior.
+    class event_revoker
+    {
+    public:
+        event_revoker() noexcept = default;
+
+        template<typename T>
+            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker>)
+        event_revoker(T&& revoker) noexcept
+        {
+            _emplace(std::forward<T>(revoker));
+        }
+
+        event_revoker(event_revoker&& other) noexcept
+        {
+            _move_from(std::move(other));
+        }
+
+        event_revoker& operator=(event_revoker&& other) noexcept
+        {
+            if (this != &other)
+            {
+                event_revoker{ std::move(other) }.swap(*this);
+            }
+            return *this;
+        }
+
+        template<typename T>
+            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker>)
+        event_revoker& operator=(T&& revoker) noexcept
+        {
+            event_revoker{ std::forward<T>(revoker) }.swap(*this);
+            return *this;
+        }
+
+        event_revoker(const event_revoker&) = delete;
+        event_revoker& operator=(const event_revoker&) = delete;
+
+        ~event_revoker() noexcept
+        {
+            revoke();
+        }
+
+        void revoke() noexcept
+        {
+            if (const auto operations = std::exchange(_operations, nullptr))
+            {
+                alignas(uint64_t) std::byte oldStorage[_storageSize];
+                operations->move(&oldStorage, &_storage);
+                operations->revoke(&oldStorage);
+            }
+        }
+
+        void swap(event_revoker& other) noexcept
+        {
+            if (this != &other)
+            {
+                event_revoker temporary{ std::move(other) };
+                other._move_from(std::move(*this));
+                _move_from(std::move(temporary));
+            }
+        }
+
+        explicit operator bool() const noexcept
+        {
+            return _operations && _operations->has_value(&_storage);
+        }
+
+    private:
+        static constexpr size_t _storageSize = 2 * sizeof(uint64_t);
+
+        struct Operations
+        {
+            void (*revoke)(void*) noexcept;
+            void (*move)(void*, void*) noexcept;
+            bool (*has_value)(const void*) noexcept;
+        };
+
+        template<typename T>
+        static const Operations* _get_operations() noexcept
+        {
+            static constexpr Operations operations{
+                [](void* storage) noexcept {
+                    auto value = std::launder(reinterpret_cast<T*>(storage));
+                    value->revoke();
+                    std::destroy_at(value);
+                },
+                [](void* destination, void* source) noexcept {
+                    auto value = std::launder(reinterpret_cast<T*>(source));
+                    std::construct_at(reinterpret_cast<T*>(destination), std::move(*value));
+                    std::destroy_at(value);
+                },
+                [](const void* storage) noexcept {
+                    return static_cast<bool>(*std::launder(reinterpret_cast<const T*>(storage)));
+                },
+            };
+            return &operations;
+        }
+
+        template<typename T>
+        void _emplace(T&& revoker) noexcept
+        {
+            using revoker_type = std::remove_cvref_t<T>;
+            static_assert(sizeof(revoker_type) <= _storageSize, "auto_revoke result is unexpectedly large");
+            static_assert(alignof(revoker_type) <= alignof(uint64_t), "auto_revoke result is unexpectedly aligned");
+            static_assert(std::is_nothrow_constructible_v<revoker_type, T>);
+            static_assert(std::is_nothrow_move_constructible_v<revoker_type>);
+            static_assert(std::is_nothrow_destructible_v<revoker_type>);
+            static_assert(noexcept(std::declval<revoker_type&>().revoke()));
+            static_assert(noexcept(static_cast<bool>(std::declval<const revoker_type&>())));
+
+            std::construct_at(reinterpret_cast<revoker_type*>(&_storage), std::forward<T>(revoker));
+            _operations = _get_operations<revoker_type>();
+        }
+
+        void _move_from(event_revoker&& other) noexcept
+        {
+            if (const auto operations = std::exchange(other._operations, nullptr))
+            {
+                operations->move(&_storage, &other._storage);
+                _operations = operations;
+            }
+        }
+
+        alignas(uint64_t) std::byte _storage[_storageSize];
+        const Operations* _operations = nullptr;
+    };
+
+    // Owns a collection of event revokers that all share a lifetime. This is
+    // useful when individual subscriptions never need to be revoked early.
+    class event_revoker_set
+    {
+    public:
+        event_revoker_set() noexcept = default;
+
+        event_revoker_set(event_revoker_set&& other) noexcept
+        {
+            _revokers.swap(other._revokers);
+        }
+
+        event_revoker_set& operator=(event_revoker_set&& other) noexcept
+        {
+            if (this != &other)
+            {
+                event_revoker_set{ std::move(other) }._revokers.swap(_revokers);
+            }
+            return *this;
+        }
+
+        event_revoker_set(const event_revoker_set&) = delete;
+        event_revoker_set& operator=(const event_revoker_set&) = delete;
+
+        ~event_revoker_set() noexcept
+        {
+            revoke();
+        }
+
+        template<typename T>
+        void add(T&& revoker)
+        {
+            _revokers.emplace_back(std::forward<T>(revoker));
+        }
+
+        void revoke() noexcept
+        {
+            while (!_revokers.empty())
+            {
+                std::vector<event_revoker> revokers;
+                revokers.swap(_revokers);
+                while (!revokers.empty())
+                {
+                    revokers.pop_back();
+                }
+            }
+        }
+
+        explicit operator bool() const noexcept
+        {
+            return !_revokers.empty();
+        }
+
+    private:
+        std::vector<event_revoker> _revokers;
+    };
+
 #endif
 #ifdef WINRT_Windows_UI_Xaml_Data_H
 
