@@ -34,7 +34,7 @@ TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
 void TerminalOutput::SoftReset() noexcept
 {
     // A soft reset is essentially the same thing as a restore from a fresh
-    // instance, but that instance must already be initalized with the current
+    // instance, but that instance must already be initialized with the current
     // GR translation state in order for the appropriate defaults to be set.
     RestoreFrom({ _grTranslationEnabled });
 }
