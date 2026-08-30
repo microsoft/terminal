@@ -20,6 +20,8 @@
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
+    <ClCompile Include="HtmConnections.cpp" />
+    <ClCompile Include="HtmSession.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
@@ -45,6 +47,9 @@
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="DebugTapConnection.h" />
+    <ClInclude Include="HtmProtocol.h" />
+    <ClInclude Include="HtmConnections.h" />
+    <ClInclude Include="HtmSession.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>

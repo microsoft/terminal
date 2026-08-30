@@ -284,6 +284,26 @@ namespace winrt::TerminalApp::implementation
 
             const auto& activeTab{ _senderOrFocusedTab(sender) };
 
+            if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+            {
+                const auto focusedConn = _HtmFocusedConnection();
+                const auto sourceId = _HtmPaneIdFromConnection(focusedConn);
+                if (!sourceId.empty())
+                {
+                    const auto direction = realArgs.SplitDirection();
+                    const bool vertical = direction != SplitDirection::Up && direction != SplitDirection::Down;
+                    if (const auto follower{ _htmSession->CreateFollowerForUserSplit(sourceId, vertical) })
+                    {
+                        _SplitPane(activeTab,
+                                   direction,
+                                   realArgs.SplitSize(),
+                                   _MakePane(realArgs.ContentArgs(), duplicateFromTab, follower));
+                        args.Handled(true);
+                        return;
+                    }
+                }
+            }
+
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
@@ -470,6 +490,20 @@ namespace winrt::TerminalApp::implementation
             {
                 args.Handled(false);
                 return;
+            }
+
+            if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+            {
+                const auto focusedConn = _HtmFocusedConnection();
+                if (!_HtmPaneIdFromConnection(focusedConn).empty())
+                {
+                    if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                    {
+                        _CreateNewTabFromPane(_MakePane(realArgs.ContentArgs(), nullptr, follower));
+                        args.Handled(true);
+                        return;
+                    }
+                }
             }
 
             LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));

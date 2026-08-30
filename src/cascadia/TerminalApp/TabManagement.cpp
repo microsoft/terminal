@@ -88,6 +88,18 @@ namespace winrt::TerminalApp::implementation
 
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
+        if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+        {
+            const auto focusedConn = _HtmFocusedConnection();
+            if (!_HtmPaneIdFromConnection(focusedConn).empty())
+            {
+                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                {
+                    _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr, follower));
+                    return S_OK;
+                }
+            }
+        }
         _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }

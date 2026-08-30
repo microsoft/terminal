@@ -16,6 +16,8 @@
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
+#include "HtmConnections.h"
+#include "HtmSession.h"
 #include "MarkdownPaneContent.h"
 #include "Remoting.h"
 #include "ScratchpadContent.h"
@@ -227,6 +229,10 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
+        if (Feature_HtmIntegration::IsEnabled())
+        {
+            _htmSession = std::make_unique<HtmSession>(this);
+        }
     }
 
     // Method Description:
@@ -1591,7 +1597,30 @@ namespace winrt::TerminalApp::implementation
         else
         {
             auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
-            const auto environment = settingsInternal->EnvironmentVariables();
+            auto environment = settingsInternal->EnvironmentVariables();
+            Windows::Foundation::Collections::IMapView<hstring, hstring> environmentView = environment;
+            if (Feature_HtmIntegration::IsEnabled() && environment && environment.HasKey(L"HTM_BIN_DIR"))
+            {
+                auto envMap = winrt::single_threaded_map<hstring, hstring>();
+                for (const auto& [k, v] : environment)
+                {
+                    envMap.Insert(k, v);
+                }
+                const auto bin = envMap.Lookup(L"HTM_BIN_DIR");
+                hstring path;
+                if (envMap.HasKey(L"PATH"))
+                {
+                    path = envMap.Lookup(L"PATH");
+                }
+                if (path.empty())
+                {
+                    wchar_t systemPath[32767]{};
+                    GetEnvironmentVariableW(L"PATH", systemPath, 32767);
+                    path = systemPath;
+                }
+                envMap.Insert(L"PATH", bin + L";" + path);
+                environmentView = envMap.GetView();
+            }
 
             // Update the path to be relative to whatever our CWD is.
             //
@@ -1615,7 +1644,7 @@ namespace winrt::TerminalApp::implementation
                                                                             settings.StartingTitle(),
                                                                             settingsInternal->ReloadEnvironmentVariables(),
                                                                             _WindowProperties.VirtualEnvVars(),
-                                                                            environment,
+                                                                            environmentView,
                                                                             settings.InitialRows(),
                                                                             settings.InitialCols(),
                                                                             winrt::guid(),
@@ -1642,6 +1671,12 @@ namespace winrt::TerminalApp::implementation
         }
 
         connection.Initialize(valueSet);
+
+        if (Feature_HtmIntegration::IsEnabled() && _htmSession &&
+            connection.try_as<TerminalConnection::ConptyConnection>())
+        {
+            connection = winrt::make<HtmLeaderConnection>(connection, _htmSession.get());
+        }
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -6221,5 +6256,116 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    std::string TerminalPage::_HtmPaneIdFromConnection(const TerminalConnection::ITerminalConnection& connection) const
+    {
+        if (!connection)
+        {
+            return {};
+        }
+        if (const auto leader{ connection.try_as<HtmLeaderConnection>() })
+        {
+            return leader->PaneId();
+        }
+        if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+        {
+            return follower->PaneId();
+        }
+        return {};
+    }
+
+    TerminalConnection::ITerminalConnection TerminalPage::_HtmFocusedConnection() const
+    {
+        if (const auto tab{ _GetFocusedTabImpl() })
+        {
+            if (const auto control{ tab->GetActiveTerminalControl() })
+            {
+                return control.Connection();
+            }
+        }
+        return nullptr;
+    }
+
+    std::shared_ptr<Pane> TerminalPage::_HtmFindPane(const std::string& paneId) const
+    {
+        if (paneId.empty())
+        {
+            return nullptr;
+        }
+        for (const auto& tab : _tabs)
+        {
+            if (const auto tabImpl{ _GetTabImpl(tab) })
+            {
+                if (const auto pane{ tabImpl->GetRootPane()->_FindPane([&](const auto& candidate) {
+                        const auto control = candidate->GetTerminalControl();
+                        if (!control)
+                        {
+                            return false;
+                        }
+                        return _HtmPaneIdFromConnection(control.Connection()) == paneId;
+                    }) })
+                {
+                    return pane;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    void TerminalPage::_HtmSplitExisting(const std::string& sourcePaneId,
+                                         TerminalConnection::ITerminalConnection follower,
+                                         bool vertical)
+    {
+        auto sourcePane = _HtmFindPane(sourcePaneId);
+        winrt::com_ptr<Tab> tabImpl;
+        if (sourcePane)
+        {
+            for (const auto& tab : _tabs)
+            {
+                if (const auto candidate{ _GetTabImpl(tab) })
+                {
+                    if (candidate->GetRootPane()->_FindPane([&](const auto& p) { return p == sourcePane; }))
+                    {
+                        tabImpl = candidate;
+                        break;
+                    }
+                }
+            }
+            sourcePane->SetActive();
+        }
+        else
+        {
+            tabImpl = _GetFocusedTabImpl();
+        }
+        auto newPane = _MakeTerminalPane(nullptr, tabImpl ? *tabImpl : nullptr, follower);
+        const auto direction = vertical ? SplitDirection::Right : SplitDirection::Down;
+        _SplitPane(tabImpl, direction, 0.5f, newPane);
+    }
+
+    void TerminalPage::_HtmNewTab(TerminalConnection::ITerminalConnection follower)
+    {
+        winrt::TerminalApp::Tab sourceTab{ nullptr };
+        if (const auto focused{ _GetFocusedTabImpl() })
+        {
+            sourceTab = *focused;
+        }
+        auto newPane = _MakeTerminalPane(nullptr, sourceTab, follower);
+        _CreateNewTabFromPane(newPane);
+    }
+
+    void TerminalPage::_HtmClosePane(const std::string& paneId)
+    {
+        if (auto pane{ _HtmFindPane(paneId) })
+        {
+            if (const auto control{ pane->GetTerminalControl() })
+            {
+                if (const auto follower{ control.Connection().try_as<HtmFollowerConnection>() })
+                {
+                    follower->SetSuppressClosePacket(true);
+                }
+            }
+            _HandleClosePaneRequested(pane);
+        }
     }
 }
