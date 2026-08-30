@@ -125,6 +125,7 @@ class ScreenBufferTests
     TEST_METHOD(VtSoftResetCursorPosition);
     TEST_METHOD(VtSoftResetAltBufferCursorState);
     TEST_METHOD(VtSoftResetCharacterSets);
+    TEST_METHOD(VtRestoreCharacterSets);
 
     TEST_METHOD(VtScrollMarginsNewlineColor);
 
@@ -1699,6 +1700,130 @@ void ScreenBufferTests::VtSoftResetCharacterSets()
 
     Log::Comment(L"Erase the soft font");
     stateMachine.ProcessString(L"\x1bP0;0;2{ @\x1b\\");
+}
+
+void ScreenBufferTests::VtRestoreCharacterSets()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    auto verifyTextTranslation = [&](auto sourceText, std::wstring_view expectedText, auto comment) {
+        tbi.GetCursor().SetPosition({ 0, 0 });
+        stateMachine.ProcessString(sourceText);
+        const auto& row = tbi.GetRowByOffset(0);
+        const auto actualText = row.GetText().substr(0, expectedText.length());
+        VERIFY_ARE_EQUAL(expectedText, actualText, comment);
+    };
+
+    Log::Comment(L"Enable GR translation");
+    stateMachine.ProcessString(L"\x1b%@");
+    auto returnToUTF8 = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b%G"); });
+
+    constexpr auto LS0 = L"\x0f";
+    constexpr auto LS1 = L"\x0e";
+    constexpr auto LS2 = L"\x1bn";
+    constexpr auto LS3 = L"\x1bo";
+    constexpr auto LS2R = L"\x1b}";
+    constexpr auto LS3R = L"\x1b|";
+
+    constexpr auto DECSC = L"\x1b\x37";
+    constexpr auto DECRC = L"\x1b\x38";
+
+    // Confirm that DECRC restores character sets that have been changed.
+
+    Log::Comment(L"Designate different charsets into all the G-sets");
+    stateMachine.ProcessString(L"\x1b(0"); // Special Graphics in G0
+    stateMachine.ProcessString(L"\x1b)&4"); // Cyrillic in G1
+    stateMachine.ProcessString(L"\x1b*\"4"); // Hebrew in G2
+    stateMachine.ProcessString(L"\x1b+\"?"); // Greek in G3
+
+    Log::Comment(L"Invoke G1 into GL and G3 into GR");
+    stateMachine.ProcessString(LS1);
+    stateMachine.ProcessString(LS3R);
+
+    Log::Comment(L"Save the charset state");
+    stateMachine.ProcessString(DECSC);
+
+    Log::Comment(L"Designate ASCII in all the G-sets");
+    stateMachine.ProcessString(L"\x1b(B"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b)B"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b*B"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+B"); // Designate into G3
+
+    Log::Comment(L"Invoke G0 into GL and G2 into GR");
+    stateMachine.ProcessString(LS0);
+    stateMachine.ProcessString(LS2R);
+
+    Log::Comment(L"Verify ASCII is in GL, GR, and all the G-sets");
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in GL");
+    verifyTextTranslation(L"âãäå", L"bcde", L"ASCII in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G0");
+
+    Log::Comment(L"Restore the charset state");
+    stateMachine.ProcessString(DECRC);
+
+    Log::Comment(L"Verify the original charsets are restored");
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in GL (GL = G1)");
+    verifyTextTranslation(L"âãäå", L"βγδε", L"Greek in GR (GR = G3)");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"βγδε", L"Greek in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"גדהו", L"Hebrew in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G0");
+
+    // Confirm that DECRC restores a soft font that replaced a standard character set.
+
+    constexpr auto soft_bcde = L"\xEF62\xEF63\xEF64\xEF65"; // DECDLD private use codepoints
+
+    Log::Comment(L"Invoke G2 into GL and G3 into GR");
+    stateMachine.ProcessString(LS2);
+    stateMachine.ProcessString(LS3R);
+
+    Log::Comment(L"Save the charset state");
+    stateMachine.ProcessString(DECSC);
+
+    Log::Comment(L"Designate ASCII in all the G-sets");
+    stateMachine.ProcessString(L"\x1b(B"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b)B"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b*B"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+B"); // Designate into G3
+
+    Log::Comment(L"Invoke G0 into GL and G2 into GR");
+    stateMachine.ProcessString(LS0);
+    stateMachine.ProcessString(LS2R);
+
+    Log::Comment(L"Download a soft font into charset \"4 (Hebrew)");
+    stateMachine.ProcessString(L"\x1bP1;1;1{\"4~~~~~~~/~~~~~~~\x1b\\");
+
+    Log::Comment(L"Restore the charset state");
+    stateMachine.ProcessString(DECRC);
+
+    Log::Comment(L"Verify original charsets are restored with a soft font replacing Hebrew");
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in GL (GL = G2)");
+    verifyTextTranslation(L"âãäå", L"βγδε", L"Greek in GR (GR = G3)");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"βγδε", L"Greek in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G0");
+
+    Log::Comment(L"Restore everything with a hard reset");
+    stateMachine.ProcessString(L"\033c");
 }
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()
