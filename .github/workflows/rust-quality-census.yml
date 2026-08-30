@@ -1,0 +1,416 @@
+name: Quality Census C++ ↔ Rust
+
+on:
+  push:
+    branches:
+      - "rust/main"
+    paths:
+      - "rust/**"
+      - "tools/rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".github/workflows/rust-quality-census.yml"
+  pull_request:
+    branches:
+      - "rust/main"
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "rust/**"
+      - "tools/rust/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".github/workflows/rust-quality-census.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-quality-census-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  census:
+    name: structural + runtime quality census
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write
+    env:
+      QUALITY_ROOT: artifacts/quality-census
+      QUALITY_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      QUALITY_COVERAGE_TARGET: artifacts/cargo-target/llvm-cov-target
+      QUALITY_NODE_VERSION: 26.8.1
+
+    steps:
+      - name: Checkout measured revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Use current stable Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.QUALITY_NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Confirm Rust workspace and toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$QUALITY_ROOT/raw"
+          printf 'quality-census-started=%s\n' "$QUALITY_COMMIT_SHA" > "$QUALITY_ROOT/raw/workflow-started.txt"
+          test -f Cargo.toml
+          test -f Cargo.lock
+          test -f rust-toolchain.toml
+          test -d rust
+          python3 tools/rust/quality_census.py validate-tools \
+            --path tools/rust/quality-census-tools.json
+          node --version
+          rustup show
+          cargo metadata --no-deps --format-version 1 > /dev/null
+
+      - name: Restore pinned analysis tools
+        id: cache-tools-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: quality-census-tools-${{ runner.os }}-${{ hashFiles('tools/rust/quality-census-tools.json') }}
+          restore-keys: |
+            quality-census-tools-${{ runner.os }}-
+
+      - name: Install pinned analysis tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          eval "$(
+            python3 - <<'PY'
+          import json
+          with open("tools/rust/quality-census-tools.json", encoding="utf-8") as f:
+              data = json.load(f)
+          for key, value in data["tools"].items():
+              shell_key = key.upper().replace("-", "_")
+              print(f'{shell_key}_VERSION={value["version"]}')
+          PY
+          )"
+
+          rustup component add llvm-tools-preview
+
+          if ! cargo llvm-cov --version 2>/dev/null | grep -Fq "$CARGO_LLVM_COV_VERSION"; then
+            cargo install --locked --force --version "$CARGO_LLVM_COV_VERSION" cargo-llvm-cov
+          fi
+          if ! rust-code-analysis-cli --version 2>/dev/null | grep -Fq "$RUST_CODE_ANALYSIS_CLI_VERSION"; then
+            cargo install --locked --force --version "$RUST_CODE_ANALYSIS_CLI_VERSION" rust-code-analysis-cli
+          fi
+          if ! cargo modules --version 2>/dev/null | grep -Fq "$CARGO_MODULES_VERSION"; then
+            cargo install --locked --force --version "$CARGO_MODULES_VERSION" cargo-modules
+          fi
+
+          tmp_dir="$(mktemp -d)"
+          trap 'rm -rf "$tmp_dir"' EXIT
+          if ! tokei --version 2>/dev/null | grep -Fq "$TOKEI_VERSION" ||
+             ! tokei "$tmp_dir" --output json >/dev/null 2>&1; then
+            cargo install --locked --force --version "$TOKEI_VERSION" --features all tokei
+          fi
+
+      - name: Save pinned analysis tools
+        if: steps.cache-tools-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: ${{ steps.cache-tools-restore.outputs.cache-primary-key }}
+
+      - name: Restore instrumented Rust coverage build
+        id: cache-coverage-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.QUALITY_COVERAGE_TARGET }}
+          key: quality-census-llvm-cov-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ github.event.pull_request.head.sha || github.sha }}
+          restore-keys: |
+            quality-census-llvm-cov-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}-
+
+      - name: Record tool versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$QUALITY_ROOT/raw"
+          {
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "rustc=$(rustc --version)"
+            echo "cargo=$(cargo --version)"
+            echo "cargo-llvm-cov=$(cargo llvm-cov --version)"
+            echo "rust-code-analysis-cli=$(rust-code-analysis-cli --version)"
+            echo "tokei=$(tokei --version)"
+            echo "cargo-modules=$(cargo modules --version)"
+            echo "python=$(python3 --version)"
+            echo "pwsh=$(pwsh --version)"
+          } > "$QUALITY_ROOT/raw/tool-versions.txt"
+
+      - name: Derive comparable C++ ↔ Rust scope from ownership maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rust/quality_census.py scope --artifact-root "$QUALITY_ROOT"
+
+      - name: Capture authoritative R08 functional census
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          pwsh -NoProfile -File ./tools/rust/Test-MicrosoftGlobalTestInventory.ps1 2>&1 \
+            | tee "$QUALITY_ROOT/raw/functional-global.log"
+          pwsh -NoProfile -File ./tools/rust/Test-R08FunctionalDebt.ps1 \
+            -JsonPath "$QUALITY_ROOT/raw/functional-debt.json" 2>&1 \
+            | tee "$QUALITY_ROOT/raw/functional-debt.log"
+
+      - name: Measure Rust runtime coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Cache only cargo-llvm-cov's instrumented build tree. Profile evidence is always
+          # removed before a new sample so incremental compilation cannot contaminate coverage.
+          mkdir -p "$QUALITY_COVERAGE_TARGET"
+          find "$QUALITY_COVERAGE_TARGET" -type f \
+            \( -name '*.profraw' -o -name '*.profdata' \) -delete
+          cargo llvm-cov --workspace --all-targets --locked --no-clean
+          cargo llvm-cov report \
+            --json \
+            --ignore-filename-regex '(^|/)rust/[^/]+/tests/' \
+            --output-path "$QUALITY_ROOT/raw/coverage.json"
+          cargo llvm-cov report \
+            --lcov \
+            --ignore-filename-regex '(^|/)rust/[^/]+/tests/' \
+            --output-path "$QUALITY_ROOT/raw/coverage.lcov"
+          cargo llvm-cov report \
+            --html \
+            --ignore-filename-regex '(^|/)rust/[^/]+/tests/' \
+            --output-dir "$QUALITY_ROOT/coverage-html"
+
+      - name: Remove runtime coverage profiles from build cache
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$QUALITY_COVERAGE_TARGET"
+          find "$QUALITY_COVERAGE_TARGET" -type f \
+            \( -name '*.profraw' -o -name '*.profdata' \) -delete
+
+      - name: Check coverage build cache content
+        id: coverage-cache-state
+        if: always()
+        shell: bash
+        run: |
+          if find "$QUALITY_COVERAGE_TARGET" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+            echo "has-content=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-content=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Save instrumented Rust coverage build
+        if: always() && steps.cache-coverage-restore.outputs.cache-hit != 'true' && steps.coverage-cache-state.outputs.has-content == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.QUALITY_COVERAGE_TARGET }}
+          key: ${{ steps.cache-coverage-restore.outputs.cache-primary-key }}
+
+      - name: Measure LOC, complexity, maintainability and Halstead
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in \
+            rca-rust-workspace \
+            rca-rust-comparable \
+            rca-cpp-comparable \
+            rca-rust-production \
+            rca-rust-tests
+          do
+            mkdir -p "$QUALITY_ROOT/raw/$dir"
+          done
+
+          rust-code-analysis-cli -m -p rust \
+            -O json -o "$QUALITY_ROOT/raw/rca-rust-workspace"
+          rust-code-analysis-cli -m -p "$QUALITY_ROOT/staging/rust-comparable" \
+            -O json -o "$QUALITY_ROOT/raw/rca-rust-comparable"
+          rust-code-analysis-cli -m -p "$QUALITY_ROOT/staging/cpp-comparable" \
+            -O json -o "$QUALITY_ROOT/raw/rca-cpp-comparable"
+          rust-code-analysis-cli -m -p "$QUALITY_ROOT/staging/rust-production" \
+            -O json -o "$QUALITY_ROOT/raw/rca-rust-production"
+          rust-code-analysis-cli -m -p "$QUALITY_ROOT/staging/rust-tests" \
+            -O json -o "$QUALITY_ROOT/raw/rca-rust-tests"
+
+      - name: Cross-check physical size with tokei
+        shell: bash
+        run: |
+          set -euo pipefail
+          tokei rust --output json > "$QUALITY_ROOT/raw/tokei-rust-workspace.json"
+          tokei "$QUALITY_ROOT/staging/rust-comparable" --output json \
+            > "$QUALITY_ROOT/raw/tokei-rust-comparable.json"
+          tokei "$QUALITY_ROOT/staging/cpp-comparable" --output json \
+            > "$QUALITY_ROOT/raw/tokei-cpp-comparable.json"
+
+      - name: Measure internal Rust coupling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rust/quality_census.py coupling --artifact-root "$QUALITY_ROOT"
+
+      - name: Build stable census and Step Summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/rust/quality_census.py aggregate \
+            --artifact-root "$QUALITY_ROOT" \
+            --output "$QUALITY_ROOT/quality-census.json" \
+            --summary "$QUALITY_ROOT/summary.md"
+          python3 -m json.tool "$QUALITY_ROOT/quality-census.json" >/dev/null
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/quality-census")
+          data = json.loads((root / "quality-census.json").read_text(encoding="utf-8"))
+          cpp = data["cpp"]["comparable"]
+          rust = data["rust"]["comparable"]
+          runtime = data["rust"]["runtimeCoverage"]
+          comparative = data["comparative"]
+
+          def fmt(value):
+              if value is None:
+                  return "n/a"
+              if isinstance(value, int):
+                  return f"{value:,}"
+              if isinstance(value, float):
+                  return f"{value:,.2f}"
+              return str(value)
+
+          executive = "\n".join([
+              "## Executive C++ ↔ Rust comparison",
+              "",
+              "Comparable mapped product scope; lower complexity/effort and higher Maintainability Index are favorable.",
+              "",
+              "| Metric | C++ | Rust | Rust/C++ / delta |",
+              "|---|---:|---:|---:|",
+              f"| Runtime line coverage | not measured | {fmt(runtime['lines']['percent'])}% | — |",
+              f"| LLOC | {fmt(cpp['loc']['lloc'])} | {fmt(rust['loc']['lloc'])} | {fmt(comparative['effectiveCodeCompression']['rustToCppLlocRatio'])} |",
+              f"| SLOC | {fmt(cpp['loc']['sloc'])} | {fmt(rust['loc']['sloc'])} | {fmt(rust['loc']['sloc'] / cpp['loc']['sloc'])} |",
+              f"| Cyclomatic mean | {fmt(cpp['cyclomatic']['mean'])} | {fmt(rust['cyclomatic']['mean'])} | {fmt(comparative['cyclomaticRatio']['mean'])} |",
+              f"| Cyclomatic p95 | {fmt(cpp['cyclomatic']['p95'])} | {fmt(rust['cyclomatic']['p95'])} | {fmt(comparative['cyclomaticRatio']['p95'])} |",
+              f"| Cognitive mean | {fmt(cpp['cognitive']['mean'])} | {fmt(rust['cognitive']['mean'])} | {fmt(comparative['cognitiveRatio']['mean'])} |",
+              f"| Cognitive p95 | {fmt(cpp['cognitive']['p95'])} | {fmt(rust['cognitive']['p95'])} | {fmt(comparative['cognitiveRatio']['p95'])} |",
+              f"| Maintainability Index | {fmt(cpp['maintainabilityIndex']['weightedMeanByLloc'])} | {fmt(rust['maintainabilityIndex']['weightedMeanByLloc'])} | Δ {fmt(comparative['maintainability']['miDelta'])} |",
+              f"| Halstead effort | {fmt(cpp['halstead']['totalEffort'])} | {fmt(rust['halstead']['totalEffort'])} | {fmt(comparative['maintainability']['halsteadEffortRatio'])} |",
+              f"| Files in comparable scope | {fmt(cpp['files'])} | {fmt(rust['files'])} | — |",
+              "",
+              "C++ runtime coverage remains **unavailable/not measured** because the comparable Windows-native owners do not currently share a proportional instrumented runtime-coverage pipeline with the Ubuntu Rust job. Microsoft contractual parity remains the cross-language functional reference.",
+          ])
+
+          summary_path = root / "summary.md"
+          summary = summary_path.read_text(encoding="utf-8")
+          marker = "\n## Functional parity"
+          if marker not in summary:
+              raise RuntimeError("summary.md lacks Functional parity insertion point")
+          summary = summary.replace(marker, f"\n{executive}\n{marker}", 1)
+          summary_path.write_text(summary, encoding="utf-8")
+          PY
+          cat "$QUALITY_ROOT/summary.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload machine-readable census and raw evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-quality-census-${{ github.run_id }}
+          path: artifacts/quality-census/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Prune superseded Quality Census caches on this ref
+        if: success() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUALITY_CACHE_REF: ${{ github.ref }}
+          QUALITY_TOOLS_CACHE_KEY: ${{ steps.cache-tools-restore.outputs.cache-primary-key }}
+          QUALITY_COVERAGE_CACHE_KEY: ${{ steps.cache-coverage-restore.outputs.cache-primary-key }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          ref = os.environ["QUALITY_CACHE_REF"]
+          keep_keys = {
+              os.environ["QUALITY_TOOLS_CACHE_KEY"],
+              os.environ["QUALITY_COVERAGE_CACHE_KEY"],
+          }
+          prefixes = ("quality-census-tools-", "quality-census-llvm-cov-")
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          api = f"https://api.github.com/repos/{repo}/actions/caches"
+          stale = []
+          page = 1
+
+          while True:
+              query = urlencode({"ref": ref, "per_page": 100, "page": page})
+              request = Request(f"{api}?{query}", headers=headers)
+              with urlopen(request) as response:
+                  payload = json.load(response)
+              caches = payload.get("actions_caches", [])
+              stale.extend(
+                  cache
+                  for cache in caches
+                  if cache["key"].startswith(prefixes) and cache["key"] not in keep_keys
+              )
+              if len(caches) < 100:
+                  break
+              page += 1
+
+          deleted = 0
+          freed_bytes = 0
+          for cache in stale:
+              request = Request(f"{api}/{cache['id']}", headers=headers, method="DELETE")
+              try:
+                  with urlopen(request) as response:
+                      response.read()
+              except HTTPError as exc:
+                  if exc.code == 404:
+                      continue
+                  raise
+              deleted += 1
+              freed_bytes += int(cache.get("size_in_bytes", 0))
+              print(f"Deleted stale Quality Census cache: {cache['key']} ({cache['id']})")
+
+          freed_mib = freed_bytes / (1024 * 1024)
+          print(f"Kept current Quality Census cache keys: {sorted(keep_keys)}")
+          print(f"Pruned {deleted} stale cache(s) from {ref}; freed {freed_mib:.1f} MiB.")
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with Path(summary).open("a", encoding="utf-8") as stream:
+                  stream.write(
+                      f"\n## Quality Census cache hygiene\n\n"
+                      f"Pruned **{deleted}** superseded cache(s) from `{ref}`, "
+                      f"freeing **{freed_mib:.1f} MiB**. Only the current tools and "
+                      f"coverage keys were retained for this ref.\n"
+                  )
+          PY

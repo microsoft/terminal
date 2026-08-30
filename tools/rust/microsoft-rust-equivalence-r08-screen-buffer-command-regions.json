@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer command-region checkpoint: safe Rust owns OSC 133 prompt/command/output boundary state, command capture across presentation controls and wrapped rows, scrollbar mark placement, and prompt/command/output extents.",
+  "expectedCoveragePriority": 230,
+  "expectedCoverage": {
+    "host": {"Exact":177,"Partial":82,"Platform-only":5,"Missing":67}
+  },
+  "expectedGlobalCoveragePriority": 230,
+  "expectedGlobalCoverage": {"Exact":581,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":105},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SimpleMarkCommand","coverage":"Exact","rustWitnesses":["microsoft_simple_mark_command_contract"],"notes":"CommandRegionState owns OSC 133 A/B/C/D region transitions, prompt-row scrollbar metadata, completed plus active command enumeration, and command text capture that excludes presentation-only controls such as the Microsoft SGR-in-command vector."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SimpleWrappedCommand","coverage":"Exact","rustWitnesses":["microsoft_simple_wrapped_command_contract"],"notes":"The same owner tracks a 100-character command across physical row wrapping while keeping scrollbar metadata only on the original prompt row and preserving the logical command as one value."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SimplePromptRegions","coverage":"Exact","rustWitnesses":["microsoft_simple_prompt_regions_contract"],"notes":"The direct witness reproduces the Microsoft PWSH C:\\Windows prompt, Foo-bar command and three output rows, asserting cursor (17,4), two prompt marks, first extent start/end (0,0)/(17,0), commandEnd (24,0), outputEnd (22,3), and an open second prompt with no command/output end."}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer alternate-buffer checkpoint: safe Rust owns alternate-buffer replacement/linkage, cursor inheritance/restoration, active-buffer VT dispatch and RIS return-to-main semantics.",
+  "expectedCoveragePriority": 214,
+  "expectedCoverage": {
+    "host": {"Exact":127,"Partial":82,"Platform-only":5,"Missing":117}
+  },
+  "expectedGlobalCoveragePriority": 214,
+  "expectedGlobalCoverage": {"Exact":531,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":155},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SingleAlternateBufferCreationTest","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_single_alternate_buffer_creation_contract"],"notes":"Safe Rust creates a distinct alternate state linked to the persistent main owner and removes that transient linkage when returning to main."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"MultipleAlternateBufferCreationTest","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_multiple_alternate_buffer_creation_contract"],"notes":"Creating an alternate while already in alternate state replaces the transient alternate while retaining the same persistent main owner."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"MultipleAlternateBuffersFromMainCreationTest","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_multiple_alternates_from_main_contract"],"notes":"Repeated alternate creation from main replaces the previous transient alternate and inherits current main cursor state."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"AlternateBufferCursorInheritanceTest","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_alternate_cursor_inheritance_contract"],"notes":"Alternate creation inherits full cursor state; return-to-main preserves main position while carrying visibility/style/blinking back from the alternate."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAltBufferCursorState","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_alt_buffer_cursor_state_contract"],"notes":"Cursor size and type are copied into newly created alternate state."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAltBufferVtDispatching","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_alt_buffer_vt_dispatching_contract"],"notes":"VT writes issued through the main screen owner dispatch to the active alternate, moving only its cursor, attributes and text."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAltBufferRIS","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_alt_buffer_ris_contract"],"notes":"RIS exits alternate-screen state and restores main ownership."}
+  ]
+}

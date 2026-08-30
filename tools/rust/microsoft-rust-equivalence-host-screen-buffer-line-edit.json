@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer horizontal line-edit checkpoint: safe Rust owns DCH/ICH, insert/replace mode and DEC horizontal-margin column shifts with standard-erase attributes; the same checkpoint also certifies the already-implemented Clipboard extraction witnesses by promoting their canonical R06-A identities in place.",
+  "expectedCoveragePriority": 212,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 117,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 127
+    }
+  },
+  "expectedGlobalCoveragePriority": 212,
+  "expectedGlobalCoverage": {
+    "Exact": 521,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 165
+  },
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DeleteCharsNearEndOfLine","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_delete_chars_near_end_of_line_contract"],"notes":"delete_cells reproduces Microsoft's full 8x8 dx/count DCH regression matrix and always clears the complete newly exposed tail, eliminating the historical near-end artifact."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DeleteCharsNearEndOfLineSimpleFirstCase","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_delete_chars_near_end_simple_first_contract"],"notes":"Deleting D/E/F from ABCDEFG at column 3 yields ABCG followed only by blanks, with no stale cell artifact."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DeleteCharsNearEndOfLineSimpleSecondCase","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_delete_chars_near_end_simple_second_contract"],"notes":"Deleting C/D/E/F from ABCDEFG at column 2 yields ABG followed only by blanks, matching the second fixed regression vector."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"InsertChars","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_insert_chars_contract"],"notes":"insert_cells covers middle, right-edge and over-width ICH for both active horizontal margins and the whole row, preserving outside content and using standard-erase attributes for inserted blanks."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DeleteChars","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_delete_chars_contract"],"notes":"delete_cells covers middle, right-edge and over-width DCH under the same horizontal-margin activation matrix, preserving outside cells and standard-erasing the revealed tail."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"InsertReplaceMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_insert_replace_mode_contract"],"notes":"write_text uses terminal display-cell width and reproduces Microsoft's IRM enabled shift versus IRM disabled overwrite behavior while storing active attributes on new text."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"HorizontalScrollOperations","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_horizontal_scroll_operations_contract"],"notes":"insert/delete columns plus DEC Forward/Back Index reproduce DECIC, DECDC, DECFI and DECBI across the Microsoft 10..29 by 14..19 margin rectangle, including edge-pinned cursor behavior, standard-erase blanks and unchanged cells outside the margins."}
+  ]
+}

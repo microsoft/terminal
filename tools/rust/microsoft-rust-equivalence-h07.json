@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "H07 freezes the global source-method distribution after R06-B Server/UIA hardening. Five deterministic UiaTextRange contracts move from Platform-only to Exact through the migrated Rust range-state owner; retained COM/WRL/UIA behavior remains native.",
+  "expectedGlobalCoveragePriority": 7,
+  "expectedGlobalCoverage": {
+    "Exact": 164,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 487
+  }
+}

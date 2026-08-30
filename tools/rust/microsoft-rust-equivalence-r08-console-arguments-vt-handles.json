@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the remaining ConsoleArguments VT-handle semantics with a dedicated safe Rust owner and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 302,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 254,
+      "Partial": 72,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 302,
+  "expectedGlobalCoverage": {
+    "Exact": 696,
+    "Stronger": 11,
+    "Partial": 306,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "IsUsingVtHandleTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_is_using_vt_handle_contract"
+      ],
+      "notes": "The safe VtHandlePair owner reproduces Microsoft's HasVtHandles matrix: both input and output must be non-null and different from INVALID_HANDLE_VALUE."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "CombineVtPipeHandleTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_combine_vt_pipe_handle_contract"
+      ],
+      "notes": "The safe raw-command-line aggregate preserves externally supplied VT input/output handles unchanged while parsing a command line with no VT mode switch, matching Microsoft's constructor-plus-ParseCommandline observable."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "IsVtHandleValidTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_is_vt_handle_valid_contract"
+      ],
+      "notes": "The portable handle predicate treats both zero and pointer-sized -1 as invalid and positive handle values as valid, exactly matching Microsoft's IsValidHandle vectors."
+    }
+  ]
+}

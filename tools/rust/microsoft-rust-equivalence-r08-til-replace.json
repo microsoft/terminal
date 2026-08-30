@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the complete TIL ReplaceTests family with a safe Rust narrow-string and UTF-16 replacement owner plus direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 309,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 147,
+      "Partial": 47,
+      "Platform-only": 5
+    }
+  },
+  "expectedGlobalCoveragePriority": 309,
+  "expectedGlobalCoverage": {
+    "Exact": 829,
+    "Stronger": 11,
+    "Partial": 173,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceStrings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_strings_contract"],
+      "notes": "Safe Rust reproduces Microsoft's narrow-string copy replacement vectors foo→boo→b0000."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceStringAndViews",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_string_and_views_contract"],
+      "notes": "Rust &str views reproduce the same Microsoft narrow-string replacement behavior."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceStringsInplace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_strings_inplace_contract"],
+      "notes": "Mutable String replacement reproduces Microsoft's in-place foo→boo→b0000 transitions."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceStringAndViewsInplace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_string_and_views_inplace_contract"],
+      "notes": "Mutable String plus borrowed &str needle/replacement views reproduces the Microsoft in-place vectors."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceWstrings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_wstrings_contract"],
+      "notes": "UTF-16 code-unit replacement owns Microsoft's std::wstring copy semantics without Win32 dependencies."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceWstringAndViews",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_wstring_and_views_contract"],
+      "notes": "Borrowed UTF-16 slices reproduce Microsoft's wstring/wstring_view replacement vectors."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceWstringsInplace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_wstrings_inplace_contract"],
+      "notes": "Mutable UTF-16 storage reproduces Microsoft's in-place wide-string transitions."
+    },
+    {
+      "suite": "til",
+      "source": "ReplaceTests.cpp",
+      "method": "ReplaceWstringAndViewsInplace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_replace_wstring_and_views_inplace_contract"],
+      "notes": "Mutable UTF-16 storage plus borrowed needle/replacement slices reproduces Microsoft's final wide-view contract."
+    }
+  ]
+}

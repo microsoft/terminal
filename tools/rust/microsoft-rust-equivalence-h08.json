@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "H08 freezes the global Microsoft source-method distribution while hardening R07 Renderer ownership separately. Renderer has no standalone Microsoft TAEF suite in the 1,098-method census, so H08 adds method-level renderer classifications and source-drift protection without inventing global ledger movement.",
+  "expectedGlobalCoveragePriority": 8,
+  "expectedGlobalCoverage": {
+    "Exact": 164,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 487
+  }
+}

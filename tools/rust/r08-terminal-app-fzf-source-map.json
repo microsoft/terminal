@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "stage": "H09-R08-TerminalApp-FZF",
+  "sources": [
+    {
+      "sourcePath": "src/cascadia/ut_app/FzfTests.cpp",
+      "sourceBlobSha": "19d0562818ac0e59716e2d6af9008c85b337739c",
+      "role": "Microsoft contract vectors"
+    },
+    {
+      "sourcePath": "src/cascadia/fzf/fzf.cpp",
+      "sourceBlobSha": "6f2ac764cf9be6a5564662b6ef8af8ce4e83e9f6",
+      "role": "C++ product reference implementation"
+    }
+  ],
+  "rustOwner": "rust/terminal-app/src/fzf.rs",
+  "rustLibrary": "rust/terminal-app/src/lib.rs",
+  "rustContractTests": "rust/terminal-app/tests/microsoft_fzf_contract.rs",
+  "ignoredMicrosoftMethod": "German_CaseMisMatch_FoldResultsInMultipleCodePoints",
+  "expected": {
+    "sourceMethods": 39,
+    "exactMethods": 38,
+    "ignoredBacklog": 1,
+    "sourceBlobs": 2,
+    "rustWitnesses": 38
+  }
+}

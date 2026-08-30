@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host InputBuffer CP932 closeout: safe Rust now owns the final non-Unicode DBCS read contract by composing InputBuffer padding/order with a safe Windows Japanese code-page encoder.",
+  "expectedCoveragePriority": 247,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 244,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 247,
+  "expectedGlobalCoverage": {
+    "Exact": 686,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "InputBufferTests.cpp",
+      "method": "ReadingDbcsCharsPadsOutputArray",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_input_buffer_reading_dbcs_chars_pads_output_array_contract"
+      ],
+      "notes": "The safe CP932 adapter encodes Microsoft's U+3042 fixture to 0x82 0xA0 and InputBuffer::read_with_codepage expands the DBCS key into two records while preserving mouse/key ordering and original key metadata."
+    }
+  ]
+}

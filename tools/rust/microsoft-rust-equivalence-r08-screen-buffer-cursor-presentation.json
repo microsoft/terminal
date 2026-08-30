@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer cursor-presentation checkpoint: safe Rust composes existing DECTCEM visibility ownership with DEC private mode 12 cursor-blink state and reproduces Microsoft's independent and combined mode transitions.",
+  "expectedCoveragePriority": 221,
+  "expectedCoverage": {
+    "host": {"Exact":152,"Partial":82,"Platform-only":5,"Missing":92}
+  },
+  "expectedGlobalCoveragePriority": 221,
+  "expectedGlobalCoverage": {"Exact":556,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":130},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestCursorIsOn","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_is_on_contract"],"notes":"Safe Rust starts with blinking and visibility enabled, applies DEC private mode 12 without disturbing visibility, applies DECTCEM mode 25 without disturbing blinking, and handles Microsoft's final combined ?12;25 reset as two parser-normalized SetMode actions."}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests copy/inheritance seam: portable Rust owns deep-copy independence for Cascadia settings collections and clone-time reconstruction of the profiles.defaults inheritance graph.",
+  "expectedCoveragePriority": 122,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 117,
+      "Partial": 2,
+      "Missing": 38
+    }
+  },
+  "expectedGlobalCoveragePriority": 122,
+  "expectedGlobalCoverage": {
+    "Exact": 394,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 299
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestCopy",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_copy_contract"],
+      "notes": "CloneableCascadiaSettings deep-copies owned globals, profiles, color-scheme membership and the already-exact DeserializedActionMap; mutating WordDelimiters on the clone cannot alter the source aggregate."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestCloneInheritanceTree",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_clone_inheritance_tree_contract"],
+      "notes": "Profiles retain local JSON and resolve inherited tabTitle/snapOnInput through the graph's current profiles.defaults node. Deep copy duplicates that node and reconnects copied profiles to it, preserving HasXxx independence and the one-parent optimization for empty/missing profiles.defaults."
+    }
+  ]
+}

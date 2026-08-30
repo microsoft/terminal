@@ -1,0 +1,8 @@
+# Rust Base64 fixture tuples: encoded input plus expected decoded ASCII.
+\("(?:[A-Za-z0-9+/_-]*={0,})",\s*"(?:[A-Za-z0-9+/_-]*={0,})"\)
+
+# Rust Base64 decoder fixture calls.
+decode\("(?:[A-Za-z0-9+/_=-]+)"\)
+
+# Rust Base64 invalid-input fixture list.
+for invalid in \[.*\]

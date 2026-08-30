@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire the complete TerminalApi family, the first two TerminalBuffer aggregate contracts, and the complete residual Selection family after Microsoft-derived product/witness validation.",
+  "expectedCoveragePriority": 328,
+  "expectedCoverage": {
+    "terminalCore": {
+      "Exact": 36,
+      "Partial": 9,
+      "Platform-only": 7,
+      "UI-managed": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 328,
+  "expectedGlobalCoverage": {
+    "Exact": 901,
+    "Stronger": 11,
+    "Partial": 101,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "SetColorTableEntry",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_color_table_entry_contract"],
+      "notes": "Rust accepts Microsoft-valid color table indices 0, 128, and 255 and rejects 512 through the portable color-table owner."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "CursorVisibilityViaStateMachine",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_cursor_visibility_via_state_machine_contract"],
+      "notes": "Rust reproduces Microsoft's cursor blink/visibility state transitions, including simultaneous non-blinking hidden state."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "PrintStringOfSurrogatePairs",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_print_surrogate_pairs_makes_forward_progress"],
+      "notes": "Rust decodes and writes Microsoft's repeated surrogate-pair string while making deterministic forward progress beyond buffer width."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "AddHyperlink",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_add_hyperlink_contract"],
+      "notes": "Rust opens, retains through text output, resolves, and closes the hyperlink identity used by Microsoft."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "AddHyperlinkCustomId",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_add_hyperlink_custom_id_contract"],
+      "notes": "Rust reuses a hyperlink identity for the same custom id and URI exactly as Microsoft's contract requires."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "AddHyperlinkCustomIdDifferentUri",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_add_hyperlink_custom_id_different_uri_contract"],
+      "notes": "Rust assigns distinct hyperlink identities when a custom id is reused with a different URI while preserving both mappings."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "SetTaskbarProgress",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_taskbar_progress_contract"],
+      "notes": "Rust mirrors Microsoft's reset, invalid-state rejection, clamp-to-100, indeterminate preservation, and minimum-progress behavior."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalApiTest.cpp",
+      "method": "SetWorkingDirectory",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_api_working_directory_contract"],
+      "notes": "Rust accepts Microsoft-valid quoted/unquoted paths including Unicode and rejects empty or malformed quote payloads without mutating state."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestSimpleBufferWriting",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_simple_writing_contract"],
+      "notes": "Rust writes Microsoft's Hello World vector into the aggregate TextBuffer without moving the viewport."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "DontSnapToOutputTest",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_dont_snap_to_output_contract"],
+      "notes": "Rust preserves a scrolled-back viewport while output advances and only converges toward the mutable viewport as history saturates."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "OverflowTests",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_overflow_contract"],
+      "notes": "Rust clamps extreme selection coordinates for unit, word, and line expansion across normal and maximum scrollback heights."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "SelectAreaAfterScroll",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_after_scroll_uses_buffer_coordinates"],
+      "notes": "Rust converts viewport input to stable buffer coordinates before constructing the selection, reproducing Microsoft's scrolled selection geometry."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "SelectFromOutofBounds",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_from_out_of_bounds_contract"],
+      "notes": "Rust clamps anchors entering from each out-of-bounds direction to the Microsoft terminal boundary."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "SelectToOutOfBounds",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_to_out_of_bounds_contract"],
+      "notes": "Rust clamps moving selection endpoints on all four out-of-bounds directions while retaining pivot ordering."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "SelectWideGlyph_Trailing",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_trailing_wide_glyph_repairs_both_halves"],
+      "notes": "Rust repairs an anchor placed on the trailing half of Microsoft's wide glyph to cover the complete glyph."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "SelectionTest.cpp",
+      "method": "SelectWideGlyphsInBoxSelection",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_selection_wide_glyph_block_spans_expand_per_row"],
+      "notes": "Rust expands block-selection boundaries independently per row when either boundary intersects a trailing wide-glyph cell."
+    }
+  ]
+}

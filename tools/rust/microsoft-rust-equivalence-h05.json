@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "H05 freezes the global source-method distribution after TerminalCore hardening. Higher-priority hardening snapshots supersede historical global snapshots without changing per-suite expectations or witness validation.",
+  "expectedGlobalCoveragePriority": 5,
+  "expectedGlobalCoverage": {
+    "Exact": 136,
+    "Stronger": 11,
+    "Partial": 374,
+    "Platform-only": 68,
+    "UI-managed": 22,
+    "Missing": 487
+  }
+}

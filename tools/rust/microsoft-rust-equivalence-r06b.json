@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "description": "R06-B Interactivity Win32 reconciliation hardened by H07. The COM/WRL provider boundary remains native, while five endpoint/block-range contracts whose complete observable is implemented in UiaTextRangeBase deterministic state now have direct Rust owners and Microsoft-derived witnesses.",
+  "expectedCoverage": {
+    "interactivityWin32": { "Exact": 5, "Platform-only": 14 }
+  },
+  "entries": [
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "method": "DegenerateRangesDetected",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_interactivity_uia_degenerate_ranges_detected"],
+      "notes": "The Microsoft observable is exactly endpoint equality/non-equality. Rust owns the same normalized range state and degeneracy predicate without reproducing COM construction plumbing."
+    },
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "method": "CompareRange",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_interactivity_uia_compare_range"],
+      "notes": "The Microsoft method only asserts equality of start/end endpoint pairs before and after changing one endpoint; the Rust core reproduces that complete observable."
+    },
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "method": "CompareEndpoints",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_interactivity_uia_compare_endpoints"],
+      "notes": "Rust reproduces the Microsoft row-major endpoint distance contract, including the same start/start, end/end and signed two-cell comparison vectors."
+    },
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "method": "MoveEndpointByRange",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_interactivity_uia_move_endpoint_by_range"],
+      "notes": "All Microsoft endpoint-copy, self-collapse and crossing-collapse vectors are reproduced against the real Rust range owner."
+    },
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "method": "BlockRange",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_interactivity_uia_block_range_clone_preserves_state"],
+      "notes": "Rust defaults block-range state to false and preserves both false and true values across copy/clone state exactly as the regression contract requires."
+    }
+  ],
+  "sourceRules": [
+    {
+      "suite": "interactivityWin32",
+      "source": "UiaTextRangeTests.cpp",
+      "coverage": "Platform-only",
+      "rustWitnesses": [],
+      "notes": "The remaining 14 methods still materially exercise richer Windows UI Automation behavior: COM/WRL interfaces, TextUnit movement coupled to native TextBuffer word/glyph/document-end semantics, VARIANT/BSTR attributes, provider scrolling/window state, or generated UIA movement data. H07 does not create portable shadows for those retained boundaries."
+    }
+  ]
+}

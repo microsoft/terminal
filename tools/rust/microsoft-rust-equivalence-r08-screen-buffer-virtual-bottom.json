@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer virtual-bottom checkpoint: safe Rust owns cursor/viewport/virtual-bottom state transitions outside text reflow.",
+  "expectedCoveragePriority": 217,
+  "expectedCoverage": {
+    "host": {"Exact":139,"Partial":82,"Platform-only":5,"Missing":105}
+  },
+  "expectedGlobalCoveragePriority": 217,
+  "expectedGlobalCoverage": {"Exact":543,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":143},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"UpdateVirtualBottomWhenCursorMovesBelowIt","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_update_virtual_bottom_when_cursor_moves_below_it_contract"],"notes":"Safe Rust grows virtual bottom when output advances the cursor below it while preserving a manually scrolled viewport until explicitly returning to the virtual viewport."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"UpdateVirtualBottomWithSetConsoleCursorPosition","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_update_virtual_bottom_with_set_console_cursor_position_contract"],"notes":"API cursor positioning restores the virtual viewport for in-range positions and rebases virtual bottom only when moving above or below the virtual range."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"UpdateVirtualBottomAfterInternalSetViewportSize","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_update_virtual_bottom_after_internal_set_viewport_size_contract"],"notes":"Internal viewport-height changes preserve virtual bottom unless the resize crosses through it, at which point viewport bottom and virtual bottom realign."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DontChangeVirtualBottomWithOffscreenLinefeed","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_dont_change_virtual_bottom_with_offscreen_linefeed_contract"],"notes":"An offscreen line feed that remains above virtual bottom advances the cursor without perturbing virtual-bottom state."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DontChangeVirtualBottomAfterResizeWindow","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_dont_change_virtual_bottom_after_resize_window_contract"],"notes":"Window-resize VT changes viewport dimensions without implicitly rebasing an existing virtual bottom."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DontChangeVirtualBottomWithMakeCursorVisible","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_dont_change_virtual_bottom_with_make_cursor_visible_contract"],"notes":"Making the cursor visible scrolls the viewport only as far as needed and preserves virtual bottom both above and below the cursor."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"RetainHorizontalOffsetWhenMovingToBottom","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_retain_horizontal_offset_when_moving_to_bottom_contract"],"notes":"Returning to the virtual viewport restores its vertical origin without losing the existing horizontal viewport offset."}
+  ]
+}

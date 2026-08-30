@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer terminal-scrolling alternate checkpoint: safe Rust owns restore-down viewport anchoring, cursor snap and active-buffer API targeting while preserving main state.",
+  "expectedCoveragePriority": 216,
+  "expectedCoverage": {
+    "host": {"Exact":132,"Partial":82,"Platform-only":5,"Missing":112}
+  },
+  "expectedGlobalCoveragePriority": 216,
+  "expectedGlobalCoverage": {"Exact":536,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":150},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"RestoreDownAltBufferWithTerminalScrolling","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_restore_down_alt_buffer_terminal_scrolling_contract"],"notes":"Safe Rust keeps the terminal-scrolling alternate viewport anchored at top zero and realigns virtual bottom to the active viewport through maximize and restore-down resizing."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SnapCursorWithTerminalScrolling","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_snap_cursor_terminal_scrolling_contract"],"notes":"Safe Rust distinguishes output viewport movement from mouse scrollback, preserves virtual bottom during manual scrollback and snaps the viewport to API cursor positioning under terminal scrolling."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ClearAlternateBuffer","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_clear_alternate_buffer_contract"],"notes":"Console clear and cursor-position API effects are routed to the active alternate even through main ownership, while main text and cursor state remain untouched."}
+  ]
+}

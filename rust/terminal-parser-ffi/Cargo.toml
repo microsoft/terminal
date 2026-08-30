@@ -1,0 +1,13 @@
+[package]
+name = "terminal-parser-ffi"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+terminal-parser = { path = "../terminal-parser" }
+
+[lints]
+workspace = true

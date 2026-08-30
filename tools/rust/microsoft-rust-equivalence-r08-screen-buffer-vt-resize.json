@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer VT-resize checkpoint: safe Rust owns CSI 8 t viewport/buffer-width coordination, comprehensive resize vectors, DECCOLM gating/reset side effects, and preservation of extended current attributes across both resize paths.",
+  "expectedCoveragePriority": 238,
+  "expectedCoverage": {
+    "host": {"Exact":206,"Partial":82,"Platform-only":5,"Missing":38}
+  },
+  "expectedGlobalCoveragePriority": 238,
+  "expectedGlobalCoverage": {"Exact":610,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":76},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtResize","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_resize_contract"],"notes":"VtResizeState applies CSI 8 t by retaining physical buffer height, resizing the safe buffer width and viewport to Microsoft's four concrete vectors, and treating 8;0;0t as an exact no-op."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtResizeComprehensive","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_resize_comprehensive_contract"],"notes":"The direct witness executes all 25 Microsoft dx/dy combinations around the 80x25 viewport and verifies exact requested viewport dimensions with matching buffer width and unchanged physical buffer height."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtResizeDECCOLM","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_resize_deccolm_contract"],"notes":"DECCOLM is inert until DECSET 40 enables column switching; enabled set/reset select 132/80 columns, preserve heights, clear vertical margins and home the relative cursor, while disabling DECSET 40 restores no-op behavior."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtResizePreservingAttributes","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_resize_preserving_attributes_contract"],"notes":"Both CSI 8 t and enabled DECCOLM round-trip 80/132-column widths without mutating the active RGB foreground/background/underline color, crossed-out, curly-underline or italic attributes."}
+  ]
+}

@@ -1,0 +1,22 @@
+[package]
+name = "terminal-app"
+version = "0.0.0"
+autotests = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[[test]]
+name = "microsoft_fzf_contract"
+path = "tests/microsoft_fzf_contract.rs"
+
+[[test]]
+name = "microsoft_local_terminal_app_commandline_contract"
+path = "tests/microsoft_local_terminal_app_commandline_clippy.rs"
+
+[[test]]
+name = "microsoft_local_terminal_app_filtered_command_contract"
+path = "tests/microsoft_local_terminal_app_filtered_command_contract.rs"

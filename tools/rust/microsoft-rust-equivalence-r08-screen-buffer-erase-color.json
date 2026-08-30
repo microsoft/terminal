@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer DECECM checkpoint: terminal-mode state selects active versus default erase colors and the complete Microsoft 20-operation erase matrix flows through the real Rust owners for viewport indexing, horizontal edits, vertical scrolling, EL/ED and rectangular erasure.",
+  "expectedCoveragePriority": 229,
+  "expectedCoverage": {
+    "host": {"Exact":174,"Partial":82,"Platform-only":5,"Missing":70}
+  },
+  "expectedGlobalCoveragePriority": 229,
+  "expectedGlobalCoverage": {"Exact":578,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":108},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"EraseColorMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_erase_color_mode_contract"],"notes":"TerminalModeState owns DECECM private mode 117 at the dispatch boundary: disabled passes active attributes into erase producers, enabled passes TextAttribute defaults. One direct Microsoft-derived witness runs both mode states across all 20 source vectors (LF, VT, FF, NEL, IND, RI, DECBI, DECFI, DECIC, DECDC, ICH, DCH, IL, DL, ECH, EL, ED, DECERA, SU, SD) through the real viewport-index, line-edit, vertical-scroll, screen-erase and rect-op owners and verifies the asserted blank cell carries standard-erase active colors or default attributes respectively."}
+  ]
+}

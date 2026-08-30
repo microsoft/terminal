@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "description": "R06-B audited server seams. H07 pins each audited C++ source blob so any upstream semantic change forces an explicit ownership re-audit instead of silently inheriting the previous split/native decision.",
+  "entries": [
+    {
+      "sourcePath": "src/server/ApiSorter.cpp",
+      "sourceBlobSha": "7e20b290f59dc33811ffc21bf38c01128289236a",
+      "ownership": "split",
+      "rustPath": "rust/terminal-host/src/api_sorter.rs",
+      "rustWitnesses": [
+        "canonical_layer_boundaries_are_accepted",
+        "zero_and_unknown_layers_are_rejected",
+        "api_index_must_fit_selected_layer",
+        "dispatch_plan_matches_cpp_offset_initialization",
+        "each_cpp_size_guard_has_a_distinct_failure",
+        "exact_boundaries_are_valid"
+      ],
+      "nativeBoundary": "Function-pointer dispatch, exception translation, NTSTATUS conversion, pending replies, and device I/O remain native."
+    },
+    {
+      "sourcePath": "src/server/ApiMessage.cpp",
+      "sourceBlobSha": "abb2a3edd3f05e7358ecc65de06c81829ae274f0",
+      "ownership": "split",
+      "rustPath": "rust/terminal-host/src/api_message_buffers.rs",
+      "rustWitnesses": [
+        "input_or_output_remainder_starts_at_current_offset",
+        "offset_past_descriptor_size_is_rejected",
+        "oversized_capacity_is_trimmed_only_when_more_than_half_is_unneeded",
+        "successful_release_writes_exact_completion_information",
+        "failed_status_or_missing_buffer_suppresses_device_write"
+      ],
+      "nativeBoundary": "Owned allocation and DeviceComm reads/writes remain native; Rust owns deterministic offset, capacity, and release planning."
+    },
+    {
+      "sourcePath": "src/server/ConsoleShimPolicy.cpp",
+      "sourceBlobSha": "5ca506bd9a7931bb34bbc1af366c50ab966285e5",
+      "ownership": "split",
+      "rustPath": "rust/terminal-host/src/console_shim_policy.rs",
+      "rustWitnesses": [
+        "cmd_is_ascii_case_insensitive",
+        "inbox_and_core_powershell_are_recognized",
+        "unrelated_executables_enable_no_shim",
+        "filename_only_and_forward_slashes_are_supported",
+        "empty_or_trailing_separator_is_not_a_known_client"
+      ],
+      "nativeBoundary": "Obtaining a process module filename from a Windows process HANDLE remains native; Rust owns deterministic filename classification."
+    },
+    {
+      "sourcePath": "src/server/ApiDispatchers.cpp",
+      "sourceBlobSha": "fc7d83d8cf2bc4e02df13c0e828b92b94bc9f213",
+      "ownership": "native",
+      "rustPath": null,
+      "rustWitnesses": [],
+      "nativeBoundary": "Server API routines mutate console globals, object handles, code pages, aliases/history, screen buffers, and asynchronous I/O. No safe Rust aggregate owns this dispatcher surface yet."
+    },
+    {
+      "sourcePath": "src/server/ApiDispatchersInternal.cpp",
+      "sourceBlobSha": "cc4e7be3cdb1e06afcfc2025de98cb14d937bdc9",
+      "ownership": "native",
+      "rustPath": null,
+      "rustWitnesses": [],
+      "nativeBoundary": "Internal server dispatch remains coupled to native console objects and the Windows server message path."
+    },
+    {
+      "sourcePath": "src/server/ConDrvDeviceComm.cpp",
+      "sourceBlobSha": "3d9ddba52b1c03c128a12e486af3a36a7d65038a",
+      "ownership": "native",
+      "rustPath": null,
+      "rustWitnesses": [],
+      "nativeBoundary": "ConDrv communication is a Windows device/handle I/O boundary and intentionally remains native."
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 final functional closeout for the Microsoft input parser C0 contract. Rust now owns all 32 C0 vectors, including the input-only trailing ESC ProcessString boundary rule, US-layout virtual-key/scan-code enrichment, Ctrl+C dispatch, Backspace DEL translation, Tab/Enter/Escape exceptions, and Ctrl/Shift modifier semantics.",
+  "expectedCoveragePriority": 338,
+  "expectedCoverage": {
+    "terminal": {
+      "Exact": 84,
+      "Stronger": 11,
+      "Partial": 0,
+      "Platform-only": 3,
+      "UI-managed": 0,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 338,
+  "expectedGlobalCoverage": {
+    "Exact": 957,
+    "Stronger": 11,
+    "Partial": 45,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "terminal",
+      "source": "InputEngineTest.cpp",
+      "method": "C0Test",
+      "coverage": "Exact",
+      "rustWitnesses": ["input_c0::tests::microsoft_input_engine_c0_test_matches_all_32_source_vectors"],
+      "notes": "The portable input owner reproduces Microsoft's complete 0x00-0x1f matrix. LayoutMappedInputDispatch supplies the deterministic US-layout VkKeyScanW/MapVirtualKeyW fixture fields, while process_input_utf16_chunk supplies Microsoft's input-only trailing ESC chunk-boundary behavior without changing output parser semantics."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer resize-integrity checkpoint: safe Rust owns traditional row-resize lifetime safety and preserves cursor presentation across both traditional and reflow screen-buffer resize paths.",
+  "expectedCoveragePriority": 241,
+  "expectedCoverage": {
+    "host": {"Exact":212,"Partial":82,"Platform-only":5,"Missing":32}
+  },
+  "expectedGlobalCoveragePriority": 241,
+  "expectedGlobalCoverage": {"Exact":616,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":70},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ResizeTraditionalDoesNotDoubleFreeAttrRows","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_resize_traditional_does_not_double_free_attr_rows_contract"],"notes":"ResizeIntegrityState routes wrap-disabled traditional shrinking through safely owned TextBuffer row storage. The direct witness reproduces Microsoft's one-row height shrink with attributed rows and completes successfully without aliased attribute-row lifetime state."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ResizeCursorUnchanged","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_resize_cursor_unchanged_contract"],"notes":"ResizeIntegrityState preserves CursorState presentation across both traditional and reflow resize strategies. The witness reproduces Microsoft's complete 2 x 5 x 5 strategy/dx/dy matrix and verifies cursor shape and size, while also proving the stronger full cursor state remains unchanged."}
+  ]
+}

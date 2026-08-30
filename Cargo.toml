@@ -1,0 +1,37 @@
+[workspace]
+resolver = "3"
+members = [
+    "rust/terminal-adapter",
+    "rust/terminal-app",
+    "rust/terminal-buffer",
+    "rust/terminal-core",
+    "rust/terminal-foundation",
+    "rust/terminal-host",
+    "rust/terminal-input",
+    "rust/terminal-parser",
+    "rust/terminal-parser-ffi",
+    "rust/terminal-renderer",
+    "rust/terminal-settings",
+]
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/ChicoDotNet/terminal"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Microsoft parity witnesses intentionally preserve source-vector shape,
+# case granularity, parameter layout, and source-contract attribution.
+# These structural preferences are not migration defects and changing them
+# solely to satisfy Clippy can make one-for-one parity harder to audit.
+too_many_lines = "allow"
+too_many_arguments = "allow"
+many_single_char_names = "allow"
+match_same_arms = "allow"
+needless_pass_by_value = "allow"

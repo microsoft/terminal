@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer saved-cursor checkpoint: safe Rust owns DECSC/DECRC persistence of cursor position, delayed wrap, text attributes, DEC G0 charset and DECOM-relative restore/clamping semantics.",
+  "expectedCoveragePriority": 220,
+  "expectedCoverage": {
+    "host": {"Exact":151,"Partial":82,"Platform-only":5,"Missing":93}
+  },
+  "expectedGlobalCoveragePriority": 220,
+  "expectedGlobalCoverage": {"Exact":555,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":131},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorSaveRestore","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_save_restore_contract"],"notes":"Safe Rust preserves position, delayed-wrap, TextAttribute and DEC special-graphics charset across repeated DECSC/DECRC; DECSTR resets the saved slot, and saved DECOM positions restore relative to the margins active at restore time with bottom/right clamping."}
+  ]
+}

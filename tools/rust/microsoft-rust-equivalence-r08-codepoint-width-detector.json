@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional closeout for the four Microsoft CodepointWidthDetectorTests.cpp contracts. Rust now owns the generated Unicode grapheme corpus, forward/reverse grapheme segmentation, stateful cross-chunk Grapheme/Wcswidth/Console measurement, and ambiguous-width policy. The generated Microsoft corpus is preserved byte-for-byte as a fixture and replayed through the Rust product owner rather than reconstructed.",
+  "expectedCoveragePriority": 335,
+  "expectedCoverage": {
+    "types": {
+      "Exact": 16,
+      "Partial": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 335,
+  "expectedGlobalCoverage": {
+    "Exact": 939,
+    "Stronger": 11,
+    "Partial": 63,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "types",
+      "source": "CodepointWidthDetectorTests.cpp",
+      "method": "GraphemeBreakTest",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_grapheme_break_test_replays_every_active_source_row"
+      ],
+      "notes": "The Rust integration witness consumes a byte-for-byte fixture of Microsoft's generated Unicode 16 grapheme corpus, parses every active source row, and verifies the exact UTF-16 cluster lengths in both forward and reverse traversal against TextMeasurementEngine. Rows intentionally disabled by Microsoft remain disabled in the copied source corpus, preserving source provenance and policy rather than reinterpreting the generated table."
+    },
+    {
+      "suite": "types",
+      "source": "CodepointWidthDetectorTests.cpp",
+      "method": "BasicGraphemes",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_basic_graphemes_match_forward_and_reverse_contract"
+      ],
+      "notes": "The Rust owner reproduces Microsoft's basic combining-mark grapheme boundaries in both directions with UTF-16 lengths preserved."
+    },
+    {
+      "suite": "types",
+      "source": "CodepointWidthDetectorTests.cpp",
+      "method": "ChunkedText",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_chunked_text_matches_all_three_measurement_modes"
+      ],
+      "notes": "The Rust stateful measurement owner reproduces Microsoft's cross-chunk forward and reverse contracts for Graphemes, Wcswidth, and Console modes, including delayed completion and Microsoft's reverse ZWJ joining semantics."
+    },
+    {
+      "suite": "types",
+      "source": "CodepointWidthDetectorTests.cpp",
+      "method": "AmbiguousWidthPolicy",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_ambiguous_width_policy_switches_arrow_width"
+      ],
+      "notes": "The Rust owner preserves the mutable ambiguous-width policy and observes the Microsoft narrow/wide switch through the same text-measurement surface."
+    }
+  ]
+}

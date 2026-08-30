@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 TerminalSettingsTests checkpoint: safe Rust owns binding-to-NewTerminalArgs projection, profile/default composition, color-scheme layering, title promotion and launch-position parsing. Six contracts are Exact; CommandLineToArgvW, NormalizeCommandLine and command-line profile matching are Partial only for their native argv memory layout or Win32 environment/SearchPath/filesystem adapter.",
+  "expectedCoveragePriority": 160,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 148,
+      "Partial": 9,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 160,
+  "expectedGlobalCoverage": {
+    "Exact": 425,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 261
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "TestTerminalArgsForBinding",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_test_terminal_args_for_binding_contract"],
+      "notes": "Rust reproduces all twelve ctrl+a..l binding vectors, split directions, NewTerminalArgs payloads, explicit/generated profile selection, defaults fallback and TerminalSettings commandline/title/directory/history composition."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "CommandLineToArgvW",
+      "coverage": "Partial",
+      "rustWitnesses": ["microsoft_terminal_settings_command_line_to_argv_w_contract"],
+      "notes": "Rust owns Windows command-line argument value and quoting semantics across 1..16 arguments. Microsoft's additional assertion that CommandLineToArgvW returns argv strings contiguously inside one HLOCAL block is a native API memory-layout property, not portable product behavior."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "NormalizeCommandLine",
+      "coverage": "Partial",
+      "rustWitnesses": ["microsoft_terminal_settings_normalize_command_line_contract"],
+      "notes": "Rust owns tokenization, progressive unquoted executable-candidate reconstruction, canonical executable substitution and NUL-separated argument projection. Environment expansion and SearchPath/filesystem canonicalization are injected through CommandLinePlatform rather than Win32."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "GetProfileForArgsWithCommandline",
+      "coverage": "Partial",
+      "rustWitnesses": ["microsoft_terminal_settings_get_profile_for_args_with_commandline_contract"],
+      "notes": "Rust reproduces all nine Microsoft vectors: case-insensitive longest-prefix selection, connectionType exclusion, invalid-path preservation and profiles.defaults fallback. Production executable/environment normalization remains delegated to the classified CommandLinePlatform seam."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "MakeSettingsForProfile",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_make_settings_for_profile_contract"],
+      "notes": "CreateWithProfile preserves each profile history size and CreateWithNewTerminalArgs(null) resolves the configured default profile."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "MakeSettingsForDefaultProfileThatDoesntExist",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_make_settings_for_default_profile_that_doesnt_exist_contract"],
+      "notes": "Validation retains two active profiles, records the two native warning observables, retargets the effective default to profile zero and successfully composes historySize=1."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "TestLayerProfileOnColorScheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_test_layer_profile_on_color_scheme_contract"],
+      "notes": "Rust applies scheme cursor color first and then profile cursorColor, reproducing all six Microsoft scheme/profile/default precedence vectors."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "TestCommandlineToTitlePromotion",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_test_commandline_to_title_promotion_contract"],
+      "notes": "Rust reproduces profile/title precedence and the exact quoted, unquoted, empty-first-component and leading-space command-line title promotion vectors."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "method": "TestInitialPositionParsing",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_settings_test_initial_position_parsing_contract"],
+      "notes": "LaunchPosition parsing reproduces single-value duplication, one-sided comma values, paired values and invalid-token omission for all six Microsoft vectors."
+    }
+  ]
+}

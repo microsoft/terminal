@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "description": "H10 re-audits R01-R08 completed Rust ownership. It promotes the already-fixed TerminalCore InvalidKeyEvent contract to Exact, records Microsoft's explicitly ignored multi-code-point FZF full-fold case as Partial rather than Missing, and supersedes per-suite/global coverage expectations without rewriting historical classification evidence.",
+  "expectedCoveragePriority": 10,
+  "expectedCoverage": {
+    "terminalCore": {
+      "Exact": 16,
+      "Partial": 25,
+      "Missing": 4,
+      "Platform-only": 7,
+      "UI-managed": 1
+    },
+    "terminalApp": {
+      "Exact": 38,
+      "Partial": 1,
+      "Missing": 13
+    }
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "InputTest.cpp",
+      "method": "InvalidKeyEvent",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_terminal_core_invalid_key_event_is_silent"
+      ],
+      "notes": "Commit 0e80c6b fixed the Microsoft VK 0/255, scan-code 123 vectors so both are silently unhandled. The direct Rust regression now reproduces the complete Microsoft observable."
+    },
+    {
+      "suite": "terminalApp",
+      "source": "FzfTests.cpp",
+      "method": "German_CaseMisMatch_FoldResultsInMultipleCodePoints",
+      "coverage": "Partial",
+      "rustWitnesses": [
+        "microsoft_terminal_app_fzf_german_case_match",
+        "microsoft_terminal_app_fzf_english_case_mismatch"
+      ],
+      "notes": "Microsoft marks this source method Ignore=true because the current C++ matcher does not implement full case folding where ß expands to ss. Rust materially owns German ß matching and ordinary case-insensitive folding, but likewise does not implement the multi-code-point expansion; the unsupported expansion remains explicit debt rather than an unclassified Missing row."
+    }
+  ],
+  "expectedGlobalCoveragePriority": 10,
+  "expectedGlobalCoverage": {
+    "Exact": 203,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 448
+  }
+}

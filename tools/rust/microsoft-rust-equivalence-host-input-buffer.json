@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host InputBuffer portable queue/coalescing checkpoint: safe Rust owns 19 of 20 Microsoft InputBufferTests contracts across insertion, coalescing, flush/read/peek, wait signaling, prepend/reinitialize, pause handling and stream de-coalescing. The CP_JAPANESE DBCS conversion contract remains Missing because actual Windows codepage conversion is still a platform responsibility.",
+  "expectedCoveragePriority": 173,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 69,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 175
+    }
+  },
+  "expectedGlobalCoveragePriority": 173,
+  "expectedGlobalCoverage": {
+    "Exact": 460,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 226
+  },
+  "entries": [
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanGetNumberOfReadyEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_get_number_of_ready_events_contract"],"notes":"Single writes increase the ready-event count and mixed key/menu storage reports the exact queue size."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanInsertIntoInputBufferIndividually","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_insert_individually_contract"],"notes":"Twelve individual writes preserve each event at the back of storage and report twelve ready events."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanBulkInsertIntoInputBuffer","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_bulk_insert_contract"],"notes":"Bulk insertion preserves all twelve menu records without individual-write coalescing."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"InputBufferCoalescesMouseEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_coalesces_mouse_events_contract"],"notes":"Consecutive MOUSE_MOVED events coalesce to the latest position, while an intervening key breaks coalescing."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"InputBufferDoesNotCoalesceBulkMouseEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_does_not_coalesce_bulk_mouse_events_contract"],"notes":"A bulk mouse batch is appended verbatim even after a prior single mouse event."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"InputBufferCoalescesKeyEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_coalesces_key_events_contract"],"notes":"Identical single key writes coalesce into one event whose repeat count equals the number of writes."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"InputBufferDoesNotCoalesceBulkKeyEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_does_not_coalesce_bulk_key_events_contract"],"notes":"Bulk key insertion bypasses coalescing and preserves all records individually."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"InputBufferDoesNotCoalesceSurrogatePairs","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_does_not_coalesce_surrogate_pairs_contract"],"notes":"UTF-16 surrogate code units never coalesce, including repeated low-surrogate events."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanFlushAllOutput","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_flush_all_output_contract"],"notes":"Flush clears all queued input and resets ready-event state."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanFlushAllButKeys","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_flush_all_but_keys_contract"],"notes":"FlushAllButKeys removes non-key records while preserving all key records in order."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanReadInput","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_read_input_contract"],"notes":"Normal reads return queued records in FIFO order and consume the requested records."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanPeekAtEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_peek_at_events_contract"],"notes":"Peek returns the same FIFO records without consuming storage."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"EmptyingBufferDuringReadSetsResetWaitEvent","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_emptying_read_resets_wait_event_contract"],"notes":"Consuming only part of the queue leaves the wait event signaled; consuming the remainder resets it."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanPrependEvents","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_prepend_events_contract"],"notes":"Prepend places a complete batch before existing records while preserving order within both batches."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"CanReinitializeInputBuffer","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_can_reinitialize_contract"],"notes":"Reinitialize restores the default input mode and empties queued state."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"HandleConsoleSuspensionEventsRemovesPauseKeys","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_suspension_removes_pause_keys_contract"],"notes":"Pause suspends output and is discarded; the next ordinary key resumes output and is also discarded."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"SystemKeysDontUnpauseConsole","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_system_keys_do_not_unpause_contract"],"notes":"Modifier/system keys remain queued while output is suspended and do not resume the console."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"StreamReadingDeCoalesces","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_stream_reading_decoalesces_contract"],"notes":"Stream reads emit one repeat while decrementing the stored repeat count in place."},
+    {"suite":"host","source":"InputBufferTests.cpp","method":"StreamPeekingDeCoalesces","coverage":"Exact","rustWitnesses":["microsoft_input_buffer_stream_peeking_decoalesces_contract"],"notes":"Stream peeks emit one repeat without mutating the stored coalesced repeat count."}
+  ]
+}

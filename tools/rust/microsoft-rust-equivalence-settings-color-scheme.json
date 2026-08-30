@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "description": "Modified-sandwich SettingsModel checkpoint: all seven Microsoft ColorScheme source contracts now have direct safe Rust ownership and Microsoft-derived witnesses, including parsing/round-trip, reference updates, collision forking, profile retargeting, fragments and repeated modified-name allocation.",
+  "expectedCoveragePriority": 34,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 22,
+      "Missing": 135
+    }
+  },
+  "expectedGlobalCoveragePriority": 34,
+  "expectedGlobalCoverage": {
+    "Exact": 299,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 396
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "ParseSimpleColorScheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_parse_simple_color_scheme"],
+      "notes": "The safe Rust ColorScheme owner parses Microsoft's full Campbell scheme including name, foreground/background, selection/cursor colors and all 16 table entries, then projects the same typed JSON object for the round-trip assertion."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "LayerColorSchemesOnArray",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_layer_color_schemes_on_array"],
+      "notes": "The safe Rust settings owner layers Microsoft's inbox Campbell scheme and distinct user Campbell Powershell scheme into one collection while preserving each foreground/background value and origin semantics."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "UpdateSchemeReferences",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_update_scheme_references"],
+      "notes": "The Rust owner updates locally-owned dark/light references in profile defaults and explicit profile appearances while inherited profiles observe the renamed parent value without acquiring a local Has flag; unrelated and one-sided light/dark references remain unchanged."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "LayerColorSchemesWithUserOwnedCollision",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_layer_user_owned_collision"],
+      "notes": "A user-modified collision with an inbox scheme is forked to '(modified)' with User origin while the stock scheme remains InBox; a user copy equivalent for Microsoft's merge purposes collapses to the inbox owner instead of creating a duplicate."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_collision_retargets_all_profiles"],
+      "notes": "Collision retargeting updates profile defaults, explicit profile references and unfocused appearances to the modified user scheme while inherited appearances receive the parent value without gaining local ownership, preserving Microsoft's HasDark/HasLight behavior."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "LayerColorSchemesWithUserOwnedCollisionWithFragments",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_collision_with_fragments"],
+      "notes": "Fragment schemes replace the inbox layer with Fragment origin; a later user collision forks only the collided fragment scheme, retargets user and fragment-profile light references, preserves an inherited fragment-profile dark reference, and leaves unrelated stock schemes untouched."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "method": "LayerColorSchemesWithUserOwnedMultipleCollisions",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_layer_multiple_user_collisions"],
+      "notes": "Modified-name allocation preserves an existing user-owned 'Campbell (modified)' and deterministically forks the colliding user Campbell copy to 'Campbell (modified 2)', with stock Campbell retained as InBox and both user schemes retaining User origin."
+    }
+  ]
+}

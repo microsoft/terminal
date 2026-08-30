@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host title-translation checkpoint: safe Rust closes Microsoft's data-driven TitleTests.cpp contract across non-filesystem titles, SystemRoot unexpansion and backslash substitution.",
+  "expectedCoveragePriority": 195,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 86,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 158
+    }
+  },
+  "expectedGlobalCoveragePriority": 195,
+  "expectedGlobalCoverage": {
+    "Exact": 490,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 196
+  },
+  "entries": [
+    {"suite":"host","source":"TitleTests.cpp","method":"TestTranslateConsoleTitle","coverage":"Exact","rustWitnesses":["microsoft_test_translate_console_title_contract"],"notes":"translate_console_title reproduces all 12 Microsoft data combinations: non-filesystem passthrough/substitution, case-insensitive SystemRoot unexpansion and filesystem backslash substitution without altering drive-colon semantics."}
+  ]
+}

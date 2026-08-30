@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ApiRoutines input-mode checkpoint: safe Rust owns Microsoft's SetConsoleInputModeImpl state machine across ordinary flags, extended flag preservation/clearing, invalid-mode reporting, insert/cursor transitions, cooked-read propagation and the PSReadLine compatibility scenario.",
+  "expectedCoveragePriority": 187,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 78,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 166
+    }
+  },
+  "expectedGlobalCoveragePriority": 187,
+  "expectedGlobalCoverage": {
+    "Exact": 482,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 204
+  },
+  "entries": [
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplValidNonExtended","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_valid_non_extended_contract"],"notes":"Ordinary processed/line/echo bits are stored exactly and succeed without changing console-global extended state."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplValidExtended","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_valid_extended_contract"],"notes":"ENABLE_EXTENDED_FLAGS applies quick-edit and auto-position outside the InputBuffer mode field."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplExtendedTurnOff","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_extended_turn_off_contract"],"notes":"With ENABLE_EXTENDED_FLAGS present, omitted quick-edit/auto-position bits clear their prior console-global state."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplInvalid","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_invalid_contract"],"notes":"Unknown bits are still stored while the API reports InvalidArgument."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplInsertNoCookedRead","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_insert_no_cooked_read_contract"],"notes":"Insert-mode transitions update console state and disable cursor double mode when the insert value changes without an active cooked read."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplInsertCookedRead","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_insert_cooked_read_contract"],"notes":"The same insert transition is propagated into active cooked-read state while preserving the cursor transition contract."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplEchoOnLineOff","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_echo_on_line_off_contract"],"notes":"Echo without line input is applied to InputBuffer mode but returns InvalidArgument."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeExtendedFlagBehaviors","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_extended_flag_behaviors_contract"],"notes":"Extended bits may be enabled without ENABLE_EXTENDED_FLAGS; absent extended bits are preserved unless ENABLE_EXTENDED_FLAGS authorizes clearing them."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiSetConsoleInputModeImplPSReadlineScenario","coverage":"Exact","rustWitnesses":["microsoft_api_set_console_input_mode_impl_ps_readline_scenario_contract"],"notes":"The 0x1F7 to 0x1E4 PSReadLine transition preserves insert/quick-edit/auto-position, stores echo-only ordinary mode and reports InvalidArgument because line input is absent."}
+  ]
+}

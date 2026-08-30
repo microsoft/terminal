@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer terminal-mode checkpoint: safe Rust owns coupled LNM state, DECSCNM color reversal, DECOM origin-relative cursor addressing over DEC margins and DECAWM cell-aware wrapping including wide-glyph boundary repair.",
+  "expectedCoveragePriority": 227,
+  "expectedCoverage": {
+    "host": {"Exact":169,"Partial":82,"Platform-only":5,"Missing":75}
+  },
+  "expectedGlobalCoveragePriority": 227,
+  "expectedGlobalCoverage": {"Exact":573,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":113},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetLineFeedMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_line_feed_mode_contract"],"notes":"TerminalModeState applies LNM as the same coupled observable Microsoft tests: set enables output newline-auto-return and TerminalInput line-feed mode, while reset disables both."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetScreenMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_screen_mode_contract"],"notes":"DECSCNM is owned as explicit screen-reversed state whose attribute-color resolution swaps foreground/background when set and restores the normal pair when reset."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetOriginMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_origin_mode_contract"],"notes":"CursorMovementState now owns DECOM: mode and margin changes home to the resolved origin, CUP/HVP coordinates become relative to active vertical/horizontal margins and clamp to their bottom-right edge, while reset addressing remains full-screen absolute."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetAutoWrapMode","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_auto_wrap_mode_contract"],"notes":"TerminalModeState reproduces Microsoft's 80-column DECAWM vectors: default/set wrap abc|def across rows, reset clamps repeated output to the final cell as abf, and wide emoji writes at the right edge are repaired or ignored without leaving half glyphs before the final narrow overwrite."}
+  ]
+}

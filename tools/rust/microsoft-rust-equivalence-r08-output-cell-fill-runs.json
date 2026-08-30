@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the remaining OutputCellIterator fill/run constructor family with a safe owned Rust iterator and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 303,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 266,
+      "Partial": 60,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 303,
+  "expectedGlobalCoverage": {
+    "Exact": 708,
+    "Stronger": 11,
+    "Partial": 294,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "CharacterFillDoubleWidth",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_character_fill_double_width_contract"],
+      "notes": "OutputCellRunIterator repeats one logical full-width character as a Leading/Trailing pair per requested source repeat, matching Microsoft's five-repeat Katakana vector."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "CharacterFillLimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_character_fill_limited_contract"],
+      "notes": "The safe fill owner emits exactly five Current-behavior narrow Q cells and then exhausts."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "CharacterFillUnlimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_character_fill_unlimited_contract"],
+      "notes": "An unlimited character fill remains productive after Microsoft's SHORT_MAX observation window."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "AttributeFillLimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_attribute_fill_limited_contract"],
+      "notes": "Attribute-only fill preserves text, emits StoredOnly behavior with the supplied legacy attribute, and exhausts at the requested limit."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "AttributeFillUnlimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_attribute_fill_unlimited_contract"],
+      "notes": "Unlimited StoredOnly attribute fill remains productive beyond SHORT_MAX with the Microsoft foreground-red/background-blue attribute."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "TextAndAttributeFillLimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_text_and_attribute_fill_limited_contract"],
+      "notes": "The owner emits exactly five Q cells with Stored text+attribute behavior and the supplied legacy color."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "TextAndAttributeFillUnlimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_text_and_attribute_fill_unlimited_contract"],
+      "notes": "Unlimited Stored text+attribute fill remains productive beyond SHORT_MAX."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "CharInfoFillLimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_char_info_fill_limited_contract"],
+      "notes": "Portable LegacyCharInfo projects Microsoft's Q plus legacy WORD attributes into five Stored output cells and then exhausts."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "CharInfoFillUnlimited",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_char_info_fill_unlimited_contract"],
+      "notes": "Unlimited LegacyCharInfo fill preserves Microsoft CHAR_INFO text/attribute semantics beyond SHORT_MAX without Win32 storage."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "LegacyColorDataRun",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_legacy_color_data_run_contract"],
+      "notes": "The materialized run projects Microsoft's four legacy WORD colors to StoredOnly cells in order and exhausts after the source span."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "LegacyCharInfoRun",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_legacy_char_info_run_contract"],
+      "notes": "The safe legacy CHAR_INFO run reproduces A-E with attributes 0-4, Stored behavior, source order, and finite exhaustion."
+    },
+    {
+      "suite": "host",
+      "source": "OutputCellIteratorTests.cpp",
+      "method": "OutputCellRun",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_output_cell_run_contract"],
+      "notes": "OwnedOutputCell run preserves Microsoft's five pre-materialized surrogate-pair cells, DBCS state, attributes and behavior exactly through one finite pass."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire adapter/kittyKeyboardProtocol.cpp::KeyPressTests after all 132 Microsoft data-source rows passed Rust CI and Quality Census through the deterministic French Standard keyboard-layout fixture.",
+  "expectedCoveragePriority": 332,
+  "expectedCoverage": {
+    "adapter": {
+      "Exact": 57,
+      "Partial": 14,
+      "Platform-only": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 332,
+  "expectedGlobalCoverage": {
+    "Exact": 925,
+    "Stronger": 11,
+    "Partial": 77,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  }
+}

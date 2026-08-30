@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer hyperlink checkpoint: safe Rust owns URI/custom-id hyperlink-map identity and lookup semantics.",
+  "expectedCoveragePriority": 218,
+  "expectedCoverage": {
+    "host": {"Exact":142,"Partial":82,"Platform-only":5,"Missing":102}
+  },
+  "expectedGlobalCoveragePriority": 218,
+  "expectedGlobalCoverage": {"Exact":546,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":140},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAddHyperlink","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_test_add_hyperlink_contract"],"notes":"Safe Rust allocates independent hyperlink ids and preserves URI lookup for hyperlinks without a custom id."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAddHyperlinkCustomId","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_test_add_hyperlink_custom_id_contract"],"notes":"The same custom-id/URI pair resolves to a stable hyperlink id while a different custom id remains independently addressable."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAddHyperlinkCustomIdDifferentUri","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_test_add_hyperlink_custom_id_different_uri_contract"],"notes":"A reused custom id does not alias distinct URIs; each custom-id/URI pair receives its own stable hyperlink id."}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host Clipboard implementation checkpoint. Safe Rust TextBuffer ownership and Microsoft-derived witnesses reproduce the block- and line-selection CopyRequest/GetPlainText behavior. Coverage promotion is recorded on the canonical R06-A identities, so this checkpoint remains implementation evidence only and intentionally carries no duplicate method entries.",
+  "entries": []
+}

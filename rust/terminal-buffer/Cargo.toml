@@ -1,0 +1,14 @@
+[package]
+name = "terminal-buffer"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+unicode-segmentation = "=1.12.0"
+unicode-width = "=0.2.0"
+
+[lints]
+workspace = true

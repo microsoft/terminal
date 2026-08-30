@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host search family checkpoint: safe Rust closes all 13 Microsoft SearchTests.cpp contracts through terminal-buffer matching plus terminal-host cursor/direction orchestration. ICU remains a native backend choice rather than a semantic dependency of the source contracts.",
+  "expectedCoveragePriority": 208,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 99,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 145
+    }
+  },
+  "expectedGlobalCoveragePriority": 208,
+  "expectedGlobalCoverage": {
+    "Exact": 503,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 183
+  },
+  "entries": [
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseSensitive","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_sensitive_contract"],"notes":"Literal AB search returns the four row-local x=0..2 spans in forward order and SearchSession advances with native wrap semantics."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseSensitiveJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_sensitive_japanese_contract"],"notes":"Literal U+304B search maps the wide glyph to x=2..4 on all four rows in forward order."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseInsensitive","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_insensitive_contract"],"notes":"Case-insensitive literal ab matches the AB source fixture and preserves cell spans."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseInsensitiveJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_insensitive_japanese_contract"],"notes":"Case-insensitive U+304B search preserves the same Japanese wide-cell spans."},
+    {"suite":"host","source":"SearchTests.cpp","method":"BackwardCaseSensitive","coverage":"Exact","rustWitnesses":["microsoft_search_backward_case_sensitive_contract"],"notes":"Reverse Reset starts on the final AB result and FindNext(true) walks rows 3→0."},
+    {"suite":"host","source":"SearchTests.cpp","method":"BackwardCaseSensitiveJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_backward_case_sensitive_japanese_contract"],"notes":"Reverse Japanese literal search starts on row 3 and preserves x=2..4 spans."},
+    {"suite":"host","source":"SearchTests.cpp","method":"BackwardCaseInsensitive","coverage":"Exact","rustWitnesses":["microsoft_search_backward_case_insensitive_contract"],"notes":"Reverse case-insensitive literal search reproduces native result order and wrap semantics."},
+    {"suite":"host","source":"SearchTests.cpp","method":"BackwardCaseInsensitiveJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_backward_case_insensitive_japanese_contract"],"notes":"Reverse case-insensitive Japanese search reproduces the four native spans."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseSensitiveRegex","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_sensitive_regex_contract"],"notes":"The portable regex subset accepts [BA]{2} and returns the same AB spans as ICU."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseSensitiveRegexJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_sensitive_regex_japanese_contract"],"notes":"The portable regex subset accepts the Microsoft \\x{3041}-\\x{304c} class range and maps U+304B to x=2..4."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseInsensitiveRegex","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_insensitive_regex_contract"],"notes":"Regular-expression mode plus CaseInsensitive reproduces the native ab→AB matches."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseInsensitiveRegexJapanese","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_insensitive_regex_japanese_contract"],"notes":"Regular-expression plus CaseInsensitive preserves the Japanese range matches."},
+    {"suite":"host","source":"SearchTests.cpp","method":"ForwardCaseSensitiveRegexWithCaseInsensitiveFlag","coverage":"Exact","rustWitnesses":["microsoft_search_forward_case_sensitive_regex_with_case_insensitive_flag_contract"],"notes":"A leading (?i) inline regex modifier enables case-insensitive matching exactly as the source contract expects."}
+  ]
+}

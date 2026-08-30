@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer DECALN checkpoint: safe Rust owns viewport-local alignment fill, cursor home, margin reset and standard-erase attribute reset without mutating rows outside the viewport.",
+  "expectedCoveragePriority": 222,
+  "expectedCoverage": {
+    "host": {"Exact":153,"Partial":82,"Platform-only":5,"Missing":91}
+  },
+  "expectedGlobalCoveragePriority": 222,
+  "expectedGlobalCoverage": {"Exact":557,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":129},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScreenAlignmentPattern","coverage":"Exact","rustWitnesses":["microsoft_screen_alignment_pattern_contract"],"notes":"Safe Rust reproduces DECALN: only active viewport rows become E with default attributes, rows outside the viewport remain unchanged, the cursor returns to viewport home, vertical/horizontal margins clear, and active rendition/meta attributes reset to standard-erase while preserving colors."}
+  ]
+}

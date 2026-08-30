@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the effective TIL OperatorTests point/size cross-operator family with a safe Rust TilSize owner and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 308,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 139,
+      "Partial": 55,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 308,
+  "expectedGlobalCoverage": {
+    "Exact": 821,
+    "Stronger": 11,
+    "Partial": 181,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "PointAddSize",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_point_size_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise point plus size vector (5,10)+(2,4)=(7,14)."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "PointSubSize",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_point_size_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise point minus size vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "PointMulSize",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_point_size_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise point times size vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "PointDivSize",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_point_size_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's integer component-wise point divided by size vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "SizeAddPoint",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_size_point_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise size plus point vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "SizeSubPoint",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_size_point_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise size minus point vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "SizeMulPoint",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_size_point_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's component-wise size times point vector."
+    },
+    {
+      "suite": "til",
+      "source": "OperatorTests.cpp",
+      "method": "SizeDivPoint",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_size_point_operator_contract"],
+      "notes": "Safe Rust reproduces Microsoft's integer component-wise size divided by point vector."
+    }
+  ]
+}

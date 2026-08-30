@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer cursor-movement checkpoint: safe Rust owns portable CUU/CUD/CUF/CUB/CNL/CPL/HPR/VPR movement and DEC margin clamping semantics.",
+  "expectedCoveragePriority": 219,
+  "expectedCoverage": {
+    "host": {"Exact":150,"Partial":82,"Platform-only":5,"Missing":94}
+  },
+  "expectedGlobalCoveragePriority": 219,
+  "expectedGlobalCoverage": {"Exact":554,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":132},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorUpDownAcrossMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_up_down_across_margins_contract"],"notes":"Safe Rust clamps CUU/CUD to DECSTBM when a movement from outside crosses into or through the vertical margin region."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorUpDownOutsideMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_up_down_outside_margins_contract"],"notes":"CUU/CUD movement that remains wholly outside DECSTBM is not spuriously clamped into the margin region."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorUpDownExactlyAtMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_up_down_exactly_at_margins_contract"],"notes":"Movement starting exactly on the top/bottom vertical margins clamps outward motion while permitting inward motion."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorLeftRightAcrossMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_left_right_across_margins_contract"],"notes":"With DECLRMM active, CUF/CUB clamp large movements to the right/left horizontal margin respectively."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorLeftRightOutsideMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_left_right_outside_margins_contract"],"notes":"Horizontal movement that stays outside DECLRMM margins remains outside rather than snapping into the margin region."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorLeftRightExactlyAtMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_left_right_exactly_at_margins_contract"],"notes":"Movement exactly on horizontal margins clamps outward motion while allowing movement back into the region."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorNextPreviousLine","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_next_previous_line_contract"],"notes":"CNL/CPL use vertical-margin clamping and reset X to the active left horizontal margin only when starting inside the vertical region; outside the region they reset to column zero."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CursorPositionRelative","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_cursor_position_relative_contract"],"notes":"HPR/VPR intentionally ignore DEC margins and clamp only to the full row/viewport bounds, including oversized counts."}
+  ]
+}

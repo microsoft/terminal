@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "description": "Modified-sandwich SettingsModel checkpoint: all ProfileTests contracts now have direct safe Rust ownership and Microsoft-derived witnesses across inheritance/local ownership, nullable icon/environment semantics, strict/generated identity, profile-array reconciliation, prohibited profiles.defaults identity fields, legacy shell fixups, environment validation and deterministic duplication semantics.",
+  "expectedCoveragePriority": 44,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 35,
+      "Missing": 122
+    }
+  },
+  "expectedGlobalCoveragePriority": 44,
+  "expectedGlobalCoverage": {
+    "Exact": 312,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 383
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "SettingInheritanceFallback",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_setting_inheritance_fallback"],
+      "notes": "The safe Rust ProfileSettings owner resolves historySize from profiles.defaults, retains the built-in snapOnInput=true fallback when no layer defines it, and lets an explicit profile value override only that child layer."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "ClearSettingRestoresInheritance",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_clear_setting_restores_inheritance"],
+      "notes": "A child profile initially owns layered historySize/tabTitle values; clearing each local value flips HasXxx false and resolves the corresponding parent value without copying it into the child layer."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "HasSettingAtSpecificLayer",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_has_setting_at_specific_layer"],
+      "notes": "The Rust owner distinguishes local ownership from inherited resolution: explicit profile historySize reports Has=true, inherited defaults historySize/tabTitle report Has=false on children, and profiles.defaults itself retains Has=true for its locally-defined value."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "LayerProfileIcon",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_layer_icon_preserves_null_and_missing_semantics"],
+      "notes": "The safe Rust Profile owner reproduces Microsoft's nullable icon layering: an explicit null clears the icon, an omitted icon preserves the current layer result, and a later string replaces it."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "ProfileWithEnvVars",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_with_env_vars_preserves_entries_verbatim"],
+      "notes": "The safe Rust Profile owner parses the environment object as a typed string map and preserves all three Microsoft values verbatim, including the self-referential %VAR_3%;value3 payload without premature expansion."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "ProfileGeneratesGuid",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_generates_guid_accepts_only_braced_guid_format"],
+      "notes": "The safe Rust Profile owner keeps absent/null GUIDs unset, accepts zero/lowercase/uppercase braced format-B GUIDs as the same identity, and rejects Microsoft's hyphenless, raw and parenthesized presentations."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "LayerProfileProperties",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_layer_profile_properties_preserves_inherited_appearance_and_directory"],
+      "notes": "Profile children inherit background, selection background and starting directory from the resolved parent while locally layered foreground/name/directory values replace only their own layer, matching Microsoft's three-profile chain."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "LayerProfilesOnArray",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_layer_profiles_on_array_merges_by_guid_and_preserves_inbox_order"],
+      "notes": "The safe Rust ProfileCollection owner layers user profile objects over matching inbox entries by strict GUID identity, preserves inbox positions and unmatched inbox profiles, and yields Microsoft's exact [profile3, profile4, profile2] observable order."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "TestCorrectOldDefaultShellPaths",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_correct_old_default_shell_paths_only_for_canonical_guids"],
+      "notes": "The safe Rust ProfileCollection fixup owner reproduces Microsoft's hard-coded compatibility table: only the canonical Windows PowerShell and Command Prompt GUIDs replace the legacy powershell.exe/cmd.exe commandlines with their %SystemRoot% paths, while profiles with lookalike noncanonical GUIDs remain unchanged and list order is preserved."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "ProfileWithEnvVarsSameNameDifferentCases",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_environment_case_collision_emits_two_warnings"],
+      "notes": "The safe Rust ProfileCollection validation owner reproduces the Microsoft source vector end-to-end. With no inbox schemes, the inherited AppearanceConfig default Campbell scheme is unknown and records UnknownColorScheme first; _validateProfileEnvironmentVariables then detects FOO/Foo through case-insensitive name comparison and records InvalidProfileEnvironmentVariables, yielding exactly the two warnings asserted by Microsoft. An absent defaultProfile does not itself warn because _resolveDefaultProfile only appends MissingDefaultProfile for a non-empty unresolved request."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "TestGenGuidsForProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_test_gen_guids_for_profiles_distinguishes_source_identity"],
+      "notes": "The safe Rust ProfileIdentitySettings owner generates stable nonzero profile identity when GUID is omitted, includes source in that identity, reconciles the matching inbox/user dynamic profile, preserves the unmatched inbox profile, and keeps an otherwise identical source-less profile distinct, reproducing the Microsoft assertions without exposing a platform projection dependency."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "ProfileDefaultsProhibitedSettings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_profile_defaults_prohibited_settings_do_not_inherit_identity_or_commandline"],
+      "notes": "The safe Rust profile identity policy deliberately excludes guid, name, source, and commandline from profiles.defaults inheritance. Local profile identity is preserved or generated independently, source remains absent unless local, and the canonical PowerShell commandline fixup still applies to the explicitly identified PowerShell profile."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "method": "DuplicateProfileTest",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_duplicate_profile_preserves_local_json_and_inherits_profile_defaults"],
+      "notes": "The safe Rust ProfileDuplicationSettings owner keeps nested profiles.defaults font settings inherited rather than flattening them into a duplicate, duplicates the source profile's local serialized settings, and after the same name/GUID reassignment performed by Microsoft yields structure-equivalent local JSON. Fresh random GUID creation and localized copy naming remain at the native/UI boundary because the Microsoft contract overwrites them before observing serialization."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer word-boundary checkpoint: safe Rust owns host-style exclusive word boundaries, separator-to-previous-word behavior, and optional leading-zero trimming while preserving 0x, 0X and 0n prefixes.",
+  "expectedCoveragePriority": 237,
+  "expectedCoverage": {
+    "host": {"Exact":202,"Partial":82,"Platform-only":5,"Missing":42}
+  },
+  "expectedGlobalCoveragePriority": 237,
+  "expectedGlobalCoverage": {"Exact":606,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":80},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"GetWordBoundary","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_get_word_boundary_contract"],"notes":"screen_word_boundary operates directly on safe TextBuffer row storage, returns the host's exclusive end coordinate, reproduces front/middle/end queries including the one-past-row endpoint, and maps a query on the separator after 'some' to the word immediately to its left."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"GetWordBoundaryTrimZerosOn","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_get_word_boundary_trim_zeros_on_contract"],"notes":"With trim-leading-zeros enabled, the Rust owner removes redundant leading zeroes from Microsoft's 000fe12 and 0Nfe12 vectors while preserving recognized 0x, 0X and 0n prefixes and the exact exclusive endpoints."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"GetWordBoundaryTrimZerosOff","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_get_word_boundary_trim_zeros_off_contract"],"notes":"With trimming disabled, all five Microsoft source vectors retain their complete regular-character runs and exact exclusive endpoints."}
+  ]
+}

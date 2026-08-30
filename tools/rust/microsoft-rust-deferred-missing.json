@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 deferred Microsoft Missing inventory. All functional Missing contracts now have direct Rust owners and witnesses.",
+  "expectedMissingTotal": 0,
+  "sources": []
+}

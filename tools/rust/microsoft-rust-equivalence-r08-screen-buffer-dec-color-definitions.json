@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer DEC color-definition checkpoint: safe Rust owns DCS 2$p HLS/RGB percentage color definitions, omission/clamp/wrap semantics, multi-entry updates and RIS restoration to Campbell.",
+  "expectedCoveragePriority": 236,
+  "expectedCoverage": {
+    "host": {"Exact":199,"Partial":82,"Platform-only":5,"Missing":45}
+  },
+  "expectedGlobalCoveragePriority": 236,
+  "expectedGlobalCoverage": {"Exact":603,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":83},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtRestoreColorTableReport","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_restore_color_table_report_contract"],"notes":"ColorTableState reproduces Microsoft's complete DEC DCS 2$p contract: all 16 VT340-derived HLS vectors, all 16 RGB-percentage vectors, multiple slash-separated definitions, omitted components defaulting to zero, hue wrapping, percentage clamping, and RIS restoration of the initial 16-entry Campbell palette."}
+  ]
+}

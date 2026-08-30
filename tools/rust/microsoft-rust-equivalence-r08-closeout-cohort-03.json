@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional closeout cohort for the five remaining portable host TextBuffer contracts. Rust now owns the deterministic cross-owner behavior for right-edge VT backspace output, complete multi-row word boundaries, wide-glyph-aware text rectangles, the full CopyRequest plain-text matrix, and shell command-region remapping across reflow.",
+  "expectedCoveragePriority": 337,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 326,
+      "Partial": 0,
+      "Platform-only": 5
+    }
+  },
+  "expectedGlobalCoveragePriority": 337,
+  "expectedGlobalCoverage": {
+    "Exact": 956,
+    "Stronger": 11,
+    "Partial": 46,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "TextBufferTests.cpp",
+      "method": "TestBackspaceRightSideVt",
+      "coverage": "Exact",
+      "rustWitnesses": ["host_textbuffer::tests::microsoft_host_text_buffer_backspace_right_side_vt_contract"],
+      "notes": "The portable host TextBuffer owner reproduces Microsoft's far-right CUB clamp, x/backspace/y overwrite ordering and following-line cursor result over live Rust buffer state."
+    },
+    {
+      "suite": "host",
+      "source": "TextBufferTests.cpp",
+      "method": "GetWordBoundaries",
+      "coverage": "Exact",
+      "rustWitnesses": ["host_textbuffer::tests::microsoft_host_text_buffer_get_word_boundaries_matches_all_source_vectors"],
+      "notes": "Rust reproduces Microsoft's complete GetWordStart/GetWordEnd matrices for selection and accessibility modes, including unwrapped, forced-wrap, cross-row whitespace and end-of-buffer cases."
+    },
+    {
+      "suite": "host",
+      "source": "TextBufferTests.cpp",
+      "method": "GetTextRects",
+      "coverage": "Exact",
+      "rustWitnesses": ["host_textbuffer::tests::microsoft_host_text_buffer_get_text_rects_matches_block_and_line_vectors"],
+      "notes": "The Rust owner produces Microsoft's exact block and line selection rectangles while expanding boundaries that intersect wide glyph cells."
+    },
+    {
+      "suite": "host",
+      "source": "TextBufferTests.cpp",
+      "method": "GetPlainText",
+      "coverage": "Exact",
+      "rustWitnesses": ["host_textbuffer::tests::microsoft_host_text_buffer_get_plain_text_matches_complete_copy_request_matrix"],
+      "notes": "The Rust CopyRequest owner reproduces the complete wrapped/unwrapped × block/line × CRLF/no-CRLF × trim/preserve-whitespace matrix from Microsoft over live TextBuffer rows."
+    },
+    {
+      "suite": "host",
+      "source": "TextBufferTests.cpp",
+      "method": "ReflowPromptRegions",
+      "coverage": "Exact",
+      "rustWitnesses": ["host_textbuffer::tests::microsoft_host_text_buffer_reflow_prompt_regions_matches_all_dx_variants"],
+      "notes": "Shell prompt, command and output mark coordinates are remapped with logical forced-wrap topology and reproduce every Microsoft dx variant (-15, -1, 0, +1, +15), including the +15 unwrap row shift."
+    }
+  ]
+}

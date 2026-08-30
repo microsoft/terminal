@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "description": "Modified-sandwich SettingsModel checkpoint: the six Theme contracts now have direct safe Rust ownership and Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 31,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 15,
+      "Missing": 142
+    }
+  },
+  "expectedGlobalCoveragePriority": 31,
+  "expectedGlobalCoverage": {
+    "Exact": 292,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 403
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "ParseSimpleTheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_parse_simple_theme"],
+      "notes": "The Rust Theme owner parses the theme name, RGBA/RGB tab-row colors, light application theme and useMica=true with the same observable values as Microsoft."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "ParseEmptyTheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_parse_empty_theme"],
+      "notes": "A name-only theme preserves null TabRow/Window owners and reports the default/system requested theme."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "ParseNoWindowTheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_parse_no_window_theme"],
+      "notes": "A theme with tabRow but no window preserves its RGB color and falls back to ElementTheme::Default."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "ParseNullWindowTheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_parse_null_window_theme"],
+      "notes": "An explicit window:null is treated as no window while the tab-row object remains materialized, matching Theme::FromJson."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "ParseThemeWithNullThemeColor",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_parse_theme_with_null_theme_color"],
+      "notes": "The Rust collection distinguishes tabRow:{} and tabRow.background:null from an omitted tabRow without default-constructing a ThemeColor."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "method": "InvalidCurrentTheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_theme_invalid_current_theme"],
+      "notes": "An unknown requested theme emits UnknownTheme while preserving parsed custom themes and selecting the built-in system fallback."
+    }
+  ]
+}

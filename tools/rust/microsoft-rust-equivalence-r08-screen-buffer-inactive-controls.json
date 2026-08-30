@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer inactive-control checkpoint: the safe host VT writer discards exactly the C0 controls Microsoft classifies as inactive without changing cursor position or row contents.",
+  "expectedCoveragePriority": 242,
+  "expectedCoverage": {
+    "host": {"Exact":213,"Partial":82,"Platform-only":5,"Missing":31}
+  },
+  "expectedGlobalCoveragePriority": 242,
+  "expectedGlobalCoverage": {"Exact":617,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":69},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"InactiveControlCharactersTest","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_inactive_control_characters_contract"],"notes":"HostWriteState::write_vt filters Microsoft's exact 24 inactive C0 ordinals (0-7, 14-25, 28-31). The direct witness reproduces the native single-control, repeated-control, control-before-text and controls-between-text cases for every ordinal, proving no write/cursor movement beyond printable text."}
+  ]
+}

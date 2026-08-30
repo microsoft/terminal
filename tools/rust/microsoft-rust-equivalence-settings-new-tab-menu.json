@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "description": "Modified-sandwich SettingsModel checkpoint: the two NewTabMenu contracts now have direct safe Rust ownership and Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 30,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 9,
+      "Missing": 148
+    }
+  },
+  "expectedGlobalCoveragePriority": 30,
+  "expectedGlobalCoverage": {
+    "Exact": 286,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 409
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "NewTabMenuTests.cpp",
+      "method": "DefaultsToRemainingProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_new_tab_menu_defaults_to_remaining_profiles"],
+      "notes": "An absent newTabMenu setting produces one RemainingProfiles entry with no warnings, matching WindowSettingsDefaults().NewTabMenu()."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "NewTabMenuTests.cpp",
+      "method": "ParseEmptyFolder",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_new_tab_menu_parse_empty_folder"],
+      "notes": "A folder entry containing only type=folder is accepted without warnings and remains one Folder entry instead of crashing or being discarded."
+    }
+  ]
+}

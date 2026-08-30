@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the effective TIL RunLengthEncodingTests family through the existing safe Rle owner plus portable variable-length sequence transformations and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 307,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 131,
+      "Partial": 63,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 307,
+  "expectedGlobalCoverage": {
+    "Exact": 813,
+    "Stronger": 11,
+    "Partial": 189,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "ConstructDefault",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_construct_default_contract"],
+      "notes": "Safe Rust reproduces default-empty state and insertion into an initially empty RLE sequence."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "ConstructWithInitializerList",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_initializer_list_contract"],
+      "notes": "Explicit runs are expanded and canonicalized with the same logical values and run boundaries as Microsoft's initializer-list vector."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "At",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_at_contract"],
+      "notes": "The existing Rle indexed-access owner reproduces all Microsoft run-boundary positions and out-of-range behavior."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "Slice",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_slice_contract"],
+      "notes": "Portable slicing covers empty, full, between-run and within-run boundaries and returns canonical RLE output."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "Replace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_replace_contract"],
+      "notes": "The direct witness reproduces Microsoft's full 29-vector remove/insert/replace/neighbor-merge matrix with variable-length replacements."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "ReplaceValues",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_replace_values_contract"],
+      "notes": "Value replacement preserves unaffected values and merges newly adjacent equal runs for all six Microsoft vectors."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "ResizeTrailingExtent",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_resize_trailing_extent_contract"],
+      "notes": "Shrinking preserves every tested prefix and growth repeats the trailing value exactly as basic_rle does."
+    },
+    {
+      "suite": "til",
+      "source": "RunLengthEncodingTests.cpp",
+      "method": "Iterators",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_rle_iterators_contract"],
+      "notes": "Expanded safe-Rust iteration reproduces forward/reverse values, random positions and iterator-distance observables without copying C++ iterator representation."
+    }
+  ]
+}

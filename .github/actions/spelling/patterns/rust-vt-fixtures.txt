@@ -1,0 +1,7 @@
+# Rust VT/DCS fixture strings: the final `q` introducer directly precedes arbitrary payload bytes.
+\\u\{1b\}P[0-9;]*q(?:abcdef|abc)
+# MacroBuffer fixtures copied from Microsoft Adapter tests; these are protocol/test payloads, not prose.
+(?:Hex (?:JKLMNO|jklmno)|(?:Repeat|Unterminated) echo echo echo(?: three)?)
+# R03d Adapter DCS fixtures: final action characters directly precede test payload bytes.
+\\u\{1b\}P[0-9;]*!z(?:hello|kept|dropped)
+\\u\{1b\}P[0-9;]*\$pignored

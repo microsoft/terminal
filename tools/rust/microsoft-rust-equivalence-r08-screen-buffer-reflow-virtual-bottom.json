@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer reflow/virtual-bottom checkpoint: safe Rust composes the existing TextBuffer reflow owner with virtual-bottom viewport/cursor state for the two remaining reflow-dependent virtual-bottom contracts.",
+  "expectedCoveragePriority": 224,
+  "expectedCoverage": {
+    "host": {"Exact":157,"Partial":82,"Platform-only":5,"Missing":87}
+  },
+  "expectedGlobalCoveragePriority": 224,
+  "expectedGlobalCoverage": {"Exact":561,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":125},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"UpdateVirtualBottomAfterResizeWithReflow","coverage":"Exact","rustWitnesses":["microsoft_virtual_bottom_reflow_contract"],"notes":"Safe Rust composes TextBuffer reflow with VirtualBottomState: shrink reflow keeps virtual bottom at or below the final non-space row, and a subsequent grow reflow preserves cursor distance from the virtual bottom."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DontShrinkVirtualBottomDuringResizeWithReflowAtTop","coverage":"Exact","rustWitnesses":["microsoft_virtual_bottom_reflow_at_top_does_not_shrink_contract"],"notes":"Safe Rust verifies that shrinking width with reflow while viewport and cursor are at buffer top cannot reduce virtual bottom below the viewport bottom."}
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host VT I/O checkpoint: close SetConsoleOutputMode with a direct safe-Rust state-transition owner and Microsoft-derived DECAWM witness while retaining the remaining VtIoTests.cpp contracts until their live screen-buffer/API mutation seams are owned.",
+  "expectedCoveragePriority": 321,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 307,
+      "Partial": 19,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 321,
+  "expectedGlobalCoverage": {
+    "Exact": 877,
+    "Stronger": 11,
+    "Partial": 125,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "SetConsoleOutputMode",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_vt_io_set_console_output_mode_matches_exact_vectors"
+      ],
+      "notes": "Safe Rust owns valid output-mode validation, mutation, VT-processing reset/redraw decisions and exact DECAWM bytes for the four Microsoft mode transitions."
+    }
+  ]
+}

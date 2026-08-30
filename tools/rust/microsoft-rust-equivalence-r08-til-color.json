@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the complete portable TIL color family with a safe Rust RGBA owner and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 310,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 154,
+      "Partial": 40,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 310,
+  "expectedGlobalCoverage": {
+    "Exact": 836,
+    "Stronger": 11,
+    "Partial": 166,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "Construct",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_construct_contract"],
+      "notes": "Safe Rust owns Microsoft's RGB default-alpha and explicit RGBA value/equality semantics."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "ConvertFromColorRef",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_from_colorref_contract"],
+      "notes": "Safe Rust reproduces COLORREF 0BGR byte ordering and fills alpha with 255."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "ConvertToColorRef",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_to_colorref_contract"],
+      "notes": "Safe Rust reproduces COLORREF 0BGR projection while dropping alpha."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "ConvertFromIntColorStructs",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_from_integral_struct_contract"],
+      "notes": "Integral RGBA component conversion is owned directly by the portable color value type."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "ConvertFromFloatColorStructs",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_from_float_struct_contract"],
+      "notes": "Normalized floating RGBA components use Microsoft's multiply-by-255 and truncation semantics."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "WithAlpha",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_with_alpha_contract"],
+      "notes": "with_alpha preserves RGB and replaces only alpha."
+    },
+    {
+      "suite": "til",
+      "source": "ColorTests.cpp",
+      "method": "LayerOver",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_color_layer_over_contract"],
+      "notes": "Safe Rust reproduces Microsoft's straight-alpha source-over composition and rounding vectors."
+    }
+  ]
+}

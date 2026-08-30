@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the complete Microsoft til string.cpp family with a safe portable string utility owner and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 306,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 123,
+      "Partial": 71,
+      "Platform-only": 5
+    }
+  },
+  "expectedGlobalCoveragePriority": 306,
+  "expectedGlobalCoverage": {
+    "Exact": 805,
+    "Stronger": 11,
+    "Partial": 197,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {"suite":"til","source":"string.cpp","method":"VisualizeControlCodes","coverage":"Exact","rustWitnesses":["microsoft_til_string_visualize_control_codes"]},
+    {"suite":"til","source":"string.cpp","method":"starts_with","coverage":"Exact","rustWitnesses":["microsoft_til_string_starts_with"]},
+    {"suite":"til","source":"string.cpp","method":"ends_with","coverage":"Exact","rustWitnesses":["microsoft_til_string_ends_with"]},
+    {"suite":"til","source":"string.cpp","method":"parse_u64","coverage":"Exact","rustWitnesses":["microsoft_til_string_parse_u64"]},
+    {"suite":"til","source":"string.cpp","method":"parse_u64_overflow","coverage":"Exact","rustWitnesses":["microsoft_til_string_parse_u64_overflow"]},
+    {"suite":"til","source":"string.cpp","method":"parse_unsigned","coverage":"Exact","rustWitnesses":["microsoft_til_string_parse_unsigned"]},
+    {"suite":"til","source":"string.cpp","method":"parse_signed","coverage":"Exact","rustWitnesses":["microsoft_til_string_parse_signed"]},
+    {"suite":"til","source":"string.cpp","method":"tolower_ascii","coverage":"Exact","rustWitnesses":["microsoft_til_string_tolower_ascii"]},
+    {"suite":"til","source":"string.cpp","method":"toupper_ascii","coverage":"Exact","rustWitnesses":["microsoft_til_string_toupper_ascii"]},
+    {"suite":"til","source":"string.cpp","method":"equals_insensitive_ascii","coverage":"Exact","rustWitnesses":["microsoft_til_string_equals_insensitive_ascii"]},
+    {"suite":"til","source":"string.cpp","method":"split_iterator","coverage":"Exact","rustWitnesses":["microsoft_til_string_split_iterator"]},
+    {"suite":"til","source":"string.cpp","method":"CleanPathAndFilename","coverage":"Exact","rustWitnesses":["microsoft_til_string_clean_path_and_filename"]},
+    {"suite":"til","source":"string.cpp","method":"LegalPath","coverage":"Exact","rustWitnesses":["microsoft_til_string_legal_path"]},
+    {"suite":"til","source":"string.cpp","method":"IterateFontFamilies","coverage":"Exact","rustWitnesses":["microsoft_til_string_iterate_font_families"]}
+  ]
+}

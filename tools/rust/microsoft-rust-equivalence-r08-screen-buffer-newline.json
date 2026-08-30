@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer newline/index checkpoint: safe Rust owns LF/IND/NEL viewport panning, physical-bottom scrolling, DECSTBM confinement, DECSLRM rectangular scrolling, carriage-return column semantics and standard-erase fill attributes.",
+  "expectedCoveragePriority": 232,
+  "expectedCoverage": {
+    "host": {"Exact":184,"Partial":82,"Platform-only":5,"Missing":60}
+  },
+  "expectedGlobalCoveragePriority": 232,
+  "expectedGlobalCoverage": {"Exact":588,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":98},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtScrollMarginsNewlineColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_scroll_margins_newline_color_contract"],"notes":"Repeated LF under DECSTBM uses the existing vertical-scroll owner and keeps every affected cell in default non-legacy Rust attributes, preserving symbolic default foreground/background colors while the margin region scrolls."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtNewlinePastViewport","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_newline_past_viewport_contract"],"notes":"LF from the visible bottom pans the viewport one row into existing buffer space, keeps the cursor on the new visible bottom, and standard-erases the newly exposed row from the active attributes."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtNewlinePastEndOfBuffer","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_newline_past_end_of_buffer_contract"],"notes":"After LF reaches the physical buffer bottom, further LF scrolls the visible region in place, keeps the cursor at the bottom cell row, preserves prior default rows and standard-erases the newly revealed bottom row with active colors."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtNewlineOutsideMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_newline_outside_margins_contract"],"notes":"Without DECSTBM, LF at viewport bottom pans into scrollback; with a vertical margin active and the cursor below its lower edge, LF remains confined to the viewport and neither cursor nor viewport pans past the visible bottom."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"LineFeedEscapeSequences","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_line_feed_escape_sequences_contract"],"notes":"IND and NEL match Microsoft's top-of-viewport, bottom-pan, DECSTBM lower-edge and DECSTBM+DECSLRM rectangular-scroll cases. IND preserves the column; NEL returns to column zero or the active left horizontal margin, and revealed cells use the active standard-erase attributes."}
+  ]
+}

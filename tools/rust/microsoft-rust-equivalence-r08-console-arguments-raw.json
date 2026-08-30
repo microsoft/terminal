@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the raw-command-line cluster of ConsoleArgumentsTests with a safe Windows-compatible tokenizer feeding the existing Rust conhost argument state machine.",
+  "expectedCoveragePriority": 300,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 247,
+      "Partial": 79,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 300,
+  "expectedGlobalCoverage": {
+    "Exact": 689,
+    "Stronger": 11,
+    "Partial": 313,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "ArgSplittingTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_arg_splitting_contract",
+        "microsoft_console_arguments_backslash_whitespace_vectors"
+      ],
+      "notes": "Safe Rust now owns the raw command-line boundary: Windows quote/backslash tokenization feeds the existing conhost parser and reproduces Microsoft's headless, quoted client, server-handle, whitespace, backslash-space/tab and implicit-client vectors."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "ClientCommandlineTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_client_commandline_contract"
+      ],
+      "notes": "The direct witness covers explicit -- separation, implicit client takeover, embedded host-looking arguments after client takeover, empty explicit client and empty command line."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "LegacyFormatsTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_legacy_formats_contract"
+      ],
+      "notes": "The raw owner preserves the legacy bare 0x server-handle launch and historical \\??\\ executable-path leader behavior before deterministic host switches are parsed."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 host HistoryTests lifecycle checkpoint: safe Rust owns bounded per-application history allocation, detach/reattach persistence, case-insensitive app identity and resize behavior. Seven lifecycle/capacity contracts are Exact; the four duplicate-add policy methods remain Missing for the next coherent slice.",
+  "expectedCoveragePriority": 168,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 46,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 198
+    }
+  },
+  "expectedGlobalCoveragePriority": 168,
+  "expectedGlobalCoverage": {
+    "Exact": 437,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 249
+  },
+  "entries": [
+    {"suite":"host","source":"HistoryTests.cpp","method":"AllocateAndFreeOneApp","coverage":"Exact","rustWitnesses":["microsoft_history_allocate_and_free_one_app_contract"],"notes":"CommandHistoryStore allocates one attached history, preserves the stored app buffer after free, clears only the process attachment, and keeps the history count unchanged."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"AllocateTooManyApps","coverage":"Exact","rustWitnesses":["microsoft_history_allocate_too_many_apps_contract"],"notes":"The configured four-history limit rejects a fifth application while all existing buffers are allocated, preserving all first-four lookups and the bounded store size."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"EnsureHistoryRestoredAfterClientLeavesAndRejoins","coverage":"Exact","rustWitnesses":["microsoft_history_ensure_history_restored_after_client_leaves_and_rejoins_contract"],"notes":"Detaching and reattaching the same application with a different opaque process token restores the retained ten-command history."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"TooManyAppsDoesNotTakeList","coverage":"Exact","rustWitnesses":["microsoft_history_too_many_apps_does_not_take_list_contract"],"notes":"When every configured history is both allocated and full, another application cannot steal a list and the store remains at the configured limit."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"AppNamesMatchInsensitive","coverage":"Exact","rustWitnesses":["microsoft_history_app_names_match_insensitive_contract"],"notes":"Application identity comparison is case-insensitive, matching the native ordinal-ignore-case observable for the Microsoft vector."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"ReallocUp","coverage":"Exact","rustWitnesses":["microsoft_history_realloc_up_contract"],"notes":"Growing capacity preserves all currently stored commands and their order, then allows the larger buffer to fill to the requested size."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"ReallocDown","coverage":"Exact","rustWitnesses":["microsoft_history_realloc_down_contract"],"notes":"Shrinking capacity truncates the tail and preserves the first five commands in the same order as native vector resize."}
+  ]
+}

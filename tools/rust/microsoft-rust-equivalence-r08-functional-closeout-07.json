@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire the final two Adapter functional Partial contracts after SoftFont sizing and live LineFeed product integration passed Linux, Windows, Clippy, witness validation and Quality Census. Adapter now has zero functional Partial contracts.",
+  "expectedCoveragePriority": 334,
+  "expectedCoverage": {
+    "adapter": {
+      "Exact": 67,
+      "Partial": 4,
+      "Platform-only": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 334,
+  "expectedGlobalCoverage": {
+    "Exact": 935,
+    "Stronger": 11,
+    "Partial": 67,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  }
+}

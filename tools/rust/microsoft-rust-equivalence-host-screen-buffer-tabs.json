@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer tab-stop checkpoint: safe Rust owns default/reset, ordered unique add/clear, forward/reverse navigation, edge clamping, and the main/alternate shared tab-stop state.",
+  "expectedCoveragePriority": 210,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 108,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 136
+    }
+  },
+  "expectedGlobalCoveragePriority": 210,
+  "expectedGlobalCoverage": {
+    "Exact": 512,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 174
+  },
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestResetClearTabStops","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reset_clear_tab_stops_contract"],"notes":"TabStops initializes every eight columns, clears all stops, and restores defaults for both RIS/DECST8C reset observables."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAddTabStop","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_add_tab_stop_contract"],"notes":"Ordered BTreeSet ownership matches head/middle/tail insertion and duplicate suppression."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestClearTabStop","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_clear_tab_stop_contract"],"notes":"Clearing empty, singleton, head, middle, tail and nonexistent stops matches Microsoft's vectors."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestGetForwardTab","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_get_forward_tab_contract"],"notes":"Forward navigation selects the next strictly-greater stop and clamps to the rightmost buffer column."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestGetReverseTab","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_get_reverse_tab_contract"],"notes":"Reverse navigation selects the previous strictly-smaller stop and clamps to column zero."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestAltBufferTabStops","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_alt_buffer_tab_stops_contract"],"notes":"SharedTabStops clones the same safe owner so alternate-buffer mutations remain visible after returning to the main buffer, matching the source contract."}
+  ]
+}

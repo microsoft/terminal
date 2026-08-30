@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host History duplicate-policy checkpoint: safe Rust owns Microsoft's sequential/nonsequential command-add duplicate semantics, completing HistoryTests.cpp with no remaining Missing contracts.",
+  "expectedCoveragePriority": 172,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 50,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 194
+    }
+  },
+  "expectedGlobalCoveragePriority": 172,
+  "expectedGlobalCoverage": {
+    "Exact": 441,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 245
+  },
+  "entries": [
+    {"suite":"host","source":"HistoryTests.cpp","method":"AddSequentialDuplicates","coverage":"Exact","rustWitnesses":["microsoft_history_add_sequential_duplicates_contract"],"notes":"Sequential identical commands are always suppressed even when suppressDuplicates is false."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"AddSequentialNoDuplicates","coverage":"Exact","rustWitnesses":["microsoft_history_add_sequential_no_duplicates_contract"],"notes":"Sequential identical commands remain a single entry when suppressDuplicates is true."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"AddNonsequentialDuplicates","coverage":"Exact","rustWitnesses":["microsoft_history_add_nonsequential_duplicates_contract"],"notes":"With suppressDuplicates=false, a nonadjacent duplicate is retained as a new command, yielding dir/cd/dir."},
+    {"suite":"host","source":"HistoryTests.cpp","method":"AddNonsequentialNoDuplicates","coverage":"Exact","rustWitnesses":["microsoft_history_add_nonsequential_no_duplicates_contract"],"notes":"With suppressDuplicates=true, an earlier exact duplicate is removed and promoted to the newest slot, yielding cd/dir."}
+  ]
+}

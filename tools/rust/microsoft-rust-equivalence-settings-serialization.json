@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "description": "SerializationTests.cpp is now fully backed by safe Rust owners with Microsoft-derived typed JSON evidence: round-trip serialization, profile/scheme mutations, color-scheme collision write-back, generated action IDs, legacy ActionMap canonicalization/deduplication/collapse, stable FixupUserSettings behavior, and built-in commandline patching are Exact.",
+  "expectedCoveragePriority": 68,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 59,
+      "Missing": 98
+    }
+  },
+  "expectedGlobalCoveragePriority": 68,
+  "expectedGlobalCoverage": {
+    "Exact": 336,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 359
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "ColorScheme",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_color_scheme_parse_simple_color_scheme"],
+      "notes": "Microsoft SerializationTests::ColorScheme uses the same Campbell object as the existing ColorScheme contract: foreground #F2F2F2, background #0C0C0C, cursor #FFFFFF, selection #131313 and all sixteen ANSI table colors. The safe Rust ColorScheme owner parses that exact vector and projects a structure-identical typed JSON value, satisfying the FromJson/ToJson round-trip without introducing a second settings owner."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "GlobalSettings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_global_settings_contract"],
+      "notes": "Microsoft round-trips both the full GlobalAppSettings vector and a minimal defaultProfile/actions/keybindings vector. Safe Rust SettingsDocument retains the shared typed JSON tree as its serialization source of truth; the Microsoft-derived witness uses those exact vectors, verifies structure-identical round-trip, and checks representative numeric, boolean, string, warning and empty-array settings without inventing a parallel serializer."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "Actions",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_actions_contract"],
+      "notes": "Microsoft round-trips fifteen ActionMap/GlobalAppSettings vectors covering simple commands, object commands and arguments, keybindings, icons/names, new-terminal args, meaningful null, nested command groups, iterable commands and an unbound keybinding. Safe Rust ActionMapDocument accepts the same bare-array and actions/keybindings object forms, recursively validates portable command/group structure, retains the shared typed JSON tree and the witness requires every Microsoft vector to project structure-identically."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "Profile",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_profile_contract"],
+      "notes": "Microsoft round-trips six Profile vectors: the full Windows PowerShell profile, a minimal name-only profile, a nullable-color profile, explicit icon, null icon, and icon=none. Safe Rust routes these vectors through the existing Profile semantic owner before retaining the complete shared typed JSON tree, so migrated GUID/color/icon/history/directory/environment semantics are validated while unmigrated members remain lossless without a second profile serializer."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "CascadiaSettings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_cascadia_settings_contract"],
+      "notes": "Microsoft SerializationTests::CascadiaSettings round-trips the aggregate settings model rather than one leaf owner. Safe Rust CascadiaSettingsDocument composes the existing SettingsDocument typed tree, validates portable profiles/schemes/actions/keybindings aggregate shapes, and the Microsoft-derived witness proves globals, profile identity/commandline, scheme colors, actions and keybindings survive together without introducing a second serializer."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "LegacyFontSettings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_legacy_font_settings_contract"],
+      "notes": "Microsoft loads a profile using legacy fontFace/fontSize/fontWeight and expects Profile::ToJson to emit only the modern font object with face=Cascadia Mono, size=12 and weight=normal. Safe Rust SettingsDocument now canonicalizes those aliases during profile serialization while retaining the same Profile validation and shared typed tree, and the witness checks both exact structure and removal of all three legacy keys."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "ProfileWithInvalidIcon",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_profile_with_invalid_icon_contract"],
+      "notes": "Microsoft verifies that an icon path which cannot be resolved at load time is still serialized exactly as the user wrote it, rather than as null or as the commandline fallback. Safe Rust CascadiaSettingsDocument canonicalizes legacy root profiles arrays into the modern profiles.list shape while retaining the original typed profile fields."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "DontRoundtripNoReloadEnvVars",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_dont_roundtrip_no_reload_env_vars_contract"],
+      "notes": "Microsoft verifies that settings which never specify compatibility.reloadEnvironmentVariables do not acquire that setting during fixup/round-trip. Safe Rust canonicalizes the legacy profiles array without synthesizing either the legacy root property or a profiles.defaults object."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripReloadEnvVars",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_reload_env_vars_contract"],
+      "notes": "Microsoft moves legacy root compatibility.reloadEnvironmentVariables=false into profiles.defaults while preserving profiles/actions. Safe Rust SettingsDocument performs the same localized migration and the witness compares Microsoft's old/new vectors structurally."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripUserModifiedColorSchemeCollision",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_user_modified_color_scheme_collision_contract"],
+      "notes": "Safe Rust reuses ColorSchemeSettings::from_layers to preserve the modified Campbell user definition, remove redundant Tango Dark, canonicalize profiles/actions and retarget the default to Campbell (modified), matching Microsoft's complete old/new vectors."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripUserModifiedColorSchemeCollisionUnusedByProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_user_modified_color_scheme_collision_unused_by_profiles_contract"],
+      "notes": "Safe Rust renames an unused modified Tango Dark collision to Tango Dark (modified), preserves the modified colors, canonicalizes profiles/actions and does not synthesize profiles.defaults, matching Microsoft."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripUserDeletedColorSchemeCollision",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_user_deleted_color_scheme_collision_contract"],
+      "notes": "Safe Rust removes a user Tango Dark definition that is merge-equivalent to inbox and emits the same modern profiles/actions/schemes shape as Microsoft."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripGenerateActionID",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_generate_action_id_contract"],
+      "notes": "Safe Rust resolves legacy keys-inside-action bindings and reproduces Microsoft's generated User.sendInput.<hash> ID using the TIL hash over UTF-16 arguments, including architecture-specific 32-bit and 64-bit vectors."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "NoGeneratedIDsForIterableAndNestedCommands",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_no_generated_ids_for_iterable_and_nested_commands_contract"],
+      "notes": "Safe Rust mirrors ActionMap::LayerJson: ordinary user actions need write-back for missing IDs or legacy keys, while explicit-ID, iterable and nested commands do not request generated-ID fixup."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "GeneratedActionIDsEqualForIdenticalCommands",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_generated_action_ids_equal_for_identical_commands_contract"],
+      "notes": "Two independently parsed identical Microsoft sendInput command documents resolve to the same deterministic User.sendInput.* ID; the Rust witness checks the intended cross-document invariant."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripLegacyToModernActions",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_roundtrip_legacy_to_modern_actions_contract"],
+      "notes": "ActionMapDocument migrates legacy inline keys into modern keybindings, removes keys from action blocks, preserves explicit action IDs, and converts legacy unbound commands into null-ID keybindings. The witness requires Microsoft's exact old/new structures and a second fixup to be stable."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripUserActionsSameAsInBoxAreRemoved",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_user_actions_same_as_inbox_are_removed_contract"],
+      "notes": "ActionMapDocument matches user action semantics against inbox, adopts Terminal.PasteFromClipboard, removes the redundant user paste action, and retains the user's ctrl+shift+x binding under the inbox ID exactly as Microsoft writes it back."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "RoundtripActionsSameNameDifferentCommandsAreRetained",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_same_name_different_commands_are_retained_contract"],
+      "notes": "Two same-name sendInput actions with different input semantics remain distinct. Safe Rust generates Microsoft's architecture-specific IDs for both command payloads and proves both actions survive canonicalization."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "MultipleActionsAreCollapsed",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_multiple_actions_are_collapsed_contract"],
+      "notes": "Duplicate legacy action blocks that resolve to the same generated command ID collapse to one modern action while preserving the first block's name/icon and projecting every legacy key chord as a modern keybinding to that ID."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "ModifyColorSchemeAndRoundtrip",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_modify_color_scheme_and_roundtrip_contract"],
+      "notes": "Safe Rust mutates MyScheme foreground to #AABBCC in the retained typed settings tree while preserving the rest of the scheme/settings structure."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "ModifyProfileSettingAndRoundtrip",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_modify_profile_setting_and_roundtrip_contract"],
+      "notes": "Safe Rust mutates profile historySize and adds tabTitle while preserving commandline and the surrounding typed settings tree."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "ModifyGlobalSettingAndRoundtrip",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_modify_global_setting_and_roundtrip_contract"],
+      "notes": "Safe Rust mutates initialRows and alwaysOnTop on the retained global settings tree and preserves unrelated settings."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "FixupUserSettingsDetectsChanges",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_fixup_user_settings_detects_changes_contract"],
+      "notes": "The safe Rust fixup owner is idempotent across Microsoft's clean custom-profile round-trip: after serialization canonicalizes legacy profiles to profiles.list, reapplying product fixups reports no further write-back and leaves the typed document unchanged."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "method": "FixupCommandlinePatching",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_serialization_fixup_commandline_patching_contract"],
+      "notes": "The portable settings fixup patches explicit cmd.exe and powershell.exe only for Microsoft's built-in profile GUIDs, reports a change, leaves custom profiles untouched, and resolves omitted built-in commandlines through inbox defaults without materializing them into user settings. All four Microsoft cases are witnessed."
+    }
+  ]
+}

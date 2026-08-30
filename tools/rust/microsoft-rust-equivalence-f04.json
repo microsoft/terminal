@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "description": "F04 TextAttribute, rendition and cursor-presentation method-level equivalence evidence, including portable renderer color resolution.",
+  "expectedCoveragePriority": 27,
+  "expectedCoverage": {
+    "adapter": { "Exact": 29, "Partial": 42, "Platform-only": 1 },
+    "textBuffer": { "Exact": 13, "Partial": 1, "Missing": 0 }
+  },
+  "expectedGlobalCoveragePriority": 27,
+  "expectedGlobalCoverage": {
+    "Exact": 250,
+    "Stronger": 11,
+    "Partial": 334,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 418
+  },
+  "entries": [
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestRoundtripLegacy",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_text_attribute_legacy_roundtrip_matches_source_contract"],
+      "notes": "Rust reproduces Microsoft's FOREGROUND_BLUE | BACKGROUND_RED construction, IsLegacy observable, and exact legacy round-trip through the production TextAttribute owner."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestRoundtripMetaBits",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_text_attribute_meta_bits_roundtrip_matches_source_contract"],
+      "notes": "Rust reproduces the five Microsoft COMMON_LVB meta-bit vectors, preserves each bit in TextAttribute character attributes, and round-trips the complete legacy word."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestRoundtripExhaustive",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_text_attribute_exhaustive_legacy_roundtrip_matches_source_contract"],
+      "notes": "Rust iterates the Microsoft legacy attribute domain, skips the same reserved and DBCS bits, and requires exact round-trip through the production TextAttribute owner."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestRoundtripDefaultColors",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_text_attribute_default_colors_roundtrip_matches_source_contract"],
+      "notes": "Rust uses an explicit LegacyColorDefaults value instead of Microsoft's mutable process-global defaults, but reproduces all three source observables: default foreground, default background, and both defaults map bidirectionally to the configured legacy indices."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestTextAttributeColorGetters",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_text_attribute_color_getters_match_source_contract"],
+      "notes": "The production renderer now composes TextAttribute/TextColor lookup with faint, reverse-video and invisible policy. The direct Rust witness reproduces Microsoft's RGB getter invariants and all six calculated foreground/background transitions."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestReverseDefaultColors",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_reverse_default_colors_match_source_contract"],
+      "notes": "The portable renderer resolver reproduces Microsoft's configured default foreground/background aliases, reverse-video swap, explicit foreground mutation, invert, and restored-default foreground with explicit background."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "TextAttributeTests.cpp",
+      "method": "TestIntenseAsBright",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_f04_intense_as_bright_matches_source_contract"],
+      "notes": "Rust reproduces the complete Microsoft IntenseIsBright matrix: defaults remain unchanged, dark indexed foreground brightens only while the mode is enabled and intensity is set, background is unaffected, intensity-off disables brightening, and an already-bright foreground remains bright with the mode either enabled or disabled."
+    }
+  ]
+}

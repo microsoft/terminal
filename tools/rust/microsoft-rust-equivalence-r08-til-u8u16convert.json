@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the complete TIL u8u16convertTests family with explicit incremental UTF-8/UTF-16 conversion state and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 327,
+  "expectedCoverage": {
+    "til": {
+      "Exact": 159,
+      "Partial": 35,
+      "Platform-only": 5
+    }
+  },
+  "expectedGlobalCoveragePriority": 327,
+  "expectedGlobalCoverage": {
+    "Exact": 885,
+    "Stronger": 11,
+    "Partial": 117,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "til",
+      "source": "u8u16convertTests.cpp",
+      "method": "TestU8ToU16",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_u8u16_test_u8_to_u16"],
+      "notes": "Safe Rust reproduces Microsoft's complete UTF-8 to UTF-16 vector, including the four-byte CJK scalar encoded as a surrogate pair."
+    },
+    {
+      "suite": "til",
+      "source": "u8u16convertTests.cpp",
+      "method": "TestU16ToU8",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_u8u16_test_u16_to_u8"],
+      "notes": "Safe Rust reproduces Microsoft's complete UTF-16 to UTF-8 vector byte-for-byte."
+    },
+    {
+      "suite": "til",
+      "source": "u8u16convertTests.cpp",
+      "method": "TestU8ToU16Partials",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_u8u16_test_u8_to_u16_partials"],
+      "notes": "Utf8ToUtf16State retains incomplete multibyte prefixes across calls and reproduces both Microsoft split-sequence vectors, including GH#4673."
+    },
+    {
+      "suite": "til",
+      "source": "u8u16convertTests.cpp",
+      "method": "TestU16ToU8Partials",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_u8u16_test_u16_to_u8_partials"],
+      "notes": "Utf16ToUtf8State retains a trailing high surrogate and completes the scalar when the low surrogate arrives in the next chunk."
+    },
+    {
+      "suite": "til",
+      "source": "u8u16convertTests.cpp",
+      "method": "TestU8ToU16OneByOne",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_u8u16_test_u8_to_u16_one_by_one"],
+      "notes": "Incremental UTF-8 state emits no output for the first three CAMERA bytes and emits the exact surrogate pair only when the fourth byte arrives."
+    }
+  ]
+}

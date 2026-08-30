@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire the final TerminalCore functional Partial after the Microsoft GH#637 Alt+Shift character contract passed Rust CI and Quality Census on the published witness HEAD.",
+  "expectedCoveragePriority": 331,
+  "expectedCoverage": {
+    "terminalCore": {
+      "Exact": 45,
+      "Partial": 0,
+      "Platform-only": 7,
+      "UI-managed": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 331,
+  "expectedGlobalCoverage": {
+    "Exact": 924,
+    "Stronger": 11,
+    "Partial": 78,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "InputTest.cpp",
+      "method": "AltShiftKey",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_core_alt_shift_key_contract"],
+      "notes": "Rust drives the real TerminalInput fallback with Microsoft's SendCharEvent-equivalent translated character event: LeftAlt prefixes ESC for lowercase a, and LeftAlt+Shift preserves the already translated uppercase A while still prefixing ESC."
+    }
+  ]
+}

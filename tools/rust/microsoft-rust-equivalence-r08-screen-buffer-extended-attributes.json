@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer extended-attribute checkpoint: safe Rust owns SGR rendition reset semantics and color persistence through cell writes for microsoft/terminal#2554.",
+  "expectedCoveragePriority": 223,
+  "expectedCoverage": {
+    "host": {"Exact":155,"Partial":82,"Platform-only":5,"Missing":89}
+  },
+  "expectedGlobalCoveragePriority": 223,
+  "expectedGlobalCoverage": {"Exact":559,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":127},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestExtendedTextAttributes","coverage":"Exact","rustWitnesses":["microsoft_extended_text_attributes_contract"],"notes":"Safe Rust enumerates every extended-rendition combination, persists the active TextAttribute into a written cell, applies the Microsoft shared and individual SGR resets, and returns to default rendition."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestExtendedTextAttributesWithColors","coverage":"Exact","rustWitnesses":["microsoft_extended_text_attributes_with_colors_contract"],"notes":"Safe Rust composes all extended-rendition combinations with default, 16-color, 256-color and RGB foreground/background encodings; rendition resets preserve colors and 39/49 independently restore default colors."}
+  ]
+}

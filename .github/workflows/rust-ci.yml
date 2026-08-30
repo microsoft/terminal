@@ -1,0 +1,111 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - "rust/main"
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "rust/**"
+      - "tools/rust/**"
+      - "doc/rust-migration/**"
+      - "src/cascadia/fzf/**"
+      - "src/cascadia/ut_app/FzfTests.cpp"
+      - ".github/workflows/rust-ci.yml"
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "rust/**"
+      - "tools/rust/**"
+      - "doc/rust-migration/**"
+      - "src/cascadia/fzf/**"
+      - "src/cascadia/ut_app/FzfTests.cpp"
+      - ".github/workflows/rust-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain
+        run: rustup show
+      - name: Apply rustfmt for incremental CI
+        if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
+        run: cargo fmt --all
+      - name: Verify rustfmt for integration-ready PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+        run: cargo fmt --all --check
+      - name: Apply Clippy fixes for incremental CI
+        if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
+        run: cargo clippy --fix --workspace --all-targets --locked --allow-dirty --allow-staged -- -D warnings
+      - name: Verify Clippy for integration-ready PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-2025-vs2026
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain
+        run: rustup show
+      - name: Apply rustfmt before checks
+        run: cargo fmt --all
+      - name: Check
+        run: cargo check --workspace --all-targets --locked
+      - name: Test
+        run: cargo test --workspace --all-targets --locked
+
+  contract-harness:
+    name: TAEF harness self-test
+    runs-on: windows-2025-vs2026
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate TAEF result parser
+        shell: pwsh
+        run: ./tools/rust/Test-TaefContract.ps1
+      - name: Validate Microsoft source inventory
+        shell: pwsh
+        run: ./tools/rust/Test-MicrosoftTestInventory.ps1
+      - name: Validate global Microsoft source census
+        shell: pwsh
+        run: ./tools/rust/Test-MicrosoftGlobalTestInventory.ps1
+      - name: Validate R08 functional-debt classification
+        shell: pwsh
+        run: ./tools/rust/Test-R08FunctionalDebt.ps1
+      - name: Enforce R08 functional-debt exit gate
+        if: github.event_name == 'pull_request' && (github.event.pull_request.draft == false || github.head_ref == 'rust/r08-product-integration')
+        shell: pwsh
+        run: ./tools/rust/Test-R08FunctionalDebt.ps1 -RequireZero
+      - name: Validate global Rust witnesses
+        shell: pwsh
+        run: ./tools/rust/Test-RustGlobalWitnesses.ps1
+      - name: Validate R06-B server seams
+        shell: pwsh
+        run: ./tools/rust/Test-RustServerSourceMap.ps1
+      - name: Validate R07 renderer seams
+        shell: pwsh
+        run: ./tools/rust/Test-RustRendererSourceMap.ps1
+      - name: Validate H09 TerminalApp FZF seam
+        shell: pwsh
+        run: ./tools/rust/Test-RustTerminalAppFzfSourceMap.ps1

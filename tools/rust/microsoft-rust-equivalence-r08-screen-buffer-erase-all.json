@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer Erase All checkpoint: safe Rust owns scrollback-aware ED 2 viewport advancement, physical-bottom clamping, viewport-relative cursor preservation and active standard-erase color fill.",
+  "expectedCoveragePriority": 233,
+  "expectedCoverage": {
+    "host": {"Exact":187,"Partial":82,"Platform-only":5,"Missing":57}
+  },
+  "expectedGlobalCoveragePriority": 233,
+  "expectedGlobalCoverage": {"Exact":591,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":95},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"EraseAllTests","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_erase_all_tests_contract"],"notes":"Safe Rust implements the three Microsoft ED 2 scrollback cases: the viewport advances to the row after the pre-erase cursor when space remains, clamps at the physical buffer bottom, preserves prior rows as scrollback and reconstructs the cursor from its viewport-relative position."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtEraseAllPersistCursor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_erase_all_persist_cursor_contract"],"notes":"Erase All keeps the cursor at the same viewport-relative row and column while the visible window advances into scrollback."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtEraseAllPersistCursorFillColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_erase_all_persist_cursor_fill_color_contract"],"notes":"Erase All preserves the active rendition and fills every newly visible viewport cell with the active standard-erase colors, matching Microsoft's dark-red on bright-blue contract."}
+  ]
+}

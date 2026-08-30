@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "description": "Modified-sandwich SettingsModel checkpoint: the seven ApplicationState persisted-workspace contracts now have direct safe Rust ownership and Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 29,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 7,
+      "Missing": 150
+    }
+  },
+  "expectedGlobalCoveragePriority": 29,
+  "expectedGlobalCoverage": {
+    "Exact": 284,
+    "Stronger": 11,
+    "Partial": 307,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 411
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "SaveAndLookupWorkspace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_save_and_lookup_workspace"],
+      "notes": "The Rust ApplicationState owner inserts/replaces a persisted workspace and exposes the canonical map for lookup, matching Microsoft's observable."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "RemoveWorkspaceReturnsFalseWhenMissing",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_remove_workspace_returns_false_when_missing"],
+      "notes": "Missing removal is false; the first existing removal is true and a second removal is false."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "RenameWorkspaceMigratesEntry",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_rename_workspace_migrates_entry"],
+      "notes": "Rename removes the old key and preserves the same WindowLayout under the new key."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "RenameWorkspaceNoOpForEmptyOrEqualNames",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_rename_workspace_no_op_for_empty_or_equal_names"],
+      "notes": "Equal names and an empty old name are no-ops; renaming an existing workspace to an empty name removes it and a repeated attempt is a no-op."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "RenameWorkspaceNoOpForMissingEntry",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_rename_workspace_no_op_for_missing_entry"],
+      "notes": "Renaming an absent workspace returns false without mutating persisted state."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "TakeWorkspaceRemovesAndReturns",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_take_workspace_removes_and_returns"],
+      "notes": "take_workspace atomically removes and returns the stored layout; a second take returns None."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "method": "TakeWorkspaceReturnsNullWhenMissing",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_application_state_take_workspace_returns_none_when_missing"],
+      "notes": "Taking a missing workspace returns None, the Rust equivalent of Microsoft's null result."
+    }
+  ]
+}

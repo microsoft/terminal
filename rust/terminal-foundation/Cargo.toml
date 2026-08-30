@@ -1,0 +1,13 @@
+[package]
+name = "terminal-foundation"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+path = "src/root.rs"
+
+[lints]
+workspace = true

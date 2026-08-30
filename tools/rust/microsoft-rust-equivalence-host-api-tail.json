@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ApiRoutines tail checkpoint: safe Rust closes the seven remaining Microsoft ApiRoutinesTests contracts across console title reads, stateful A/W writes and ScrollConsoleScreenBufferW. The ApiRoutinesTests.cpp family is now complete with 16/16 Exact contracts.",
+  "expectedCoveragePriority": 194,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 85,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 159
+    }
+  },
+  "expectedGlobalCoveragePriority": 194,
+  "expectedGlobalCoverage": {
+    "Exact": 489,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 197
+  },
+  "entries": [
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiGetConsoleTitleA","coverage":"Exact","rustWitnesses":["microsoft_api_get_console_title_a_contract"],"notes":"ConsoleTitleState owns title storage plus ANSI-buffer null termination and written/needed counts for Microsoft's active ASCII title vector."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiGetConsoleTitleW","coverage":"Exact","rustWitnesses":["microsoft_api_get_console_title_w_contract"],"notes":"Wide title reads preserve UTF-16 content and the native W API count convention where written/needed exclude the terminator."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiGetConsoleOriginalTitleA","coverage":"Exact","rustWitnesses":["microsoft_api_get_console_original_title_a_contract"],"notes":"Original-title reads own native buffer/count semantics while the output-codepage transform remains an injected adapter; the Microsoft ASCII source vector is reproduced exactly."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiGetConsoleOriginalTitleW","coverage":"Exact","rustWitnesses":["microsoft_api_get_console_original_title_w_contract"],"notes":"Original UTF-16 title content, null termination and written/needed counts match the native W contract."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiWriteConsoleA","coverage":"Exact","rustWitnesses":["microsoft_api_write_console_a_contract"],"notes":"ConsoleWriter reproduces success/wait and consumed-byte observables across CP437, CP932 and UTF-8, retaining incomplete multibyte sequences across the native 0/1/2-byte chunk matrix."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiWriteConsoleW","coverage":"Exact","rustWitnesses":["microsoft_api_write_console_w_contract"],"notes":"Wide writes reproduce success/wait behavior and consumed UTF-16-unit counts while retaining written output in the portable owner."},
+    {"suite":"host","source":"ApiRoutinesTests.cpp","method":"ApiScrollConsoleScreenBufferW","coverage":"Exact","rustWitnesses":["microsoft_api_scroll_console_screen_buffer_w_contract"],"notes":"ConsoleScreenBuffer performs snapshot-based source moves over terminal-buffer::TextBuffer with clipping, overlap, off-screen destinations, default null fill and explicit independence from VT margins across Microsoft's full parameter matrix."}
+  ]
+}

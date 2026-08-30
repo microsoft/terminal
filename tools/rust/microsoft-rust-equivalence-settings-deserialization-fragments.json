@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests fragment seam: portable Rust owns fragment profile updates, runtime-only fragment actions, ignored fragment keys, nested/iterable commands and fragment non-persistence across user-settings roundtrip.",
+  "expectedCoveragePriority": 129,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 124,
+      "Partial": 2,
+      "Missing": 31
+    }
+  },
+  "expectedGlobalCoveragePriority": 129,
+  "expectedGlobalCoverage": {
+    "Exact": 401,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 292
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "LoadFragmentsWithMultipleUpdates",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_load_fragments_with_multiple_updates_contract"],
+      "notes": "FragmentSettings composes the existing layered profile owner, targets the two exact built-in GUIDs through `updates`, permits the native name override, appends the exact third profile vector and does not report a duplicate."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionSimple",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_simple_contract"],
+      "notes": "A named fragment action with an explicit ID is materialized in the runtime fragment overlay and remains discoverable by name."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionNoKeys",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_no_keys_contract"],
+      "notes": "The fragment action is present by name while its legacy `keys` member is deliberately ignored; lookup still delegates to the pre-fragment ActionMap, so preexisting bindings remain authoritative and ctrl+f stays unbound for the Microsoft vector."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionNested",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_nested_contract"],
+      "notes": "The exact two-child nested fragment command is retained as a named runtime command with nested-command state."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionNestedNoName",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_nested_no_name_contract"],
+      "notes": "An unnamed nested fragment command is ignored without producing a CascadiaSettings warning, matching the native observable directly."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionIterable",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_iterable_contract"],
+      "notes": "The exact iterateOn=schemes template materializes as a nested runtime command whose expanded child count equals the current effective color-scheme collection size."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FragmentActionRoundtrip",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_fragment_action_roundtrip_contract"],
+      "notes": "Fragment actions are runtime-only: they exist after fragment layering but are absent from the base user-owned ActionMap that is observed after serialization/reload without the fragment."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer deferred-main resize checkpoint: safe Rust owns the pending main-buffer resize lifecycle while an alternate buffer is active, including DECSET 1049 re-entry before the resize is materialized.",
+  "expectedCoveragePriority": 225,
+  "expectedCoverage": {
+    "host": {"Exact":158,"Partial":82,"Platform-only":5,"Missing":86}
+  },
+  "expectedGlobalCoveragePriority": 225,
+  "expectedGlobalCoverage": {"Exact":562,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":124},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestDeferredMainBufferResize","coverage":"Exact","rustWitnesses":["microsoft_deferred_main_buffer_resize_contract","microsoft_deferred_main_buffer_resize_reentry_contract"],"notes":"Safe Rust verifies both Microsoft data rows: resizing the active alternate to 60x24 leaves the main buffer/view unchanged until release; optional DECSET 1049 re-entry replaces the logical alternate without losing the pending size; returning to main then materializes the deferred resize."}
+  ]
+}

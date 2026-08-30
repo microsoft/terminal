@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "rustToolchain": "1.98.0",
+  "tools": {
+    "cargo-llvm-cov": {
+      "version": "0.8.7",
+      "install": [
+        "cargo",
+        "install",
+        "--locked",
+        "--force",
+        "--version",
+        "0.8.7",
+        "cargo-llvm-cov"
+      ]
+    },
+    "rust-code-analysis-cli": {
+      "version": "0.0.25",
+      "install": [
+        "cargo",
+        "install",
+        "--locked",
+        "--force",
+        "--version",
+        "0.0.25",
+        "rust-code-analysis-cli"
+      ]
+    },
+    "tokei": {
+      "version": "14.0.0",
+      "install": [
+        "cargo",
+        "install",
+        "--locked",
+        "--force",
+        "--version",
+        "14.0.0",
+        "--features",
+        "all",
+        "tokei"
+      ]
+    },
+    "cargo-modules": {
+      "version": "0.27.0",
+      "install": [
+        "cargo",
+        "install",
+        "--locked",
+        "--force",
+        "--version",
+        "0.27.0",
+        "cargo-modules"
+      ]
+    }
+  },
+  "coveragePolicy": {
+    "rust": {
+      "runtime": true,
+      "branchCoverage": "not-measured",
+      "branchCoverageReason": "cargo-llvm-cov documents --branch as unstable; the baseline stays on the repository's pinned stable Rust toolchain."
+    },
+    "cpp": {
+      "runtime": false,
+      "status": "unavailable/not-measured",
+      "reason": "The comparable C++ owners do not currently share a proportional instrumented runtime-coverage pipeline; Microsoft contractual coverage remains the functional reference."
+    }
+  }
+}

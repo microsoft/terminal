@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host VT I/O checkpoint: close WriteConsoleOutputW through the safe-Rust CHAR_INFO serializer plus the cursor-preserving corked writer transaction exercised by Microsoft.",
+  "expectedCoveragePriority": 323,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 308,
+      "Partial": 18,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 323,
+  "expectedGlobalCoverage": {
+    "Exact": 878,
+    "Stronger": 11,
+    "Partial": 124,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "WriteConsoleOutputW",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_vt_io_write_console_output_w_matches_exact_vector"
+      ],
+      "notes": "Safe Rust composes vt_char_info::write_infos with the DECSC/DECRC writer transaction and reproduces Microsoft's target origin, red/green and blue/green CHAR_INFO runs, exact SGR transitions, and cursor preservation byte-for-byte."
+    }
+  ]
+}

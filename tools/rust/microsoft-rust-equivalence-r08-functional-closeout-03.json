@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire the complete residual TerminalBuffer wrapping and URL-pattern family after green Rust CI and Quality Census on the published product/witness HEAD.",
+  "expectedCoveragePriority": 330,
+  "expectedCoverage": {
+    "terminalCore": {
+      "Exact": 44,
+      "Partial": 1,
+      "Platform-only": 7,
+      "UI-managed": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 330,
+  "expectedGlobalCoverage": {
+    "Exact": 923,
+    "Stronger": 11,
+    "Partial": 79,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestWrappingCharByChar",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_wrapping_char_by_char_contract"],
+      "notes": "Rust reuses the buffer Last Column Flag owner and records the consumed delayed wrap so Microsoft's 100 printable-character vector lands at cursor (20,1), preserves exact text, and marks row 0 forced-wrap only."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestWrappingALongString",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_wrapping_long_string_contract"],
+      "notes": "Rust feeds Microsoft's exact Test100CharsString through the same autowrap owner and reproduces cursor, row-wrap flags, and buffer content."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestURLPatternDetection",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_url_pattern_detection_contract"],
+      "notes": "Rust detects plain-text URL intervals in single rows, across forced-wrap rows, after scrollback movement, and projects stable buffer coordinates back to viewport-relative intervals."
+    }
+  ]
+}

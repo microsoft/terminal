@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer erase/protection/reset checkpoint: safe Rust owns EL/ED plus selective DECSEL/DECSED bounds, DECSCA protection state, ED3 scrollback clearing and the deterministic RIS buffer/view/cursor/attribute reset surface.",
+  "expectedCoveragePriority": 228,
+  "expectedCoverage": {
+    "host": {"Exact":173,"Partial":82,"Platform-only":5,"Missing":71}
+  },
+  "expectedGlobalCoveragePriority": 228,
+  "expectedGlobalCoverage": {"Exact":577,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":109},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"EraseScrollbackTests","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_erase_scrollback_tests_contract"],"notes":"Safe erase_scrollback reproduces ED 3: resolved viewport rows move to logical row zero from a stable snapshot, the viewport keeps its horizontal offset while moving to top zero, the cursor keeps its viewport-relative position, and all rows below the moved viewport clear with initial attributes."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"EraseTests","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_erase_tests_contract"],"notes":"Safe erase_line/erase_display cover Microsoft's complete 3 erase directions × EL/ED × normal/selective matrix. ED is vertically viewport-bounded but spans complete buffer rows; normal erasure uses standard-erase active attributes while DECSEL/DECSED skip protected cells and preserve each erased cell's existing attributes."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ProtectedAttributeTests","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_protected_attribute_tests_contract"],"notes":"DECSCA is owned as ordered active-attribute state: default/0/2 select unprotected, 1 selects protected, and later parameters win; direct writes carry the resulting protection attribute into buffer cells."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"HardResetBuffer","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_hard_reset_buffer_contract"],"notes":"Safe hard_reset owns every RIS observable asserted by Microsoft here: shallow or scrolled buffer content is cleared to default cells, viewport origin and cursor return to 0,0, circular row state resets, and active attributes return to TextAttribute defaults."}
+  ]
+}

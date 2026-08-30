@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional-debt checkpoint: close the post-tokenization ConsoleArguments parser/state cluster using the existing safe Rust conhost argument state machine and direct Microsoft-derived witnesses.",
+  "expectedCoveragePriority": 301,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 251,
+      "Partial": 75,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 301,
+  "expectedGlobalCoverage": {
+    "Exact": 693,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "InitialSizeTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_initial_size_contract"
+      ],
+      "notes": "The existing safe Rust console_argument_parser reproduces Microsoft's width/height state, zero and -1 values, and rejects malformed or out-of-range dimensions."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "HeadlessArgTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_headless_arg_contract"
+      ],
+      "notes": "The existing parser owns headless mode, duplicate idempotence, interaction with a legacy server handle, and the explicit-client boundary that keeps --headless inside the client command line."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "SignalHandleTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_signal_handle_contract"
+      ],
+      "notes": "The existing parser owns server/signal handle parsing and the Microsoft invalid and missing-value vectors without requiring a Win32 handle API."
+    },
+    {
+      "suite": "host",
+      "source": "ConsoleArgumentsTests.cpp",
+      "method": "FeatureArgTests",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_console_arguments_feature_arg_contract"
+      ],
+      "notes": "The existing parser reproduces the supported pty feature, repeated supported values, unsupported tty values, missing values and switch-shaped invalid feature values."
+    }
+  ]
+}

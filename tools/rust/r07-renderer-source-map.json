@@ -1,0 +1,381 @@
+{
+  "schemaVersion": 2,
+  "stage": "R07",
+  "description": "H08 machine-checks renderer ownership, method-level contract completeness, and source-content drift. Renderer has no standalone Microsoft TAEF suite, so this map binds all 50 Rust tests to audited C++ source families while preserving native paint-engine boundaries.",
+  "expected": {
+    "split": 7,
+    "native": 3,
+    "rustOwners": 12,
+    "rustWitnesses": 50,
+    "sourceBlobs": 10,
+    "contracts": {
+      "Exact": 14,
+      "Stronger": 1,
+      "Partial": 10
+    }
+  },
+  "entries": [
+    {
+      "sourcePath": "src/renderer/base/CSSLengthPercentage.cpp",
+      "sourceBlob": "a9bdf7b5d9fa5bc3080071a34e3efc198e2cec66",
+      "ownership": "split",
+      "nativeBoundary": "C++ remains the current product caller and wchar_t/wcstof integration surface; Rust owns the extracted deterministic CSS length representation, common parsing forms, and resolution policy.",
+      "sourcePatterns": [
+        "CSSLengthPercentage::FromString",
+        "CSSLengthPercentage::Resolve"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "CSSLengthPercentage::FromString",
+          "coverage": "Partial",
+          "notes": "Rust reproduces the supported suffixes, signs/exponents and common whitespace behavior, but std::wcstof has additional edge semantics such as non-finite/underflow forms that are not claimed Exact."
+        },
+        {
+          "sourcePattern": "CSSLengthPercentage::Resolve",
+          "coverage": "Exact",
+          "notes": "Reference-frame selection, multiplication, and fallback behavior are fully represented by CssLengthPercentage::resolve."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/css_length_percentage.rs",
+          "rustWitnesses": [
+            "empty_and_invalid_inputs_are_unset",
+            "unitless_and_percent_values_are_relative_to_font_size",
+            "pixels_and_points_are_normalized_to_inches",
+            "ch_values_are_relative_to_advance_width",
+            "leading_whitespace_matches_wcstof_but_trailing_whitespace_is_invalid",
+            "exponent_and_sign_forms_are_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/FontInfoDesired.cpp",
+      "sourceBlob": "592da9df2bc23ff999ca1291a938c47d4b091292",
+      "ownership": "split",
+      "nativeBoundary": "C++ still owns the full FontInfoDesired object, engine handoff, glyph options and renderer integration; Rust owns the deterministic TrueType engine-size and default-raster decisions.",
+      "sourcePatterns": [
+        "FontInfoDesired::GetEngineSize",
+        "FontInfoDesired::IsDefaultRasterFont"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "FontInfoDesired::GetEngineSize",
+          "coverage": "Exact",
+          "notes": "TrueType width suppression and raster-size preservation are completely represented."
+        },
+        {
+          "sourcePattern": "FontInfoDesired::IsDefaultRasterFont",
+          "coverage": "Exact",
+          "notes": "Engine-marked defaults plus blank-face 0x0/8x12 legacy defaults are completely represented."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/font_info_desired_policy.rs",
+          "rustWitnesses": [
+            "true_type_engine_size_discards_requested_width",
+            "raster_engine_size_preserves_requested_dimensions",
+            "explicit_engine_default_is_always_default_raster",
+            "blank_face_zero_size_and_eight_by_twelve_are_default_raster",
+            "nonblank_face_is_not_default_raster_without_engine_marker"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/fontinfo.cpp",
+      "sourceBlob": "ff0bdcebd998add117cfea603a2d347448692fd3",
+      "ownership": "split",
+      "nativeBoundary": "C++ still owns FontInfo construction, fallback state and engine updates; Rust owns the deterministic cell-size validation extracted from _ValidateCoordSize.",
+      "sourcePatterns": [
+        "FontInfo::_ValidateCoordSize",
+        "FontInfo::ValidateFont"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "FontInfo::_ValidateCoordSize",
+          "coverage": "Exact",
+          "notes": "Default-raster exemption, zero-width promotion, and 8x12 fallback including unscaled size are completely represented."
+        },
+        {
+          "sourcePattern": "FontInfo::ValidateFont",
+          "coverage": "Exact",
+          "notes": "The C++ method is a direct _ValidateCoordSize wrapper and the Rust validation function represents the same observable state transition."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/font_info_policy.rs",
+          "rustWitnesses": [
+            "default_raster_zero_size_is_left_unchanged",
+            "zero_width_is_promoted_to_one_when_height_exists",
+            "zero_height_selects_eight_by_twelve_and_updates_unscaled_size",
+            "valid_size_and_distinct_unscaled_size_are_preserved"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/FontInfoBase.cpp",
+      "sourceBlob": "f9d47b822f0b4b1044000c810e87f70a927bcd3a",
+      "ownership": "split",
+      "nativeBoundary": "C++ retains default-font-list/code-page lookup and engine object state; Rust owns legacy face-buffer, default-raster identity and TrueType family-bit policy.",
+      "sourcePatterns": [
+        "FontInfoBase::FillLegacyNameBuffer",
+        "FontInfoBase::IsDefaultRasterFontNoSize",
+        "FontInfoBase::IsTrueTypeFont"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "FontInfoBase::FillLegacyNameBuffer",
+          "coverage": "Stronger",
+          "notes": "Rust preserves the C-string prefix/truncation/terminator contract and additionally zero-fills the unused tail, matching the C++ method documentation more strongly than its raw write behavior."
+        },
+        {
+          "sourcePattern": "FontInfoBase::IsDefaultRasterFontNoSize",
+          "coverage": "Exact",
+          "notes": "Blank face plus zero family and weight is represented exactly."
+        },
+        {
+          "sourcePattern": "FontInfoBase::IsTrueTypeFont",
+          "coverage": "Exact",
+          "notes": "TMPF_TRUETYPE family-bit testing is represented exactly."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/font_info_base_policy.rs",
+          "rustWitnesses": [
+            "legacy_name_buffer_is_zero_terminated_and_zero_filled",
+            "legacy_name_buffer_reserves_the_last_cell_for_the_terminator",
+            "default_raster_without_size_requires_blank_identity_fields",
+            "true_type_family_uses_the_family_bit"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/RenderSettings.cpp",
+      "sourceBlob": "292f86faf6a05b7502ba3bb65bcb5ad8b63fb2b3",
+      "ownership": "split",
+      "nativeBoundary": "C++ retains color-table lookup, ColorFix adjustment, underline color and live renderer integration; Rust owns mode/reset/blink state plus deterministic dim/reverse/invisible/alpha post-processing.",
+      "sourcePatterns": [
+        "RenderSettings::SetRenderMode",
+        "RenderSettings::GetRenderMode",
+        "RenderSettings::RestoreDefaultSettings",
+        "RenderSettings::GetAttributeColors",
+        "RenderSettings::GetAttributeColorsWithAlpha",
+        "RenderSettings::ToggleBlinkRendition"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "RenderSettings::SetRenderMode",
+          "coverage": "Exact",
+          "notes": "Independent render-mode bit setting is completely represented."
+        },
+        {
+          "sourcePattern": "RenderSettings::GetRenderMode",
+          "coverage": "Exact",
+          "notes": "Render-mode bit lookup is completely represented."
+        },
+        {
+          "sourcePattern": "RenderSettings::RestoreDefaultSettings",
+          "coverage": "Partial",
+          "notes": "Rust exactly resets ScreenReversed and SynchronizedOutput while preserving preference modes, but color table and alias restoration remain C++."
+        },
+        {
+          "sourcePattern": "RenderSettings::GetAttributeColors",
+          "coverage": "Partial",
+          "notes": "Rust owns dim/reverse/invisible post-processing; TextColor lookup, intense brightening and ColorFix remain native."
+        },
+        {
+          "sourcePattern": "RenderSettings::GetAttributeColorsWithAlpha",
+          "coverage": "Partial",
+          "notes": "Rust owns deterministic alpha post-processing after color resolution; the underlying native color lookup remains C++."
+        },
+        {
+          "sourcePattern": "RenderSettings::ToggleBlinkRendition",
+          "coverage": "Exact",
+          "notes": "The blink-faint state toggle is completely represented."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/render_settings_policy.rs",
+          "rustWitnesses": [
+            "default_mode_matches_cpp_initial_state",
+            "modes_can_be_changed_independently",
+            "hard_reset_only_clears_programmable_modes",
+            "blink_rendition_toggles_faint_state"
+          ]
+        },
+        {
+          "rustPath": "rust/terminal-renderer/src/attribute_color_policy.rs",
+          "rustWitnesses": [
+            "dim_halves_each_foreground_component",
+            "reverse_video_and_screen_reverse_cancel_each_other",
+            "one_reverse_source_swaps_foreground_and_background",
+            "invisible_text_uses_the_final_background_as_foreground",
+            "default_background_keeps_transparency_when_not_reversed_or_invisible",
+            "custom_reversed_and_invisible_backgrounds_are_opaque"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/RenderEngineBase.cpp",
+      "sourceBlob": "2bfc568c9d5eea8b2a33e22dc483f567bc97b9e0",
+      "ownership": "split",
+      "nativeBoundary": "C++ retains backend _DoUpdateTitle execution and HRESULT plumbing; Rust owns the deterministic title invalidation and commit state that RenderEngineBase keeps around that backend call.",
+      "sourcePatterns": [
+        "RenderEngineBase::InvalidateTitle",
+        "RenderEngineBase::UpdateTitle"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "RenderEngineBase::InvalidateTitle",
+          "coverage": "Exact",
+          "notes": "Changed-title detection and pending invalidation state are completely represented."
+        },
+        {
+          "sourcePattern": "RenderEngineBase::UpdateTitle",
+          "coverage": "Partial",
+          "notes": "Rust models unchanged/update-required state, successful commit, and failure-without-commit; the backend _DoUpdateTitle call and HRESULT remain native."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/title_state.rs",
+          "rustWitnesses": [
+            "invalidation_marks_only_changed_titles",
+            "update_is_skipped_for_the_current_title",
+            "committed_update_clears_pending_invalidation",
+            "failed_backend_update_can_leave_state_uncommitted"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/base/renderer.cpp",
+      "sourceBlob": "5115d05976374e99d51db06d19b8d2a56ba6553e",
+      "ownership": "split",
+      "nativeBoundary": "C++ retains the render thread, locks/events, engine calls, Win32 waiting/timing APIs and Present orchestration; Rust owns extracted deterministic retry, dirty-region, viewport, timer and rendition-blink decisions.",
+      "sourcePatterns": [
+        "Renderer::PaintFrame",
+        "Renderer::TriggerRedraw",
+        "Renderer::_CheckViewportAndScroll",
+        "Renderer::_scheduleRenditionBlink",
+        "Renderer::_timerSaturatingAdd",
+        "Renderer::_timerSaturatingSub",
+        "Renderer::_timerToMillis",
+        "Renderer::_tickTimers"
+      ],
+      "contracts": [
+        {
+          "sourcePattern": "Renderer::PaintFrame",
+          "coverage": "Partial",
+          "notes": "Rust exactly represents the attempt/backoff schedule, while _PaintFrame execution, HRESULT handling, Sleep and renderer disable/error callbacks remain native."
+        },
+        {
+          "sourcePattern": "Renderer::TriggerRedraw",
+          "coverage": "Partial",
+          "notes": "Rust exactly plans double-width expansion, clipping and viewport-origin conversion; engine Invalidate calls and NotifyPaintFrame remain native."
+        },
+        {
+          "sourcePattern": "Renderer::_CheckViewportAndScroll",
+          "coverage": "Partial",
+          "notes": "Rust exactly plans force/no-op, viewport replacement and scroll delta; engine UpdateViewport/InvalidateScroll calls remain native."
+        },
+        {
+          "sourcePattern": "Renderer::_scheduleRenditionBlink",
+          "coverage": "Partial",
+          "notes": "Rust exactly plans start/stop/unchanged with the one-second interval; buffer scanning and timer API side effects remain native."
+        },
+        {
+          "sourcePattern": "Renderer::_timerSaturatingAdd",
+          "coverage": "Exact",
+          "notes": "Unsigned overflow saturation to TimerReprMax is completely represented."
+        },
+        {
+          "sourcePattern": "Renderer::_timerSaturatingSub",
+          "coverage": "Exact",
+          "notes": "Unsigned underflow saturation to zero is completely represented."
+        },
+        {
+          "sourcePattern": "Renderer::_timerToMillis",
+          "coverage": "Exact",
+          "notes": "100ns-to-millisecond truncation and DWORD clamping are completely represented."
+        },
+        {
+          "sourcePattern": "Renderer::_tickTimers",
+          "coverage": "Partial",
+          "notes": "Rust exactly represents drift-free repeating rescheduling and saturation; timer iteration, callback invocation and exception handling remain native."
+        }
+      ],
+      "rustOwners": [
+        {
+          "rustPath": "rust/terminal-renderer/src/timer_policy.rs",
+          "rustWitnesses": [
+            "timer_add_and_subtract_saturate_at_the_integer_bounds",
+            "timer_conversion_truncates_to_milliseconds_and_clamps_to_dword",
+            "repeating_timer_preserves_original_schedule_without_drift",
+            "repeating_timer_moves_forward_from_now_if_schedule_is_already_past",
+            "repeating_timer_reschedule_saturates"
+          ]
+        },
+        {
+          "rustPath": "rust/terminal-renderer/src/retry_policy.rs",
+          "rustWitnesses": [
+            "first_attempt_is_immediate_and_five_retries_follow"
+          ]
+        },
+        {
+          "rustPath": "rust/terminal-renderer/src/redraw_region.rs",
+          "rustWitnesses": [
+            "redraw_region_is_clipped_and_converted_to_viewport_origin",
+            "redraw_region_outside_viewport_produces_no_invalidation",
+            "double_width_row_doubles_right_margin_before_clipping",
+            "expanded_double_width_region_is_still_trimmed_to_viewport"
+          ]
+        },
+        {
+          "rustPath": "rust/terminal-renderer/src/viewport_update.rs",
+          "rustWitnesses": [
+            "unchanged_viewport_needs_no_update_without_force",
+            "forced_update_resynchronizes_even_when_viewport_is_unchanged",
+            "scroll_delta_is_old_origin_minus_new_origin",
+            "resize_without_origin_change_still_updates_the_engine"
+          ]
+        },
+        {
+          "rustPath": "rust/terminal-renderer/src/rendition_blink.rs",
+          "rustWitnesses": [
+            "starts_one_second_repeating_timer_when_blink_first_appears",
+            "stops_timer_when_blink_disappears",
+            "leaves_matching_timer_state_unchanged"
+          ]
+        }
+      ]
+    },
+    {
+      "sourcePath": "src/renderer/atlas/AtlasEngine.cpp",
+      "sourceBlob": "5ca57eb659ae965a6f70007c1d530bb6010b3aef",
+      "ownership": "native",
+      "nativeBoundary": "Direct2D/DirectWrite/COM/GPU-backed Atlas paint engine remains native; R07 extracts renderer decisions, not graphics backend ownership."
+    },
+    {
+      "sourcePath": "src/renderer/gdi/paint.cpp",
+      "sourceBlob": "8ffe6799c1bff9571dbf7176105f8b795f3d1c83",
+      "ownership": "native",
+      "nativeBoundary": "GDI/HDC glyph and cell painting remains a Windows graphics backend boundary."
+    },
+    {
+      "sourcePath": "src/renderer/uia/UiaRenderer.cpp",
+      "sourceBlob": "fdef47ee09b64247d2047bad16dedb526e04ce91",
+      "ownership": "native",
+      "nativeBoundary": "UI Automation renderer and provider notifications remain on the native COM/UIA boundary, consistent with R06-B interactivity ownership."
+    }
+  ]
+}

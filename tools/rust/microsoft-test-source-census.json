@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "description": "Frozen source-method fingerprints for the twelve Microsoft unit-test suites tracked by the Rust migration. Runtime totals remain the authoritative expanded TAEF baseline; source counts fingerprint TEST_METHOD identities for fast drift detection.",
+  "suites": {
+    "host": { "runtimeBaseline": 5101, "sourceMethodCount": 331, "identitySha256": "d8da098823bfcefe5438f5b3bb62fb5d522abd61b47b262690b84128feeac937" },
+    "textBuffer": { "runtimeBaseline": 13, "sourceMethodCount": 14, "identitySha256": "9d6c26b955a71ba9c9b93f5358bd7465ce0a2941a31b8aff5d2a090d6b259aa4" },
+    "terminalCore": { "runtimeBaseline": 54, "sourceMethodCount": 53, "identitySha256": "bca7951504908d8aedfc023f730cb1a55cf61a86555567b455ae9c68b827d089" },
+    "terminalApp": { "runtimeBaseline": 51, "sourceMethodCount": 52, "identitySha256": "4d3f718de57a011475a19b4d165bd1dddbb82be76dd363a91931b3cc2f391590" },
+    "localTerminalApp": { "runtimeBaseline": 76, "sourceMethodCount": 59, "identitySha256": "3fd38019b1e086a7b725330f243de4531f7ed446eed71abf34b264f0dcaaf73c" },
+    "unitSettingsModel": { "runtimeBaseline": 157, "sourceMethodCount": 157, "identitySha256": "0e8c39840901012bdc443fc31130208d98dc0692f906f720a6f064c9361554f0" },
+    "unitControl": { "runtimeBaseline": 29, "sourceMethodCount": 28, "identitySha256": "6db971dc1e8b2662a9992ce42e47ea05224ec5181af7a8c4387734860791e724" },
+    "interactivityWin32": { "runtimeBaseline": 52, "sourceMethodCount": 19, "identitySha256": "64f224651569242dee3193c5784d7101e7b74397bd95aa97a6d77e8b80925cc7" },
+    "terminal": { "runtimeBaseline": 760, "sourceMethodCount": 98, "identitySha256": "e588e25649748d3c574cd310bc1eee581974351f31c7f69399b759162083ac2b" },
+    "adapter": { "runtimeBaseline": 411, "sourceMethodCount": 72, "identitySha256": "ebc704b998e871e8b0f4edde3a5cfe2bdb22fe135852391a68f88622fee3b6e1" },
+    "types": { "runtimeBaseline": 16, "sourceMethodCount": 16, "identitySha256": "4698c0bc569646b610d62535f4db5e4cf6ec6d919802b198f15a543c2022da36" },
+    "til": { "runtimeBaseline": 278, "sourceMethodCount": 199, "identitySha256": "c7a5a6903de7785ec2d8cafd361d7cd715ef67067d10139a800050f1c2634776" }
+  }
+}

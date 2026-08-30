@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 MediaResourceTests checkpoint: safe Rust owns media-resource state, layered origin/base-path propagation, profile/action/menu traversal, emoji handling, icon fallback, bell-sound replacement and fragment appearance behavior. Eighteen contracts are Exact; the four real-resolver contracts are Partial only for their Win32 filesystem, environment, wallpaper and package-context adapter.",
+  "expectedCoveragePriority": 151,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 142,
+      "Partial": 6,
+      "Missing": 9
+    }
+  },
+  "expectedGlobalCoveragePriority": 151,
+  "expectedGlobalCoverage": {
+    "Exact": 419,
+    "Stronger": 11,
+    "Partial": 313,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 270
+  },
+  "entries": [
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverCalledForInbox","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_called_for_inbox_contract"],"notes":"Rust visits the eleven inbox media resources once with InBox origin and preserves resolved profile icon/background values."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverCalledForInboxAndUser","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_called_for_inbox_and_user_contract"],"notes":"Layering reproduces the native 10 inbox, one ProfilesDefaults and one User resolver observations plus the effective default/user profile icons."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverCalledForFragments","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_called_for_fragments_contract"],"notes":"Fragment profile/action resources retain Fragment origin and the fragment base path while materializing resolved runtime values."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverCalledForNewTabMenuEntries","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_called_for_new_tab_menu_entries_contract"],"notes":"Recursive new-tab-menu traversal finds all six user icons in profile/action/folder entries without changing the eleven inbox observations."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverCalledIncrementallyOnChange","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_called_incrementally_on_change_contract"],"notes":"Resolved resources are skipped on later passes; a runtime profile-icon replacement is pending until one User-origin resolver visit completes it."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ValidateResolverNotCalledForEmojiIcons","coverage":"Exact","rustWitnesses":["microsoft_media_resource_validate_resolver_not_called_for_emoji_icons_contract"],"notes":"The five Microsoft symbol/emoji icon vectors resolve to themselves without invoking the external media resolver."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileDefaultsContainsInvalidIcon","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_defaults_contains_invalid_icon_contract"],"notes":"A rejected icon inherited from profiles.defaults falls back to the command line owned by the defaults source."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileSpecifiesInvalidIconAndCommandline","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_specifies_invalid_icon_and_commandline_contract"],"notes":"A rejected profile-owned icon falls back to that profile's explicit command line."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileSpecifiesInvalidIconAndNoCommandline","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_specifies_invalid_icon_and_no_commandline_contract"],"notes":"A rejected profile-owned icon with no command-line override falls back to the default cmd.exe command line."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileInheritsInvalidIconAndHasCommandline","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_inherits_invalid_icon_and_has_commandline_contract"],"notes":"An inherited rejected icon keeps its source fallback instead of adopting a child profile command line."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileInheritsInvalidIconAndHasNoCommandline","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_inherits_invalid_icon_and_has_no_commandline_contract"],"notes":"An inherited rejected icon with no child command-line setting falls back to cmd.exe."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileSpecifiesNullIcon","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_specifies_null_icon_contract"],"notes":"An explicit null profile icon bypasses media resolution and falls back to the profile's explicit command line."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileSpecifiesNullIconAndHasNoCommandline","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_specifies_null_icon_and_has_no_commandline_contract"],"notes":"An explicit null icon without a profile command-line override falls back to cmd.exe."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"ProfileOverwritesBellSound","coverage":"Exact","rustWitnesses":["microsoft_media_resource_profile_overwrites_bell_sound_contract"],"notes":"A user bellSound array replaces the inherited two-item list and retains the rejected state of its sole resource."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"FragmentUpdatesBaseProfile","coverage":"Exact","rustWitnesses":["microsoft_media_resource_fragment_updates_base_profile_contract"],"notes":"A fragment updates an existing profile icon by GUID and resolves it against the fragment base path."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"FragmentActionResourcesGetResolved","coverage":"Exact","rustWitnesses":["microsoft_media_resource_fragment_action_resources_get_resolved_contract"],"notes":"A fragment action icon is retained in the runtime action map and resolved with the fragment base path."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"DisabledFragmentNotResolved","coverage":"Exact","rustWitnesses":["microsoft_media_resource_disabled_fragment_not_resolved_contract"],"notes":"disabledProfileSources suppresses fragment media traversal while preserving the inbox profile icon."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"FragmentAppearanceAndUserAppearanceInteraction","coverage":"Exact","rustWitnesses":["microsoft_media_resource_fragment_appearance_and_user_appearance_interaction_contract"],"notes":"User replacement of an unfocused appearance re-parents missing media fields to the focused appearance while user-owned fields retain the user base path and shared resources retain identity."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"RealResolverFilePaths","coverage":"Partial","rustWitnesses":["microsoft_media_resource_real_resolver_file_paths_contract"],"notes":"Rust owns Windows-style absolute/relative traversal, slash normalization, environment expansion flow and candidate validation. Actual file existence and environment lookup are supplied by MediaPlatform rather than Win32."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"RealResolverSpecialKeywords","coverage":"Partial","rustWitnesses":["microsoft_media_resource_real_resolver_special_keywords_contract"],"notes":"The none and desktopWallpaper decisions are owned in Rust; desktop-wallpaper discovery itself remains a MediaPlatform operation."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"RealResolverUrlCases","coverage":"Partial","rustWitnesses":["microsoft_media_resource_real_resolver_url_cases_contract"],"notes":"Rust owns file/HTTPS/ms-resource/ms-appx and rejected-scheme decisions plus local leaf fallback; filesystem existence and packaged-app context remain platform responsibilities."},
+    {"suite":"unitSettingsModel","source":"MediaResourceTests.cpp","method":"RealResolverUNCCases","coverage":"Partial","rustWitnesses":["microsoft_media_resource_real_resolver_unc_cases_contract"],"notes":"Rust preserves UNC and Win32 namespace candidates and the native acceptance decision is exercised through MediaPlatform; real share/local-path existence remains platform-bound."}
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 host AliasTests checkpoint: safe Rust owns DOSKEY alias lookup and macro expansion, including positional/all-argument macros, redirection/control escapes, CRLF accounting and all negative-match paths. The five source contracts are Exact.",
+  "expectedCoveragePriority": 161,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 39,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 205
+    }
+  },
+  "expectedGlobalCoveragePriority": 161,
+  "expectedGlobalCoverage": {
+    "Exact": 430,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 256
+  },
+  "entries": [
+    {"suite":"host","source":"AliasTests.cpp","method":"TestMatchAndCopy","coverage":"Exact","rustWitnesses":["microsoft_alias_test_match_and_copy_contract"],"notes":"AliasStore reproduces Microsoft's full data-driven DOSKEY expansion matrix: $1..$9, $*, $l/$g/$b/$t case-insensitively, unknown-dollar passthrough, preserved argument spacing, trailing CRLF and line accounting."},
+    {"suite":"host","source":"AliasTests.cpp","method":"TestMatchAndCopyInvalidExeName","coverage":"Exact","rustWitnesses":["microsoft_alias_test_match_and_copy_invalid_exe_name_contract"],"notes":"An empty/unregistered executable identity yields no expansion and therefore leaves caller line state untouched."},
+    {"suite":"host","source":"AliasTests.cpp","method":"TestMatchAndCopyExeNotFound","coverage":"Exact","rustWitnesses":["microsoft_alias_test_match_and_copy_exe_not_found_contract"],"notes":"An executable with no alias table yields no expansion."},
+    {"suite":"host","source":"AliasTests.cpp","method":"TestMatchAndCopyAliasNotFound","coverage":"Exact","rustWitnesses":["microsoft_alias_test_match_and_copy_alias_not_found_contract"],"notes":"A populated executable table with a different alias yields no expansion."},
+    {"suite":"host","source":"AliasTests.cpp","method":"TestMatchAndCopyLeadingSpaces","coverage":"Exact","rustWitnesses":["microsoft_alias_test_match_and_copy_leading_spaces_contract"],"notes":"Leading whitespace prevents alias tokenization exactly as the native host compatibility path requires."}
+  ]
+}

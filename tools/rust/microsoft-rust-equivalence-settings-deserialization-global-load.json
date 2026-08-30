@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests global-load seam: portable Rust owns startup dimension clamping, permissive JSON trailing commas, built-in default profile activation, and legacy reload-environment migration into profile defaults.",
+  "expectedCoveragePriority": 120,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 115,
+      "Partial": 2,
+      "Missing": 40
+    }
+  },
+  "expectedGlobalCoveragePriority": 120,
+  "expectedGlobalCoverage": {
+    "Exact": 392,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 301
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestClampingOfStartupColumnAndViewProperties",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_clamps_startup_columns_and_rows_contract"],
+      "notes": "DeserializedProfiles applies the exact GlobalAppSettings LayerJson clamp range 1..=999 after global layering; the Microsoft 1000000/-1000000 vector resolves to 999/1."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestTrailingCommas",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_accepts_trailing_commas_contract"],
+      "notes": "The shared settings_json parser accepts Microsoft's trailing comma after the profiles array and the resulting Cascadia profile aggregate loads normally."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestValidDefaults",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_load_defaults_populates_active_profiles_contract"],
+      "notes": "DeserializedProfiles loads the two exact built-in profile identities/names from TerminalSettingsModel/defaults.json and reports active profile count equal to total profile count, both 2."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "MigrateReloadEnvVars",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_migrates_reload_environment_variables_contract"],
+      "notes": "CascadiaSettingsDocument exposes the existing portable load fixup: legacy root compatibility.reloadEnvironmentVariables is removed, fixup state is true, and profiles.defaults receives the exact false value."
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer vertical-scroll checkpoint: safe Rust owns viewport/DEC-margin SU, SD, IL, DL and RI movement, cursor side effects, horizontal-margin clipping and standard-erase attributes including 16/256/RGB color preservation.",
+  "expectedCoveragePriority": 226,
+  "expectedCoverage": {
+    "host": {"Exact":165,"Partial":82,"Platform-only":5,"Missing":79}
+  },
+  "expectedGlobalCoveragePriority": 226,
+  "expectedGlobalCoverage": {"Exact":569,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":117},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScrollOperations","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_scroll_operations_contract"],"notes":"Safe Rust composes the overlap-safe rectangular mover with viewport vertical bounds for SU/SD/IL/DL/RI magnitudes, preserving rows outside the viewport and standard-erasing revealed cells."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScrollUpInMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_scroll_up_in_margins_contract"],"notes":"SU moves only the DEC vertical region and, when DECLRMM is active, only the horizontal margin columns; surrounding cells remain untouched."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScrollDownInMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_scroll_down_in_margins_contract"],"notes":"SD mirrors SU downward with the same vertical/horizontal clipping and standard-erase fill."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"InsertLinesInMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_insert_lines_in_margins_contract"],"notes":"IL scrolls the cursor-to-bottom portion down, clips to active horizontal margins and returns the cursor to the active left margin."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DeleteLinesInMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_delete_lines_in_margins_contract"],"notes":"DL scrolls the cursor-to-bottom portion up, clips to active horizontal margins and returns the cursor to the active left margin."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ReverseLineFeedInMargins","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reverse_line_feed_in_margins_contract"],"notes":"RI moves the cursor upward away from the top margin and scrolls the active region downward without moving the cursor when already on the top margin."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScrollLines256Colors","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_scroll_lines_256_colors_contract"],"notes":"IL/DL/RI clear revealed rows with standard-erase active attributes while preserving indexed-16, indexed-256 and RGB background colors."}
+  ]
+}

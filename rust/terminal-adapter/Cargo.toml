@@ -1,0 +1,15 @@
+[package]
+name = "terminal-adapter"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+terminal-buffer = { path = "../terminal-buffer" }
+terminal-input = { path = "../terminal-input" }
+terminal-parser = { path = "../terminal-parser" }
+
+[lints]
+workspace = true

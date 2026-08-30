@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "description": "F02 Unicode-search ownership. Rust terminal-buffer now performs exact UTF-16 substring search over stored rows while returning end-exclusive terminal-cell coordinates through the row's validated character/cell mapping. This closes the portable UTextAdapter Unicode contract without importing ICU or conflating Host search flags/case-folding orchestration with TextBuffer ownership.",
+  "expectedCoveragePriority": 21,
+  "expectedCoverage": {
+    "textBuffer": { "Exact": 6, "Partial": 8 }
+  },
+  "expectedGlobalCoveragePriority": 21,
+  "expectedGlobalCoverage": {
+    "Exact": 229,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 422
+  },
+  "entries": [
+    {
+      "suite": "textBuffer",
+      "source": "UTextAdapterTests.cpp",
+      "method": "Unicode",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_utext_adapter_unicode_matches_source_contract"],
+      "notes": "Rust TextBuffer searches the same stored UTF-16 content and maps match offsets through Row character/cell offsets. The Microsoft vectors therefore remain exact for repeated ASCII (0-3, 8-11), supplementary-plane mathematical b (5-6 despite a surrogate pair), and wide Japanese ネコ (12-16). Host search flags and case-folding remain a later aggregate responsibility rather than being hidden in this classification."
+    }
+  ]
+}

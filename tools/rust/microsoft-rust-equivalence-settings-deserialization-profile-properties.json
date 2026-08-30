@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests profile-property seam: safe Rust composes the migrated profile collection with closeOnExit compatibility, profiles.defaults precedence, prohibited GUID inheritance, dynamic-profile defaults and explicit profile lookup.",
+  "expectedCoveragePriority": 111,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 106,
+      "Partial": 2,
+      "Missing": 49
+    }
+  },
+  "expectedGlobalCoveragePriority": 111,
+  "expectedGlobalCoverage": {
+    "Exact": 383,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 310
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestCloseOnExitParsing",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_close_on_exit_parsing_contract"],
+      "notes": "String closeOnExit modes map to Graceful/Always/Never/Automatic and null/unknown values resolve to Automatic."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestCloseOnExitCompatibilityShim",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_close_on_exit_compatibility_shim_contract"],
+      "notes": "Legacy boolean closeOnExit values remain compatible: true maps to Graceful and false maps to Never."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestLayerUserDefaultsBeforeProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_layer_user_defaults_before_profiles_contract"],
+      "notes": "profiles.defaults historySize applies before each explicit user profile, so local profile values override the default while omitted values inherit it."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestDontLayerGuidFromUserDefaults",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_dont_layer_guid_from_user_defaults_contract"],
+      "notes": "GUID is an identity field and is never inherited from profiles.defaults; explicit GUIDs remain local and GUID-less profiles stay identity-generated."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestLayerUserDefaultsOnDynamics",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_layer_user_defaults_on_dynamics_contract"],
+      "notes": "Dynamic/inbox profile values form the base, user profiles.defaults layer above them, and explicit user profile values win last while preserving user-first ordering."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "FindMissingProfile",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_find_missing_profile_contract"],
+      "notes": "Explicit profile GUID lookup returns the matching profile and returns None for a GUID absent from the effective collection."
+    }
+  ]
+}

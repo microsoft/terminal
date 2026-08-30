@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "H06 freezes the global source-method distribution after R06-A Host hardening. Twenty-three deterministic Viewport contracts move from Partial to Exact through the migrated Rust Viewport owner.",
+  "expectedGlobalCoveragePriority": 6,
+  "expectedGlobalCoverage": {
+    "Exact": 159,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 68,
+    "UI-managed": 22,
+    "Missing": 487
+  }
+}

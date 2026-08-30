@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer backspace/default-attribute checkpoint: safe Rust owns VT and WriteCharsLegacy printable-plus-BS behavior without legacy attribute degradation, and composes the existing DCH owner for prompt-line edits.",
+  "expectedCoveragePriority": 239,
+  "expectedCoverage": {
+    "host": {"Exact":209,"Partial":82,"Platform-only":5,"Missing":35}
+  },
+  "expectedGlobalCoveragePriority": 239,
+  "expectedGlobalCoverage": {"Exact":613,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":73},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"BackspaceDefaultAttrs","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_backspace_default_attrs_contract"],"notes":"HostWriteState writes printable VT text with the complete symbolic TextAttribute and treats BS as cursor-only movement. The direct witness reproduces XX+BS, cursor x=1, non-legacy stored defaults, and the configured magenta default background resolved through ColorTableState."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"BackspaceDefaultAttrsWriteCharsLegacy","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_backspace_default_attrs_write_chars_legacy_contract"],"notes":"The legacy entry point deliberately shares the modern attribute-preserving row writer after platform adaptation. The witness covers both Microsoft data rows: characters/control supplied singly and XX+BS supplied as one batch, with identical cursor and cell attributes."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"BackspaceDefaultAttrsInPrompt","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_backspace_default_attrs_in_prompt_contract"],"notes":"The prompt witness composes HostWriteState cursor movement with the already migrated line_edit::delete_cells DCH owner. After XXX, cursor-left-2 and DCH at column 1, the cursor remains at x=1 and every cell retains the expected symbolic default TextAttribute, matching the Microsoft regression observable."}
+  ]
+}

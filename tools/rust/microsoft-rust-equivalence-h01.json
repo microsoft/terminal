@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "H01 freezes the audited R02 distribution after reconciling Windows keyboard-layout ownership with the latest functional-lane review.",
+  "expectedCoverage": {
+    "adapter": {
+      "Exact": 19,
+      "Stronger": 0,
+      "Partial": 52,
+      "Platform-only": 1,
+      "UI-managed": 0,
+      "Missing": 0
+    }
+  }
+}

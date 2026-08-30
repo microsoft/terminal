@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire eight Adapter functional Partial contracts after the color/report and terminal-surface product owners passed Linux, Windows, Clippy, witness validation and Quality Census. Closed: ColorTableReportTests, Osc4ColorPaletteReportTests, XtermColorResourceReportTests, SetColorTableValue, AllowBlinkingTest, SetConsoleTitleTest, MenuCompletionsTests and adapterTest.cpp::SendC1ControlTest.",
+  "expectedCoveragePriority": 333,
+  "expectedCoverage": {
+    "adapter": {
+      "Exact": 65,
+      "Partial": 6,
+      "Platform-only": 1
+    }
+  },
+  "expectedGlobalCoveragePriority": 333,
+  "expectedGlobalCoverage": {
+    "Exact": 933,
+    "Stronger": 11,
+    "Partial": 69,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer rectangular-area checkpoint: safe Rust owns overlap-safe wide-glyph horizontal movement, DEC rectangular fill/erase/attribute/copy behavior, and line-rendition-aware rectangular copy from double-width source rows.",
+  "expectedCoveragePriority": 213,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 120,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 124
+    }
+  },
+  "expectedGlobalCoveragePriority": 213,
+  "expectedGlobalCoverage": {
+    "Exact": 524,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 162
+  },
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ScrollingWideCharsHorizontally","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_scrolling_wide_chars_horizontally_contract"],"notes":"The safe row/rect owners move the Microsoft Japanese wide-glyph fixture one cell right and left through ICH, DCH, overlapping rectangular copy and ScrollRegion-like movement without self-erasing or splitting a two-cell glyph."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"RectangularAreaOperations","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_rectangular_area_operations_contract"],"notes":"rect_ops reproduces all six Microsoft data rows: DECFRA fill, DECERA standard erase, DECSERA protected-aware text erase with attributes retained, DECCARA rectangular rendition/color patching, DECRARA intensity reversal and overlap-safe DECCRA copy, while preserving cells outside the target rectangle."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"CopyDoubleWidthRectangularArea","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_copy_double_width_rectangular_area_contract"],"notes":"DECCRA source screen coordinates are projected through each row's LineRendition, so a 20-screen-column source slice contributes 20 cells on single-width rows and 10 cells on the double-width row, preserving glyphs and attributes exactly at the destination."}
+  ]
+}

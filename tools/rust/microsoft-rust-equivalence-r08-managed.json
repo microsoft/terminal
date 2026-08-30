@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "stage": "R08-managed-product",
+  "sourceRules": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "ApplicationStateTests.cpp",
+      "coverage": "Missing",
+      "notes": "Application-state settings semantics remain implemented in the native SettingsModel; there is no Rust settings owner in R08."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ColorSchemeTests.cpp",
+      "coverage": "Missing",
+      "notes": "Color-scheme model, JSON, inheritance and mutation semantics remain native SettingsModel responsibilities with no Rust owner."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "CommandTests.cpp",
+      "coverage": "Missing",
+      "notes": "Settings command-model semantics remain native C++/WinRT product logic; they are not UI-only and have not transferred to Rust."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "coverage": "Missing",
+      "notes": "Settings deserialization and layering semantics remain in native SettingsModel with no Rust equivalent."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "coverage": "Missing",
+      "notes": "Key-binding model and action-binding semantics remain native SettingsModel responsibilities; terminal-input Rust does not own this product settings contract."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "MediaResourceTests.cpp",
+      "coverage": "Missing",
+      "notes": "Media-resource settings semantics remain in the native SettingsModel. Platform-facing resource resolution is not a reason to claim a Rust equivalent."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "NewTabMenuTests.cpp",
+      "coverage": "Missing",
+      "notes": "New-tab menu settings-model semantics remain native product logic; no Rust settings owner exists."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ProfileTests.cpp",
+      "coverage": "Missing",
+      "notes": "Profile model semantics remain native SettingsModel behavior with no Rust owner."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "SerializationTests.cpp",
+      "coverage": "Missing",
+      "notes": "Settings serialization and round-trip semantics remain native SettingsModel behavior with no Rust equivalent."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "TerminalSettingsTests.cpp",
+      "coverage": "Missing",
+      "notes": "Terminal-settings composition and projection remain native SettingsModel behavior; no Rust settings crate owns these contracts."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "ThemeTests.cpp",
+      "coverage": "Missing",
+      "notes": "Theme model semantics remain native SettingsModel behavior; XAML consumption does not make the model itself UI-managed."
+    },
+    {
+      "suite": "terminalApp",
+      "source": "FzfTests.cpp",
+      "coverage": "Missing",
+      "notes": "FZF source methods default to Missing unless H09 supplies an individual Exact Rust witness. The Microsoft-ignored multi-code-point full-fold contract intentionally remains Missing."
+    },
+    {
+      "suite": "terminalApp",
+      "source": "JsonUtilsTests.cpp",
+      "coverage": "Missing",
+      "notes": "TerminalApp JSON utility semantics remain native C++ product logic with no Rust equivalent."
+    },
+    {
+      "suite": "localTerminalApp",
+      "source": "CommandlineTest.cpp",
+      "coverage": "Missing",
+      "notes": "Terminal application command-line semantics remain native C++ product logic; terminal-host argument parsing is a different contract and is not credited here."
+    },
+    {
+      "suite": "localTerminalApp",
+      "source": "FilteredCommandTests.cpp",
+      "coverage": "Missing",
+      "notes": "Filtered command/product action semantics remain native TerminalApp logic with no Rust owner."
+    },
+    {
+      "suite": "localTerminalApp",
+      "source": "SettingsTests.cpp",
+      "coverage": "Missing",
+      "notes": "TerminalApp settings integration remains native product logic; it is not merely XAML orchestration and has not transferred to Rust."
+    },
+    {
+      "suite": "localTerminalApp",
+      "source": "TabTests.cpp",
+      "coverage": "UI-managed",
+      "notes": "These tests deliberately activate UAP/XAML, construct XAML controls, dispatch work to the UI thread and exercise TerminalPage/tab UI orchestration. This responsibility stays on the XAML/managed product side rather than being shadow-migrated into Rust."
+    },
+    {
+      "suite": "unitControl",
+      "source": "ControlCoreTests.cpp",
+      "coverage": "Platform-only",
+      "notes": "The suite directly constructs C++/WinRT ControlCore through COM apartments, projected settings/connection interfaces and renderer/control platform boundaries. Lower-level terminal semantics already have their own Rust-suite evidence and are not double-counted here."
+    },
+    {
+      "suite": "unitControl",
+      "source": "ControlInteractivityTests.cpp",
+      "coverage": "Platform-only",
+      "notes": "The suite directly constructs C++/WinRT ControlInteractivity, uses COM apartments and Windows pointer/mouse/control event surfaces. Portable terminal selection/input contracts remain tracked in their owning Rust stages rather than replacing this boundary suite."
+    }
+  ],
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Missing": 157
+    },
+    "terminalApp": {
+      "Exact": 38,
+      "Missing": 14
+    },
+    "localTerminalApp": {
+      "Missing": 38,
+      "UI-managed": 21
+    },
+    "unitControl": {
+      "Platform-only": 28
+    }
+  }
+}

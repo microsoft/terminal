@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer reverse-line-feed checkpoint: existing safe Rust vertical-scroll ownership directly reproduces the three Microsoft RI cases for ordinary viewport coordinates.",
+  "expectedCoveragePriority": 240,
+  "expectedCoverage": {
+    "host": {"Exact":210,"Partial":82,"Platform-only":5,"Missing":34}
+  },
+  "expectedGlobalCoveragePriority": 240,
+  "expectedGlobalCoverage": {"Exact":614,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":72},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestReverseLineFeed","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_test_reverse_line_feed_contract"],"notes":"VerticalScrollState::reverse_index directly reproduces all three Microsoft cases: below the viewport top RI decrements Y while preserving X; at the viewport top RI pins the cursor and scrolls content down one row; and the same behavior holds when the viewport begins below the physical buffer origin."}
+  ]
+}

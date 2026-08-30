@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host VT I/O checkpoint: close WriteConsoleW through the safe-Rust legacy processed-write projection and Microsoft's exact forced-wrap vectors.",
+  "expectedCoveragePriority": 326,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 310,
+      "Partial": 16,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 326,
+  "expectedGlobalCoverage": {
+    "Exact": 880,
+    "Stronger": 11,
+    "Partial": 122,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "WriteConsoleW",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_vt_io_write_console_w_matches_exact_vectors"
+      ],
+      "notes": "Microsoft's source method exercises only processed single-cell ASCII/control input. The safe-Rust vt_legacy_console_write owner preserves width and cursor-column state across calls, mirrors printable runs, expands tabs only for cursor accounting, avoids duplicate CR before LF, and emits the same forced CRLF when the final cell reaches the right edge. Unicode glyph measurement outside this Microsoft method remains with the text-buffer owner and is not used to justify this promotion."
+    }
+  ]
+}

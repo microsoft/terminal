@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer alternate resize checkpoint: safe Rust owns alternate viewport resize isolation and active-buffer screen-info projection while preserving the main viewport.",
+  "expectedCoveragePriority": 215,
+  "expectedCoverage": {
+    "host": {"Exact":129,"Partial":82,"Platform-only":5,"Missing":115}
+  },
+  "expectedGlobalCoveragePriority": 215,
+  "expectedGlobalCoverage": {"Exact":533,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":153},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ResizeAltBuffer","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_resize_alt_buffer_contract"],"notes":"Safe Rust resizes the active alternate viewport without recursive main/alternate resizing, preserves the persistent main viewport and removes transient alternate state on return to main."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ResizeAltBufferGetScreenBufferInfo","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_resize_alt_buffer_get_screen_buffer_info_contract"],"notes":"All Microsoft dx/dy combinations {-10,-1,1,10} resize only the alternate viewport; screen-buffer-info projection follows the active alternate while the main viewport remains unchanged."}
+  ]
+}

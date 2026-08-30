@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host VT I/O checkpoint: close SetConsoleActiveScreenBuffer through the existing safe-Rust screen snapshot serializer and a direct Microsoft 8x4 screen-state vector.",
+  "expectedCoveragePriority": 324,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 309,
+      "Partial": 17,
+      "Platform-only": 5,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 324,
+  "expectedGlobalCoverage": {
+    "Exact": 879,
+    "Stronger": 11,
+    "Partial": 123,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "SetConsoleActiveScreenBuffer",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_vt_io_set_console_active_screen_buffer_matches_exact_vector"
+      ],
+      "notes": "The safe-Rust vt_screen_dump owner reproduces Microsoft's complete observable when returning to the main buffer: ASB reset, all four 8-column rows with exact legacy color transitions, cursor position, default attributes, cursor visibility, and autowrap state. Native screen-buffer handle selection remains the platform input to the snapshot serializer rather than deferred output behavior."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer dynamic color checkpoint: safe Rust owns global indexed palette mutation, OSC 4/10/11 RGB payload validation, default-color resolution, three-digit indexed colors and DEC color-alias reset semantics.",
+  "expectedCoveragePriority": 234,
+  "expectedCoverage": {
+    "host": {"Exact":196,"Partial":82,"Platform-only":5,"Missing":48}
+  },
+  "expectedGlobalCoveragePriority": 234,
+  "expectedGlobalCoverage": {"Exact":600,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":86},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"VtSetColorTable","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_vt_set_color_table_contract"],"notes":"ColorTableState applies OSC 4 payloads after VT framing, reproduces Microsoft's one- and two-digit xterm rgb component scaling, accepts indexed palette updates and leaves state unchanged for every invalid source payload family."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetGlobalColorTable","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_global_color_table_contract"],"notes":"Indexed TextAttribute values remain symbolic and resolve through one shared ColorTableState, so an OSC 4 update immediately changes the rendered color of already-stored main and alternate-buffer cells without rewriting their attributes."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetColorTableThreeDigits","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_color_table_three_digits_contract"],"notes":"OSC 4 accepts index 123 and TextColor::Index256 resolves that three-digit entry before and after mutation."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetDefaultForegroundColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_default_foreground_color_contract"],"notes":"OSC 10 mutates the symbolic default-foreground slot for valid rgb payloads and preserves the previous value for Microsoft's invalid unprefixed syntax."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetDefaultBackgroundColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_default_background_color_contract"],"notes":"OSC 11 mutates the symbolic default-background slot for valid rgb payloads and preserves the previous value for Microsoft's invalid unprefixed syntax."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"AssignColorAliases","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_assign_color_aliases_contract"],"notes":"DEC item 1 assigns normal-text foreground/background aliases, item 2 assigns frame aliases, unsupported item 0 is ignored, and RIS restores all initial alias indices."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetDefaultsIndividuallyBothDefault","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_defaults_individually_both_default_contract"],"notes":"Already-owned TextAttribute SGR state composes with ColorTableState so individual foreground/background default resets preserve symbolic defaults, legacy-vs-modern attribute identity and the exact yellow/magenta plus indexed-color resolution matrix."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"SetDefaultsTogether","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_set_defaults_together_contract"],"notes":"Combined foreground/background default reset returns an indexed-256 background attribute to fully symbolic defaults while retaining current default palette colors."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"ReverseResetWithDefaultBackground","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reverse_reset_with_default_background_contract"],"notes":"Reverse-video swaps resolved default colors without destroying symbolic default-background state, and reset restores the original non-reversed attribute with the configured magenta background."}
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Functional Closeout checkpoint: retire the complete UtilsTests and MathTests functional families plus the TerminalBuffer tab-stop subcluster after green Rust CI and Quality Census on the published product/witness HEAD.",
+  "expectedCoveragePriority": 329,
+  "expectedCoverage": {
+    "terminalCore": {
+      "Exact": 41,
+      "Partial": 4,
+      "Platform-only": 7,
+      "UI-managed": 1
+    },
+    "til": {
+      "Exact": 163,
+      "Partial": 31,
+      "Platform-only": 5
+    },
+    "types": {
+      "Exact": 12,
+      "Partial": 4
+    }
+  },
+  "expectedGlobalCoveragePriority": 329,
+  "expectedGlobalCoverage": {
+    "Exact": 920,
+    "Stronger": 11,
+    "Partial": 82,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestResetClearTabStops",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_reset_clear_tab_stops_contract"],
+      "notes": "Rust reproduces Microsoft's default 8-column tab stops, clear-all behavior, and RIS-style reset."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestAddTabStop",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_add_tab_stop_contract"],
+      "notes": "Rust preserves sorted tab-stop insertion at head/middle/tail and duplicate suppression."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestClearTabStop",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_clear_tab_stop_contract"],
+      "notes": "Rust clears existing head/middle/tail stops and leaves state unchanged for nonexistent stops."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestGetForwardTab",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_forward_tab_contract"],
+      "notes": "Rust advances to the next configured stop and clamps to the rightmost buffer column when none remains."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "TerminalBufferTests.cpp",
+      "method": "TestGetReverseTab",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_terminal_buffer_reverse_tab_contract"],
+      "notes": "Rust moves to the previous configured stop and clamps to column zero when none precedes the cursor."
+    },
+    {
+      "suite": "til",
+      "source": "MathTests.cpp",
+      "method": "Ceiling",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_math_ceiling_full_matrix"],
+      "notes": "Rust matches Microsoft's full ceiling and narrowing matrix, including non-finite and out-of-range rejection."
+    },
+    {
+      "suite": "til",
+      "source": "MathTests.cpp",
+      "method": "Flooring",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_math_flooring_full_matrix"],
+      "notes": "Rust matches Microsoft's full flooring and narrowing matrix."
+    },
+    {
+      "suite": "til",
+      "source": "MathTests.cpp",
+      "method": "Rounding",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_math_rounding_full_matrix"],
+      "notes": "Rust matches Microsoft's full rounding and narrowing matrix, including negative half-away-from-zero behavior."
+    },
+    {
+      "suite": "til",
+      "source": "MathTests.cpp",
+      "method": "NormalIntegers",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_til_math_normal_integers_full_matrix"],
+      "notes": "Rust preserves identity for normal signed integer inputs including both i32 extrema."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestClampToShortMax",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_clamp_to_short_max_contract"],
+      "notes": "Rust clamps below the supplied minimum and above SHORT_MAX exactly as Microsoft tests require."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestColorFromXTermColor",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_color_from_xterm_color_contract"],
+      "notes": "Rust reproduces Microsoft's XParseColor rgb:/# scaling, case handling, X11 names/variants, gray levels, and invalid-sequence rejection."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestDontTrimTrailingWhitespace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_dont_trim_multiline_whitespace_contract"],
+      "notes": "Rust preserves trailing whitespace for multiline paste payloads where Microsoft deliberately avoids trimming."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestEvaluateStartingDirectory",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_evaluate_starting_directory_contract"],
+      "notes": "Rust preserves Microsoft's absolute, tilde, POSIX-rooted, and relative starting-directory decisions."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestFilterStringForPaste",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_filter_string_for_paste_contract"],
+      "notes": "Rust reproduces CR/LF normalization and C0/C1 control filtering over Microsoft's ASCII and Unicode vectors."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestGuidToString",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_guid_string_round_trip_contract"],
+      "notes": "Rust emits braced/plain GUID strings and round-trips the Microsoft GUID field layout."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestMangleWSLPaths",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_mangle_wsl_paths_contract"],
+      "notes": "Rust reproduces WSL executable qualification, --cd injection/suppression, System32 checks, tilde behavior, and //wsl path normalization with platform lookups injected."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestSplitString",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_split_string_contract"],
+      "notes": "Rust matches Microsoft's delimiter split behavior including leading, trailing, adjacent, and absent delimiters."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestStringToUint",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_string_to_uint_contract"],
+      "notes": "Rust accepts Microsoft's decimal unsigned vectors and rejects empty/non-decimal inputs."
+    },
+    {
+      "suite": "types",
+      "source": "UtilsTests.cpp",
+      "method": "TestTrimTrailingWhitespace",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_types_trim_trailing_whitespace_contract"],
+      "notes": "Rust trims Microsoft's single-line trailing whitespace vectors without altering interior tabs."
+    }
+  ]
+}

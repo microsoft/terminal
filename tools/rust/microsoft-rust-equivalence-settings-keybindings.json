@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 KeyBindings family checkpoint: safe Rust closes all seventeen Microsoft KeyBindingsTests contracts. Fifteen are Exact; KeyChords and LayerScancodeKeybindings are Partial only for their active Windows keyboard-layout mapping boundary.",
+  "expectedCoveragePriority": 85,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 74,
+      "Partial": 2,
+      "Missing": 81
+    }
+  },
+  "expectedGlobalCoveragePriority": 85,
+  "expectedGlobalCoverage": {
+    "Exact": 351,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 342
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "KeyChords",
+      "coverage": "Partial",
+      "rustWitnesses": [
+        "microsoft_keybindings_key_chords_contract"
+      ],
+      "notes": "Rust reproduces the portable serialization/parse vectors, modifier ordering, named plus, numeric vk(255), sc(123) preservation and KeyChord data model. The source method additionally derives the effective VKey for a raw scan code through active-layout MapVirtualKeyW; that platform lookup is intentionally not claimed by the safe Rust owner."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "ManyKeysSameAction",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_many_keys_same_action_contract"
+      ],
+      "notes": "Multiple chords bind the same semantic action while retaining independent key-map entries and Microsoft's 0→1→2→4 cardinality sequence."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "LayerKeybindings",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_layer_keybindings_contract"
+      ],
+      "notes": "Later layers replace an existing effective chord without growing the key map; distinct chords remain additive."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "HashDeduplication",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_hash_deduplication_contract"
+      ],
+      "notes": "Repeated identical splitPane command content deduplicates to one semantic action entry."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "HashContentArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_hash_content_args_contract"
+      ],
+      "notes": "newTab default arguments and newTab(index=0) retain distinct semantic identities while preserving nullable profile-index semantics."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "UnbindKeybindings",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_unbind_keybindings_contract"
+      ],
+      "notes": "unbound, null, unknown command and numeric command values all become recoverable explicit unbinds while retaining the chord slot."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "LayerScancodeKeybindings",
+      "coverage": "Partial",
+      "rustWitnesses": [
+        "microsoft_keybindings_layer_scancode_keybindings_contract"
+      ],
+      "notes": "Rust reproduces Microsoft’s US-layout vector where scan code 41 and the grave key share one effective identity, including replacement/cardinality semantics. General scancode↔VKey/character equivalence still depends on the active Windows keyboard layout (MapVirtualKeyW/VkKeyScanW), so the source contract remains platform-boundary Partial."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestExplicitUnbind",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_explicit_unbind_contract"
+      ],
+      "notes": "Explicit-unbound state follows Microsoft's false→false→true→false bind/unbind/rebind transition."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestArbitraryArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_arbitrary_args_contract"
+      ],
+      "notes": "Rust owns Microsoft's ten copy/newTab/adjustFontSize vectors, including defaults, unknown-copy-member tolerance, profile indexes 0/11 and signed font deltas."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestSplitPaneArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_split_pane_args_contract"
+      ],
+      "notes": "vertical maps Right, horizontal maps Down, and omitted/auto map Automatic across all four Microsoft vectors."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestStringOverload",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_string_overload_contract"
+      ],
+      "notes": "Scalar keys syntax is accepted and simple copy exposes effective singleLine=false."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestSetTabColorArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_set_tab_color_args_contract"
+      ],
+      "notes": "Rust preserves null/no-color defaults and converts #123456 to Microsoft's COLORREF byte order 0x563412."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestScrollArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_scroll_args_contract"
+      ],
+      "notes": "Both scroll directions preserve nullable rowsToScroll, explicit value 10, and rejection of negative rows without mutating a fresh key map."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestToggleCommandPaletteArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_toggle_command_palette_args_contract"
+      ],
+      "notes": "String/default/action launch modes resolve to Action, commandLine resolves to CommandLine, and invalid launchMode is rejected before binding."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestMoveTabArgs",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_move_tab_args_contract"
+      ],
+      "notes": "forward/backward directions bind exactly; bare moveTab without required args is ignored; invalid direction is rejected."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "TestGetKeyBindingForAction",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_get_key_binding_for_action_contract"
+      ],
+      "notes": "Explicit IDs preserve bidirectional ID↔key lookup for simple, object-argument, new-terminal and commandPalette actions."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "KeyBindingsTests.cpp",
+      "method": "KeybindingsWithoutVkey",
+      "coverage": "Exact",
+      "rustWitnesses": [
+        "microsoft_keybindings_without_vkey_contract"
+      ],
+      "notes": "When scan code 255 has no VKey translation, effective identity falls back to the scan code and the explicit action remains retrievable."
+    }
+  ]
+}

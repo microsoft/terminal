@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests profile collection seam: safe Rust owns user-first profile ordering, duplicate/default validation, hide/active projection, generated identity continuity, and global property layering for the Microsoft profile-collection contracts.",
+  "expectedCoveragePriority": 105,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 100,
+      "Partial": 2,
+      "Missing": 55
+    }
+  },
+  "expectedGlobalCoveragePriority": 105,
+  "expectedGlobalCoverage": {
+    "Exact": 377,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 316
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateProfilesExist",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_profiles_exist_contract"],
+      "notes": "A non-empty profile collection loads; missing or empty effective profile lists fail with the migrated NoProfiles boundary."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateDefaultProfileExists",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_default_profile_exists_contract"],
+      "notes": "defaultProfile resolves by GUID or profile name; an unresolved explicit default emits MissingDefaultProfile and falls back to the first effective profile."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateDuplicateProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_duplicate_profiles_contract"],
+      "notes": "Duplicate GUID identities retain their first user occurrence, emit one DuplicateProfile warning, and preserve the surviving order."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateManyWarnings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_many_warnings_contract"],
+      "notes": "DuplicateProfile precedes MissingDefaultProfile in the warning sequence while the first surviving profile becomes the fallback default."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "LayerGlobalProperties",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_layer_global_properties_contract"],
+      "notes": "Inbox global values survive unless user settings override them; user initial rows/columns and tab-titlebar settings win independently."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateProfileOrdering",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_profile_ordering_contract"],
+      "notes": "User profile order is authoritative for matched/default profiles and unmatched inbox profiles append after all user entries."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateHideProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_validate_hide_profiles_contract"],
+      "notes": "AllProfiles retains hidden entries while ActiveProfiles filters them after user-first ordering."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestReorderWithNullGuids",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_reorder_with_null_guids_contract"],
+      "notes": "Name-only profiles receive effective identity without disrupting user ordering or inherited default-profile reconciliation."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestReorderingWithoutGuid",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_reordering_without_guid_contract"],
+      "notes": "GUID-less user profiles coexist with explicit/default identities without crashes; matched inbox names survive omitted user names and ordering remains stable."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestLayeringNameOnlyProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_layering_name_only_profiles_contract"],
+      "notes": "Generated identity distinguishes name-only profiles; distinct names remain independent and user entries precede unmatched inbox defaults."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestHideAllProfiles",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_hide_all_profiles_contract"],
+      "notes": "A collection with at least one visible profile loads; an all-hidden effective collection fails with AllProfilesHidden."
+    }
+  ]
+}

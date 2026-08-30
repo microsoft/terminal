@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 TerminalApp JsonUtils family checkpoint: the shared terminal-settings JSON conversion owner reproduces all 13 Microsoft JsonUtilsTests contracts, including Missing/Null/Value semantics, filling overloads, custom converters, enum/flag maps, nested key errors, hstring-like null handling and double optional serialization.",
+  "expectedCoveragePriority": 186,
+  "expectedCoverage": {
+    "terminalApp": {
+      "Exact": 51,
+      "Partial": 1,
+      "Missing": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 186,
+  "expectedGlobalCoverage": {
+    "Exact": 473,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 213
+  },
+  "entries": [
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"DocumentedBehaviors_GetValue_Returning","coverage":"Exact","rustWitnesses":["microsoft_json_utils_documented_behaviors_get_value_returning_contract"],"notes":"JsonConversion reproduces bare/optional type mismatch, null and successful returning semantics."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"DocumentedBehaviors_GetValue_Filling","coverage":"Exact","rustWitnesses":["microsoft_json_utils_documented_behaviors_get_value_filling_contract"],"notes":"Filling converts into temporary storage first, preserving the destination on errors and distinguishing optional null."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"DocumentedBehaviors_GetValueForKey_Returning","coverage":"Exact","rustWitnesses":["microsoft_json_utils_documented_behaviors_get_value_for_key_returning_contract"],"notes":"Keyed returning preserves Microsoft's Missing versus Null behavior for bare and optional values."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"DocumentedBehaviors_GetValueForKey_Filling","coverage":"Exact","rustWitnesses":["microsoft_json_utils_documented_behaviors_get_value_for_key_filling_contract"],"notes":"Keyed filling reports absent members without modifying storage and annotates conversion errors with the key."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"BasicTypeConversion","coverage":"Exact","rustWitnesses":["microsoft_json_utils_basic_type_conversion_contract"],"notes":"Portable conversions cover strings, signed/unsigned integers, bool, float/double, wide strings, RGB shorthand/canonicalization and GUID validation/roundtrip."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"BasicTypeWithCustomConverter","coverage":"Exact","rustWitnesses":["microsoft_json_utils_basic_type_with_custom_converter_contract"],"notes":"JsonConverter supports temporary and stateful caller-provided converters for direct and keyed reads."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"CustomTypeWithConverterSpecialization","coverage":"Exact","rustWitnesses":["microsoft_json_utils_custom_type_with_converter_specialization_contract"],"notes":"User-defined JsonConversion implementations participate in direct and keyed conversion."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"EnumMapper","coverage":"Exact","rustWitnesses":["microsoft_json_utils_enum_mapper_contract"],"notes":"EnumMapper handles known names, rejects unknown values and serializes mapped enum values."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"FlagMapper","coverage":"Exact","rustWitnesses":["microsoft_json_utils_flag_mapper_contract"],"notes":"FlagMapper reproduces single/array mappings, none/all sentinels, composition, serialization and invalid combinations."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"NestedExceptionDuringKeyParse","coverage":"Exact","rustWitnesses":["microsoft_json_utils_nested_exception_during_key_parse_contract"],"notes":"Conversion errors raised below keyed lookup retain the failing member key."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"SetValueHStringLike","coverage":"Exact","rustWitnesses":["microsoft_json_utils_set_value_hstring_like_contract"],"notes":"Nullable string-like values serialize empty as null, populated as strings and absent outer optionals as omitted members."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"GetValueHStringLike","coverage":"Exact","rustWitnesses":["microsoft_json_utils_get_value_hstring_like_contract"],"notes":"A conversion type that accepts null maps it to a concrete empty value, including inside Option, while missing keys remain no-ops."},
+    {"suite":"terminalApp","source":"JsonUtilsTests.cpp","method":"DoubleOptional","coverage":"Exact","rustWitnesses":["microsoft_json_utils_double_optional_contract"],"notes":"Nested Option preserves all three states: member absent, member present/null and member present/value on serialization and keyed filling."}
+  ]
+}

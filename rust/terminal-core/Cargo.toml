@@ -1,0 +1,13 @@
+[package]
+name = "terminal-core"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+terminal-buffer = { path = "../terminal-buffer" }
+
+[lints]
+workspace = true

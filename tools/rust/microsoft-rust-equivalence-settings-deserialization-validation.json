@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 DeserializationTests validation/lookup seam: safe Rust owns profile and action color-scheme validation, exact CascadiaSettings profile lookup over generated UUID identity, and ActionMap/keybinding required-parameter warning projection.",
+  "expectedCoveragePriority": 116,
+  "expectedCoverage": {
+    "unitSettingsModel": {
+      "Exact": 111,
+      "Partial": 2,
+      "Missing": 44
+    }
+  },
+  "expectedGlobalCoveragePriority": 116,
+  "expectedGlobalCoverage": {
+    "Exact": 388,
+    "Stronger": 11,
+    "Partial": 309,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 305
+  },
+  "entries": [
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestInvalidColorSchemeName",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_invalid_color_scheme_name_contract"],
+      "notes": "The validation aggregate records one UnknownColorScheme warning and resolves all three Microsoft profile vectors to Campbell for both dark and light appearance names."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateColorSchemeInCommands",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_color_scheme_in_commands_contract"],
+      "notes": "Recursive action validation finds invalid setColorScheme references at top level, nested, and nested-in-nested depth and emits exactly one InvalidColorSchemeInCmd warning for each Microsoft settings vector."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "TestHelperFunctions",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_helper_functions_contract"],
+      "notes": "ProfileLookup projects GetProfileByName and FindProfile over the exact existing UUIDv5 identity owner, including the generated UUID for ThisProfileShouldNotThrow and null lookup results."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateKeybindingsWarnings",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_keybindings_warnings_contract"],
+      "notes": "Action validation reproduces the two invalid KeyMap entries, one valid splitPane ActionMap/NameMap entry, four ordered concrete warnings and the leading AtLeastOneKeybindingWarning aggregate."
+    },
+    {
+      "suite": "unitSettingsModel",
+      "source": "DeserializationTests.cpp",
+      "method": "ValidateExecuteCommandlineWarning",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_deserialization_execute_commandline_warning_contract"],
+      "notes": "Missing, empty and null wt commandline values each produce MissingRequiredParameter, remain invalid key-map bindings and surface beneath one AtLeastOneKeybindingWarning."
+    }
+  ]
+}

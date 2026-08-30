@@ -1,0 +1,51 @@
+name: Rust Microsoft Contract
+
+on:
+  push:
+    branches:
+      - "sync/microsoft/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terminal-contract:
+    name: Microsoft terminal suite
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Configure Visual Studio environment
+        shell: pwsh
+        run: |
+          Import-Module ./tools/OpenConsole.psm1
+          Set-MsBuildDevEnvironment
+          msbuild -version
+
+      - name: Build x64 Debug
+        shell: pwsh
+        run: |
+          Import-Module ./tools/OpenConsole.psm1
+          Set-MsBuildDevEnvironment
+          Invoke-OpenConsoleBuild /m /p:Configuration=Debug /p:Platform=x64
+
+      - name: Run parser contract
+        shell: pwsh
+        run: ./tools/rust/Invoke-ContractTest.ps1 -Suite terminal -Platform x64 -Configuration Debug
+
+      - name: Upload contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-contract-${{ github.run_id }}
+          path: artifacts/contract/
+          if-no-files-found: warn
+          retention-days: 14

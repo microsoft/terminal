@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 functional closeout cohort for the remaining portable VtIo live-buffer mutations, legacy host selection semantics, and the complete Microsoft ReflowTests.cpp data-driven corpus. The Rust owners now mutate real Rust screen/text state and replay Microsoft vectors directly rather than certifying serialization-only surrogates.",
+  "expectedCoveragePriority": 336,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 321,
+      "Partial": 5,
+      "Platform-only": 5
+    },
+    "textBuffer": {
+      "Exact": 14,
+      "Partial": 0
+    }
+  },
+  "expectedGlobalCoveragePriority": 336,
+  "expectedGlobalCoverage": {
+    "Exact": 951,
+    "Stronger": 11,
+    "Partial": 51,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 0
+  },
+  "entries": [
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "FillConsoleOutputAttribute",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_console_output::tests::microsoft_vt_io_fill_console_output_attribute_matches_exact_vectors"],
+      "notes": "VtScreenOutputState now owns the live cell mutation plus VT projection, including zero-count and PowerShell clear-shim behavior, and reproduces Microsoft's exact affected-cell vectors."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "FillConsoleOutputAttributeWide",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_console_output::tests::microsoft_vt_io_fill_console_output_attribute_wide_matches_exact_vector"],
+      "notes": "The same live-state owner preserves DBCS leading/trailing bookkeeping while replacing attributes and reproduces Microsoft's wide-cell vector."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "FillConsoleOutputCharacterW",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_console_output::tests::microsoft_vt_io_fill_console_output_character_w_matches_all_source_vectors"],
+      "notes": "The Rust owner mutates glyph state, preserves destination attributes, handles wide-glyph row boundaries and the full-buffer clear optimization, then emits the exact Microsoft VT vectors."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "ScrollConsoleScreenBufferW",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_screen_scroll::tests::microsoft_vt_io_scroll_console_screen_buffer_w_matches_all_source_vectors_and_final_grid"],
+      "notes": "The scroll owner reproduces Microsoft's clipping/fill/source-target mutations, exact VT bytes, no-op/clear cases and final live screen grid."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "ScrollConsoleScreenBufferW_DECCRA",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_screen_scroll::tests::microsoft_vt_io_scroll_console_screen_buffer_w_deccra_matches_all_source_vectors_and_final_grid"],
+      "notes": "The DECCRA path uses the same live screen state and reproduces Microsoft's rectangular-copy/fill vectors and final grid exactly."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "WriteConsoleOutputAttribute",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_console_output::tests::microsoft_vt_io_write_console_output_attribute_matches_exact_vector"],
+      "notes": "The live-state owner mutates attributes across row boundaries while preserving wide-cell flags and reproduces the exact Microsoft writer transaction."
+    },
+    {
+      "suite": "host",
+      "source": "VtIoTests.cpp",
+      "method": "WriteConsoleOutputCharacterW",
+      "coverage": "Exact",
+      "rustWitnesses": ["vt_console_output::tests::microsoft_vt_io_write_console_output_character_w_matches_all_source_vectors"],
+      "notes": "The Rust owner mutates characters in the live screen state, preserves attributes, handles truncation and wide glyph boundaries, and reproduces all Microsoft vectors."
+    },
+    {
+      "suite": "host",
+      "source": "SelectionTests.cpp",
+      "method": "TestGetSelectionSpans_BoxMode",
+      "coverage": "Exact",
+      "rustWitnesses": ["legacy_host_selection::tests::microsoft_host_selection_get_spans_box_mode_matches_all_source_configurations"],
+      "notes": "The portable legacy-selection owner reproduces Microsoft's box-mode span matrix directly over Rust TextBuffer state."
+    },
+    {
+      "suite": "host",
+      "source": "SelectionTests.cpp",
+      "method": "TestGetSelectionSpans_LineMode",
+      "coverage": "Exact",
+      "rustWitnesses": ["legacy_host_selection::tests::microsoft_host_selection_get_spans_line_mode_matches_all_source_configurations"],
+      "notes": "The portable legacy-selection owner reproduces Microsoft's line/alternate-mode span matrix including single-line anchor permutations."
+    },
+    {
+      "suite": "host",
+      "source": "SelectionTests.cpp",
+      "method": "TestWordByWordNext",
+      "coverage": "Exact",
+      "rustWitnesses": ["legacy_host_selection::tests::microsoft_host_selection_word_by_word_next_matches_complete_walk_to_buffer_end"],
+      "notes": "Rust reproduces the complete Microsoft forward word-selection walk through the real Rust buffer to its terminal endpoint."
+    },
+    {
+      "suite": "host",
+      "source": "SelectionTests.cpp",
+      "method": "TestWordByWordPrevious",
+      "coverage": "Exact",
+      "rustWitnesses": ["legacy_host_selection::tests::microsoft_host_selection_word_by_word_previous_matches_complete_walk"],
+      "notes": "Rust reproduces Microsoft's complete reverse word-selection walk and exact stopping points."
+    },
+    {
+      "suite": "textBuffer",
+      "source": "ReflowTests.cpp",
+      "method": "TestReflowCases",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_reflow_tests::microsoft_reflow_test_cases_contract"],
+      "notes": "The integration witness parses a byte-for-byte copy of Microsoft's ReflowTests.cpp fixture and replays all 15 scenarios step-by-step through the cursor-aware Rust reflow owner, checking dimensions, cursor, wrap flags, glyphs and DBCS state."
+    }
+  ]
+}

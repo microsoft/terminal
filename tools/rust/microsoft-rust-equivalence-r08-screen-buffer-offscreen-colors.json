@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer offscreen-color checkpoint: existing safe host-write and virtual-bottom owners compose to preserve previously stored attributes when output continues below a manually scrolled viewport.",
+  "expectedCoveragePriority": 243,
+  "expectedCoverage": {
+    "host": {"Exact":214,"Partial":82,"Platform-only":5,"Missing":30}
+  },
+  "expectedGlobalCoveragePriority": 243,
+  "expectedGlobalCoverage": {"Exact":618,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":68},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DontResetColorsAboveVirtualBottom","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_dont_reset_colors_above_virtual_bottom_contract"],"notes":"VirtualBottomState keeps cursor and virtual bottom on the output row when mouse-style viewport scrolling uses update_virtual_bottom=false, while HostWriteState writes only the new cell with the current symbolic TextAttribute. The witness reproduces Microsoft's colored-X/default-X/manual-scrollback/default-X sequence and proves the earlier red-on-blue cell remains unchanged."}
+  ]
+}

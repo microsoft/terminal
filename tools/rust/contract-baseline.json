@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "20588130d8ef2ba40eb56bdae88e04cce7fc5b5d",
+  "capturedAt": "2026-08-19",
+  "description": "CPP-BASELINE-001. Limits are no-regression ceilings, not desired end-state values.",
+  "suites": {
+    "host":                { "total": 5101, "maxFailed": 5, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 1 },
+    "textBuffer":          { "total": 13,   "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "terminalCore":        { "total": 54,   "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "terminalApp":         { "total": 51,   "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "localTerminalApp":    { "total": 76,   "maxFailed": 0, "maxBlocked": 76, "maxNotRun": 0, "maxSkipped": 0 },
+    "unitSettingsModel":   { "total": 157,  "maxFailed": 4, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "unitControl":         { "total": 29,   "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "interactivityWin32":  { "total": 52,   "maxFailed": 1, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "terminal":            { "total": 760,  "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 1 },
+    "adapter":             { "total": 411,  "maxFailed": 5, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "types":               { "total": 16,   "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 },
+    "til":                 { "total": 278,  "maxFailed": 0, "maxBlocked": 0,  "maxNotRun": 0, "maxSkipped": 0 }
+  }
+}

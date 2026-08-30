@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer delayed-wrap checkpoint: safe Rust owns the portable Last Column Flag reset matrix and multiline autowrap continuation beyond the visible viewport.",
+  "expectedCoveragePriority": 231,
+  "expectedCoverage": {
+    "host": {"Exact":179,"Partial":82,"Platform-only":5,"Missing":65}
+  },
+  "expectedGlobalCoveragePriority": 231,
+  "expectedGlobalCoverage": {"Exact":583,"Stronger":11,"Partial":316,"Platform-only":63,"UI-managed":22,"Missing":103},
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"DelayedWrapReset","coverage":"Exact","rustWitnesses":["microsoft_delayed_wrap_reset_contract"],"notes":"AutowrapState owns pending Last Column Flag cancellation and cursor effects across all 36 Microsoft data rows: DEC margins/rendition/modes, cursor movement, BS/LF/VT/FF/CR/IND/RI/NEL, character/line editing, and display/line erase controls. HT and SUB remain intentionally outside the reset set exactly as Microsoft documents."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"MultilineWrap","coverage":"Exact","rustWitnesses":["microsoft_multiline_wrap_contract"],"notes":"The same owner writes width-sized logical segments through delayed wrap, extends rows below the initial viewport bottom, and reproduces Microsoft's four-line 1/2/3/4 continuation with the cursor three rows below its starting row."}
+  ]
+}

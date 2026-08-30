@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "description": "Source roots for the twelve Microsoft unit-test suites tracked by the Rust migration contract baseline.",
+  "suites": {
+    "host": {
+      "sourceRoots": ["src/host/ut_host"]
+    },
+    "textBuffer": {
+      "sourceRoots": ["src/buffer/out/ut_textbuffer"]
+    },
+    "terminalCore": {
+      "sourceRoots": ["src/cascadia/UnitTests_TerminalCore"]
+    },
+    "terminalApp": {
+      "sourceRoots": ["src/cascadia/ut_app"]
+    },
+    "localTerminalApp": {
+      "sourceRoots": ["src/cascadia/LocalTests_TerminalApp"]
+    },
+    "unitSettingsModel": {
+      "sourceRoots": ["src/cascadia/UnitTests_SettingsModel"]
+    },
+    "unitControl": {
+      "sourceRoots": ["src/cascadia/UnitTests_Control"]
+    },
+    "interactivityWin32": {
+      "sourceRoots": ["src/interactivity/win32/ut_interactivity_win32"]
+    },
+    "terminal": {
+      "sourceRoots": ["src/terminal/parser/ut_parser"]
+    },
+    "adapter": {
+      "sourceRoots": ["src/terminal/adapter/ut_adapter"]
+    },
+    "types": {
+      "sourceRoots": ["src/types/ut_types"]
+    },
+    "til": {
+      "sourceRoots": ["src/til/ut_til"]
+    }
+  }
+}

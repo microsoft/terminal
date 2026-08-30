@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "description": "F03 Terminal aggregate kernel. Rust terminal-core owns viewport dimension/history capacity, user-resize clamping and the portable scroll/circling notification policy that native shells forward to scrollbar and renderer boundaries.",
+  "expectedCoveragePriority": 23,
+  "expectedCoverage": {
+    "terminalCore": { "Exact": 20, "Partial": 25, "Platform-only": 7, "UI-managed": 1 }
+  },
+  "expectedGlobalCoveragePriority": 23,
+  "expectedGlobalCoverage": {
+    "Exact": 233,
+    "Stronger": 11,
+    "Partial": 351,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 418
+  },
+  "entries": [
+    {
+      "suite": "terminalCore",
+      "source": "ScreenSizeLimitsTest.cpp",
+      "method": "ScreenWidthAndHeightAreClampedToBounds",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_screen_size_limits_width_and_height_are_clamped_to_bounds"],
+      "notes": "TerminalLayout clamps rows/columns to 1..SHRT_MAX using the same negative, zero and oversized vectors as Microsoft."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "ScreenSizeLimitsTest.cpp",
+      "method": "ScrollbackHistorySizeIsClampedToBounds",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_screen_size_limits_scrollback_history_is_clamped_to_bounds"],
+      "notes": "TerminalLayout clamps configured history to zero or remaining SHRT_MAX capacity and exposes the resulting total row count."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "ScreenSizeLimitsTest.cpp",
+      "method": "ResizeIsClampedToBounds",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_screen_size_limits_resize_is_clamped_to_bounds"],
+      "notes": "User resize clamps backing rows at SHRT_MAX while preserving configured history, so shrinking the viewport restores the original total exactly as the Microsoft regression requires."
+    },
+    {
+      "suite": "terminalCore",
+      "source": "ScrollTest.cpp",
+      "method": "TestNotifyScrolling",
+      "coverage": "Exact",
+      "rustWitnesses": ["microsoft_scroll_test_notify_scrolling_matches_source_contract"],
+      "notes": "TerminalLayout owns the portable scroll policy for both Microsoft data rows: viewport/history progression, optional scrollbar notification while the backing buffer circles, and renderer TriggerScroll delta (0,-1). Native renderer/callback delivery remains a boundary consumer of this semantic update."
+    }
+  ]
+}

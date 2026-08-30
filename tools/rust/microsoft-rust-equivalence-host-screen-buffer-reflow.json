@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "description": "R08 Host ScreenBuffer reflow checkpoint: safe Rust now preserves Microsoft TextBuffer::Reflow trailing-attribute semantics across width/height changes, including colored trailing spaces, erased rows, forced-wrap shrink and de-flow growth.",
+  "expectedCoveragePriority": 209,
+  "expectedCoverage": {
+    "host": {
+      "Exact": 102,
+      "Partial": 82,
+      "Platform-only": 5,
+      "Missing": 142
+    }
+  },
+  "expectedGlobalCoveragePriority": 209,
+  "expectedGlobalCoverage": {
+    "Exact": 506,
+    "Stronger": 11,
+    "Partial": 316,
+    "Platform-only": 63,
+    "UI-managed": 22,
+    "Missing": 180
+  },
+  "entries": [
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestReflowEndOfLineColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reflow_end_of_line_color_contract"],"notes":"Rust exercises the complete Microsoft dx={-1,0,1} by dy={-1,0,1} matrix and preserves per-row background tails, a two-cell surrogate-pair glyph, and the fully colored erased row through reflow."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestReflowSmallerLongLineWithColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reflow_smaller_long_line_with_color_contract"],"notes":"Shrinking 80→65 columns wraps the 70 red A cells plus green-spaced BBB segment exactly, including the source row's trailing green space and default attribute fill on the destination continuation row."},
+    {"suite":"host","source":"ScreenBufferTests.cpp","method":"TestReflowBiggerLongLineWithColor","coverage":"Exact","rustWitnesses":["microsoft_screen_buffer_reflow_bigger_long_line_with_color_contract"],"notes":"Growing 80→95 columns de-flows the forced-wrap chain into one row and preserves the final source row's green trailing space followed by default attributes, matching Microsoft's native Reflow behavior."}
+  ]
+}
