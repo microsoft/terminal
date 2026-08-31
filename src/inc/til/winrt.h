@@ -57,6 +57,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #ifdef WINRT_Windows_Foundation_H
 
+    // A function cannot expand to the two arguments required by C++/WinRT's
+    // auto_revoke overload, and C++20 cannot turn a bare member name into its
+    // member pointer. Keep these macros focused on just that syntactic gap.
+    // Overloaded handlers must use the explicit spelling with a static_cast.
+#define TIL_WEAK_DELEGATE(handler) \
+    { this->get_weak(), &std::remove_cvref_t<decltype(*this)>::handler }
+#define TIL_AUTO_REVOKE(handler) \
+    ::winrt::auto_revoke, TIL_WEAK_DELEGATE(handler)
+
     template<typename ArgsT>
     struct event
     {
@@ -81,11 +90,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // types while preserving their normal RAII behavior.
     class event_revoker
     {
+        static constexpr size_t _storageSize = 2 * sizeof(uint64_t);
+
+        template<typename T>
+        static constexpr bool _is_supported_revoker =
+            sizeof(T) <= _storageSize &&
+            alignof(T) <= alignof(uint64_t) &&
+            std::is_nothrow_move_constructible_v<T> &&
+            std::is_nothrow_destructible_v<T> &&
+            requires(T& value, const T& constValue) {
+                { value.revoke() } noexcept -> std::same_as<void>;
+                { static_cast<bool>(constValue) } noexcept -> std::same_as<bool>;
+            };
+
     public:
         event_revoker() noexcept = default;
 
         template<typename T>
-            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker>)
+            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker> &&
+                     _is_supported_revoker<std::remove_cvref_t<T>> &&
+                     std::is_nothrow_constructible_v<std::remove_cvref_t<T>, T>)
         event_revoker(T&& revoker) noexcept
         {
             _emplace(std::forward<T>(revoker));
@@ -106,7 +130,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         template<typename T>
-            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker>)
+            requires(!std::is_same_v<std::remove_cvref_t<T>, event_revoker> &&
+                     _is_supported_revoker<std::remove_cvref_t<T>> &&
+                     std::is_nothrow_constructible_v<std::remove_cvref_t<T>, T>)
         event_revoker& operator=(T&& revoker) noexcept
         {
             event_revoker{ std::forward<T>(revoker) }.swap(*this);
@@ -147,8 +173,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     private:
-        static constexpr size_t _storageSize = 2 * sizeof(uint64_t);
-
         struct Operations
         {
             void (*revoke)(void*) noexcept;
@@ -181,14 +205,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void _emplace(T&& revoker) noexcept
         {
             using revoker_type = std::remove_cvref_t<T>;
-            static_assert(sizeof(revoker_type) <= _storageSize, "auto_revoke result is unexpectedly large");
-            static_assert(alignof(revoker_type) <= alignof(uint64_t), "auto_revoke result is unexpectedly aligned");
-            static_assert(std::is_nothrow_constructible_v<revoker_type, T>);
-            static_assert(std::is_nothrow_move_constructible_v<revoker_type>);
-            static_assert(std::is_nothrow_destructible_v<revoker_type>);
-            static_assert(noexcept(std::declval<revoker_type&>().revoke()));
-            static_assert(noexcept(static_cast<bool>(std::declval<const revoker_type&>())));
-
             std::construct_at(reinterpret_cast<revoker_type*>(&_storage), std::forward<T>(revoker));
             _operations = _get_operations<revoker_type>();
         }
@@ -243,14 +259,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void revoke() noexcept
         {
-            while (!_revokers.empty())
+            std::vector<event_revoker> revokers;
+            revokers.swap(_revokers);
+            while (!revokers.empty())
             {
-                std::vector<event_revoker> revokers;
-                revokers.swap(_revokers);
-                while (!revokers.empty())
-                {
-                    revokers.pop_back();
-                }
+                revokers.pop_back();
             }
         }
 

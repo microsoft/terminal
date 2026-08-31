@@ -28,6 +28,33 @@ using namespace WEX::TestExecution;
 namespace TerminalCoreUnitTests
 {
     class TilWinRtHelpersTests;
+
+    struct WeakEventSink : winrt::implements<WeakEventSink, winrt::Windows::Foundation::IStringable>
+    {
+        explicit WeakEventSink(int& calls) noexcept :
+            _calls{ calls }
+        {
+        }
+
+        winrt::hstring ToString() const
+        {
+            return {};
+        }
+
+        til::event_revoker Subscribe(const winrt::Windows::Foundation::Collections::IObservableVector<int>& source)
+        {
+            return source.VectorChanged(TIL_AUTO_REVOKE(OnVectorChanged));
+        }
+
+        void OnVectorChanged(const winrt::Windows::Foundation::Collections::IObservableVector<int>&,
+                             const winrt::Windows::Foundation::Collections::IVectorChangedEventArgs&)
+        {
+            ++_calls;
+        }
+
+    private:
+        int& _calls;
+    };
 };
 using namespace TerminalCoreUnitTests;
 
@@ -44,6 +71,7 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
 
     TEST_METHOD(TestEventRevoker);
     TEST_METHOD(TestEventRevokerSet);
+    TEST_METHOD(TestAutoRevokeMacro);
 
     TEST_METHOD(TestTypedEvent);
 
@@ -285,6 +313,10 @@ void TilWinRtHelpersTests::TestEventRevoker()
     struct CountingRevoker
     {
         int* revocations;
+        explicit CountingRevoker(int* revocations) noexcept :
+            revocations{ revocations }
+        {
+        }
         CountingRevoker(CountingRevoker&& other) noexcept :
             revocations{ std::exchange(other.revocations, nullptr) }
         {
@@ -302,6 +334,10 @@ void TilWinRtHelpersTests::TestEventRevoker()
     struct ReentrantRevoker
     {
         ReentrantContext* context;
+        explicit ReentrantRevoker(ReentrantContext* context) noexcept :
+            context{ context }
+        {
+        }
         ReentrantRevoker(ReentrantRevoker&& other) noexcept :
             context{ std::exchange(other.context, nullptr) }
         {
@@ -350,6 +386,66 @@ void TilWinRtHelpersTests::TestEventRevokerSet()
     first.Append(2);
     second.Append(2);
     VERIFY_ARE_EQUAL(2, calls);
+
+    // Reentrant additions belong to the next lifetime of the set and must not
+    // be invalidated by the revocation currently in progress.
+    struct ReentrantSetContext
+    {
+        til::event_revoker_set* owner;
+        decltype(first)* source;
+        int* calls;
+    } context{ &revokers, &first, &calls };
+    struct ReentrantSetRevoker
+    {
+        ReentrantSetContext* context;
+        explicit ReentrantSetRevoker(ReentrantSetContext* context) noexcept :
+            context{ context }
+        {
+        }
+        ReentrantSetRevoker(ReentrantSetRevoker&& other) noexcept :
+            context{ std::exchange(other.context, nullptr) }
+        {
+        }
+        ~ReentrantSetRevoker() noexcept { revoke(); }
+        void revoke() noexcept
+        {
+            if (const auto state = std::exchange(context, nullptr))
+            {
+                state->owner->add(state->source->VectorChanged(winrt::auto_revoke, [calls = state->calls](auto&&, auto&&) {
+                    ++*calls;
+                }));
+            }
+        }
+        explicit operator bool() const noexcept { return context != nullptr; }
+    };
+
+    revokers.add(ReentrantSetRevoker{ &context });
+    revokers.revoke();
+    VERIFY_IS_TRUE(static_cast<bool>(revokers));
+    first.Append(3);
+    VERIFY_ARE_EQUAL(3, calls);
+    revokers.revoke();
+    VERIFY_IS_FALSE(static_cast<bool>(revokers));
+}
+
+void TilWinRtHelpersTests::TestAutoRevokeMacro()
+{
+    auto source = winrt::single_threaded_observable_vector<int>();
+    auto calls = 0;
+    til::event_revoker revoker;
+
+    {
+        auto sink = winrt::make_self<WeakEventSink>(calls);
+        revoker = sink->Subscribe(source);
+        source.Append(1);
+        VERIFY_ARE_EQUAL(1, calls);
+    }
+
+    // The macro creates a weak delegate. Keeping the source and revoker alive
+    // must not keep the handler owner alive or invoke it after destruction.
+    source.Append(2);
+    VERIFY_ARE_EQUAL(1, calls);
+    revoker.revoke();
 }
 
 void TilWinRtHelpersTests::TestTypedEvent()
