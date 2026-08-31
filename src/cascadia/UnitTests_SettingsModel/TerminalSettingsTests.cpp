@@ -244,7 +244,7 @@ namespace SettingsModelUnitTests
             NewTerminalArgs args;
             args.Commandline(testCase.input);
 
-            const auto profile = settings->GetProfileForArgs(args);
+            const auto profile = settings->GetProfileForArgs(args, settings->WindowSettingsDefaults());
             VERIFY_IS_NOT_NULL(profile);
 
             if (testCase.expected < 0)
@@ -332,7 +332,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
@@ -356,7 +356,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
@@ -380,7 +380,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
@@ -404,7 +404,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_FALSE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
@@ -428,7 +428,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"foo.exe", terminalArgs.Commandline());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             // This action specified a command but no profile; it gets reassigned to the base profile
@@ -454,7 +454,7 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
             VERIFY_ARE_EQUAL(L"foo.exe", terminalArgs.Commandline());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());
@@ -476,7 +476,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(terminalArgs.TabTitle().empty());
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
@@ -499,7 +499,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"c:\\foo", terminalArgs.StartingDirectory());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
@@ -524,7 +524,7 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"c:\\foo", terminalArgs.StartingDirectory());
             VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
@@ -548,7 +548,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid0, profile.Guid());
@@ -573,7 +573,7 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
             VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
@@ -600,7 +600,7 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"bar", terminalArgs.TabTitle());
             VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
 
-            const auto profile{ settings->GetProfileForArgs(terminalArgs) };
+            const auto profile{ settings->GetProfileForArgs(terminalArgs, settings->WindowSettingsDefaults()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, settings->WindowSettingsDefaults(), terminalArgs) };
             const auto termSettings = settingsStruct.DefaultSettings();
             VERIFY_ARE_EQUAL(guid1, profile.Guid());

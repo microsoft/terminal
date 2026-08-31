@@ -549,7 +549,7 @@ namespace winrt::TerminalApp::implementation
 
             // It's possible that newTerminalArgs is null here.
             // GetProfileForArgs should be resilient to that.
-            const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
+            const auto profile{ settings.GetProfileForArgs(newTerminalArgs, settings.WindowSettingsDefaults()) };
             if (profile.Elevate())
             {
                 continue;
@@ -1480,7 +1480,7 @@ namespace winrt::TerminalApp::implementation
             if (newTerminalArgs.ProfileIndex() != nullptr)
             {
                 // We want to promote the index to a GUID because there is no "launch to profile index" command.
-                const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+                const auto profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
@@ -3599,7 +3599,7 @@ namespace winrt::TerminalApp::implementation
         // - Only one pane exists
         // else:
         // - Reset conpty to its original size back
-        if (!WindowProperties().IsQuakeWindow() && !Fullscreen() &&
+        if (!_currentWindowSettings().DockWindow() && !Fullscreen() &&
             NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
         {
             WindowSizeChanged.raise(*this, args);
@@ -3783,7 +3783,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
-            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
+            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
             auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
             return std::make_shared<Pane>(paneContent);
@@ -3809,7 +3809,7 @@ namespace winrt::TerminalApp::implementation
         }
         if (!profile)
         {
-            profile = _settings.GetProfileForArgs(newTerminalArgs);
+            profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
             controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs);
         }
 

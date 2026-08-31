@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings
                                                                              const Model::WindowSettings& windowSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs)
     {
-        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs, windowSettings);
         auto settingsPair{ CreateWithProfile(appSettings, windowSettings, profile) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
