@@ -173,7 +173,7 @@ void Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::D
 {
     _assertLocked();
 
-    _taskbarState = static_cast<size_t>(state);
+    _taskbarState = state;
 
     switch (state)
     {
@@ -424,8 +424,26 @@ void Terminal::NotifyBufferRotation(const int delta)
     }
 }
 
-void Terminal::NotifyShellIntegrationMark()
+void Terminal::NotifyShellIntegrationMark(ShellIntegrationMark mark)
 {
     // Notify the scrollbar that marks have been added so it can refresh the mark indicators
     _NotifyScrollEvent();
+
+    switch (mark)
+    {
+    case ShellIntegrationMark::Prompt:
+        if (_pfnPromptStarted)
+        {
+            _pfnPromptStarted();
+        }
+        break;
+    case ShellIntegrationMark::Output:
+        if (_pfnOutputStarted)
+        {
+            _pfnOutputStarted();
+        }
+        break;
+    default:
+        break;
+    }
 }

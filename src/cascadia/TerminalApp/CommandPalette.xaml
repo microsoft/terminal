@@ -233,6 +233,12 @@
 
                         <FontIcon Margin="0,0,8,0"
                                   FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="8"
+                                  Glyph="&#xF127;"
+                                  Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).ActivityIndicator, Mode=OneWay}" />
+
+                        <FontIcon Margin="0,0,8,0"
+                                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                   FontSize="12"
                                   Glyph="&#xE8A3;"
                                   Visibility="{x:Bind Item.(local:TabPaletteItem.TabStatus).IsPaneZoomed, Mode=OneWay}" />

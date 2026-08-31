@@ -53,7 +53,7 @@ public:
     virtual void SetShowTabsFullscreen(const bool newShowTabsFullscreen);
 
     void FlashTaskbar();
-    void SetTaskbarProgress(const size_t state, const size_t progress);
+    void SetTaskbarProgress(const winrt::Microsoft::Terminal::Control::TaskbarState state, const size_t progress);
 
     void SummonWindow(winrt::TerminalApp::SummonWindowBehavior args);
 
