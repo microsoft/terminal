@@ -2391,9 +2391,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::PersistState()
     {
         // There are two persistence mechanisms in play here:
-        //   * PersistedWindowLayouts (vector) — consumed on next startup to
+        //   * PersistedWindowLayouts (vector): consumed on next startup to
         //     re-open a matching set of windows. Cleared after restore.
-        //   * PersistedWorkspaces (name-keyed map) — the full tab/buffer
+        //   * PersistedWorkspaces (name-keyed map): the full tab/buffer
         //     state of a named window, claimed by name on demand via
         //     ApplicationState::TakeWorkspace.
         //

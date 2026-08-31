@@ -69,6 +69,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"LaunchSizeCurrentValue");
             }
+            else if (viewModelProperty == L"LaunchSizeCurrentValue")
+            {
+                _NotifyChanges(L"LaunchSizeAccessibleName");
+            }
+            else if (viewModelProperty == L"LaunchParametersCurrentValue")
+            {
+                _NotifyChanges(L"LaunchParametersAccessibleName");
+            }
         });
     }
 
@@ -206,6 +214,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return til::hstring_format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows());
     }
 
+    winrt::hstring LaunchViewModel::LaunchSizeAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchSize/Header"), LaunchSizeCurrentValue());
+    }
+
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
     {
         const auto launchModeString = CurrentLaunchMode().as<EnumEntry>()->EnumName();
@@ -227,6 +240,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Append the CenterOnLaunch part
         result = CenterOnLaunch() ? til::hstring_format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_CenterOnLaunchCentered")) : result;
         return result;
+    }
+
+    winrt::hstring LaunchViewModel::LaunchParametersAccessibleName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchParameters/Header"), LaunchParametersCurrentValue());
     }
 
     double LaunchViewModel::InitialPosX()
@@ -406,7 +424,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break; // fall through to the common case (no task, not configured, etc.)
             }
         }
-        return RS_(L"Globals_StartOnUserLogin/HelpText");
+        return RS_(L"Globals_StartOnUserLogin/Description");
     }
 
     bool LaunchViewModel::StartOnUserLogin()
