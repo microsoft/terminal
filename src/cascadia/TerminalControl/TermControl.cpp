@@ -216,9 +216,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         POINT islandOrigin{};
         ClientToScreen(hwnd, &islandOrigin);
 
-        // DisplayInformation::GetForCurrentView() describes the hidden dummy CoreWindow that XAML islands run
-        // on, not necessarily the display we're on. fontSize below is in pixels derived from the SwapChainPanel's
-        // composition scale (see ControlCore::FontSizeInDips), so use that here as well to keep both in sync.
         const auto scaleFactor = _termControl->SwapChainPanel().CompositionScaleX();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
