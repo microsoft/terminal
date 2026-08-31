@@ -4,6 +4,7 @@ allcolors
 Affordance
 breadcrumb
 breadcrumbs
+capturep
 ccmp
 ccon
 clickable
@@ -21,6 +22,7 @@ downsides
 Emacspeak
 Fitt
 flac
+focusp
 FTCS
 gantt
 gfm
@@ -32,12 +34,15 @@ https
 hyperlinking
 hyperlinks
 Kbds
+killp
 libfuzzer
 liga
 Llast
 Lmid
 locl
 lol
+lsp
+lsw
 Lorigin
 maxed
 megathread
@@ -45,6 +50,7 @@ minimalistic
 mkmk
 mnt
 mru
+neww
 notwrapped
 NTMTo
 overlined
@@ -70,8 +76,10 @@ rubyw
 runtimes
 servicebus
 slnt
+splitw
 ssh
 stakeholders
+submittable
 subpage
 subpages
 sustainability

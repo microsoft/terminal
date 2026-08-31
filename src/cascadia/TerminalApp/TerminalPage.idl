@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 import "TaskbarState.idl";
 import "Remoting.idl";
+// Microsoft.Terminal.Protocol types are available via project reference (.winmd)
 
 namespace TerminalApp
 {
@@ -132,6 +133,23 @@ namespace TerminalApp
         // named window in-process, restoring its persisted workspace if
         // one exists. No new wt.exe process is spawned.
         event Windows.Foundation.TypedEventHandler<Object, OpenWindowRequestedArgs> RequestOpenWindow;
+
+        // Terminal Protocol Bridge Methods
+        UInt32 TabCount { get; };
+        Windows.Foundation.IReference<UInt32> FocusedTabIndex { get; };
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.PaneInfo> GetProtocolActivePane();
+        Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVector<Microsoft.Terminal.Protocol.TabInfo> > GetProtocolTabs();
+        Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVector<Microsoft.Terminal.Protocol.PaneInfo> > GetProtocolPanes(UInt32 tabIdFilter);
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.PaneOutput> ReadProtocolPaneOutput(Guid sessionId, String source, Int32 maxLines);
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.ProcessStatus> GetProtocolProcessStatus(Guid sessionId);
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.SessionVariable> GetProtocolSessionVariable(Guid sessionId, String name);
+        Windows.Foundation.IAsyncOperation<Boolean> SetProtocolSessionVariable(Guid sessionId, String name, String value);
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.TabCreationResult> CreateProtocolTab(Microsoft.Terminal.Settings.Model.NewTerminalArgs args, Boolean background);
+        Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.TabCreationResult> SplitProtocolPane(Guid sessionId, Microsoft.Terminal.Settings.Model.SplitDirection direction, Single size, Microsoft.Terminal.Settings.Model.NewTerminalArgs args, Boolean background);
+        Windows.Foundation.IAsyncOperation<Boolean> CloseProtocolPane(Guid sessionId);
+        Windows.Foundation.IAsyncOperation<Boolean> SendProtocolInput(Guid sessionId, String text);
+        Windows.Foundation.IAsyncOperation<Boolean> FocusProtocolPane(Guid sessionId);
+        event Windows.Foundation.TypedEventHandler<Object, String> ProtocolVtSequenceReceived;
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     }
