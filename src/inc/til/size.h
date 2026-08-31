@@ -206,7 +206,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 };
 
-#ifdef __WEX_COMMON_H__
+#ifdef VERIFY_ARE_EQUAL
 namespace WEX::TestExecution
 {
     template<>

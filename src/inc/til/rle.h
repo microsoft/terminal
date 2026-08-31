@@ -1039,7 +1039,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     using small_rle = basic_rle<T, S, til::small_vector<rle_pair<T, S>, N>>;
 };
 
-#ifdef __WEX_COMMON_H__
+#ifdef VERIFY_ARE_EQUAL
 namespace WEX::TestExecution
 {
     template<typename T, typename S, typename Container>
