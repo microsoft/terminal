@@ -4409,7 +4409,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         // _tabs is already IObservableVector<Tab>, which inherits from IVector<Tab>
-        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
         const auto windowTheme = theme ? theme.Window() : nullptr;
         overview.UseMica(windowTheme ? windowTheme.UseMica() : false);
         overview.UpdateTabContent(_tabs, idx);
