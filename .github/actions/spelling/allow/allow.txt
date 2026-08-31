@@ -80,6 +80,7 @@ splitw
 ssh
 stakeholders
 submittable
+storyboards
 subpage
 subpages
 sustainability
