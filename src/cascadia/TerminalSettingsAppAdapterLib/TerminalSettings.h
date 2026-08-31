@@ -60,6 +60,9 @@ namespace winrt::Microsoft::Terminal::Settings
         static winrt::com_ptr<TerminalSettings> CreateForPreview(const Model::CascadiaSettings& appSettings,
                                                                  const Model::WindowSettings& windowSettings,
                                                                  const Model::Profile& profile);
+        static winrt::com_ptr<TerminalSettings> CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings,
+                                                                          const Model::WindowSettings& windowSettings,
+                                                                          const Model::Profile& profile);
 
         static TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
                                                               const Model::WindowSettings& windowSettings,
