@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
         String NotifyOnActivityPreview { get; };
+        String NotifyOnActivityAccessibleName { get; };
         Boolean IsNotifyOnActivityFlagSet(UInt32 flag);
         void SetNotifyOnActivityTaskbar(Windows.Foundation.IReference<Boolean> on);
         void SetNotifyOnActivityAudible(Windows.Foundation.IReference<Boolean> on);
@@ -61,6 +62,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetNotifyOnActivityNotification(Windows.Foundation.IReference<Boolean> on);
 
         String NotifyOnNextPromptPreview { get; };
+        String NotifyOnNextPromptAccessibleName { get; };
         Boolean IsNotifyOnNextPromptFlagSet(UInt32 flag);
         void SetNotifyOnNextPromptTaskbar(Windows.Foundation.IReference<Boolean> on);
         void SetNotifyOnNextPromptAudible(Windows.Foundation.IReference<Boolean> on);

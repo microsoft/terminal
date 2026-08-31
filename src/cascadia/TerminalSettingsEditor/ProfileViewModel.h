@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // notify on activity bits
         hstring NotifyOnActivityPreview() const;
+        hstring NotifyOnActivityAccessibleName() const;
         bool IsNotifyOnActivityFlagSet(const uint32_t flag);
         void SetNotifyOnActivityTaskbar(winrt::Windows::Foundation::IReference<bool> on);
         void SetNotifyOnActivityAudible(winrt::Windows::Foundation::IReference<bool> on);
@@ -60,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // notify on next prompt bits
         hstring NotifyOnNextPromptPreview() const;
+        hstring NotifyOnNextPromptAccessibleName() const;
         bool IsNotifyOnNextPromptFlagSet(const uint32_t flag);
         void SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on);
         void SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on);
