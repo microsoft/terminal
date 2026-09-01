@@ -31,7 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, EnableColorSelection);

@@ -60,7 +60,6 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass GlobalAppSettings {
         // ---- Global-only settings (not per-window) ----
         INHERITABLE_SETTING(String, Language);
-        INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
