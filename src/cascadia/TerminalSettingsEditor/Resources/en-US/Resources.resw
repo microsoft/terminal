@@ -2261,9 +2261,6 @@
     <value>Multiple tabs or panes</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
-    <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
-  </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
     <value>Warn when pasting more than 5 KiB</value>
   </data>
