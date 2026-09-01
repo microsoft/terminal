@@ -29,6 +29,7 @@ diffs
 disposables
 enablewttlogging
 HOMESHARE
+hta
 Intelli
 issecret
 libucrt
@@ -44,6 +45,7 @@ MSVC
 MSVCP
 mtu
 muxc
+ocx
 pgc
 pgo
 pgosweep
