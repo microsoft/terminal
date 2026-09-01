@@ -142,13 +142,6 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
-            <!--  Input Service Warning  -->
-            <local:SettingContainer x:Name="InputServiceWarning"
-                                    x:Uid="Globals_InputServiceWarning">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
-
             <!--  Large Paste Warning  -->
             <local:SettingContainer x:Name="WarnAboutLargePaste"
                                     x:Uid="Globals_WarnAboutLargePaste">
