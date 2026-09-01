@@ -31,7 +31,7 @@ TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
     _gsetIds.at(3) = grId;
 }
 
-void TerminalOutput::SoftReset() noexcept
+void TerminalOutput::SoftReset()
 {
     // A soft reset is essentially the same thing as a restore from a fresh
     // instance, but that instance must already be initialized with the current
@@ -39,7 +39,7 @@ void TerminalOutput::SoftReset() noexcept
     RestoreFrom({ _grTranslationEnabled });
 }
 
-void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept
+void TerminalOutput::RestoreFrom(const TerminalOutput& savedState)
 {
     // When restoring from a saved instance, we want to preserve the current GR
     // translation state as well as the DRCS character set.
