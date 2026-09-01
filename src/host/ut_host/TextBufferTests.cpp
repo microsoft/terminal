@@ -369,12 +369,16 @@ void TextBufferTests::TestCopyProperties()
     testTextBuffer->GetCursor().SetIsDouble(false);
     otherTbi.GetCursor().SetIsDouble(true);
 
+    testTextBuffer->SetScrollMargins({});
+    otherTbi.SetScrollMargins({ 5, 3, 70, 20 });
+
     // run copy
     testTextBuffer->CopyProperties(otherTbi);
 
     // test that new now contains values from other
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
+    VERIFY_ARE_EQUAL(otherTbi.GetScrollMargins(), testTextBuffer->GetScrollMargins());
 }
 
 void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)

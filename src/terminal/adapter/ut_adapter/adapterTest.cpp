@@ -2935,66 +2935,68 @@ public:
         _testGetSet->_viewport.right = 8;
         _testGetSet->_viewport.bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;
+        const auto getMargins = [&]() { return _pDispatch->_pages.ActivePage().Buffer().GetScrollMargins(); };
+        const auto clearMargins = [&]() { _pDispatch->_pages.ActivePage().Buffer().SetScrollMargins({}); };
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
-        VERIFY_ARE_EQUAL(2, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(6, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(2, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(6, getMargins().bottom + 1);
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
         _pDispatch->SetTopBottomScrollingMargins(7, 0);
-        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(sScreenHeight, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(7, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(sScreenHeight, getMargins().bottom + 1);
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
         _pDispatch->SetTopBottomScrollingMargins(0, 7);
-        VERIFY_ARE_EQUAL(1, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(1, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(7, getMargins().bottom + 1);
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
         _pDispatch->SetTopBottomScrollingMargins(0, 0);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        clearMargins();
         _pDispatch->SetTopBottomScrollingMargins(7, 3);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(0, sScreenHeight);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(1, 0);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
-        _pDispatch->_scrollMargins = {};
+        clearMargins();
         _pDispatch->SetTopBottomScrollingMargins(4, 4);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        clearMargins();
         _pDispatch->SetTopBottomScrollingMargins(sScreenHeight + 1, sScreenHeight + 10);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        clearMargins();
         _pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight + 1);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
     }
 
     TEST_METHOD(LineFeedTest)
@@ -3996,6 +3998,81 @@ public:
 
         // Reset to page 1
         _pDispatch->PagePositionAbsolute(1);
+    }
+
+    TEST_METHOD(PageMovementWithOriginModeTest)
+    {
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 80, 24 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
+        _testGetSet->_viewport = { 0, 0, 80, 24 };
+
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetTopBottomScrollingMargins(2, 20);
+        _pDispatch->SetLeftRightScrollingMargins(3, 60);
+        _pDispatch->PagePositionAbsolute(2);
+        _pDispatch->SetTopBottomScrollingMargins(5, 12);
+        _pDispatch->SetLeftRightScrollingMargins(10, 20);
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->SetMode(DispatchTypes::DECOM_OriginMode);
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+
+        const auto getCursorPosition = [&]() { return _pDispatch->_pages.ActivePage().Cursor().GetPosition(); };
+        _pDispatch->CursorPosition(3, 4);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(12, 6), getCursorPosition(), L"PPA preserves margin-relative coordinates");
+        _pDispatch->PagePositionAbsolute(1);
+        VERIFY_ARE_EQUAL(til::point(5, 3), getCursorPosition(), L"PPA preserves coordinates in both directions");
+
+        _pDispatch->CursorPosition(10, 40);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(19, 11), getCursorPosition(), L"PPA clamps to smaller margins");
+        _pDispatch->PagePositionAbsolute(1);
+
+        _pDispatch->SetMode(DispatchTypes::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->CursorPosition(3, 4);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(12, 6), getCursorPosition(), L"Coupled PPA preserves margin-relative coordinates");
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->CursorPosition(10, 40);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(til::point(19, 11), getCursorPosition(), L"Coupled PPA clamps to smaller margins");
+    }
+
+    TEST_METHOD(PageMarginsAreIndependentTest)
+    {
+        _testGetSet->PrepData();
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 80, 24 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
+        _testGetSet->_viewport = { 0, 0, 80, 24 };
+
+        _stateMachine->ProcessString(L"\033#8\033[2 P\033[9;15r\033[1 P\033[999B\n\n\n\n\n\n\n");
+
+        const auto bottomText = _testGetSet->_textBuffer->GetRowByOffset(23).GetText().substr(0, 80);
+        const std::wstring expected(80, L' ');
+        VERIFY_ARE_EQUAL(String(expected.c_str()), String(bottomText.data(), gsl::narrow<int>(bottomText.size())));
+
+        const auto requestSetting = [=](const std::wstring_view settingId) {
+            const auto stringHandler = _pDispatch->RequestSetting();
+            for (const auto ch : settingId)
+            {
+                stringHandler(ch);
+            }
+            stringHandler(L'\033');
+        };
+
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;24r\033\\");
+        _pDispatch->PagePositionAbsolute(2);
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r9;15r\033\\");
+
+        _pDispatch->SetMode(DispatchTypes::DECLRMM_LeftRightMarginMode);
+        _pDispatch->SetLeftRightScrollingMargins(10, 20);
+        _pDispatch->PagePositionAbsolute(1);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;80s\033\\");
+        _pDispatch->PagePositionAbsolute(2);
+        requestSetting(L"s");
+        _testGetSet->ValidateInputEvent(L"\033P1$r10;20s\033\\");
     }
 
     TEST_METHOD(SendC1ControlTest)
