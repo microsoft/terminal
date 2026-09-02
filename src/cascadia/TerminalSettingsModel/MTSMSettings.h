@@ -22,7 +22,6 @@ Author(s):
 // not to any specific window.
 #define MTSM_GLOBAL_SETTINGS(X)                                                                                                    \
     X(hstring, Language, "language")                                                                                               \
-    X(bool, InputServiceWarning, "warning.inputService", true)                                                                     \
     X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)         \
     X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                           \
     X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                  \

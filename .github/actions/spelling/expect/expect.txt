@@ -86,6 +86,7 @@ backstory
 Bazz
 bbccb
 bbwe
+bcde
 bcount
 bcx
 bcz
@@ -247,10 +248,12 @@ consrv
 consteval
 constexprable
 contentfiles
+contentproperty
 conterm
 contsf
 contypes
 conwinuserrefs
+cooldown
 COPYCOLOR
 COPYDATA
 COPYDATASTRUCT
@@ -1603,6 +1606,7 @@ STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
 stl
+storyboards
 STRINGTABLE
 STRSAFE
 STUBHEAD
@@ -1850,6 +1854,7 @@ wcs
 WCSHELPER
 wcsrev
 wcswidth
+WCT
 wddm
 wddmcon
 WDDMCONSOLECONTEXT

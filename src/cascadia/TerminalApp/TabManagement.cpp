@@ -843,7 +843,7 @@ namespace winrt::TerminalApp::implementation
                 const auto weak = get_weak();
 
                 // Check if we should warn before closing a single pane
-                // (only triggers on Always — Automatic doesn't warn for single pane)
+                // (only triggers on Always. Automatic doesn't warn for single pane)
                 const auto setting = _settings.GlobalSettings().ConfirmOnClose();
                 if (setting == ConfirmOnClose::Always)
                 {

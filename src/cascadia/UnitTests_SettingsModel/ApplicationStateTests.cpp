@@ -125,8 +125,8 @@ namespace SettingsModelUnitTests
         const auto taken = state->TakeWorkspace(L"win1");
         VERIFY_IS_NOT_NULL(taken);
 
-        // Subsequent Take for the same name must return null — this is the
-        // atomicity guarantee the startup path relies on.
+        // Subsequent Take for the same name must return null.
+        // This is the atomicity guarantee the startup path relies on.
         VERIFY_IS_NULL(state->TakeWorkspace(L"win1"));
     }
 

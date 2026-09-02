@@ -150,6 +150,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 _NotifyChanges(L"IsFolderView", L"CurrentView");
             }
+            else if (viewModelProperty == L"CurrentFolderName")
+            {
+                _NotifyChanges(L"CurrentFolderNameAccessibleName");
+            }
         });
     }
 
@@ -174,6 +178,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return {};
         }
         return _CurrentFolder.Name();
+    }
+
+    hstring NewTabMenuViewModel::CurrentFolderNameAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"NewTabMenu_CurrentFolderName/Header"), CurrentFolderName());
     }
 
     void NewTabMenuViewModel::CurrentFolderName(const hstring& value)

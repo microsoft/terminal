@@ -109,7 +109,6 @@ namespace SettingsModelUnitTests
         static constexpr std::string_view globalsString{ R"(
             {
                 "warning.confirmOnClose": "automatic",
-                "warning.inputService" : true,
                 "actions": [],
                 "keybindings": []
             })" };

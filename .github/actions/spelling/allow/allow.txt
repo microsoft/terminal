@@ -1,4 +1,5 @@
 aci
+addref
 allcolors
 breadcrumb
 breadcrumbs
@@ -33,6 +34,7 @@ Kbds
 libfuzzer
 liga
 Llast
+LLMs
 Lmid
 locl
 lol
@@ -44,6 +46,7 @@ mkmk
 mnt
 mru
 notwrapped
+NPCs
 NTMTo
 overlined
 passthrough
@@ -78,6 +81,7 @@ Tencent
 TOCTOU
 toolset
 ubuntu
+undershoots
 UEFI
 uiatextrange
 Uids

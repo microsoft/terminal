@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 .SYNOPSIS
-Scans XAML files for local:SettingContainer entries and generates GeneratedSettingsIndex.g.h / .g.cpp.
+Scans XAML files for local:SettingsCard and local:SettingsExpander entries and generates GeneratedSettingsIndex.g.h / .g.cpp.
 
 .PARAMETER SourceDir
 Directory to scan recursively for .xaml files.
@@ -18,12 +18,24 @@ param(
 
 # Prohibited UIDs (exact match, case-insensitive by default)
 $ProhibitedUids = @(
+    "ColorScheme_ColorsHeader",
+    "ColorScheme_InboxSchemeDuplicate",
+    "ColorScheme_Rename",
+    "Extensions_ComplexPackageNavigator",
+    "Extensions_ComplexPackageNavigatorFontIcon",
+    "Extensions_DefaultPackageNavigator",
+    "Extensions_FragmentColorSchemeNavigator",
+    "Extensions_FragmentProfileNavigator",
     "Extensions_Scope",
+    "Profile_AdvancedNavigator",
+    "Profile_AppearanceNavigator",
+    "Profile_DeleteProfile",
     "Profile_MissingFontFaces",
     "Profile_ProportionalFontFaces",
-    "ColorScheme_InboxSchemeDuplicate",
-    "ColorScheme_ColorsHeader",
-    "ColorScheme_Rename"
+    "Profile_ResetProfile",
+    "Profile_TerminalNavigator",
+    "Profiles_ColorSchemesNavigator",
+    "Profiles_DefaultsNavigator"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
@@ -55,6 +67,7 @@ $ClassMap = @{
         ResourceName    = "Nav_ColorSchemes/Content"
         NavigationParam = "ColorSchemes_Nav"
         SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
     }
     "Microsoft::Terminal::Settings::Editor::Rendering" = @{
         ResourceName    = "Nav_Rendering/Content"
@@ -85,6 +98,7 @@ $ClassMap = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
     }
     "Microsoft::Terminal::Settings::Editor::Profiles_Appearance" = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
@@ -101,9 +115,9 @@ $ClassMap = @{
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::Profile_Advanced"
     }
-    "Microsoft::Terminal::Settings::Editor::AddProfile" = @{
-        ResourceName    = "Nav_AddNewProfile/Content"
-        NavigationParam = "AddProfile"
+    "Microsoft::Terminal::Settings::Editor::Profiles" = @{
+        ResourceName    = "Nav_Profiles/Content"
+        NavigationParam = "Profiles_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
 }
@@ -156,6 +170,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             NavigationParam = $ClassMap[$pageClass].NavigationParam
             SubPage         = $ClassMap[$pageClass].SubPage
             ElementName     = $null # No specific element to navigate to, for the page itself
+            SecondaryLabel  = $ClassMap[$pageClass].SecondaryLabel # Resource name for the result's sub-text (i.e. parent page name); $null if none
             File            = $filename
         }
     }
@@ -180,26 +195,14 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
-    elseif ($filename -eq "AddProfile.xaml")
-    {
-        # "add new" button
-        $entries += [pscustomobject]@{
-            ResourceName    = "AddProfile_AddNewTextBlock/Text"
-            ParentPage      = $pageClass
-            NavigationParam = $ClassMap[$pageClass].NavigationParam
-            SubPage         = $ClassMap[$pageClass].SubPage
-            ElementName     = "AddNewButton"
-            File            = $filename
-        }
-    }
 
-    # Iterate over all local:SettingContainer nodes
-    foreach ($settingContainer in $xml.SelectNodes("//local:SettingContainer", $xm))
+    # Iterate over all local:SettingsCard and local:SettingsExpander nodes
+    foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
         # Extract Uid
         if ($null -eq $settingContainer.Uid)
         {
-            Write-Warning "No x:Uid found for a SettingContainer in file $filename. Skipping entry."
+            Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander in file $filename. Skipping entry."
             continue
         }
         elseif ($ProhibitedUids -contains $settingContainer.Uid)
@@ -208,7 +211,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         }
 
         # Extract Name via GetAttribute to avoid PowerShell's XML integration
-        # returning the element name (e.g. "local:SettingContainer") when x:Name is absent.
+        # returning the element name (e.g. "local:SettingsCard") when x:Name is absent.
         $name = $settingContainer.GetAttribute("x:Name")
         if ([string]::IsNullOrEmpty($name))
         {
@@ -256,12 +259,15 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         if ($includeInBuildIndex)
         {
+            # Profiles > Defaults results should show "Profiles" as secondary label
+            $buildSecondaryLabel = $navigationParam -eq "GlobalProfile_Nav" ? "Nav_Profiles/Content" : $null
             $entries += [pscustomobject]@{
                 ResourceName      = "$($settingContainer.Uid)/Header"
                 ParentPage        = $pageClass
                 NavigationParam   = $navigationParam
                 SubPage           = $subPage
                 ElementName       = $name
+                SecondaryLabel    = $buildSecondaryLabel
                 File              = $filename
             }
         }
@@ -285,8 +291,9 @@ function FormatEntry($e)
     $formattedResourceName = 'USES_RESOURCE(L"{0}")' -f $e.ResourceName
     $formattedNavigationParam = 'L"{0}"' -f $e.NavigationParam # null Navigation param resolves to empty string
     $formattedElementName = 'L"{0}"' -f $e.ElementName
+    $formattedSecondaryLabel = [string]::IsNullOrEmpty($e.SecondaryLabel) ? 'L""' : ('USES_RESOURCE(L"{0}")' -f $e.SecondaryLabel)
 
-    return "            IndexEntry{{ {0}, {1}, {2}, {3} }}, // {4}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $e.File)
+    return "            IndexEntry{{ {0}, {1}, {2}, {3}, {4} }}, // {5}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $formattedSecondaryLabel, $e.File)
 }
 
 function FormatEntries($es) {
@@ -294,7 +301,7 @@ function FormatEntries($es) {
 }
 
 # Sort and remove duplicates
-$entries = $entries | Sort-Object ResourceName, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+$entries = $entries | Sort-Object ResourceName, ParentPage, NavigationParam, SubPage, ElementName, SecondaryLabel, File -Unique
 
 $buildTimeEntries = @()
 $profileEntries = @()
@@ -350,6 +357,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         
         // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
         wil::zwstring_view ElementName;
+
+        // Resource name of the search result's secondary label (i.e. parent page name like "Nav_Profiles/Content").
+        // Empty if the entry has no secondary label.
+        // NOTE: wrapped in USES_RESOURCE() like ResourceName when non-empty.
+        wil::zwstring_view SecondaryLabelResourceName;
     };
 
     const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();

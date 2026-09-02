@@ -19,13 +19,9 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
-static constexpr std::string_view ThemeKey{ "theme" };
-static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
-static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
-static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
@@ -126,8 +122,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
-
     // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
     // "confirmOnClose" enum. true -> Automatic, false -> Never.
     {

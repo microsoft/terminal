@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::NewTabMenuEntryViewModel RequestAddRemainingProfilesEntry();
 
         hstring CurrentFolderName() const;
+        hstring CurrentFolderNameAccessibleName() const;
         void CurrentFolderName(const hstring& value);
         bool CurrentFolderInlining() const;
         void CurrentFolderInlining(bool value);
