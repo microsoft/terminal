@@ -36,15 +36,21 @@ namespace winrt::TerminalApp::implementation
         bool HandleUserClose(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
     private:
+        struct PendingFollower
+        {
+            HtmFollowerConnection* connection;
+            bool isTab;
+        };
+
         void _appendToPane(const std::string& paneId, std::string_view utf8);
         void _exitHtmMode();
         void _finishReply();
 
         TerminalPage* _page;
         HtmLeaderConnection* _leader{ nullptr };
-        std::mutex _mutex;
+        mutable std::mutex _mutex;
         std::unordered_map<std::string, HtmFollowerConnection*> _followers;
-        std::vector<HtmFollowerConnection*> _pendingFollowers;
+        std::vector<PendingFollower> _pendingFollowers;
         std::vector<std::string> _replyLines;
         bool _inReply{ false };
         bool _suppressClosePackets{ false };

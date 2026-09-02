@@ -190,14 +190,25 @@ namespace winrt::TerminalApp::implementation
 
     void HtmFollowerConnection::Start()
     {
-        _started = true;
-        StateChanged.raise(*this, nullptr);
-        if (_session)
+        HtmSession* session = nullptr;
+        std::string paneId;
+        uint32_t rows = 0;
+        uint32_t cols = 0;
         {
-            _session->RegisterFollower(this);
-            if (!_paneId.empty())
+            std::lock_guard lock{ _stateMutex };
+            _started = true;
+            session = _session;
+            paneId = _paneId;
+            rows = _rows;
+            cols = _cols;
+        }
+        StateChanged.raise(*this, nullptr);
+        if (session)
+        {
+            session->RegisterFollower(this);
+            if (!paneId.empty())
             {
-                Resize(_rows, _cols);
+                session->WriteToLeader("resize-pane -t " + paneId + " -x " + std::to_string(cols) + " -y " + std::to_string(rows));
             }
         }
     }
@@ -224,10 +235,23 @@ namespace winrt::TerminalApp::implementation
 
     void HtmFollowerConnection::SetPaneId(std::string paneId)
     {
-        _paneId = std::move(paneId);
-        if (_started && !_paneId.empty())
+        HtmSession* session = nullptr;
+        uint32_t rows = 0;
+        uint32_t cols = 0;
         {
-            Resize(_rows, _cols);
+            std::lock_guard lock{ _stateMutex };
+            _paneId = std::move(paneId);
+            if (_started && !_paneId.empty())
+            {
+                session = _session;
+                paneId = _paneId;
+                rows = _rows;
+                cols = _cols;
+            }
+        }
+        if (session)
+        {
+            session->WriteToLeader("resize-pane -t " + paneId + " -x " + std::to_string(cols) + " -y " + std::to_string(rows));
         }
     }
 

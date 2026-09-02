@@ -34,7 +34,11 @@ namespace winrt::TerminalApp::implementation
         if (_leader == leader) { _leader = nullptr; _exitHtmMode(); }
     }
 
-    bool HtmSession::IsActive() const noexcept { return _leader != nullptr; }
+    bool HtmSession::IsActive() const noexcept
+    {
+        std::lock_guard lock{ _mutex };
+        return _leader != nullptr;
+    }
 
     bool HtmSession::IsHtmConnection(const ITerminalConnection& connection) const
     {
@@ -99,7 +103,7 @@ namespace winrt::TerminalApp::implementation
                     std::lock_guard lock{ _mutex };
                     if (!_pendingFollowers.empty())
                     {
-                        follower = _pendingFollowers.front();
+                        follower = _pendingFollowers.front().connection;
                         _pendingFollowers.erase(_pendingFollowers.begin());
                         _followers[paneId] = follower;
                     }
@@ -111,6 +115,41 @@ namespace winrt::TerminalApp::implementation
                 else if (_leader && _leader->PaneId().empty())
                 {
                     _leader->SetPaneId(paneId);
+                }
+            }
+            return;
+        }
+        if (line.rfind("%layout-change ", 0) == 0)
+        {
+            // tmux does not send %window-pane-changed for a newly-created
+            // window. Its initial layout is necessarily a single leaf, whose
+            // final comma-separated field is the pane ID. Treat that
+            // authoritative notification as a fallback when the new-window
+            // command reply races follower startup or delivery.
+            const auto layoutBegin = line.find(' ', 15);
+            const auto layoutEnd = layoutBegin == std::string_view::npos ? std::string_view::npos : line.find(' ', layoutBegin + 1);
+            if (layoutBegin != std::string_view::npos && layoutEnd != std::string_view::npos)
+            {
+                const auto layout = line.substr(layoutBegin + 1, layoutEnd - layoutBegin - 1);
+                const auto comma = layout.rfind(',');
+                if (comma != std::string_view::npos &&
+                    layout.find_first_of("[]{}") == std::string_view::npos)
+                {
+                    const std::string paneId{ "%" + std::string{ layout.substr(comma + 1) } };
+                    HtmFollowerConnection* follower = nullptr;
+                    {
+                        std::lock_guard lock{ _mutex };
+                        if (!_pendingFollowers.empty() && _pendingFollowers.front().isTab)
+                        {
+                            follower = _pendingFollowers.front().connection;
+                            _pendingFollowers.erase(_pendingFollowers.begin());
+                            _followers[paneId] = follower;
+                        }
+                    }
+                    if (follower)
+                    {
+                        follower->SetPaneId(paneId);
+                    }
                 }
             }
             return;
@@ -132,7 +171,7 @@ namespace winrt::TerminalApp::implementation
         {
             std::lock_guard lock{ _mutex };
             if (_pendingFollowers.empty()) return;
-            follower = _pendingFollowers.front();
+            follower = _pendingFollowers.front().connection;
             _pendingFollowers.erase(_pendingFollowers.begin());
         }
         follower->SetPaneId(id);
@@ -148,7 +187,7 @@ namespace winrt::TerminalApp::implementation
         auto follower = winrt::make_self<HtmFollowerConnection>(this, "");
         {
             std::lock_guard lock{ _mutex };
-            _pendingFollowers.push_back(follower.get());
+            _pendingFollowers.push_back({ follower.get(), false });
         }
         WriteToLeader(std::string{ "split-window -P -F '#{pane_id}' -t " } + sourcePaneId + (vertical ? " -h" : " -v"));
         return follower.as<ITerminalConnection>();
@@ -160,7 +199,7 @@ namespace winrt::TerminalApp::implementation
         auto follower = winrt::make_self<HtmFollowerConnection>(this, "");
         {
             std::lock_guard lock{ _mutex };
-            _pendingFollowers.push_back(follower.get());
+            _pendingFollowers.push_back({ follower.get(), true });
         }
         WriteToLeader("new-window -P -F '#{pane_id}'");
         return follower.as<ITerminalConnection>();

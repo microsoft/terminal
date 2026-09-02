@@ -90,14 +90,14 @@ namespace winrt::TerminalApp::implementation
         // case above with the _maybeElevate call.
         if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
         {
-            const auto focusedConn = _HtmFocusedConnection();
-            if (!_HtmPaneIdFromConnection(focusedConn).empty())
+            // new-window is session-scoped and does not require a source pane.
+            // Requiring a focused HTM connection here made command-line
+            // new-tab actions intermittently fall through while focus was
+            // transitioning after a split.
+            if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
             {
-                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
-                {
-                    _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr, follower));
-                    return S_OK;
-                }
+                _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr, follower));
+                return S_OK;
             }
         }
         _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
