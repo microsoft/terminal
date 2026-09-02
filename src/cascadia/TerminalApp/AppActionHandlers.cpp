@@ -479,31 +479,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
                                      const ActionEventArgs& args)
     {
+        const auto realArgs = args ? args.ActionArgs().try_as<NewTabArgs>() : nullptr;
+        if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+        {
+            const auto focusedConn = _HtmFocusedConnection();
+            if (!_HtmPaneIdFromConnection(focusedConn).empty())
+            {
+                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                {
+                    _CreateNewTabFromPane(_MakePane(realArgs ? realArgs.ContentArgs() : nullptr, nullptr, follower));
+                    args.Handled(true);
+                    return;
+                }
+            }
+        }
+
         if (args == nullptr)
         {
             LOG_IF_FAILED(_OpenNewTab(nullptr));
-            args.Handled(true);
+            return;
         }
-        else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
+        else if (realArgs)
         {
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
                 args.Handled(false);
                 return;
-            }
-
-            if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
-            {
-                const auto focusedConn = _HtmFocusedConnection();
-                if (!_HtmPaneIdFromConnection(focusedConn).empty())
-                {
-                    if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
-                    {
-                        _CreateNewTabFromPane(_MakePane(realArgs.ContentArgs(), nullptr, follower));
-                        args.Handled(true);
-                        return;
-                    }
-                }
             }
 
             LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));

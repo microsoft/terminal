@@ -6,7 +6,9 @@
 #include "HtmProtocol.h"
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <til/event.h>
+#include <til/winrt.h>
+
+#include <mutex>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -41,6 +43,7 @@ namespace winrt::TerminalApp::implementation
         void _ProcessHtmBytes(std::string_view utf8);
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _wrapped{ nullptr };
+        winrt::guid _sessionId{};
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
         HtmSession* _session{ nullptr };
@@ -48,6 +51,8 @@ namespace winrt::TerminalApp::implementation
         std::string _pendingInit;
         std::string _htmBuffer;
         std::string _paneId;
+        std::mutex _writeMutex;
+        bool _closed{ false };
     };
 
     class HtmFollowerConnection : public winrt::implements<HtmFollowerConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
@@ -68,6 +73,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const std::string& PaneId() const noexcept { return _paneId; }
+        void SetPaneId(std::string paneId);
         void InjectOutput(std::string_view utf8);
         void SetSuppressClosePacket(bool value) noexcept { _suppressClosePacket = value; }
 

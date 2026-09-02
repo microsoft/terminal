@@ -11,7 +11,8 @@ using namespace ::Microsoft::Terminal::Htm;
 namespace winrt::TerminalApp::implementation
 {
     HtmLeaderConnection::HtmLeaderConnection(ITerminalConnection wrapped, HtmSession* session) :
-        _wrapped{ std::move(wrapped) },
+        _wrapped{ wrapped },
+        _sessionId{ wrapped.SessionId() },
         _session{ session }
     {
         _outputRevoker = _wrapped.TerminalOutput(winrt::auto_revoke, { get_weak(), &HtmLeaderConnection::_OutputHandler });
@@ -38,7 +39,24 @@ namespace winrt::TerminalApp::implementation
         if (_htmMode)
         {
             const auto utf8 = til::u16u8(winrt_array_to_wstring_view(data));
-            WriteRaw(FrameInsertDebugKeys(utf8));
+            if (utf8 == "\x1b[I" || utf8 == "\x1b[O")
+            {
+                return;
+            }
+            // With VT input enabled, Windows Terminal reports Escape as an
+            // enhanced-key sequence whose first codepoint is 27. Plain VT
+            // input still arrives as the single ESC byte.
+            if (utf8 == "\x1b" || utf8.starts_with("\x1b[27;"))
+            {
+                _session->WriteToLeader("detach-client");
+                return;
+            }
+            if (utf8 == "x" || utf8.starts_with("\x1b[88;0;120;1;"))
+            {
+                _session->WriteToLeader("kill-server");
+                return;
+            }
+            _session->SendKeys(_paneId, utf8);
             return;
         }
         _wrapped.WriteInput(data);
@@ -49,12 +67,13 @@ namespace winrt::TerminalApp::implementation
         _wrapped.Resize(rows, columns);
         if (_htmMode && !_paneId.empty())
         {
-            WriteRaw(FrameResizePane(_paneId, static_cast<int32_t>(columns), static_cast<int32_t>(rows)));
+            _session->WriteToLeader("refresh-client -C " + std::to_string(columns) + "x" + std::to_string(rows));
         }
     }
 
     void HtmLeaderConnection::Close()
     {
+        _closed = true;
         if (_session && _htmMode)
         {
             _session->DetachLeader(this);
@@ -70,17 +89,25 @@ namespace winrt::TerminalApp::implementation
 
     winrt::guid HtmLeaderConnection::SessionId() const noexcept
     {
-        return _wrapped ? _wrapped.SessionId() : winrt::guid{};
+        return _sessionId;
     }
 
     ConnectionState HtmLeaderConnection::State() const noexcept
     {
-        return _wrapped ? _wrapped.State() : ConnectionState::Closed;
+        return _closed ? ConnectionState::Closed : ConnectionState::Connected;
     }
 
     void HtmLeaderConnection::WriteRaw(std::string_view bytes)
     {
-        if (!_wrapped || bytes.empty())
+        if (bytes.empty())
+        {
+            return;
+        }
+        // Pane input, resizes, and app actions can arrive on different UI and
+        // connection threads. Keep each HTM frame in one ConPTY write so a
+        // resize cannot splice itself into a key or split packet.
+        std::lock_guard lock{ _writeMutex };
+        if (!_wrapped)
         {
             return;
         }
@@ -103,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         const auto utf8 = til::u16u8(winrt_array_to_wstring_view(str));
         if (_htmMode)
         {
-            if (utf8.find(ExitSequence) != std::string::npos)
+            if (utf8.find(TmuxControlSt) != std::string::npos)
             {
                 _htmMode = false;
                 if (_session)
@@ -116,56 +143,42 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto result = ConsumeInitPayload(_pendingInit, utf8);
-        _pendingInit = result.pending;
-        if (!result.prefix.empty())
+        _pendingInit.append(utf8);
+        const auto marker = _pendingInit.find(TmuxControlDcs);
+        if (marker == std::string::npos)
         {
-            const auto wide = til::u8u16(result.prefix);
+            if (_pendingInit.size() > TmuxControlDcs.size())
+            {
+                const auto render = _pendingInit.substr(0, _pendingInit.size() - TmuxControlDcs.size());
+                const auto wide = til::u8u16(render);
+                TerminalOutput.raise(winrt_wstring_to_array_view(wide));
+                _pendingInit.erase(0, _pendingInit.size() - TmuxControlDcs.size());
+            }
+            return;
+        }
+        const auto prefix = _pendingInit.substr(0, marker);
+        if (!prefix.empty())
+        {
+            const auto wide = til::u8u16(prefix);
             TerminalOutput.raise(winrt_wstring_to_array_view(wide));
         }
-        if (result.matched)
-        {
-            _htmMode = true;
-            if (_session)
-            {
-                _session->AttachLeader(this);
-            }
-            if (!result.remainder.empty())
-            {
-                _ProcessHtmBytes(result.remainder);
-            }
-        }
+        const auto remainder = _pendingInit.substr(marker + TmuxControlDcs.size());
+        _pendingInit.clear();
+        _htmMode = true;
+        if (_session) _session->AttachLeader(this);
+        if (!remainder.empty()) _ProcessHtmBytes(remainder);
     }
 
     void HtmLeaderConnection::_ProcessHtmBytes(std::string_view utf8)
     {
         _htmBuffer.append(utf8);
-        auto [packets, rest] = ParsePackets(_htmBuffer);
-        _htmBuffer = std::move(rest);
-        for (const auto& packet : packets)
+        size_t newline = 0;
+        while ((newline = _htmBuffer.find('\n')) != std::string::npos)
         {
-            if (packet.invalidLength)
-            {
-                _htmMode = false;
-                if (_session)
-                {
-                    _session->HandleExitSequence();
-                }
-                return;
-            }
-            if (packet.header == SessionEnd)
-            {
-                _htmMode = false;
-                if (_session)
-                {
-                    _session->HandlePacket(packet.header, packet.payload);
-                }
-                return;
-            }
-            if (_session)
-            {
-                _session->HandlePacket(packet.header, packet.payload);
-            }
+            auto line = _htmBuffer.substr(0, newline);
+            _htmBuffer.erase(0, newline + 1);
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (_session) _session->HandleLine(line);
         }
     }
 
@@ -182,6 +195,10 @@ namespace winrt::TerminalApp::implementation
         if (_session)
         {
             _session->RegisterFollower(this);
+            if (!_paneId.empty())
+            {
+                Resize(_rows, _cols);
+            }
         }
     }
 
@@ -192,16 +209,25 @@ namespace winrt::TerminalApp::implementation
             return;
         }
         const auto utf8 = til::u16u8(winrt_array_to_wstring_view(data));
-        _session->WriteToLeader(FrameInsertKeys(_paneId, utf8));
+        _session->SendKeys(_paneId, utf8);
     }
 
     void HtmFollowerConnection::Resize(uint32_t rows, uint32_t columns)
     {
         _rows = rows;
         _cols = columns;
-        if (_session)
+        if (_session && !_paneId.empty())
         {
-            _session->WriteToLeader(FrameResizePane(_paneId, static_cast<int32_t>(columns), static_cast<int32_t>(rows)));
+            _session->WriteToLeader("resize-pane -t " + _paneId + " -x " + std::to_string(columns) + " -y " + std::to_string(rows));
+        }
+    }
+
+    void HtmFollowerConnection::SetPaneId(std::string paneId)
+    {
+        _paneId = std::move(paneId);
+        if (_started && !_paneId.empty())
+        {
+            Resize(_rows, _cols);
         }
     }
 
@@ -211,7 +237,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!_suppressClosePacket)
             {
-                _session->WriteToLeader(FrameClientClosePane(_paneId));
+                _session->WriteToLeader("kill-pane -t " + _paneId);
             }
             _session->UnregisterFollower(this);
         }

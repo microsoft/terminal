@@ -17,6 +17,35 @@
 
 namespace Microsoft::Terminal::Htm
 {
+    // HTM now uses tmux control mode. These are terminal-facing markers; the
+    // bytes after DCS are ordinary newline-delimited tmux control records.
+    inline constexpr std::string_view TmuxControlDcs{ "\x1bP1000p" };
+    inline constexpr std::string_view TmuxControlSt{ "\x1b\\" };
+
+    inline std::string UnescapeControlOutput(std::string_view input)
+    {
+        std::string result;
+        result.reserve(input.size());
+        for (size_t i = 0; i < input.size(); ++i)
+        {
+            if (input[i] == '\\' && i + 3 < input.size() &&
+                input[i + 1] >= '0' && input[i + 1] <= '7' &&
+                input[i + 2] >= '0' && input[i + 2] <= '7' &&
+                input[i + 3] >= '0' && input[i + 3] <= '7')
+            {
+                result.push_back(static_cast<char>(((input[i + 1] - '0') << 6) |
+                                                   ((input[i + 2] - '0') << 3) |
+                                                   (input[i + 3] - '0')));
+                i += 3;
+            }
+            else
+            {
+                result.push_back(input[i]);
+            }
+        }
+        return result;
+    }
+
     inline constexpr char InsertKeys = '1';
     inline constexpr char InitState = '2';
     inline constexpr char ClientClosePane = '3';

@@ -1670,9 +1670,21 @@ namespace winrt::TerminalApp::implementation
             valueSet.Insert(L"sessionId", Windows::Foundation::PropertyValue::CreateGuid(id));
         }
 
+        if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+        {
+            if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+            {
+                return follower;
+            }
+        }
+
         connection.Initialize(valueSet);
 
-        if (Feature_HtmIntegration::IsEnabled() && _htmSession &&
+        const auto commandline = settings.Commandline();
+        const std::wstring_view commandlineView{ commandline };
+        const auto executable = std::filesystem::path{ commandlineView }.filename().wstring();
+        const auto isHtmCommand = executable.starts_with(L"htm") || commandlineView.find(L"\\htm.exe") != std::wstring_view::npos;
+        if (Feature_HtmIntegration::IsEnabled() && _htmSession && isHtmCommand &&
             connection.try_as<TerminalConnection::ConptyConnection>())
         {
             connection = winrt::make<HtmLeaderConnection>(connection, _htmSession.get());
@@ -6338,7 +6350,12 @@ namespace winrt::TerminalApp::implementation
         {
             tabImpl = _GetFocusedTabImpl();
         }
-        auto newPane = _MakeTerminalPane(nullptr, tabImpl ? *tabImpl : nullptr, follower);
+        winrt::TerminalApp::Tab sourceTab{ nullptr };
+        if (tabImpl)
+        {
+            sourceTab = *tabImpl;
+        }
+        auto newPane = _MakeTerminalPane(nullptr, sourceTab, follower);
         const auto direction = vertical ? SplitDirection::Right : SplitDirection::Down;
         _SplitPane(tabImpl, direction, 0.5f, newPane);
     }
