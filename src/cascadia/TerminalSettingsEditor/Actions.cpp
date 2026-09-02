@@ -14,57 +14,6 @@ using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    // Depth-first search of the visual tree under 'root' for the first KeyChordListener.
-    static Editor::KeyChordListener _findKeyChordListener(const Windows::UI::Xaml::DependencyObject& root)
-    {
-        if (!root)
-        {
-            return nullptr;
-        }
-        if (const auto listener = root.try_as<Editor::KeyChordListener>())
-        {
-            return listener;
-        }
-        const auto count = Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(root);
-        for (int32_t i = 0; i < count; ++i)
-        {
-            const auto child = Windows::UI::Xaml::Media::VisualTreeHelper::GetChild(root, i);
-            if (const auto found = _findKeyChordListener(child))
-            {
-                return found;
-            }
-        }
-        return nullptr;
-    }
-
-    // Depth-first search of the visual tree under 'root' for the first focusable, visible
-    // control (e.g. a key chord row's edit pencil), used to restore focus to a row after it
-    // leaves inline edit mode.
-    static Controls::Control _findFirstFocusable(const Windows::UI::Xaml::DependencyObject& root)
-    {
-        if (!root)
-        {
-            return nullptr;
-        }
-        if (const auto control = root.try_as<Controls::Control>())
-        {
-            if (control.IsTabStop() && control.IsEnabled() && control.Visibility() == Visibility::Visible)
-            {
-                return control;
-            }
-        }
-        const auto count = Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(root);
-        for (int32_t i = 0; i < count; ++i)
-        {
-            const auto child = Windows::UI::Xaml::Media::VisualTreeHelper::GetChild(root, i);
-            if (const auto found = _findFirstFocusable(child))
-            {
-                return found;
-            }
-        }
-        return nullptr;
-    }
-
     // Depth-first search of the visual tree under 'root' for the first ItemsControl. Used to
     // locate a command row's nested key chord list so we can resolve a specific chord's row.
     static Controls::ItemsControl _findChildItemsControl(const Windows::UI::Xaml::DependencyObject& root)
@@ -144,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (kcVM.IsInEditMode())
             {
                 // Focus the editable listener so the user can type a chord.
-                if (const auto listener = _findKeyChordListener(rowRoot))
+                if (const auto listener = FindKeyChordListener(rowRoot))
                 {
                     listener.FocusInput();
                     return;
@@ -152,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             // Otherwise (left edit mode) return focus to the row's first focusable control.
-            if (const auto focusable = _findFirstFocusable(rowRoot))
+            if (const auto focusable = FindFirstFocusable(rowRoot))
             {
                 focusable.Focus(FocusState::Programmatic);
             }

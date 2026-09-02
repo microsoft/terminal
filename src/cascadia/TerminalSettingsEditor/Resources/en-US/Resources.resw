@@ -1805,18 +1805,6 @@
     <value>Shortcuts</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
   </data>
-  <data name="Actions_AdditionalKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>View additional key bindings</value>
-    <comment>Tooltip for a "+N" badge button on each row of the Shortcuts page that opens a flyout listing every additional keyboard shortcut registered for that action (beyond the one already displayed inline on the row).</comment>
-  </data>
-  <data name="EditAction_ActionType.Header" xml:space="preserve">
-    <value>Shortcut type</value>
-    <comment>Header for the shortcut-type setting on the Edit Shortcut page (lets the user pick which action runs when this shortcut is invoked).</comment>
-  </data>
-  <data name="EditAction_ActionName.Header" xml:space="preserve">
-    <value>Shortcut name</value>
-    <comment>Header for the shortcut-name setting on the Edit Shortcut page (lets the user provide a friendly name for this shortcut).</comment>
-  </data>
   <data name="EditAction_KeyBindings.Text" xml:space="preserve">
     <value>Key bindings</value>
     <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>

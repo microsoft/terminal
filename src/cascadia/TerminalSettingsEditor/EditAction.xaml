@@ -421,8 +421,7 @@
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Action type  -->
-            <local:SettingsCard x:Name="ActionType"
-                                x:Uid="EditAction_ActionType">
+            <local:SettingsCard x:Name="ActionType">
                 <local:SettingsCard.HeaderIcon>
                     <FontIcon Glyph="&#xEDA7;" />
                 </local:SettingsCard.HeaderIcon>
@@ -479,7 +478,6 @@
 
                 <!--  Action name  -->
                 <local:SettingsCard x:Name="ActionName"
-                                    x:Uid="EditAction_ActionName"
                                     Margin="0,0,0,2">
                     <TextBox x:Name="CommandNameTextBox"
                              MinWidth="248"

@@ -14,57 +14,6 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    // Depth-first search of the visual tree under 'root' for the first KeyChordListener.
-    static Editor::KeyChordListener _findKeyChordListener(const Windows::UI::Xaml::DependencyObject& root)
-    {
-        if (!root)
-        {
-            return nullptr;
-        }
-        if (const auto listener = root.try_as<Editor::KeyChordListener>())
-        {
-            return listener;
-        }
-        const auto count = Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(root);
-        for (int32_t i = 0; i < count; ++i)
-        {
-            const auto child = Windows::UI::Xaml::Media::VisualTreeHelper::GetChild(root, i);
-            if (const auto found = _findKeyChordListener(child))
-            {
-                return found;
-            }
-        }
-        return nullptr;
-    }
-
-    // Depth-first search of the visual tree under 'root' for the first focusable, visible
-    // control (e.g. a key chord row's edit pencil), used to restore focus to a row after it
-    // leaves edit mode.
-    static Controls::Control _findFirstFocusable(const Windows::UI::Xaml::DependencyObject& root)
-    {
-        if (!root)
-        {
-            return nullptr;
-        }
-        if (const auto control = root.try_as<Controls::Control>())
-        {
-            if (control.IsTabStop() && control.IsEnabled() && control.Visibility() == Visibility::Visible)
-            {
-                return control;
-            }
-        }
-        const auto count = Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(root);
-        for (int32_t i = 0; i < count; ++i)
-        {
-            const auto child = Windows::UI::Xaml::Media::VisualTreeHelper::GetChild(root, i);
-            if (const auto found = _findFirstFocusable(child))
-            {
-                return found;
-            }
-        }
-        return nullptr;
-    }
-
     // Depth-first search of the visual tree under 'root' for the first TextBox (the AutoSuggestBox's
     // inner editable TextBox), so we can select its text on focus.
     static Controls::TextBox _findChildTextBox(const Windows::UI::Xaml::DependencyObject& root)
@@ -91,14 +40,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     EditAction::EditAction()
     {
+        InitializeComponent();
+
+        ActionType().Header(box_value(RS_(L"Actions_ShortcutAction/Text")));
+        ActionName().Header(box_value(RS_(L"Actions_Name/Text")));
+        Automation::AutomationProperties::SetName(KeyBindingsContainer(), RS_(L"EditAction_KeyBindings/Text"));
+        Automation::AutomationProperties::SetName(AdditionalCustomizationsContainer(), RS_(L"EditAction_AdditionalCustomizations/Text"));
+        Automation::AutomationProperties::SetName(NewKeyBinding(), RS_(L"EditAction_NewKeyBinding/Header"));
     }
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        Automation::AutomationProperties::SetName(KeyBindingsContainer(), RS_(L"EditAction_KeyBindings/Text"));
-        Automation::AutomationProperties::SetName(AdditionalCustomizationsContainer(), RS_(L"EditAction_AdditionalCustomizations/Text"));
-        Automation::AutomationProperties::SetName(NewKeyBinding(), RS_(L"EditAction_NewKeyBinding/Header"));
-
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::CommandViewModel>();
 
@@ -128,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             if (kcVM->IsInEditMode())
                             {
                                 // Focus the editable listener so the user can type a chord.
-                                if (const auto listener = _findKeyChordListener(root))
+                                if (const auto listener = FindKeyChordListener(root))
                                 {
                                     listener.FocusInput();
                                     return;
@@ -136,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             }
                             // Otherwise (left edit mode) return focus to the row's first
                             // focusable control (the edit pencil).
-                            if (const auto focusable = _findFirstFocusable(root))
+                            if (const auto focusable = FindFirstFocusable(root))
                             {
                                 focusable.Focus(FocusState::Programmatic);
                             }

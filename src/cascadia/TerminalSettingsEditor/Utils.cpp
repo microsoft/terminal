@@ -170,4 +170,55 @@ namespace winrt::Microsoft::Terminal::Settings
         control.StartBringIntoView();
         control.Focus(FocusState::Programmatic);
     }
+
+    // Depth-first search of the visual tree under 'root' for the first KeyChordListener.
+    Editor::KeyChordListener FindKeyChordListener(const DependencyObject& root)
+    {
+        if (!root)
+        {
+            return nullptr;
+        }
+        if (const auto listener = root.try_as<Editor::KeyChordListener>())
+        {
+            return listener;
+        }
+        const auto count = Media::VisualTreeHelper::GetChildrenCount(root);
+        for (int32_t i = 0; i < count; ++i)
+        {
+            const auto child = Media::VisualTreeHelper::GetChild(root, i);
+            if (const auto found = FindKeyChordListener(child))
+            {
+                return found;
+            }
+        }
+        return nullptr;
+    }
+
+    // Depth-first search of the visual tree under 'root' for the first focusable, visible
+    // control (e.g. a key chord row's edit pencil), used to restore focus to a row after it
+    // leaves edit mode.
+    Controls::Control FindFirstFocusable(const DependencyObject& root)
+    {
+        if (!root)
+        {
+            return nullptr;
+        }
+        if (const auto control = root.try_as<Controls::Control>())
+        {
+            if (control.IsTabStop() && control.IsEnabled() && control.Visibility() == Visibility::Visible)
+            {
+                return control;
+            }
+        }
+        const auto count = Media::VisualTreeHelper::GetChildrenCount(root);
+        for (int32_t i = 0; i < count; ++i)
+        {
+            const auto child = Media::VisualTreeHelper::GetChild(root, i);
+            if (const auto found = FindFirstFocusable(child))
+            {
+                return found;
+            }
+        }
+        return nullptr;
+    }
 }
