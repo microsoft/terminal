@@ -72,30 +72,29 @@
                     </local:SettingsCard>
 
                     <!--  Starting Directory  -->
-                    <local:SettingsCard x:Uid="Profile_StartingDirectory"
-                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}">
-                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                            <TextBox x:Uid="Profile_StartingDirectoryBox"
-                                     IsSpellCheckEnabled="False"
-                                     Style="{StaticResource TextBoxSettingStyle}"
-                                     Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
-                            <Button x:Name="StartingDirectoryBrowse"
-                                    x:Uid="Profile_StartingDirectoryBrowse"
-                                    Click="StartingDirectory_Click"
-                                    Style="{StaticResource BrowseButtonStyle}">
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                          Glyph="&#xE838;" />
-                            </Button>
-                            <local:SettingResetButton SettingName="StartingDirectory"
-                                                      Target="{x:Bind Profile}" />
+                    <local:SettingsCard x:Uid="Profile_StartingDirectory">
+                        <StackPanel Spacing="4">
+                            <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                                <TextBox x:Uid="Profile_StartingDirectoryBox"
+                                         IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
+                                         IsSpellCheckEnabled="False"
+                                         Style="{StaticResource TextBoxSettingStyle}"
+                                         Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
+                                <Button x:Name="StartingDirectoryBrowse"
+                                        x:Uid="Profile_StartingDirectoryBrowse"
+                                        Click="StartingDirectory_Click"
+                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
+                                        Style="{StaticResource BrowseButtonStyle}">
+                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE838;" />
+                                </Button>
+                                <local:SettingResetButton SettingName="StartingDirectory"
+                                                          Target="{x:Bind Profile}" />
+                            </StackPanel>
+                            <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
+                                      x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                      IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                         </StackPanel>
-                    </local:SettingsCard>
-
-                    <local:SettingsCard x:Name="StartingDirectory"
-                                        ContentAlignment="Left">
-                        <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
-                                  x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                  IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                     </local:SettingsCard>
 
                     <!--  Elevate  -->
