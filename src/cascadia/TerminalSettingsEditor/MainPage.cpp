@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<implementation::ProfileViewModel>(profile, appSettings, windowSettings, dispatcher);
     }
 
-    static ProfileSubPage ProfileSubPageFromBreadcrumb(BreadcrumbSubPage subPage)
+    static ProfileSubPage ProfileSubPageFromBreadcrumb(BreadcrumbSubPage subPage, const Editor::ProfileViewModel& profile)
     {
         switch (subPage)
         {
@@ -89,7 +89,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         case BreadcrumbSubPage::Profile_Appearance:
             return ProfileSubPage::Appearance;
         case BreadcrumbSubPage::Profile_UnfocusedAppearance:
-            return ProfileSubPage::UnfocusedAppearance;
+            // If the profile has no unfocused appearance, fallback to the base page.
+            return profile.HasUnfocusedAppearance() ? ProfileSubPage::UnfocusedAppearance : ProfileSubPage::Base;
         case BreadcrumbSubPage::Profile_Terminal:
             return ProfileSubPage::Terminal;
         case BreadcrumbSubPage::Profile_Advanced:
@@ -527,6 +528,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
+    void MainPage::_LazyLoadProfileDefaultsViewModel()
+    {
+        if (!_profileDefaultsVM)
+        {
+            _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, _windowSettingsClone, Dispatcher());
+            _profileDefaultsVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
+            _profileDefaultsVM.IsBaseLayer(true);
+        }
+    }
+
     // Method Description:
     // - Navigates to the page corresponding to the given nav tag. Updates the breadcrumb bar and selected nav view item accordingly.
     // Arguments:
@@ -624,16 +635,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _AppendProfilesRootCrumb();
 
-                // lazy load profile defaults VM
-                if (!_profileDefaultsVM)
-                {
-                    _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, _windowSettingsClone, Dispatcher());
-                    _profileDefaultsVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
-                    _profileDefaultsVM.IsBaseLayer(true);
-                }
+                _LazyLoadProfileDefaultsViewModel();
 
                 // Set CurrentPage before registering the handler to avoid double-navigation
-                const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
+                const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage, _profileDefaultsVM);
                 _profileDefaultsVM.CurrentPage(profileSubPage);
 
                 // Navigate directly to the correct sub-page
@@ -680,7 +685,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else
             {
                 // Set CurrentPage before registering the handler to avoid double-navigation
-                const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
+                const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage, profile);
                 profile.CurrentPage(profileSubPage);
 
                 // Navigate directly to the correct sub-page
@@ -1162,6 +1167,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& navigationArg{ chosenResult->NavigationArg() };
             const auto& subpage{ indexEntry.Entry->SubPage };
             const hstring elementToFocus{ indexEntry.Entry->ElementName };
+
+            // User explicitly wants to see the unfocused appearance, so create it if it doesn't exist yet.
+            if (subpage == BreadcrumbSubPage::Profile_UnfocusedAppearance)
+            {
+                if (const auto& profileVM{ navigationArg.try_as<Editor::ProfileViewModel>() })
+                {
+                    profileVM.CreateUnfocusedAppearance();
+                }
+                else if (const auto& navTag{ navigationArg.try_as<hstring>() }; navTag && *navTag == globalProfileTag)
+                {
+                    _LazyLoadProfileDefaultsViewModel();
+                    _profileDefaultsVM.CreateUnfocusedAppearance();
+                }
+            }
+
             _Navigate(navigationArg, subpage, elementToFocus);
             SettingsSearchBox().Text(L"");
         }

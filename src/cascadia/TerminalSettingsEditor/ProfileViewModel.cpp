@@ -552,6 +552,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::CreateUnfocusedAppearance()
     {
+        if (_profile.HasUnfocusedAppearance())
+        {
+            // Profile already has an unfocused appearance. Don't create a new one.
+            return;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "CreateUnfocusedAppearance",
+            TraceLoggingDescription("Event emitted when the user creates an unfocused appearance for a profile"),
+            TraceLoggingValue(IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(static_cast<GUID>(Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         _profile.CreateUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());

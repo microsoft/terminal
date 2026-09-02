@@ -28,22 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
         _weakWindowRoot = args.WindowRoot();
-
-        // Auto-create the unfocused appearance on navigate so the preview and editor are ready to go.
-        if (!_Profile.HasUnfocusedAppearance())
-        {
-            TraceLoggingWrite(
-                g_hTerminalSettingsEditorProvider,
-                "CreateUnfocusedAppearance",
-                TraceLoggingDescription("Event emitted when the user creates an unfocused appearance for a profile"),
-                TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
-                TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
-                TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-            _Profile.CreateUnfocusedAppearance();
-        }
+        assert(_Profile.HasUnfocusedAppearance());
 
         // Settings are stored in Profiles_UnfocusedAppearance and Appearances.
         // We use the "App." prefix to indicate if it's in Appearances,

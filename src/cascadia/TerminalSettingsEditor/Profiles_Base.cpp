@@ -83,6 +83,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::UnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
+        // User explicitly wants to see the unfocused appearance, so create it if it doesn't exist yet.
+        _Profile.CreateUnfocusedAppearance();
         _Profile.CurrentPage(ProfileSubPage::UnfocusedAppearance);
     }
 
