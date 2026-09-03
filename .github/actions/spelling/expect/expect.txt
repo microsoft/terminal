@@ -323,6 +323,7 @@ CYSIZEFRAME
 CYSMICON
 CYVIRTUALSCREEN
 CYVSCROLL
+daemonizes
 dai
 DATABLOCK
 dbcs
@@ -750,7 +751,9 @@ HTCAPTION
 HTCLIENT
 HTLEFT
 HTMAXBUTTON
+htmd
 HTMINBUTTON
+htmtst
 HTRIGHT
 HTTOP
 HTTOPLEFT
@@ -1313,6 +1316,7 @@ PREVIEWWINDOW
 PREVLINE
 prg
 PRIs
+PROCESSENTRY
 processhost
 PROCESSINFOCLASS
 PRODEXT
@@ -1570,6 +1574,7 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
+SNAPPROCESS
 snk
 SOLIDBOX
 Solutiondir
@@ -1696,6 +1701,7 @@ tmultiple
 tofrom
 Tombstoning
 toolbars
+Toolhelp
 TOOLINFO
 TOOLWINDOW
 TOPDOWNDIB
@@ -1851,6 +1857,7 @@ WCIA
 WCIW
 wcs
 WCSHELPER
+wcsicmp
 wcsrev
 wcswidth
 WCT
@@ -1858,6 +1865,7 @@ wddm
 wddmcon
 WDDMCONSOLECONTEXT
 wdm
+wdupenv
 wekyb
 wex
 wextest

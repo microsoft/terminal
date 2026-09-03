@@ -106,7 +106,7 @@ namespace Microsoft::Terminal::Htm
         };
         std::string out;
         int val = 0;
-        int valb = -8;
+        int valueBits = -8;
         for (unsigned char c : encoded)
         {
             if (c == '=')
@@ -119,11 +119,11 @@ namespace Microsoft::Terminal::Htm
                 continue;
             }
             val = (val << 6) + d;
-            valb += 6;
-            if (valb >= 0)
+            valueBits += 6;
+            if (valueBits >= 0)
             {
-                out.push_back(char((val >> valb) & 0xFF));
-                valb -= 8;
+                out.push_back(char((val >> valueBits) & 0xFF));
+                valueBits -= 8;
             }
         }
         return out;
