@@ -40,8 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _OnClick(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         hstring _GenerateOverrideMessage(const Windows::Foundation::IInspectable& settingOrigin);
 
-        Windows::UI::Xaml::Data::INotifyPropertyChanged _subscribedTarget{ nullptr };
-        winrt::event_token _targetPropertyChangedToken{};
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _targetPropertyChangedRevoker;
     };
 }
 

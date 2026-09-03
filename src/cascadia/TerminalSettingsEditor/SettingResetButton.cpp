@@ -79,19 +79,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // tooltip in sync when the underlying setting (or its inheritance) changes.
     void SettingResetButton::_ResubscribeToTarget()
     {
-        if (_subscribedTarget)
-        {
-            _subscribedTarget.PropertyChanged(_targetPropertyChangedToken);
-            _subscribedTarget = nullptr;
-            _targetPropertyChangedToken = {};
-        }
+        _targetPropertyChangedRevoker.revoke();
 
         if (const auto target{ Target() })
         {
             if (const auto observable{ target.try_as<INotifyPropertyChanged>() })
             {
-                _subscribedTarget = observable;
-                _targetPropertyChangedToken = observable.PropertyChanged({ get_weak(), &SettingResetButton::_OnTargetPropertyChanged });
+                _targetPropertyChangedRevoker = observable.PropertyChanged(winrt::auto_revoke, { get_weak(), &SettingResetButton::_OnTargetPropertyChanged });
             }
         }
     }
