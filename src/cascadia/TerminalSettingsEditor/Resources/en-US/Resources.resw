@@ -1622,7 +1622,7 @@
     <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
-    <value>Configure how the terminal interprets text and control sequences to behave like a traditional command-line terminal</value>
+    <value>Configure how the terminal handles keyboard input and control sequences</value>
     <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
@@ -2848,5 +2848,9 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>None</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>Unfocused Appearance</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
 </root>

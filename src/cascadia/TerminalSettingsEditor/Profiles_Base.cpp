@@ -23,7 +23,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
         AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/Description")));
-        UnfocusedAppearanceNavigator().Header(box_value(RS_(L"Profile_UnfocusedAppearanceTextBlock/Text")));
         UnfocusedAppearanceNavigator().Description(box_value(RS_(L"Profile_UnfocusedAppearanceNavigator/Description")));
         TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
         TerminalNavigator().Description(box_value(RS_(L"Profile_TerminalNavigator/Description")));

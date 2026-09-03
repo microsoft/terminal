@@ -229,6 +229,7 @@
                 </local:SettingsCard.HeaderIcon>
             </local:SettingsCard>
             <local:SettingsCard x:Name="UnfocusedAppearanceNavigator"
+                                x:Uid="Profile_UnfocusedAppearanceNavigator"
                                 Click="UnfocusedAppearance_Click"
                                 IsClickEnabled="True"
                                 Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
