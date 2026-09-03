@@ -84,6 +84,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CloseZoomedPane);
 
         TEST_METHOD(SwapPanes);
+        TEST_METHOD(ContextMenuUsesMenuFlyoutsForSplitAndSwapPane);
 
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
@@ -1042,6 +1043,53 @@ namespace TerminalAppLocalTests
             // Inspect the tree to make sure we swapped
             VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_secondChild->Id().value());
             VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+        });
+    }
+
+    void TabTests::ContextMenuUsesMenuFlyoutsForSplitAndSwapPane()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Create a second pane so Swap pane is present.");
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+
+            const auto activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            winrt::Microsoft::UI::Xaml::Controls::CommandBarFlyout contextMenu{};
+            page->_PopulateContextMenu(activeControl, contextMenu, false);
+
+            bool foundSplitPane = false;
+            bool foundSwapPane = false;
+
+            for (const auto& command : contextMenu.SecondaryCommands())
+            {
+                if (const auto button{ command.try_as<AppBarButton>() })
+                {
+                    if (button.Label() == RS_(L"SplitPaneText"))
+                    {
+                        foundSplitPane = true;
+                        const auto flyout{ button.Flyout() };
+                        const auto menuFlyout{ flyout.try_as<MenuFlyout>() };
+                        VERIFY_IS_NOT_NULL(menuFlyout);
+                        VERIFY_IS_GREATER_THAN(menuFlyout.Items().Size(), 0u);
+                        VERIFY_IS_NOT_NULL(menuFlyout.Items().GetAt(0).try_as<MenuFlyoutSubItem>());
+                    }
+                    else if (button.Label() == RS_(L"SwapPaneText"))
+                    {
+                        foundSwapPane = true;
+                        const auto flyout{ button.Flyout() };
+                        const auto menuFlyout{ flyout.try_as<MenuFlyout>() };
+                        VERIFY_IS_NOT_NULL(menuFlyout);
+                        VERIFY_IS_GREATER_THAN(menuFlyout.Items().Size(), 0u);
+                        VERIFY_IS_NOT_NULL(menuFlyout.Items().GetAt(0).try_as<MenuFlyoutItem>());
+                    }
+                }
+            }
+
+            VERIFY_IS_TRUE(foundSplitPane);
+            VERIFY_IS_TRUE(foundSwapPane);
         });
     }
 

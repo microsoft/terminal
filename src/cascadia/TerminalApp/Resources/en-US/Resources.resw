@@ -191,6 +191,10 @@
   <data name="SplitPaneToolTipText" xml:space="preserve">
     <value>Right click for split directions - right/down/up/left</value>
   </data>
+  <data name="SplitPaneAutomaticText" xml:space="preserve">
+    <value>Automatic</value>
+    <comment>An option in the Split pane context menu that automatically chooses the split direction.</comment>
+  </data>
   <data name="SplitPaneDownText" xml:space="preserve">
     <value>Split pane down</value>
   </data>
