@@ -165,8 +165,10 @@ namespace winrt::TerminalApp::implementation
         const auto remainder = _pendingInit.substr(marker + TmuxControlDcs.size());
         _pendingInit.clear();
         _htmMode = true;
-        if (_session) _session->AttachLeader(this);
-        if (!remainder.empty()) _ProcessHtmBytes(remainder);
+        if (_session)
+            _session->AttachLeader(this);
+        if (!remainder.empty())
+            _ProcessHtmBytes(remainder);
     }
 
     void HtmLeaderConnection::_ProcessHtmBytes(std::string_view utf8)
@@ -177,8 +179,10 @@ namespace winrt::TerminalApp::implementation
         {
             auto line = _htmBuffer.substr(0, newline);
             _htmBuffer.erase(0, newline + 1);
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (_session) _session->HandleLine(line);
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+            if (_session)
+                _session->HandleLine(line);
         }
     }
 

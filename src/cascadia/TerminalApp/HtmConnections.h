@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
     public:
         HtmFollowerConnection(HtmSession* session, std::string paneId);
 
-        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {};
         void Start();
         void WriteInput(const winrt::array_view<const char16_t> data);
         void Resize(uint32_t rows, uint32_t columns);

@@ -15,14 +15,17 @@ namespace winrt::TerminalApp::implementation
 
     void HtmSession::AttachLeader(HtmLeaderConnection* leader)
     {
-        { std::lock_guard lock{ _mutex }; _leader = leader; }
+        {
+            std::lock_guard lock{ _mutex };
+            _leader = leader;
+        }
         // DCS is detected inside ConptyConnection's output callback. Queue the
         // first command so that callback can return before we call WriteInput
         // on the same connection.
         const auto weakLeader = leader->get_weak();
         _page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [this, weakLeader]() {
             if (const auto leader = weakLeader.get(); leader && _leader == leader.get() &&
-                leader->State() == ConnectionState::Connected)
+                                                      leader->State() == ConnectionState::Connected)
             {
                 WriteToLeader("refresh-client -C 80x24");
             }
@@ -31,7 +34,11 @@ namespace winrt::TerminalApp::implementation
 
     void HtmSession::DetachLeader(HtmLeaderConnection* leader)
     {
-        if (_leader == leader) { _leader = nullptr; _exitHtmMode(); }
+        if (_leader == leader)
+        {
+            _leader = nullptr;
+            _exitHtmMode();
+        }
     }
 
     bool HtmSession::IsActive() const noexcept
@@ -42,19 +49,29 @@ namespace winrt::TerminalApp::implementation
 
     bool HtmSession::IsHtmConnection(const ITerminalConnection& connection) const
     {
-        if (const auto leader{ connection.try_as<HtmLeaderConnection>() }) return leader.get() == _leader;
-        if (const auto follower{ connection.try_as<HtmFollowerConnection>() }) return _followers.contains(follower->PaneId());
+        if (const auto leader{ connection.try_as<HtmLeaderConnection>() })
+            return leader.get() == _leader;
+        if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+            return _followers.contains(follower->PaneId());
         return false;
     }
 
     void HtmSession::RegisterFollower(HtmFollowerConnection* follower)
     {
-        if (follower && !follower->PaneId().empty()) { std::lock_guard lock{ _mutex }; _followers[follower->PaneId()] = follower; }
+        if (follower && !follower->PaneId().empty())
+        {
+            std::lock_guard lock{ _mutex };
+            _followers[follower->PaneId()] = follower;
+        }
     }
 
     void HtmSession::UnregisterFollower(HtmFollowerConnection* follower)
     {
-        if (follower) { std::lock_guard lock{ _mutex }; _followers.erase(follower->PaneId()); }
+        if (follower)
+        {
+            std::lock_guard lock{ _mutex };
+            _followers.erase(follower->PaneId());
+        }
     }
 
     void HtmSession::WriteToLeader(std::string_view command)
@@ -64,14 +81,16 @@ namespace winrt::TerminalApp::implementation
             std::string line{ command };
             // A Windows console in line-input mode submits on CR, not LF.
             // htmd accepts CR, LF, and CRLF as tmux command delimiters.
-            if (line.empty() || (line.back() != '\r' && line.back() != '\n')) line.push_back('\r');
+            if (line.empty() || (line.back() != '\r' && line.back() != '\n'))
+                line.push_back('\r');
             _leader->WriteRaw(line);
         }
     }
 
     void HtmSession::SendKeys(std::string_view paneId, std::string_view utf8)
     {
-        if (paneId.empty()) return;
+        if (paneId.empty())
+            return;
         static constexpr char hex[] = "0123456789abcdef";
         std::string command{ "send-keys -H -t " };
         command += paneId;
@@ -89,7 +108,8 @@ namespace winrt::TerminalApp::implementation
         if (line.rfind("%output ", 0) == 0)
         {
             const auto first = line.find(' ', 8);
-            if (first != std::string_view::npos) _appendToPane(std::string{ line.substr(8, first - 8) }, UnescapeControlOutput(line.substr(first + 1)));
+            if (first != std::string_view::npos)
+                _appendToPane(std::string{ line.substr(8, first - 8) }, UnescapeControlOutput(line.substr(first + 1)));
             return;
         }
         if (line.rfind("%window-pane-changed ", 0) == 0)
@@ -154,23 +174,40 @@ namespace winrt::TerminalApp::implementation
             }
             return;
         }
-        if (line.rfind("%begin ", 0) == 0) { _inReply = true; _replyLines.clear(); return; }
-        if (line.rfind("%end ", 0) == 0 || line.rfind("%error ", 0) == 0) { _finishReply(); return; }
-        if (line == "%exit") { _exitHtmMode(); return; }
-        if (_inReply) _replyLines.emplace_back(line);
+        if (line.rfind("%begin ", 0) == 0)
+        {
+            _inReply = true;
+            _replyLines.clear();
+            return;
+        }
+        if (line.rfind("%end ", 0) == 0 || line.rfind("%error ", 0) == 0)
+        {
+            _finishReply();
+            return;
+        }
+        if (line == "%exit")
+        {
+            _exitHtmMode();
+            return;
+        }
+        if (_inReply)
+            _replyLines.emplace_back(line);
     }
 
     void HtmSession::_finishReply()
     {
         _inReply = false;
-        if (_replyLines.empty()) return;
+        if (_replyLines.empty())
+            return;
         // -P -F '#{pane_id}' replies with exactly the new %pane identifier.
         const auto id = _replyLines.front();
-        if (id.empty() || id.front() != '%') return;
+        if (id.empty() || id.front() != '%')
+            return;
         HtmFollowerConnection* follower = nullptr;
         {
             std::lock_guard lock{ _mutex };
-            if (_pendingFollowers.empty()) return;
+            if (_pendingFollowers.empty())
+                return;
             follower = _pendingFollowers.front().connection;
             _pendingFollowers.erase(_pendingFollowers.begin());
         }
@@ -183,7 +220,8 @@ namespace winrt::TerminalApp::implementation
 
     ITerminalConnection HtmSession::CreateFollowerForUserSplit(const std::string& sourcePaneId, bool vertical)
     {
-        if (!_leader || sourcePaneId.empty()) return nullptr;
+        if (!_leader || sourcePaneId.empty())
+            return nullptr;
         auto follower = winrt::make_self<HtmFollowerConnection>(this, "");
         {
             std::lock_guard lock{ _mutex };
@@ -195,7 +233,8 @@ namespace winrt::TerminalApp::implementation
 
     ITerminalConnection HtmSession::CreateFollowerForUserTab()
     {
-        if (!_leader) return nullptr;
+        if (!_leader)
+            return nullptr;
         auto follower = winrt::make_self<HtmFollowerConnection>(this, "");
         {
             std::lock_guard lock{ _mutex };
@@ -207,9 +246,18 @@ namespace winrt::TerminalApp::implementation
 
     bool HtmSession::HandleUserClose(const ITerminalConnection& connection)
     {
-        if (_suppressClosePackets || !IsHtmConnection(connection)) return false;
-        if (const auto follower{ connection.try_as<HtmFollowerConnection>() }) { WriteToLeader("kill-pane -t " + follower->PaneId()); return true; }
-        if (const auto leader{ connection.try_as<HtmLeaderConnection>() }) { WriteToLeader("kill-pane -t " + leader->PaneId()); return true; }
+        if (_suppressClosePackets || !IsHtmConnection(connection))
+            return false;
+        if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+        {
+            WriteToLeader("kill-pane -t " + follower->PaneId());
+            return true;
+        }
+        if (const auto leader{ connection.try_as<HtmLeaderConnection>() })
+        {
+            WriteToLeader("kill-pane -t " + leader->PaneId());
+            return true;
+        }
         return false;
     }
 
@@ -217,9 +265,14 @@ namespace winrt::TerminalApp::implementation
     {
         const std::string data{ utf8 };
         _page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [this, paneId, data]() {
-            if (_leader && _leader->PaneId() == paneId) { _leader->InjectOutput(data); return; }
+            if (_leader && _leader->PaneId() == paneId)
+            {
+                _leader->InjectOutput(data);
+                return;
+            }
             std::lock_guard lock{ _mutex };
-            if (const auto it = _followers.find(paneId); it != _followers.end() && it->second) it->second->InjectOutput(data);
+            if (const auto it = _followers.find(paneId); it != _followers.end() && it->second)
+                it->second->InjectOutput(data);
         });
     }
 
