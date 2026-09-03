@@ -1609,8 +1609,8 @@
     <value>Name</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
   </data>
-  <data name="Profile_Section_VisualUI.Text" xml:space="preserve">
-    <value>Visual/UI Affordance</value>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>Tab Appearance</value>
     <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
   </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">

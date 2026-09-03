@@ -145,8 +145,8 @@
                 </local:SettingsExpander.Items>
             </local:SettingsExpander>
 
-            <!--  Section: Visual/UI Affordance  -->
-            <TextBlock x:Uid="Profile_Section_VisualUI"
+            <!--  Section: Tab Appearance  -->
+            <TextBlock x:Uid="Profile_Section_TabAppearance"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Tab Title  -->
