@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <winrt/Microsoft.Terminal.Settings.Editor.h>
+
 // This macro must be used alongside GETSET_BINDABLE_ENUM_SETTING.
 // Use this in your class's constructor after Initialize_Component().
 // It sorts and initializes the observable list of enum entries with the enum name
@@ -79,6 +81,8 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
     safe_void_coroutine ExpandAncestorsAndBringIntoView(winrt::Windows::UI::Xaml::FrameworkElement root, winrt::Windows::UI::Xaml::Controls::Control control);
+    Editor::KeyChordListener FindKeyChordListener(const winrt::Windows::UI::Xaml::DependencyObject& root);
+    winrt::Windows::UI::Xaml::Controls::Control FindFirstFocusable(const winrt::Windows::UI::Xaml::DependencyObject& root);
 }
 
 // BODGY!
