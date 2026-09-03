@@ -1608,6 +1608,7 @@ STGM
 stl
 storyboards
 STRINGTABLE
+strnicmp
 STRSAFE
 STUBHEAD
 STUVWX

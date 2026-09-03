@@ -687,6 +687,18 @@
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
+    <Project Path="src/cascadia/UnitTests_TerminalDsc/TerminalDsc.UnitTests.vcxproj" Id="ca5cad1a-c663-4a5d-99d4-d7080f26c861">
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
     <Project Path="src/cascadia/ut_app/TerminalApp.UnitTests.vcxproj" Id="ca5cad1a-9333-4d05-b12a-1905cbf112f9">
       <BuildDependency Project="src/cascadia/TerminalApp/TerminalAppLib.vcxproj" />
       <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
@@ -719,6 +731,25 @@
     <Project Path="src/cascadia/ElevateShim/elevate-shim.vcxproj" Id="416fd703-baa7-4f6e-9361-64f550ec8fca">
       <Platform Solution="*|Any CPU" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalDsc/TerminalDsc.vcxproj" Id="ca5cad1a-1c2d-46ef-b109-22320f070b04">
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
