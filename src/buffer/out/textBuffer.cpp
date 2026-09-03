@@ -51,14 +51,16 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
                        const TextAttribute defaultAttributes,
                        const UINT cursorSize,
                        const bool isActiveBuffer,
-                       Microsoft::Console::Render::Renderer* renderer) :
+                       Microsoft::Console::Render::Renderer* renderer,
+                       const bool growable) :
     _renderer{ renderer },
     _currentAttributes{ defaultAttributes },
     // This way every TextBuffer will start with a ""unique"" _lastMutationId
     // and so it'll compare unequal with the counter of other TextBuffers.
     _lastMutationId{ s_lastMutationIdInitialValue.fetch_add(0x100000000) },
     _cursor{ cursorSize, *this },
-    _isActiveBuffer{ isActiveBuffer }
+    _isActiveBuffer{ isActiveBuffer },
+    _growable{ growable }
 {
     // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
     screenBufferSize.width = std::max(screenBufferSize.width, 1);
@@ -68,7 +70,7 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
 
 TextBuffer::~TextBuffer()
 {
-    if (_buffer)
+    if (!_rowBlocks.empty())
     {
         _destroy();
     }
@@ -82,7 +84,7 @@ TextBuffer::~TextBuffer()
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
-// MEM_RESERVEs memory sufficient to store height-many ROW structs,
+// MEM_RESERVEs segmented storage sufficient to store height-many ROW structs,
 // as well as their ROW::_chars and ROW::_charOffsets buffers.
 //
 // We use explicit virtual memory allocations to not taint the general purpose allocator
@@ -92,7 +94,9 @@ TextBuffer::~TextBuffer()
 void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes)
 {
     const auto w = gsl::narrow<uint16_t>(screenBufferSize.width);
-    const auto h = gsl::narrow<uint16_t>(screenBufferSize.height);
+    const auto h = _growable ?
+                       std::clamp(screenBufferSize.height, 1, til::CoordTypeMax / 2) :
+                       gsl::narrow_cast<til::CoordType>(gsl::narrow<uint16_t>(screenBufferSize.height));
 
     constexpr auto rowSize = ROW::CalculateRowSize();
     const auto charsBufferSize = ROW::CalculateCharsBufferSize(w);
@@ -100,91 +104,165 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     const auto rowStride = rowSize + charsBufferSize + charOffsetsBufferSize;
     assert(rowStride % alignof(ROW) == 0);
 
-    // 65535*65535 cells would result in an allocSize of 8GiB.
-    // --> Use uint64_t so that we can safely do our calculations even on x86.
-    // We allocate 1 additional row, which will be used for GetScratchpadRow().
-    const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
-    const auto allocSize = gsl::narrow<size_t>(rowCount * rowStride);
-
-    // NOTE: Modifications to this block of code might have to be mirrored over to ResizeTraditional().
-    // It constructs a temporary TextBuffer and then extracts the members below, overwriting itself.
-    _buffer = wil::unique_virtualalloc_ptr<std::byte>{
-        static_cast<std::byte*>(THROW_LAST_ERROR_IF_NULL(VirtualAlloc(nullptr, allocSize, MEM_RESERVE, PAGE_READWRITE)))
-    };
-    _bufferEnd = _buffer.get() + allocSize;
-    _commitWatermark = _buffer.get();
     _initialAttributes = defaultAttributes;
     _bufferRowStride = rowStride;
     _bufferOffsetChars = rowSize;
     _bufferOffsetCharOffsets = rowSize + charsBufferSize;
+
+    // Use independently allocated blocks so unlimited scrollback can grow by
+    // appending storage. A roughly 1MiB target keeps the number of virtual
+    // allocations low without reserving a giant address range up front. The
+    // row count is rounded down to a power of two so hot row lookup uses a
+    // shift and mask instead of division.
+    // Small growable blocks keep the initial reservation bounded for unusually
+    // wide terminals. Finite buffers retain a 128-row floor to avoid creating
+    // an excessive number of virtual-memory areas at their largest dimensions.
+    const auto minimumRowsPerBlock = _growable ? size_t{ 1 } : _commitReadAheadRowCount;
+    const auto desiredRowsPerBlock = std::clamp(_targetBlockSize / rowStride, minimumRowsPerBlock, size_t{ 4096 });
+    _rowsPerBlock = 1;
+    _rowBlockShift = 0;
+    while (_rowsPerBlock <= desiredRowsPerBlock / 2)
+    {
+        _rowsPerBlock *= 2;
+        ++_rowBlockShift;
+    }
+
     _width = w;
     _height = h;
+    _reserveRows(gsl::narrow<size_t>(static_cast<uint64_t>(h) + 1));
 }
 
-// MEM_COMMITs the memory and constructs all ROWs up to and including the given row pointer.
-// It's expected that the caller verifies the parameter. It goes hand in hand with _getRowByOffsetDirect().
+// Adds enough independently reserved blocks for rowCount rows. rowCount
+// includes the scratchpad row at storage offset 0.
+void TextBuffer::_reserveRows(const size_t rowCount)
+{
+    const auto requiredBlockCount = (rowCount + _rowsPerBlock - 1) >> _rowBlockShift;
+
+    if (requiredBlockCount > _rowBlocks.capacity())
+    {
+        const auto doubledCapacity = std::max<size_t>(4, _rowBlocks.capacity() * 2);
+        _rowBlocks.reserve(std::max(requiredBlockCount, doubledCapacity));
+    }
+    while (_rowBlocks.size() < requiredBlockCount)
+    {
+        const auto blockBegin = _rowBlocks.size() << _rowBlockShift;
+        const auto rowsInBlock = _growable ?
+                                     _rowsPerBlock :
+                                     std::min(_rowsPerBlock, rowCount - blockBegin);
+        const auto blockSize = gsl::narrow<size_t>(static_cast<uint64_t>(rowsInBlock) * _bufferRowStride);
+        wil::unique_virtualalloc_ptr<std::byte> allocation{
+            static_cast<std::byte*>(THROW_LAST_ERROR_IF_NULL(VirtualAlloc(nullptr, blockSize, MEM_RESERVE, PAGE_READWRITE)))
+        };
+        _rowBlocks.emplace_back(std::move(allocation), rowsInBlock);
+    }
+}
+
+// MEM_COMMITs memory and constructs all ROWs up to and including rowIndex.
+// It's expected that the caller verifies the parameter. It goes hand in hand
+// with _getRowByOffsetDirect().
 //
 // Declaring this function as noinline allows _getRowByOffsetDirect() to be inlined,
 // which improves overall TextBuffer performance by ~6%. And all it cost is this annotation.
 // The compiler doesn't understand the likelihood of our branches. (PGO does, but that's imperfect.)
-__declspec(noinline) void TextBuffer::_commit(const std::byte* row)
+__declspec(noinline) void TextBuffer::_commit(const size_t rowIndex)
 {
-    assert(row >= _commitWatermark);
+    assert(rowIndex >= _committedRowCount);
 
-    const auto rowEnd = row + _bufferRowStride;
-    const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
-    const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
-    const auto ideal = minimum + _bufferRowStride * _commitReadAheadRowCount;
-    const auto size = std::min(remaining, ideal);
+    const auto totalRows = _growable ?
+                               _rowBlocks.size() * _rowsPerBlock :
+                               gsl::narrow_cast<size_t>(_height) + 1;
+    const auto minimumEnd = rowIndex + 1;
+    const auto readAheadRows = std::clamp(_targetBlockSize / _bufferRowStride, size_t{ 1 }, _commitReadAheadRowCount);
+    const auto idealEnd = std::min(totalRows, minimumEnd + readAheadRows);
 
-    THROW_LAST_ERROR_IF_NULL(VirtualAlloc(_commitWatermark, size, MEM_COMMIT, PAGE_READWRITE));
-
-    _construct(_commitWatermark + size);
-}
-
-// Destructs and MEM_DECOMMITs all previously constructed ROWs.
-// You can use this (or rather the Reset() method) to fully clear the TextBuffer.
-void TextBuffer::_decommit() noexcept
-{
-    _destroy();
-    VirtualFree(_buffer.get(), 0, MEM_DECOMMIT);
-    _commitWatermark = _buffer.get();
-}
-
-// Constructs ROWs between [_commitWatermark,until).
-void TextBuffer::_construct(const std::byte* until) noexcept
-{
-    for (; _commitWatermark < until; _commitWatermark += _bufferRowStride)
+    // A commit cannot span separate VirtualAlloc reservations, so commit one
+    // block slice at a time. The row objects themselves are constructed only
+    // after every slice has been committed.
+    auto begin = _committedRowCount;
+    while (begin < idealEnd)
     {
-        const auto row = reinterpret_cast<ROW*>(_commitWatermark);
-        const auto chars = reinterpret_cast<wchar_t*>(_commitWatermark + _bufferOffsetChars);
-        const auto indices = reinterpret_cast<uint16_t*>(_commitWatermark + _bufferOffsetCharOffsets);
+        const auto blockIndex = begin >> _rowBlockShift;
+        const auto offsetInBlock = begin & (_rowsPerBlock - 1);
+        const auto blockEnd = std::min(idealEnd, (blockIndex + 1) << _rowBlockShift);
+        const auto byteCount = (blockEnd - begin) * _bufferRowStride;
+        auto* const address = _rowBlocks.at(blockIndex).allocation.get() + offsetInBlock * _bufferRowStride;
+        THROW_LAST_ERROR_IF_NULL(VirtualAlloc(address, byteCount, MEM_COMMIT, PAGE_READWRITE));
+        begin = blockEnd;
+    }
+
+    _construct(_committedRowCount, idealEnd);
+    _committedRowCount = idealEnd;
+}
+
+// Destructs rows after rowsToKeep and decommits complete unused blocks.
+// You can use this (or rather the Reset() method) to fully clear the TextBuffer.
+void TextBuffer::_decommit(til::CoordType rowsToKeep) noexcept
+{
+    rowsToKeep = std::clamp(rowsToKeep, 0, _height);
+    const auto storageRowsToKeep = rowsToKeep > 0 ? gsl::narrow_cast<size_t>(rowsToKeep) + 1 : size_t{ 0 };
+    const auto firstRowToDestroy = std::min(storageRowsToKeep, _committedRowCount);
+
+    _destroy(firstRowToDestroy);
+
+    // Only decommit whole blocks here. The tail of the partially retained
+    // block stays committed and can safely be recommitted when reused.
+    for (size_t blockIndex = 0; blockIndex < _rowBlocks.size(); ++blockIndex)
+    {
+        const auto blockBegin = blockIndex << _rowBlockShift;
+        if (blockBegin >= storageRowsToKeep)
+        {
+#pragma warning(suppress : 6250) // Intentionally retain the MEM_RESERVE address range.
+            VirtualFree(_rowBlocks[blockIndex].allocation.get(), _rowBlocks[blockIndex].rowCount * _bufferRowStride, MEM_DECOMMIT);
+        }
+    }
+
+    _committedRowCount = firstRowToDestroy;
+}
+
+// Constructs ROWs in [begin,end).
+void TextBuffer::_construct(const size_t begin, const size_t end) noexcept
+{
+    for (auto offset = begin; offset < end; ++offset)
+    {
+        const auto storage = _rowStorage(offset);
+        const auto row = reinterpret_cast<ROW*>(storage);
+        const auto chars = reinterpret_cast<wchar_t*>(storage + _bufferOffsetChars);
+        const auto indices = reinterpret_cast<uint16_t*>(storage + _bufferOffsetCharOffsets);
         std::construct_at(row, chars, indices, _width, _initialAttributes);
     }
 }
 
-// Destructs ROWs between [_buffer,_commitWatermark).
-void TextBuffer::_destroy() const noexcept
+// Destructs ROWs in [begin,_committedRowCount).
+void TextBuffer::_destroy(const size_t begin) const noexcept
 {
-    for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
+    for (auto offset = begin; offset < _committedRowCount; ++offset)
     {
-        std::destroy_at(reinterpret_cast<ROW*>(it));
+        std::destroy_at(reinterpret_cast<ROW*>(_rowStorage(offset)));
     }
+}
+
+std::byte* TextBuffer::_rowStorage(const size_t offset) const noexcept
+{
+    const auto blockIndex = offset >> _rowBlockShift;
+    const auto offsetInBlock = offset & (_rowsPerBlock - 1);
+    assert(blockIndex < _rowBlocks.size());
+    const auto& block = _rowBlocks[blockIndex];
+    assert(offsetInBlock < block.rowCount);
+    return block.allocation.get() + offsetInBlock * _bufferRowStride;
 }
 
 // This function is "direct" because it trusts the caller to properly
 // wrap the "offset" parameter modulo the _height of the buffer.
 ROW& TextBuffer::_getRowByOffsetDirect(size_t offset)
 {
-    const auto row = _buffer.get() + _bufferRowStride * offset;
-    THROW_HR_IF(E_UNEXPECTED, row < _buffer.get() || row >= _bufferEnd);
+    THROW_HR_IF(E_UNEXPECTED, offset > gsl::narrow<size_t>(_height));
 
-    if (row >= _commitWatermark)
+    if (offset >= _committedRowCount)
     {
-        _commit(row);
+        _commit(offset);
     }
 
-    return *reinterpret_cast<ROW*>(row);
+    return *reinterpret_cast<ROW*>(_rowStorage(offset));
 }
 
 // See GetRowByOffset().
@@ -211,23 +289,22 @@ ROW& TextBuffer::_getRow(til::CoordType y) const
 // Returns 0 if no rows are committed in.
 til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
 {
-    const auto lastRowOffset = (_commitWatermark - _buffer.get()) / _bufferRowStride;
     // This subtracts 2 from the offset to account for the:
     // * scratchpad row at offset 0, whereas regular rows start at offset 1.
-    // * fact that _commitWatermark points _past_ the last committed row,
+    // * fact that _committedRowCount points _past_ the last committed row,
     //   but we want to return an index pointing at the last row.
-    return std::max(0, gsl::narrow_cast<til::CoordType>(lastRowOffset - 2));
+    return std::clamp(gsl::narrow_cast<til::CoordType>(_committedRowCount) - 2, 0, _height - 1);
 }
 
 bool TextBuffer::_isRowCommitted(til::CoordType y) const noexcept
 {
-    auto offset = (_firstRow + y + 1 /* account for the scratch row */) % _height;
+    auto offset = (_firstRow + y) % _height;
     if (offset < 0)
     {
         offset += _height;
     }
-    const auto row = _buffer.get() + _bufferRowStride * offset;
-    return row < _commitWatermark;
+    const auto storageOffset = gsl::narrow_cast<size_t>(offset) + 1; // account for the scratch row
+    return storageOffset < _committedRowCount;
 }
 
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
@@ -300,7 +377,7 @@ size_t TextBuffer::GetCellDistance(const til::point from, const til::point to) c
 {
     auto startCell = GetCellDataAt(from);
     const auto endCell = GetCellDataAt(to);
-    auto delta = 0;
+    size_t delta = 0;
     while (startCell != endCell)
     {
         ++startCell;
@@ -989,7 +1066,11 @@ til::point TextBuffer::BufferToScreenPosition(const til::point position) const
 //   and the default current color attributes
 void TextBuffer::Reset() noexcept
 {
-    _decommit();
+    _decommit(0);
+    if (_growable)
+    {
+        _firstRow = 0;
+    }
     _initialAttributes = _currentAttributes;
 }
 
@@ -1006,7 +1087,11 @@ void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::Co
     // The new viewport should keep 0 rows? Then just reset everything.
     if (rowsToKeep <= 0)
     {
-        _decommit();
+        _decommit(0);
+        if (_growable)
+        {
+            _firstRow = 0;
+        }
         return;
     }
 
@@ -1022,10 +1107,51 @@ void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::Co
     _firstRow = 0;
     ScrollRows(startAbsolute, rowsToKeep, -startAbsolute);
 
-    const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = rowsToKeep; y <= end; ++y)
+    // Unlimited buffers never rotate, so their hyperlink table grows with
+    // their history. Retain only IDs that survived the clear (plus a hyperlink
+    // that is currently open and may be used by subsequent output).
+    if (!_hyperlinkMap.empty())
     {
-        GetMutableRowByOffset(y).Reset(_initialAttributes);
+        std::unordered_set<uint16_t> retainedHyperlinks;
+        if (const auto activeHyperlink = _currentAttributes.GetHyperlinkId())
+        {
+            retainedHyperlinks.emplace(activeHyperlink);
+        }
+        for (til::CoordType y = 0; y < rowsToKeep; ++y)
+        {
+            for (const auto id : GetRowByOffset(y).GetHyperlinks())
+            {
+                retainedHyperlinks.emplace(id);
+            }
+        }
+
+        std::vector<uint16_t> discardedHyperlinks;
+        discardedHyperlinks.reserve(_hyperlinkMap.size());
+        for (const auto& hyperlink : _hyperlinkMap)
+        {
+            const auto id = hyperlink.first;
+            if (!retainedHyperlinks.contains(id))
+            {
+                discardedHyperlinks.emplace_back(id);
+            }
+        }
+        for (const auto id : discardedHyperlinks)
+        {
+            RemoveHyperlinkFromMap(id);
+        }
+    }
+
+    _decommit(rowsToKeep);
+
+    // Unlimited buffers grow by appending independently reserved blocks. Once
+    // scrollback is cleared, discard blocks that can no longer be addressed so
+    // both their committed pages and reserved address space are released.
+    if (_growable && rowsToKeep < _height)
+    {
+        _height = rowsToKeep;
+        const auto storageRowCount = gsl::narrow_cast<size_t>(_height) + 1;
+        const auto blockCount = (storageRowCount + _rowsPerBlock - 1) >> _rowBlockShift;
+        _rowBlocks.resize(blockCount);
     }
 }
 
@@ -1041,7 +1167,7 @@ void TextBuffer::ResizeTraditional(til::size newSize)
     newSize.width = std::max(newSize.width, 1);
     newSize.height = std::max(newSize.height, 1);
 
-    TextBuffer newBuffer{ newSize, _currentAttributes, 0, false, _renderer };
+    TextBuffer newBuffer{ newSize, _currentAttributes, 0, false, _renderer, _growable };
     const auto cursorRow = GetCursor().GetPosition().y;
     const auto copyableRows = std::min<til::CoordType>(_height, newSize.height);
     til::CoordType srcRow = 0;
@@ -1057,18 +1183,42 @@ void TextBuffer::ResizeTraditional(til::size newSize)
         CopyRow(srcRow, dstRow, newBuffer);
     }
 
+    // Destroy any heap-owned state in the old ROW objects before releasing
+    // their virtual-memory blocks.
+    _destroy();
+
     // NOTE: Keep this in sync with _reserve().
-    _buffer = std::move(newBuffer._buffer);
-    _bufferEnd = newBuffer._bufferEnd;
-    _commitWatermark = newBuffer._commitWatermark;
+    _rowBlocks = std::move(newBuffer._rowBlocks);
+    _committedRowCount = newBuffer._committedRowCount;
+    newBuffer._committedRowCount = 0;
     _initialAttributes = newBuffer._initialAttributes;
     _bufferRowStride = newBuffer._bufferRowStride;
     _bufferOffsetChars = newBuffer._bufferOffsetChars;
     _bufferOffsetCharOffsets = newBuffer._bufferOffsetCharOffsets;
+    _rowsPerBlock = newBuffer._rowsPerBlock;
+    _rowBlockShift = newBuffer._rowBlockShift;
     _width = newBuffer._width;
     _height = newBuffer._height;
 
     _SetFirstRowIndex(0);
+}
+
+bool TextBuffer::GrowHeight()
+{
+    if (!_growable || _firstRow != 0 || _height >= til::CoordTypeMax / 2)
+    {
+        return false;
+    }
+
+    const auto nextHeight = _height + 1;
+    _reserveRows(gsl::narrow_cast<size_t>(nextHeight) + 1);
+    _height = nextHeight;
+    return true;
+}
+
+bool TextBuffer::IsGrowable() const noexcept
+{
+    return _growable;
 }
 
 void TextBuffer::SetAsActiveBuffer(const bool isActiveBuffer) noexcept
@@ -2744,8 +2894,20 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     til::CoordType newYLimit = til::CoordTypeMax;
 
     const auto oldHeight = std::max(lastRowWithText, oldCursorPos.y) + 1;
-    const auto newHeight = newBuffer.GetSize().Height();
+    auto newHeight = newBuffer.GetSize().Height();
     const auto newWidthU16 = gsl::narrow_cast<uint16_t>(newWidth);
+
+    const auto ensureRowAvailable = [&](const til::CoordType row) {
+        while (row >= newHeight && newBuffer.IsGrowable())
+        {
+            if (!newBuffer.GrowHeight())
+            {
+                return false;
+            }
+            newHeight = newBuffer.GetSize().Height();
+        }
+        return true;
+    };
 
     // Copy oldBuffer into newBuffer until oldBuffer has been fully consumed.
     for (; oldY < oldHeight && newY < newYLimit; ++oldY)
@@ -2763,6 +2925,11 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             {
                 newX = 0;
                 newY++;
+            }
+
+            if (!ensureRowAvailable(newY))
+            {
+                break;
             }
 
             auto& newRow = newBuffer.GetMutableRowByOffset(newY);
@@ -2817,6 +2984,10 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         //   single row, that's fine! The mark was on that logical row.
         if (oldRow.GetScrollbarData().has_value())
         {
+            if (!ensureRowAvailable(newY))
+            {
+                break;
+            }
             newBuffer.GetMutableRowByOffset(newY).SetScrollbarData(oldRow.GetScrollbarData());
         }
 
@@ -2836,6 +3007,11 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 newBuffer.GetMutableRowByOffset(newY).SetWrapForced(true);
                 newX = 0;
                 newY++;
+            }
+
+            if (!ensureRowAvailable(newY))
+            {
+                break;
             }
 
             // REFLOW_RESET:
@@ -2886,7 +3062,10 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 // * If the new cursor is at an y < 0, just put the cursor at (0,0)
                 // * Stop writing into the new buffer before we overwrite the new cursor position
                 // This implements the second option. There's no fundamental reason why this is better.
-                newYLimit = newY + newHeight;
+                if (!newBuffer.IsGrowable())
+                {
+                    newYLimit = newY + newHeight;
+                }
             }
             if (oldY >= mutableViewportTop)
             {
@@ -2925,8 +3104,13 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     // change the buffer colors then resize and everything below the last
     // printable char gets reset. See GH #12567
     const auto initializedRowsEnd = oldBuffer._estimateOffsetOfLastCommittedRow() + 1;
-    for (; oldY < initializedRowsEnd && newY < newHeight; oldY++, newY++)
+    for (; oldY < initializedRowsEnd && (newY < newHeight || newBuffer.IsGrowable()); oldY++, newY++)
     {
+        if (!ensureRowAvailable(newY))
+        {
+            break;
+        }
+
         auto& oldRow = oldBuffer.GetRowByOffset(oldY);
         auto& newRow = newBuffer.GetMutableRowByOffset(newY);
         auto& newAttr = newRow.Attributes();
@@ -2937,7 +3121,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     // Since we didn't use IncrementCircularBuffer() we need to compute the proper
     // _firstRow offset now, in a way that replicates IncrementCircularBuffer().
     // We need to do the same for newCursorPos.y for basically the same reason.
-    if (newY > newHeight)
+    if (!newBuffer.IsGrowable() && newY > newHeight)
     {
         newBuffer._firstRow = newY % newHeight;
         // _firstRow maps from API coordinates that always start at 0,0 in the top left corner of the
@@ -2984,32 +3168,41 @@ std::wstring TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
 // - The internal hyperlink ID
 uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 {
-    uint16_t numericId = 0;
-    if (id.empty())
+    if (!id.empty())
     {
-        // no custom id specified, return our internal count
-        numericId = _currentHyperlinkId;
-        ++_currentHyperlinkId;
-    }
-    else
-    {
-        // assign _currentHyperlinkId if the custom id does not already exist
-        std::wstring newId{ id };
-        // hash the URL and add it to the custom ID - GH#7698
-        newId += L"%" + std::to_wstring(til::hash(uri));
-        const auto result = _hyperlinkCustomIdMap.emplace(newId, _currentHyperlinkId);
-        if (result.second)
+        std::wstring customId{ id };
+        customId += L"%" + std::to_wstring(til::hash(uri));
+        if (const auto existing = _hyperlinkCustomIdMap.find(customId); existing != _hyperlinkCustomIdMap.end())
         {
-            // the custom id did not already exist
+            return existing->second;
+        }
+    }
+
+    // Hyperlink IDs are packed into 16 bits of TextAttribute. Once the counter
+    // wraps, find an ID that is no longer referenced instead of overwriting a
+    // live mapping and making old scrollback point at the wrong URI.
+    uint16_t numericId = 0;
+    for (size_t attempts = 0; attempts < UINT16_MAX && _hyperlinkMap.size() < UINT16_MAX; ++attempts)
+    {
+        const auto candidate = _currentHyperlinkId;
+        if (++_currentHyperlinkId == 0)
+        {
             ++_currentHyperlinkId;
         }
-        numericId = (*(result.first)).second;
+        if (candidate != 0 && !_hyperlinkMap.contains(candidate))
+        {
+            numericId = candidate;
+            break;
+        }
     }
-    // _currentHyperlinkId could overflow, make sure its not 0
-    if (_currentHyperlinkId == 0)
+
+    if (numericId != 0 && !id.empty())
     {
-        ++_currentHyperlinkId;
+        std::wstring customId{ id };
+        customId += L"%" + std::to_wstring(til::hash(uri));
+        _hyperlinkCustomIdMap.emplace(std::move(customId), numericId);
     }
+
     return numericId;
 }
 

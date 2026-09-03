@@ -412,6 +412,7 @@ private:
     std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
+    bool _infiniteScrollback = false;
     bool _detectURLs = false;
     bool _clipboardOperationsAllowed = true;
 

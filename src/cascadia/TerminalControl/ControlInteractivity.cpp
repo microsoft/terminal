@@ -461,11 +461,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto numRows = dy / -fontSizeInDips.Height;
 
                 const auto currentOffset = _core->ScrollOffset();
-                const auto newValue = numRows + currentOffset;
+                const auto newValue = static_cast<double>(numRows) + currentOffset;
 
                 // Update the Core's viewport position, and raise a
                 // ScrollPositionChanged event to update the scrollbar
-                UpdateScrollbar(newValue);
+                UpdateScrollbarPrecise(newValue);
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
@@ -623,7 +623,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // However, for us, the signs are flipped.
         // With one of the precision mice, one click is always a multiple of 120 (WHEEL_DELTA),
         // but the "smooth scrolling" mode results in non-int values
-        const auto rowDelta = mouseDelta / (-1.0f * WHEEL_DELTA);
+        const auto rowDelta = mouseDelta / (-1.0 * WHEEL_DELTA);
 
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
@@ -633,7 +633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
-        UpdateScrollbar(newValue);
+        UpdateScrollbarPrecise(newValue);
 
         if (isLeftButtonPressed)
         {
@@ -661,10 +661,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void ControlInteractivity::UpdateScrollbar(const float newValue)
     {
+        UpdateScrollbarPrecise(newValue);
+    }
+
+    void ControlInteractivity::UpdateScrollbarPrecise(const double newValue)
+    {
         // Set this as the new value of our internal scrollbar representation.
         // We're doing this so we can accumulate fractional amounts of a row to
         // scroll each time the mouse scrolls.
-        _internalScrollbarPosition = std::clamp(newValue, 0.0f, static_cast<float>(_core->BufferHeight()));
+        _internalScrollbarPosition = std::clamp(newValue, 0.0, static_cast<double>(_core->BufferHeight()));
 
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise

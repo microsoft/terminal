@@ -2458,7 +2458,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         // area and the cursor stays where it is.
         _ScrollRectVertically(page, { leftMargin, topMargin, rightMargin + 1, bottomMargin + 1 }, -1);
     }
-    else if (page.Bottom() < bufferHeight)
+    else if (page.Bottom() < bufferHeight || textBuffer.GrowHeight())
     {
         // If the top margin is at the top of the page, then we'll scroll
         // the content up by panning the viewport down, and also move the cursor
@@ -3214,7 +3214,13 @@ void AdaptDispatch::_EraseAll()
     const auto lastChar = textBuffer.GetLastNonSpaceCharacter();
     auto newPageTop = lastChar == til::point{} ? 0 : lastChar.y + 1;
     auto newPageBottom = newPageTop + pageHeight;
-    const auto delta = newPageBottom - bufferHeight;
+    auto availableBufferHeight = bufferHeight;
+    while (newPageBottom > availableBufferHeight && textBuffer.GrowHeight())
+    {
+        availableBufferHeight = textBuffer.GetSize().Height();
+    }
+
+    const auto delta = newPageBottom - availableBufferHeight;
     if (delta > 0)
     {
         for (auto i = 0; i < delta; i++)
@@ -3536,7 +3542,10 @@ void AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
     const auto id = page.Buffer().GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     page.SetAttributes(attr);
-    page.Buffer().AddHyperlinkToMap(uri, id);
+    if (id != 0)
+    {
+        page.Buffer().AddHyperlinkToMap(uri, id);
+    }
 }
 
 // Method Description:

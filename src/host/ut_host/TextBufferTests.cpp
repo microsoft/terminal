@@ -97,6 +97,8 @@ class TextBufferTests
     TEST_METHOD(TestGetLastNonSpaceCharacter);
 
     TEST_METHOD(TestIncrementCircularBuffer);
+    TEST_METHOD(TestGrowableBufferCrossesStorageBlocks);
+    TEST_METHOD(TestGrowableBufferClearReleasesStorageBlocks);
 
     TEST_METHOD(TestMixedRgbAndLegacyForeground);
     TEST_METHOD(TestMixedRgbAndLegacyBackground);
@@ -151,6 +153,7 @@ class TextBufferTests
 
     TEST_METHOD(HyperlinkTrim);
     TEST_METHOD(NoHyperlinkTrim);
+    TEST_METHOD(HyperlinkIdsDoNotOverwriteLiveMappings);
 
     TEST_METHOD(ReflowPromptRegions);
 };
@@ -464,6 +467,75 @@ void TextBufferTests::TestIncrementCircularBuffer()
         // ensure old first row has been emptied
         VERIFY_IS_FALSE(FirstRow.ContainsText());
     }
+}
+
+void TextBufferTests::TestGrowableBufferCrossesStorageBlocks()
+{
+    TextBuffer textBuffer{ { 8, 2 }, TextAttribute{}, 12, false, &_renderer, true };
+    const auto rowsPerBlock = gsl::narrow_cast<til::CoordType>(textBuffer._rowsPerBlock);
+    const auto targetHeight = rowsPerBlock * 2 + 2;
+
+    while (textBuffer.TotalRowCount() < targetHeight)
+    {
+        VERIFY_IS_TRUE(textBuffer.GrowHeight());
+    }
+
+    // The scratchpad occupies storage row zero, so these logical rows straddle
+    // both the first and second storage-block boundaries.
+    const std::array<std::pair<til::CoordType, wchar_t>, 5> samples = {
+        std::pair{ 0, L'A' },
+        std::pair{ rowsPerBlock - 2, L'B' },
+        std::pair{ rowsPerBlock - 1, L'C' },
+        std::pair{ rowsPerBlock * 2 - 1, L'D' },
+        std::pair{ targetHeight - 1, L'E' },
+    };
+
+    for (const auto& [rowIndex, value] : samples)
+    {
+        textBuffer.GetMutableRowByOffset(rowIndex).ReplaceCharacters(0, 1, { &value, 1 });
+    }
+
+    VERIFY_ARE_EQUAL(targetHeight, textBuffer.TotalRowCount());
+    VERIFY_ARE_EQUAL(0, textBuffer.GetFirstRowIndex());
+    VERIFY_IS_TRUE(textBuffer._rowBlocks.size() >= 3);
+    for (const auto& [rowIndex, value] : samples)
+    {
+        VERIFY_ARE_EQUAL(value, textBuffer.GetRowByOffset(rowIndex).GetText().front());
+    }
+}
+
+void TextBufferTests::TestGrowableBufferClearReleasesStorageBlocks()
+{
+    TextBuffer textBuffer{ { 8, 2 }, TextAttribute{}, 12, false, &_renderer, true };
+    const auto rowsPerBlock = gsl::narrow_cast<til::CoordType>(textBuffer._rowsPerBlock);
+    const auto targetHeight = rowsPerBlock * 2 + 2;
+
+    while (textBuffer.TotalRowCount() < targetHeight)
+    {
+        VERIFY_IS_TRUE(textBuffer.GrowHeight());
+    }
+
+    textBuffer.GetMutableRowByOffset(targetHeight - 1).ReplaceCharacters(0, 1, { L"Z" });
+    const auto discardedHyperlink = textBuffer.GetHyperlinkId(L"discarded.url", L"");
+    const auto retainedHyperlink = textBuffer.GetHyperlinkId(L"retained.url", L"");
+    TextAttribute hyperlinkAttributes;
+    hyperlinkAttributes.SetHyperlinkId(discardedHyperlink);
+    textBuffer.GetMutableRowByOffset(0).SetAttrToEnd(0, hyperlinkAttributes);
+    hyperlinkAttributes.SetHyperlinkId(retainedHyperlink);
+    textBuffer.GetMutableRowByOffset(targetHeight - 1).SetAttrToEnd(0, hyperlinkAttributes);
+    textBuffer.AddHyperlinkToMap(L"discarded.url", discardedHyperlink);
+    textBuffer.AddHyperlinkToMap(L"retained.url", retainedHyperlink);
+    VERIFY_IS_TRUE(textBuffer._rowBlocks.size() >= 3);
+
+    textBuffer.ClearScrollback(targetHeight - 2, 2);
+
+    VERIFY_ARE_EQUAL(2, textBuffer.TotalRowCount());
+    VERIFY_ARE_EQUAL(size_t{ 1 }, textBuffer._rowBlocks.size());
+    VERIFY_ARE_EQUAL(L'Z', textBuffer.GetRowByOffset(1).GetText().front());
+    VERIFY_ARE_EQUAL(textBuffer._hyperlinkMap.end(), textBuffer._hyperlinkMap.find(discardedHyperlink));
+    VERIFY_ARE_EQUAL(std::wstring{ L"retained.url" }, textBuffer.GetHyperlinkUriFromId(retainedHyperlink));
+    VERIFY_IS_TRUE(textBuffer.GrowHeight());
+    VERIFY_ARE_EQUAL(3, textBuffer.TotalRowCount());
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
@@ -2683,6 +2755,24 @@ void TextBufferTests::NoHyperlinkTrim()
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
+}
+
+void TextBufferTests::HyperlinkIdsDoNotOverwriteLiveMappings()
+{
+    const til::size bufferSize{ 80, 10 };
+    auto buffer = std::make_unique<TextBuffer>(bufferSize, TextAttribute{}, 12, false, &_renderer);
+
+    buffer->AddHyperlinkToMap(L"last.url", UINT16_MAX);
+    buffer->AddHyperlinkToMap(L"first.url", 1);
+    buffer->_currentHyperlinkId = UINT16_MAX;
+
+    const auto id = buffer->GetHyperlinkId(L"next.url", L"");
+    VERIFY_ARE_EQUAL(uint16_t{ 2 }, id);
+    buffer->AddHyperlinkToMap(L"next.url", id);
+
+    VERIFY_ARE_EQUAL(std::wstring{ L"last.url" }, buffer->GetHyperlinkUriFromId(UINT16_MAX));
+    VERIFY_ARE_EQUAL(std::wstring{ L"first.url" }, buffer->GetHyperlinkUriFromId(1));
+    VERIFY_ARE_EQUAL(std::wstring{ L"next.url" }, buffer->GetHyperlinkUriFromId(2));
 }
 
 #define FTCS_A L"\x1b]133;A\x1b\\"

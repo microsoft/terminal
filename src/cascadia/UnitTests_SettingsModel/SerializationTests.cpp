@@ -60,6 +60,7 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(ProfileWithInvalidIcon);
 
+        TEST_METHOD(InfiniteHistorySizeRoundtrip);
         TEST_METHOD(ModifyProfileSettingAndRoundtrip);
         TEST_METHOD(ModifyGlobalSettingAndRoundtrip);
         TEST_METHOD(ModifyColorSchemeAndRoundtrip);
@@ -1369,6 +1370,26 @@ namespace SettingsModelUnitTests
         settings->AllProfiles().GetAt(0).TabTitle(L"NewTitle");
         const auto result2{ settings->ToJson() };
         VERIFY_ARE_EQUAL("NewTitle", result2["profiles"]["list"][0]["tabTitle"].asString());
+    }
+
+    void SerializationTests::InfiniteHistorySizeRoundtrip()
+    {
+        static constexpr std::string_view profileJson{ R"(
+        {
+            "name": "Unlimited history",
+            "historySize": -1
+        })" };
+
+        const auto json{ VerifyParseSucceeded(profileJson) };
+        const auto profile{ implementation::Profile::FromJson(json) };
+
+        VERIFY_ARE_EQUAL(-1, profile->HistorySize());
+
+        const auto result{ profile->ToJson() };
+        VERIFY_ARE_EQUAL(-1, result["historySize"].asInt());
+
+        const auto reparsed{ implementation::Profile::FromJson(result) };
+        VERIFY_ARE_EQUAL(-1, reparsed->HistorySize());
     }
 
     void SerializationTests::ModifyGlobalSettingAndRoundtrip()

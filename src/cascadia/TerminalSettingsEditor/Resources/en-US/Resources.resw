@@ -1118,8 +1118,12 @@
     <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
   </data>
   <data name="Profile_HistorySize.Description" xml:space="preserve">
-    <value>The number of lines above the ones displayed in the window you can scroll back to.</value>
+    <value>The number of lines above the ones displayed in the window you can scroll back to. Unlimited scrollback retains lines for the life of the session, subject to available memory.</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
+  </data>
+  <data name="Profile_UnlimitedScrollback.Content" xml:space="preserve">
+    <value>Unlimited scrollback</value>
+    <comment>A supplementary setting to the "history size" setting. When enabled, all lines in the terminal session are retained.</comment>
   </data>
   <data name="Profile_Icon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Icon</value>

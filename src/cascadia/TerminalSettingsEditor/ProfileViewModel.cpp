@@ -60,6 +60,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"CurrentStartingDirectoryPreview");
             }
+            else if (viewModelProperty == L"HistorySize")
+            {
+                // Keep the finite value visible while unlimited scrollback is enabled,
+                // and update both controls when the underlying setting changes.
+                if (const auto historySize{ HistorySize() }; historySize >= 0)
+                {
+                    _lastFiniteHistorySize = historySize;
+                }
+                _NotifyChanges(L"FiniteHistorySize", L"UnlimitedScrollback");
+            }
             else if (viewModelProperty == L"AntialiasingMode")
             {
                 _NotifyChanges(L"CurrentAntiAliasingMode");
@@ -158,6 +168,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!StartingDirectory().empty())
         {
             _lastStartingDirectoryPath = StartingDirectory();
+        }
+
+        // Cache the finite history size so checking and unchecking the
+        // "Unlimited scrollback" box does not discard the user's value.
+        if (const auto historySize{ HistorySize() }; historySize >= 0)
+        {
+            _lastFiniteHistorySize = historySize;
         }
 
         // generate the font list, if we don't have one
@@ -602,6 +619,62 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 StartingDirectory(_lastStartingDirectoryPath);
             }
+        }
+    }
+
+    int32_t ProfileViewModel::FiniteHistorySize() const
+    {
+        const auto historySize{ HistorySize() };
+        return historySize == -1 ? _lastFiniteHistorySize : std::max(historySize, 0);
+    }
+
+    void ProfileViewModel::FiniteHistorySize(const int32_t value)
+    {
+        // This property is only for the finite NumberBox, whose minimum is 0.
+        // Keep that invariant if the setter is invoked outside of the UI too.
+        if (value < 0)
+        {
+            return;
+        }
+
+        if (_lastFiniteHistorySize != value)
+        {
+            _lastFiniteHistorySize = value;
+            if (UnlimitedScrollback())
+            {
+                _NotifyChanges(L"FiniteHistorySize");
+            }
+        }
+
+        if (!UnlimitedScrollback())
+        {
+            HistorySize(value);
+        }
+    }
+
+    bool ProfileViewModel::UnlimitedScrollback() const
+    {
+        return HistorySize() == -1;
+    }
+
+    void ProfileViewModel::UnlimitedScrollback(const bool unlimited)
+    {
+        if (unlimited == UnlimitedScrollback())
+        {
+            return;
+        }
+
+        if (unlimited)
+        {
+            if (const auto historySize{ HistorySize() }; historySize >= 0)
+            {
+                _lastFiniteHistorySize = historySize;
+            }
+            HistorySize(-1);
+        }
+        else
+        {
+            HistorySize(_lastFiniteHistorySize);
         }
     }
 

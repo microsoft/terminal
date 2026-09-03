@@ -72,7 +72,8 @@ public:
                const TextAttribute defaultAttributes,
                const UINT cursorSize,
                const bool isActiveBuffer,
-               Microsoft::Console::Render::Renderer* renderer);
+               Microsoft::Console::Render::Renderer* renderer,
+               const bool growable = false);
 
     TextBuffer(const TextBuffer&) = delete;
     TextBuffer(TextBuffer&&) = delete;
@@ -158,6 +159,13 @@ public:
     void ClearScrollback(const til::CoordType start, const til::CoordType height);
 
     void ResizeTraditional(const til::size newSize);
+
+    // Extends a growable buffer by one logical row, allocating another storage
+    // block only when needed. This lets unlimited scrollback append history
+    // without relocating existing rows. Returns false only when the coordinate
+    // space has been exhausted.
+    bool GrowHeight();
+    bool IsGrowable() const noexcept;
 
     void SetAsActiveBuffer(const bool isActiveBuffer) noexcept;
     bool IsActiveBuffer() const noexcept;
@@ -315,10 +323,12 @@ public:
 
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
-    void _commit(const std::byte* row);
-    void _decommit() noexcept;
-    void _construct(const std::byte* until) noexcept;
-    void _destroy() const noexcept;
+    void _reserveRows(size_t rowCount);
+    void _commit(size_t rowIndex);
+    void _decommit(til::CoordType rowsToKeep) noexcept;
+    void _construct(size_t begin, size_t end) noexcept;
+    void _destroy(size_t begin = 0) const noexcept;
+    std::byte* _rowStorage(size_t offset) const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
     ROW& _getRow(til::CoordType y) const;
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
@@ -347,8 +357,11 @@ private:
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
     uint16_t _currentHyperlinkId = 1;
 
-    // This block describes the state of the underlying virtual memory buffer that holds all ROWs, text and attributes.
-    // Initially memory is only allocated with MEM_RESERVE to reduce the private working set of conhost.
+    // These blocks describe the state of the underlying virtual memory storage
+    // that holds all ROWs, text and attributes. Storage is segmented so a
+    // growable buffer can append blocks without relocating existing history.
+    // Blocks are initially allocated with MEM_RESERVE to reduce the private
+    // working set of conhost and Terminal.
     // ROWs are laid out like this in memory:
     //   ROW                <-- sizeof(ROW), stores
     //   (padding)
@@ -359,12 +372,28 @@ private:
     //   ...
     // Padding may exist for alignment purposes.
     //
-    // The base (start) address of the memory arena.
-    wil::unique_virtualalloc_ptr<std::byte> _buffer;
-    // The past-the-end pointer of the memory arena.
-    std::byte* _bufferEnd = nullptr;
-    // The range between _buffer (inclusive) and _commitWatermark (exclusive) is the range of
-    // memory that has already been committed via MEM_COMMIT and contains ready-to-use ROWs.
+    struct RowBlock
+    {
+        wil::unique_virtualalloc_ptr<std::byte> allocation;
+        size_t rowCount = 0;
+
+        RowBlock() = default;
+        RowBlock(wil::unique_virtualalloc_ptr<std::byte>&& allocation, const size_t rowCount) noexcept :
+            allocation{ std::move(allocation) },
+            rowCount{ rowCount }
+        {
+        }
+        RowBlock(const RowBlock&) = delete;
+        RowBlock& operator=(const RowBlock&) = delete;
+        RowBlock(RowBlock&&) = default;
+        RowBlock& operator=(RowBlock&&) = default;
+    };
+
+    std::vector<RowBlock> _rowBlocks;
+
+    // Rows in [0, _committedRowCount) have been committed via MEM_COMMIT and
+    // contain ready-to-use ROW objects. Row 0 is the scratchpad; regular rows
+    // start at row 1.
     //
     // The problem is that calling VirtualAlloc(MEM_COMMIT) on each ROW one by one is extremely expensive, which forces
     // us to commit ROWs in batches and avoid calling it on already committed ROWs. Let's say we commit memory in
@@ -372,21 +401,20 @@ private:
     // of size `(height + 127) / 128` and mark the corresponding slot as 1 if that 128-sized batch has been committed.
     // That way we know not to commit it again. But ROWs aren't accessed randomly. Instead, they're usually accessed
     // fairly linearly from row 1 to N. As such we can just commit ROWs up to the point of the highest accessed ROW
-    // plus some read-ahead of 128 ROWs. This is exactly what _commitWatermark stores: The highest accessed ROW plus
-    // some read-ahead. It's the amount of memory that has been committed and is ready to use.
+    // plus some read-ahead of 128 ROWs. _committedRowCount stores the resulting
+    // contiguous number of rows that are ready to use.
     //
-    // _commitWatermark will always be a multiple of _bufferRowStride away from _buffer.
-    // In other words, _commitWatermark itself will either point exactly onto the next ROW
-    // that should be committed or be equal to _bufferEnd when all ROWs are committed.
-    std::byte* _commitWatermark = nullptr;
-    // This will MEM_COMMIT 128 rows more than we need, to avoid us from having to call VirtualAlloc too often.
-    // This equates to roughly the following commit chunk sizes at these column counts:
+    size_t _committedRowCount = 0;
+    // This will MEM_COMMIT up to 128 rows more than we need, bounded to roughly
+    // 1MiB, to avoid us from having to call VirtualAlloc too often. This equates
+    // to roughly the following maximum commit chunk sizes at these column counts:
     // *  80 columns (the usual minimum) =  60KB chunks,  4.1MB buffer at 9001 rows
     // * 120 columns (the most common)   =  80KB chunks,  5.6MB buffer at 9001 rows
     // * 400 columns (the usual maximum) = 220KB chunks, 15.5MB buffer at 9001 rows
     // There's probably a better metric than this. (This comment was written when ROW had both,
     // a _chars array containing text and a _charOffsets array contain column-to-text indices.)
     static constexpr size_t _commitReadAheadRowCount = 128;
+    static constexpr size_t _targetBlockSize = 1024 * 1024;
     // Before TextBuffer was made to use virtual memory it initialized the entire memory arena with the initial
     // attributes right away. To ensure it continues to work the way it used to, this stores these initial attributes.
     TextAttribute _initialAttributes;
@@ -399,10 +427,12 @@ private:
     size_t _bufferRowStride = 0;
     size_t _bufferOffsetChars = 0;
     size_t _bufferOffsetCharOffsets = 0;
+    size_t _rowsPerBlock = 0;
+    size_t _rowBlockShift = 0;
     // The width of the buffer in columns.
     uint16_t _width = 0;
     // The height of the buffer in rows, excluding the scratchpad row.
-    uint16_t _height = 0;
+    til::CoordType _height = 0;
 
     TextAttribute _currentAttributes;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)
@@ -410,6 +440,7 @@ private:
 
     Cursor _cursor;
     bool _isActiveBuffer = false;
+    bool _growable = false;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

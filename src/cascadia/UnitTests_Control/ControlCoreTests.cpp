@@ -27,6 +27,7 @@ namespace ControlUnitTests
         TEST_METHOD(ComPtrSettings);
         TEST_METHOD(InstantiateCore);
         TEST_METHOD(TestInitialize);
+        TEST_METHOD(TestInfiniteHistoryInitialization);
         TEST_METHOD(TestAdjustAcrylic);
 
         TEST_METHOD(TestFreeAfterClose);
@@ -129,6 +130,18 @@ namespace ControlUnitTests
 #endif
         VERIFY_IS_TRUE(core->_initializedTerminal);
         VERIFY_ARE_EQUAL(30, core->_terminal->GetViewport().Width());
+    }
+
+    void ControlCoreTests::TestInfiniteHistoryInitialization()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        settings->HistorySize(-1);
+
+        auto core = createCore(*settings, *conn);
+        _standardInit(core);
+
+        VERIFY_IS_TRUE(core->_terminal->GetTextBuffer().IsGrowable());
+        VERIFY_ARE_EQUAL(core->_terminal->GetViewport().Height(), core->_terminal->GetTextBuffer().TotalRowCount());
     }
 
     void ControlCoreTests::TestAdjustAcrylic()

@@ -26,8 +26,13 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(ScreenWidthAndHeightAreClampedToBounds);
         TEST_METHOD(ScrollbackHistorySizeIsClampedToBounds);
+        TEST_METHOD(InfiniteHistoryGrowsBeyondLegacyLimit);
+        TEST_METHOD(InfiniteHistoryDoesNotGrowAlternateBuffer);
+        TEST_METHOD(InfiniteHistoryPreservesScrolledViewport);
+        TEST_METHOD(InfiniteHistoryClearShrinksAndRegrows);
 
         TEST_METHOD(ResizeIsClampedToBounds);
+        TEST_METHOD(InfiniteHistorySurvivesReflow);
     };
 }
 
@@ -69,7 +74,7 @@ void ScreenSizeLimitsTest::ScrollbackHistorySizeIsClampedToBounds()
     noHistoryTerminal.CreateFromSettings(noHistorySettings, renderer);
     VERIFY_ARE_EQUAL(noHistoryTerminal.GetTextBuffer().TotalRowCount(), visibleRowCount, L"History size of 0 is accepted");
 
-    // Negative history sizes are clamped to zero.
+    // Negative history sizes other than the -1 sentinel are clamped to zero.
     auto negativeHistorySizeSettings = winrt::make<MockTermSettings>(-100, visibleRowCount, 100);
     Terminal negativeHistorySizeTerminal{ Terminal::TestDummyMarker{} };
     negativeHistorySizeTerminal.CreateFromSettings(negativeHistorySizeSettings, renderer);
@@ -92,6 +97,88 @@ void ScreenSizeLimitsTest::ScrollbackHistorySizeIsClampedToBounds()
     Terminal farTooBigHistorySizeTerminal{ Terminal::TestDummyMarker{} };
     farTooBigHistorySizeTerminal.CreateFromSettings(farTooBigHistorySizeSettings, renderer);
     VERIFY_ARE_EQUAL(farTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), SHRT_MAX, L"History size that is far too large is clamped to SHRT_MAX - initial row count");
+}
+
+void ScreenSizeLimitsTest::InfiniteHistoryGrowsBeyondLegacyLimit()
+{
+    static constexpr til::CoordType visibleRowCount = 4;
+    auto settings = winrt::make<MockTermSettings>(-1, visibleRowCount, 8);
+    Terminal terminal{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+
+    std::wstring output{ L"first\r\n" };
+    for (til::CoordType i = 0; i < SHRT_MAX + visibleRowCount; ++i)
+    {
+        output.append(L"x\r\n");
+    }
+    terminal.Write(output);
+
+    const auto& textBuffer = terminal.GetTextBuffer();
+    VERIFY_IS_TRUE(textBuffer.TotalRowCount() > SHRT_MAX);
+    VERIFY_ARE_EQUAL(std::wstring_view{ L"first" }, textBuffer.GetRowByOffset(0).GetText().substr(0, 5));
+    VERIFY_ARE_EQUAL(0, textBuffer.GetFirstRowIndex(), L"Unlimited history must append instead of rotating");
+}
+
+void ScreenSizeLimitsTest::InfiniteHistoryDoesNotGrowAlternateBuffer()
+{
+    auto settings = winrt::make<MockTermSettings>(-1, 4, 8);
+    Terminal terminal{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+
+    terminal.Write(L"main\r\nmain\r\nmain\r\nmain\r\nmain\r\n");
+    const auto mainBufferHeight = terminal.GetTextBuffer().TotalRowCount();
+    VERIFY_IS_TRUE(mainBufferHeight > 4);
+
+    terminal.Write(L"\x1b[?1049h");
+    VERIFY_IS_FALSE(terminal.GetTextBuffer().IsGrowable());
+    for (auto i = 0; i < 100; ++i)
+    {
+        terminal.Write(L"alt\r\n");
+    }
+    VERIFY_ARE_EQUAL(4, terminal.GetTextBuffer().TotalRowCount());
+
+    terminal.Write(L"\x1b[?1049l");
+    VERIFY_IS_TRUE(terminal.GetTextBuffer().IsGrowable());
+    VERIFY_ARE_EQUAL(mainBufferHeight, terminal.GetTextBuffer().TotalRowCount());
+    VERIFY_ARE_EQUAL(std::wstring_view{ L"main" }, terminal.GetTextBuffer().GetRowByOffset(0).GetText().substr(0, 4));
+}
+
+void ScreenSizeLimitsTest::InfiniteHistoryPreservesScrolledViewport()
+{
+    auto settings = winrt::make<MockTermSettings>(-1, 4, 8);
+    Terminal terminal{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+
+    terminal.Write(L"anchor\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n");
+    terminal.UserScrollViewport(0);
+    VERIFY_ARE_EQUAL(0, terminal.GetViewport().Top());
+
+    terminal.Write(L"8\r\n9\r\n10\r\n11\r\n12\r\n");
+
+    VERIFY_ARE_EQUAL(0, terminal.GetViewport().Top());
+    VERIFY_ARE_EQUAL(std::wstring_view{ L"anchor" }, terminal.GetTextBuffer().GetRowByOffset(0).GetText().substr(0, 6));
+}
+
+void ScreenSizeLimitsTest::InfiniteHistoryClearShrinksAndRegrows()
+{
+    auto settings = winrt::make<MockTermSettings>(-1, 4, 8);
+    Terminal terminal{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+
+    terminal.Write(L"0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n");
+    VERIFY_IS_TRUE(terminal.GetTextBuffer().TotalRowCount() > 4);
+
+    terminal.Write(L"\x1b[3J");
+    VERIFY_ARE_EQUAL(4, terminal.GetTextBuffer().TotalRowCount());
+    VERIFY_ARE_EQUAL(0, terminal.GetTextBuffer().GetFirstRowIndex());
+    VERIFY_ARE_EQUAL(0, terminal.GetViewport().Top());
+
+    terminal.Write(L"8\r\n9\r\n10\r\n11\r\n12\r\n");
+    VERIFY_IS_TRUE(terminal.GetTextBuffer().TotalRowCount() > 4);
 }
 
 void ScreenSizeLimitsTest::ResizeIsClampedToBounds()
@@ -128,4 +215,30 @@ void ScreenSizeLimitsTest::ResizeIsClampedToBounds()
     Log::Comment(L"Resize back down to the original size");
     VERIFY_SUCCEEDED(terminal.UserResize({ initialVisibleColCount, initialVisibleRowCount }));
     VERIFY_ARE_EQUAL(terminal.GetTextBuffer().TotalRowCount(), historySize + initialVisibleRowCount);
+}
+
+void ScreenSizeLimitsTest::InfiniteHistorySurvivesReflow()
+{
+    auto settings = winrt::make<MockTermSettings>(-1, 4, 16);
+    Terminal terminal{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &terminal };
+    terminal.CreateFromSettings(settings, renderer);
+
+    terminal.Write(L"first-line\r\n");
+    for (auto i = 0; i < 100; ++i)
+    {
+        terminal.Write(L"history-line\r\n");
+    }
+
+    const auto heightBeforeResize = terminal.GetTextBuffer().TotalRowCount();
+    VERIFY_SUCCEEDED(terminal.UserResize({ 8, 4 }));
+
+    const auto& textBuffer = terminal.GetTextBuffer();
+    VERIFY_IS_TRUE(textBuffer.TotalRowCount() > heightBeforeResize);
+    VERIFY_ARE_EQUAL(std::wstring_view{ L"first-li" }, textBuffer.GetRowByOffset(0).GetText().substr(0, 8));
+    VERIFY_ARE_EQUAL(0, textBuffer.GetFirstRowIndex());
+
+    const auto heightAfterResize = textBuffer.TotalRowCount();
+    terminal.Write(L"after-resize\r\n");
+    VERIFY_IS_TRUE(terminal.GetTextBuffer().TotalRowCount() > heightAfterResize);
 }

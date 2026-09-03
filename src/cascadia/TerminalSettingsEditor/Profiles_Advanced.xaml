@@ -64,12 +64,20 @@
             <!--  History Size  -->
             <local:SettingsCard x:Name="HistorySize"
                                 x:Uid="Profile_HistorySize">
-                <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
-                                LargeChange="100"
-                                Minimum="0"
-                                SmallChange="10"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
+                <StackPanel Orientation="Vertical">
+                    <muxc:NumberBox x:Name="HistorySizeBox"
+                                    x:Uid="Profile_HistorySizeBox"
+                                    IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UnlimitedScrollback), Mode=OneWay}"
+                                    LargeChange="100"
+                                    Minimum="0"
+                                    SmallChange="10"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Profile.FiniteHistorySize, Mode=TwoWay}" />
+                    <CheckBox x:Name="UnlimitedScrollbackCheckbox"
+                              x:Uid="Profile_UnlimitedScrollback"
+                              Margin="0,4,0,0"
+                              IsChecked="{x:Bind Profile.UnlimitedScrollback, Mode=TwoWay}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Close On Exit  -->

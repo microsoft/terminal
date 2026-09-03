@@ -3097,7 +3097,7 @@
         },
         "historySize": {
           "default": 9001,
-          "description": "The number of lines above the ones displayed in the window you can scroll back to.",
+          "description": "The number of lines above the ones displayed in the window you can scroll back to. Set this to -1 to retain all scrollback for the life of the session, subject to available memory.",
           "minimum": -1,
           "type": "integer"
         },

@@ -8,6 +8,7 @@
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
+#include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -88,6 +89,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseParentProcessDirectory() const;
         void UseParentProcessDirectory(const bool useParent);
 
+        // scrollback history
+        int32_t FiniteHistorySize() const;
+        void FiniteHistorySize(int32_t value);
+        bool UnlimitedScrollback() const;
+        void UnlimitedScrollback(bool unlimited);
+
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
@@ -167,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        int32_t _lastFiniteHistorySize{ DEFAULT_HISTORY_SIZE };
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 

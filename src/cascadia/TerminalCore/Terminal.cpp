@@ -43,12 +43,13 @@ Terminal::Terminal(TestDummyMarker) :
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
-    _scrollbackLines = scrollbackLines;
+    _infiniteScrollback = scrollbackLines == -1;
+    _scrollbackLines = _infiniteScrollback ? 0 : Utils::ClampToShortMax(scrollbackLines, 0);
     const til::size bufferSize{ viewportSize.width,
-                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
+                                Utils::ClampToShortMax(viewportSize.height + _scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
-    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
+    _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer, _infiniteScrollback);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -78,8 +79,8 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                                   Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
-    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
+    const auto historySize = settings.HistorySize();
+    Create(viewportSize, historySize == -1 ? -1 : Utils::ClampToShortMax(historySize, 0), renderer);
 
     UpdateSettings(settings);
 }
@@ -315,7 +316,12 @@ try
         return S_OK;
     }
 
-    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, SHRT_MAX);
+    // A growable buffer starts at the viewport height. Reflow appends exactly
+    // as many rows as the retained logical content needs, which also releases
+    // rows made redundant by widening the terminal.
+    const auto newBufferHeight = _infiniteScrollback ?
+                                     viewportSize.height :
+                                     std::clamp(viewportSize.height + _scrollbackLines, 1, SHRT_MAX);
     const til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // If the original buffer had _no_ scroll offset, then we should be at the
@@ -330,7 +336,8 @@ try
                                                       TextAttribute{},
                                                       0,
                                                       _mainBuffer->IsActiveBuffer(),
-                                                      _mainBuffer->GetRenderer());
+                                                      _mainBuffer->GetRenderer(),
+                                                      _infiniteScrollback);
 
     // Build a PositionInformation to track the position of both the top of
     // the mutable viewport and the top of the visible viewport in the new
@@ -444,9 +451,10 @@ try
     // top up so that we'll still fit within the buffer.
     const auto newView = Viewport::FromDimensions({ 0, proposedTop }, viewportSize);
     const auto proposedBottom = newView.BottomExclusive();
-    if (proposedBottom > bufferSize.height)
+    const auto actualBufferHeight = newTextBuffer->GetSize().Height();
+    if (proposedBottom > actualBufferHeight)
     {
-        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, bufferSize.height));
+        proposedTop = ::base::ClampSub(proposedTop, ::base::ClampSub(proposedBottom, actualBufferHeight));
     }
 
     // Keep the cursor in the mutable viewport
