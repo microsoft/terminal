@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         case BreadcrumbSubPage::Profile_Appearance:
             return ProfileSubPage::Appearance;
         case BreadcrumbSubPage::Profile_UnfocusedAppearance:
-            // If the profile has no unfocused appearance, fallback to the base page.
+            // If the profile has no unfocused appearance, fall back to the base page.
             return profile.HasUnfocusedAppearance() ? ProfileSubPage::UnfocusedAppearance : ProfileSubPage::Base;
         case BreadcrumbSubPage::Profile_Terminal:
             return ProfileSubPage::Terminal;
