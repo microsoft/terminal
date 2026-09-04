@@ -404,20 +404,11 @@
                                Margin="0,4,0,4"
                                Style="{StaticResource TextBlockSubHeaderStyle}" />
                     <!--  Name  -->
-                    <local:SettingsExpander x:Name="CurrentFolderName"
-                                            x:Uid="NewTabMenu_CurrentFolderName"
-                                            AutomationProperties.Name="{x:Bind ViewModel.CurrentFolderNameAccessibleName, Mode=OneWay}">
-                        <local:SettingsExpander.Content>
-                            <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                                       Text="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}" />
-                        </local:SettingsExpander.Content>
-                        <local:SettingsExpander.ItemsHeader>
-                            <ContentPresenter Padding="16,12,16,16">
-                                <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                                         Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
-                            </ContentPresenter>
-                        </local:SettingsExpander.ItemsHeader>
-                    </local:SettingsExpander>
+                    <local:SettingsCard x:Name="CurrentFolderName"
+                                        x:Uid="NewTabMenu_CurrentFolderName">
+                        <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                 Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
+                    </local:SettingsCard>
 
                     <!--  Icon  -->
                     <local:SettingsExpander x:Name="CurrentFolderIcon"
