@@ -137,6 +137,16 @@ namespace winrt::Microsoft::Terminal::Settings
         return GetLibraryResourceString(fmtKey);
     }
 
+    hstring ColorToHexString(const winrt::Windows::UI::Color& color)
+    {
+        return hstring{ fmt::format(FMT_COMPILE(L"#{:02X}{:02X}{:02X}"), color.R, color.G, color.B) };
+    }
+
+    hstring FormatAccessibleName(const std::wstring_view headerResourceKey, const std::wstring_view value)
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), GetLibraryResourceString(headerResourceKey), value);
+    }
+
     safe_void_coroutine ExpandAncestorsAndBringIntoView(FrameworkElement root, Controls::Control control)
     {
         if (!control)

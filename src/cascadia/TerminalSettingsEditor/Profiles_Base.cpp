@@ -18,11 +18,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
-        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
+        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), RS_(L"Profile_StartingDirectoryUseParentCheckbox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(CommandlineBrowse(), RS_(L"Profile_CommandlineBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(StartingDirectoryBrowse(), RS_(L"Profile_StartingDirectoryBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
+        AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/Description")));
+        UnfocusedAppearanceNavigator().Description(box_value(RS_(L"Profile_UnfocusedAppearanceNavigator/Description")));
         TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
+        TerminalNavigator().Description(box_value(RS_(L"Profile_TerminalNavigator/Description")));
         AdvancedNavigator().Header(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
@@ -75,6 +79,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Base::Appearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Appearance);
+    }
+
+    void Profiles_Base::UnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
+    {
+        // User explicitly wants to see the unfocused appearance, so create it if it doesn't exist yet.
+        _Profile.CreateUnfocusedAppearance();
+        _Profile.CurrentPage(ProfileSubPage::UnfocusedAppearance);
     }
 
     void Profiles_Base::Terminal_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)

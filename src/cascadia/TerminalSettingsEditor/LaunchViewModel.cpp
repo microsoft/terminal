@@ -216,7 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring LaunchViewModel::LaunchSizeAccessibleName() const
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchSize/Header"), LaunchSizeCurrentValue());
+        return FormatAccessibleName(USES_RESOURCE(L"Globals_LaunchSize/Header"), LaunchSizeCurrentValue());
     }
 
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
@@ -244,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring LaunchViewModel::LaunchParametersAccessibleName()
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchParameters/Header"), LaunchParametersCurrentValue());
+        return FormatAccessibleName(USES_RESOURCE(L"Globals_LaunchParameters/Header"), LaunchParametersCurrentValue());
     }
 
     double LaunchViewModel::InitialPosX()

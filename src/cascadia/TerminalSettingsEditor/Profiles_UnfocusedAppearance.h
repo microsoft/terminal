@@ -1,0 +1,44 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+
+#include <ThrottledFunc.h>
+
+#include "Profiles_UnfocusedAppearance.g.h"
+#include "PreviewConnection.h"
+#include "Utils.h"
+
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
+{
+    struct Profiles_UnfocusedAppearance : public HasScrollViewer<Profiles_UnfocusedAppearance>, Profiles_UnfocusedAppearanceT<Profiles_UnfocusedAppearance>
+    {
+    public:
+        Profiles_UnfocusedAppearance();
+
+        void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+
+        void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot.get(); };
+
+        til::property_changed_event PropertyChanged;
+        WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+
+    private:
+        void _onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&);
+
+        winrt::com_ptr<PreviewConnection> _previewConnection{ nullptr };
+        Microsoft::Terminal::Control::TermControl _previewControl{ nullptr };
+        std::shared_ptr<ThrottledFunc<>> _updatePreviewControl;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
+        winrt::weak_ref<Editor::IHostedInWindow> _weakWindowRoot;
+    };
+};
+
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
+{
+    BASIC_FACTORY(Profiles_UnfocusedAppearance);
+}
