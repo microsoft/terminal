@@ -2017,12 +2017,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         args.Handled(true);
     }
 
+    void TermControl::_setPointerCursor(const bool showIBeam)
+    {
+        if (showIBeam == _ownsPointerCursor)
+        {
+            return;
+        }
+
+        CoreWindow::GetForCurrentThread().PointerCursor(CoreCursor{ showIBeam ? CoreCursorType::IBeam : CoreCursorType::Arrow, 0 });
+        _ownsPointerCursor = showIBeam;
+    }
+
     // Method Description:
     // - handle a mouse moved event. Specifically handling mouse drag to update selection process.
     // Arguments:
-    // - sender: not used
+    // - sender: the element the handler is attached to, i.e. the text area
     // - args: event data
-    void TermControl::_PointerMovedHandler(const Windows::Foundation::IInspectable& /*sender*/,
+    void TermControl::_PointerMovedHandler(const Windows::Foundation::IInspectable& sender,
                                            const Input::PointerRoutedEventArgs& args)
     {
         if (_IsClosing())
@@ -2046,6 +2057,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
+            const auto overTextArea = args.OriginalSource() == sender || args.OriginalSource() == SwapChainPanel();
+            const auto selectable = ControlKeyStates{ args.KeyModifiers() }.IsShiftPressed() ||
+                                    !winrt::get_self<ControlCore>(_core)->IsVtMouseModeEnabled();
+            _setPointerCursor(overTextArea && selectable);
+
             auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
                                                                        TermControl::GetPressedMouseButtons(point),
                                                                        TermControl::GetPointerUpdateKind(point),
@@ -3477,6 +3493,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
         _core.ClearHoveredCell();
+        _setPointerCursor(false);
     }
 
     void TermControl::_hoveredHyperlinkChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
