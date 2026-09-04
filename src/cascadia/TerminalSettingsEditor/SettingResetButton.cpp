@@ -126,10 +126,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto target{ Target() };
         const auto name{ SettingName() };
-        if (target && !name.empty())
+        if (!target || name.empty())
         {
-            target.ClearSetting(name);
+            return;
         }
+
+        // Clearing the setting disables this button, which makes XAML move focus to the next element.
+        // Store the focus state before that happens so that we can correct it afterwards.
+        const auto focusState{ FocusState() };
+        const auto restoreState{ focusState == FocusState::Unfocused ? FocusState::Programmatic : focusState };
+        target.ClearSetting(name);
+        if (const auto& element{ _FindFocusTarget() })
+        {
+            element.Focus(restoreState);
+        }
+    }
+
+    // Picks where focus goes after this button is disabled
+    Windows::UI::Xaml::Controls::Control SettingResetButton::_FindFocusTarget()
+    {
+        auto scope{ Media::VisualTreeHelper::GetParent(*this) };
+
+        // The alignment picker is a grid of toggle buttons acting like radio buttons.
+        // Focus the one holding the current value.
+        if (SettingName() == L"BackgroundImageAlignment")
+        {
+            if (const auto& grid{ scope.try_as<Panel>() })
+            {
+                for (const auto& child : grid.Children())
+                {
+                    const auto& toggle{ child.try_as<Primitives::ToggleButton>() };
+                    if (toggle && toggle.IsChecked().Value())
+                    {
+                        return toggle;
+                    }
+                }
+            }
+        }
+
+        // Widen outward until something can take focus.
+        // This handles cases like "use desktop wallpaper" for background image.
+        for (; scope; scope = Media::VisualTreeHelper::GetParent(scope))
+        {
+            if (const auto& candidate{ FindFirstFocusable(scope) })
+            {
+                return candidate;
+            }
+
+            // The expander is as wide as we go. Beyond it sit other settings.
+            if (scope.try_as<Editor::SettingsExpander>())
+            {
+                break;
+            }
+        }
+        return nullptr;
     }
 
     // Mirrors the legacy SettingContainer override message: base-layer profiles get a

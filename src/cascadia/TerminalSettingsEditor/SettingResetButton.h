@@ -12,6 +12,9 @@ Abstract:
   inherited value. The button drives all of its state generically through the
   IInheritableViewModel projected on the owning view model, keyed by SettingName.
 
+  Because clearing the value disables the button, it also moves focus to a nearby
+  control so keyboard users aren't dropped past the setting. See _FindFocusTarget.
+
 --*/
 
 #pragma once
@@ -39,6 +42,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Update();
         void _OnClick(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         hstring _GenerateOverrideMessage(const Windows::Foundation::IInspectable& settingOrigin);
+
+        Windows::UI::Xaml::Controls::Control _FindFocusTarget();
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _targetPropertyChangedRevoker;
     };
