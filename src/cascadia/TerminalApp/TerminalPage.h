@@ -501,6 +501,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
+        bool _tabDragDropEnabled() const;
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 

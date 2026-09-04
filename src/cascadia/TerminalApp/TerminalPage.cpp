@@ -323,6 +323,13 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Tabs may be reordered/torn out only when the OS allows drag/drop (not
+    // elevated or a different user - GH#15689) and the user hasn't disabled it.
+    bool TerminalPage::_tabDragDropEnabled() const
+    {
+        return CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -333,7 +340,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop();
+        const auto canDragDrop = _tabDragDropEnabled();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -4138,6 +4145,15 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
 
+        // Re-apply on hot-reload so toggling enableTabDragDrop takes effect.
+        // Stays off when drag/drop would crash us anyway (elevated / different
+        // user - see Utils::CanUwpDragDrop). GH#15689.
+        {
+            const auto canDragDrop = _tabDragDropEnabled();
+            _tabView.CanReorderTabs(canDragDrop);
+            _tabView.CanDragTabs(canDragDrop);
+        }
+
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
@@ -5914,6 +5930,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
+        // CanReorderTabs/CanDragTabs don't reliably update after the TabView is
+        // live, so gate here too: this makes enableTabDragDrop take effect
+        // without a restart and blocks the drag that would fail-fast us when
+        // elevated or running as a different user. GH#15689.
+        if (!_tabDragDropEnabled())
+        {
+            // _TabDragStarted (subscribed first) already set _rearranging; a
+            // cancelled drag raises no TabDragCompleted to clear it, so undo it.
+            _rearranging = false;
+            _rearrangeFrom = std::nullopt;
+            _rearrangeTo = std::nullopt;
+            e.Cancel(true);
+            return;
+        }
+
         // Get the tab impl from this event.
         const auto eventTab = e.Tab();
         const auto tabBase = _GetTabByTabViewItem(eventTab);
