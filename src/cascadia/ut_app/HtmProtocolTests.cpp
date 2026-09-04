@@ -72,6 +72,67 @@ namespace TerminalAppUnitTests
             VERIFY_ARE_EQUAL("REST", second.remainder);
         }
 
+        TEST_METHOD(ConPtyHtmCarrierRoundTrip)
+        {
+            const std::string payload{ TmuxControlDcs };
+            const auto encoded = EncodeConPtyHtmCarrier(payload);
+            VERIFY_IS_TRUE(encoded.find("\x1b[?777;") == 0);
+            const auto decoded = DecodeConPtyHtmCarrier("", encoded);
+            VERIFY_ARE_EQUAL(payload, decoded.decoded);
+            VERIFY_IS_TRUE(decoded.pending.empty());
+        }
+
+        TEST_METHOD(ConPtyHtmCarrierSplitAcrossChunks)
+        {
+            const auto encoded = EncodeConPtyHtmCarrier("ab");
+            const auto cut = encoded.size() / 2;
+            const auto first = DecodeConPtyHtmCarrier("", encoded.substr(0, cut));
+            VERIFY_IS_TRUE(first.decoded.empty());
+            VERIFY_IS_FALSE(first.pending.empty());
+            const auto second = DecodeConPtyHtmCarrier(first.pending, encoded.substr(cut));
+            VERIFY_ARE_EQUAL("ab", second.decoded);
+            VERIFY_IS_TRUE(second.pending.empty());
+        }
+
+        TEST_METHOD(Win32InputModeKeyDown)
+        {
+            const auto decoded = DecodeWin32InputMode("\x1b[65;0;97;1;0;1_");
+            VERIFY_ARE_EQUAL("a", decoded);
+            VERIFY_IS_TRUE(DecodeWin32InputMode("\x1b[65;0;97;0;0;1_").empty());
+            VERIFY_ARE_EQUAL("\r", DecodeWin32InputMode("\x1b[13;0;13;1;0;1_"));
+            VERIFY_ARE_EQUAL("\x1b", DecodeWin32InputMode("\x1b[27;0;0;1;0;1_"));
+        }
+
+        TEST_METHOD(Win32InputModeSurrogatePairEmoji)
+        {
+            // U+1F600 😀 arrives as two KEYEVENTF_UNICODE units (D83D DE00).
+            Win32InputDecodeState state;
+            VERIFY_ARE_EQUAL("", DecodeWin32InputMode("\x1b[0;0;55357;1;0;1_", state));
+            VERIFY_ARE_EQUAL(u8"\U0001F600", DecodeWin32InputMode("\x1b[0;0;56832;1;0;1_", state));
+            VERIFY_ARE_EQUAL(static_cast<char16_t>(0), state.pendingHigh);
+        }
+
+        TEST_METHOD(PaneIdsFromTmuxLayoutLeavesAndSplits)
+        {
+            const auto single = PaneIdsFromTmuxLayout("80x24,0,0,0");
+            VERIFY_ARE_EQUAL(size_t{ 1 }, single.size());
+            VERIFY_ARE_EQUAL("%0", single[0]);
+            const auto split = PaneIdsFromTmuxLayout("80x24,0,0{40x24,0,0,1,40x24,40,0,2}");
+            VERIFY_ARE_EQUAL(size_t{ 2 }, split.size());
+            VERIFY_ARE_EQUAL("%1", split[0]);
+            VERIFY_ARE_EQUAL("%2", split[1]);
+        }
+
+        TEST_METHOD(TmuxCommandMenuMatchesITerm2)
+        {
+            const std::string menu{ TmuxCommandMenu };
+            VERIFY_IS_TRUE(menu.find("** tmux mode started **") != std::string::npos);
+            VERIFY_IS_TRUE(menu.find("esc    Detach cleanly.") != std::string::npos);
+            VERIFY_IS_TRUE(menu.find("Force-quit tmux mode.") != std::string::npos);
+            VERIFY_IS_TRUE(menu.find("Toggle logging.") != std::string::npos);
+            VERIFY_IS_TRUE(menu.find("Run tmux command.") != std::string::npos);
+        }
+
         TEST_METHOD(InsertKeysFrameContainsUuidAndPayload)
         {
             const std::string pane{ "12345678-1234-1234-1234-1234567890ab" };

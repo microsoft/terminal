@@ -21,6 +21,115 @@ namespace Microsoft::Terminal::Htm
     // bytes after DCS are ordinary newline-delimited tmux control records.
     inline constexpr std::string_view TmuxControlDcs{ "\x1bP1000p" };
     inline constexpr std::string_view TmuxControlSt{ "\x1b\\" };
+    // iTerm2's tmux -CC gateway banner. WezTerm prints the same text.
+    inline constexpr std::string_view TmuxCommandMenu{
+        "\r\n** tmux mode started **\r\n\r\n"
+        "Command Menu\r\n"
+        "----------------------------\r\n"
+        "esc    Detach cleanly.\r\n"
+        "  X    Force-quit tmux mode.\r\n"
+        "  L    Toggle logging.\r\n"
+        "  C    Run tmux command.\r\n"
+    };
+    // ConPTY strips DCS. EternalTerminal's Windows htm client carries control
+    // bytes as CSI ?777;b0;b1;...q (at most 15 payload bytes per sequence).
+    inline constexpr std::string_view ConPtyHtmCarrierPrefix{ "\x1b[?777" };
+    inline size_t LongestInitPrefix(std::string_view data, std::string_view needle);
+
+    inline std::string EncodeConPtyHtmCarrier(std::string_view bytes)
+    {
+        std::string out;
+        constexpr size_t chunkSize = 15;
+        for (size_t offset = 0; offset < bytes.size(); offset += chunkSize)
+        {
+            const auto end = std::min(bytes.size(), offset + chunkSize);
+            out.append(ConPtyHtmCarrierPrefix);
+            for (size_t i = offset; i < end; ++i)
+            {
+                out.push_back(';');
+                out += std::to_string(static_cast<unsigned char>(bytes[i]));
+            }
+            out.push_back('q');
+        }
+        return out;
+    }
+
+    struct CarrierDecodeResult
+    {
+        std::string decoded;
+        std::string pending;
+    };
+
+    inline CarrierDecodeResult DecodeConPtyHtmCarrier(std::string_view pending, std::string_view incoming)
+    {
+        std::string data;
+        data.reserve(pending.size() + incoming.size());
+        data.append(pending);
+        data.append(incoming);
+        CarrierDecodeResult result;
+        size_t i = 0;
+        while (i < data.size())
+        {
+            const auto pos = data.find(ConPtyHtmCarrierPrefix, i);
+            if (pos == std::string::npos)
+            {
+                const auto keep = LongestInitPrefix(std::string_view{ data }.substr(i), ConPtyHtmCarrierPrefix);
+                result.decoded.append(data.substr(i, data.size() - i - keep));
+                result.pending = data.substr(data.size() - keep);
+                return result;
+            }
+            result.decoded.append(data.substr(i, pos - i));
+            size_t cursor = pos + ConPtyHtmCarrierPrefix.size();
+            std::string payload;
+            bool complete = false;
+            bool invalid = false;
+            while (cursor < data.size())
+            {
+                if (data[cursor] == 'q')
+                {
+                    complete = true;
+                    ++cursor;
+                    break;
+                }
+                if (data[cursor] != ';')
+                {
+                    invalid = true;
+                    break;
+                }
+                ++cursor;
+                if (cursor >= data.size())
+                {
+                    break;
+                }
+                if (data[cursor] < '0' || data[cursor] > '9')
+                {
+                    invalid = true;
+                    break;
+                }
+                int value = 0;
+                while (cursor < data.size() && data[cursor] >= '0' && data[cursor] <= '9')
+                {
+                    value = value * 10 + (data[cursor] - '0');
+                    ++cursor;
+                }
+                payload.push_back(static_cast<char>(value & 0xFF));
+            }
+            if (invalid)
+            {
+                result.decoded.push_back(data[pos]);
+                i = pos + 1;
+                continue;
+            }
+            if (!complete)
+            {
+                result.pending = data.substr(pos);
+                return result;
+            }
+            result.decoded.append(payload);
+            i = cursor;
+        }
+        return result;
+    }
 
     inline std::string UnescapeControlOutput(std::string_view input)
     {
@@ -44,6 +153,207 @@ namespace Microsoft::Terminal::Htm
             }
         }
         return result;
+    }
+
+    // Encode a Unicode code point as UTF-8 (rejects surrogates / out-of-range).
+    inline void AppendUtf8CodePoint(std::string& out, char32_t cp)
+    {
+        if (cp < 0x80)
+        {
+            out.push_back(static_cast<char>(cp));
+        }
+        else if (cp < 0x800)
+        {
+            out.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+        else if (cp < 0xD800 || (cp > 0xDFFF && cp < 0x10000))
+        {
+            out.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+        else if (cp <= 0x10FFFF)
+        {
+            out.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+            out.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+        }
+    }
+
+    // KEYEVENTF_UNICODE may deliver one UTF-16 code unit per win32-input-mode
+    // record; hold an unpaired high surrogate across DecodeWin32InputMode calls.
+    struct Win32InputDecodeState
+    {
+        char16_t pendingHigh{};
+    };
+
+    // Windows Terminal's win32-input-mode: ESC [ vk ; sc ; uc ; kd ; cs ; rc _
+    inline std::string DecodeWin32InputMode(std::string_view utf8, Win32InputDecodeState& state)
+    {
+        std::string out;
+        size_t i = 0;
+        while (i < utf8.size())
+        {
+            if (utf8.size() - i >= 2 && utf8[i] == '\x1b' && utf8[i + 1] == '[')
+            {
+                const auto end = utf8.find('_', i + 2);
+                if (end != std::string_view::npos)
+                {
+                    const auto body = utf8.substr(i + 2, end - (i + 2));
+                    int fields[6] = {};
+                    int count = 0;
+                    size_t p = 0;
+                    while (p < body.size() && count < 6)
+                    {
+                        int value = 0;
+                        while (p < body.size() && body[p] >= '0' && body[p] <= '9')
+                        {
+                            value = value * 10 + (body[p] - '0');
+                            ++p;
+                        }
+                        fields[count++] = value;
+                        if (p < body.size() && body[p] == ';')
+                        {
+                            ++p;
+                        }
+                    }
+                    i = end + 1;
+                    if (count >= 4)
+                    {
+                        const int vk = fields[0];
+                        const int uc = fields[2];
+                        const int keyDown = fields[3];
+                        if (keyDown != 1)
+                        {
+                            continue;
+                        }
+                        if (uc > 0)
+                        {
+                            const auto unit = static_cast<char32_t>(uc);
+                            if (unit >= 0xD800 && unit <= 0xDBFF)
+                            {
+                                state.pendingHigh = static_cast<char16_t>(unit);
+                                continue;
+                            }
+                            if (unit >= 0xDC00 && unit <= 0xDFFF)
+                            {
+                                if (state.pendingHigh)
+                                {
+                                    const char32_t cp = 0x10000 +
+                                                       ((static_cast<char32_t>(state.pendingHigh) - 0xD800) << 10) +
+                                                       (unit - 0xDC00);
+                                    state.pendingHigh = 0;
+                                    AppendUtf8CodePoint(out, cp);
+                                }
+                                continue;
+                            }
+                            state.pendingHigh = 0;
+                            AppendUtf8CodePoint(out, unit);
+                        }
+                        else if (vk == 0x0D)
+                        {
+                            out.push_back('\r');
+                        }
+                        else if (vk == 0x08)
+                        {
+                            out.push_back('\x7f');
+                        }
+                        else if (vk == 0x1B)
+                        {
+                            out.push_back('\x1b');
+                        }
+                    }
+                    continue;
+                }
+            }
+            out.append(utf8.substr(i));
+            break;
+        }
+        return out;
+    }
+
+    inline std::string DecodeWin32InputMode(std::string_view utf8)
+    {
+        Win32InputDecodeState state;
+        return DecodeWin32InputMode(utf8, state);
+    }
+
+    // Collect pane ids from a tmux window_layout body (checksum optional).
+    // Leaves look like WxH,X,Y,id; splits use { } / [ ] and are skipped.
+    inline std::vector<std::string> PaneIdsFromTmuxLayout(std::string_view layout)
+    {
+        std::vector<std::string> ids;
+        size_t i = 0;
+        while (i < layout.size())
+        {
+            // Find "NxM," size prefix.
+            const auto xPos = layout.find('x', i);
+            if (xPos == std::string_view::npos || xPos == i)
+            {
+                break;
+            }
+            bool digitsBefore = true;
+            for (size_t j = i; j < xPos; ++j)
+            {
+                if (layout[j] < '0' || layout[j] > '9')
+                {
+                    digitsBefore = false;
+                    break;
+                }
+            }
+            if (!digitsBefore)
+            {
+                ++i;
+                continue;
+            }
+            size_t p = xPos + 1;
+            auto readNum = [&](size_t& pos) -> bool {
+                if (pos >= layout.size() || layout[pos] < '0' || layout[pos] > '9')
+                {
+                    return false;
+                }
+                while (pos < layout.size() && layout[pos] >= '0' && layout[pos] <= '9')
+                {
+                    ++pos;
+                }
+                return true;
+            };
+            if (!readNum(p) || p >= layout.size() || layout[p] != ',')
+            {
+                i = xPos + 1;
+                continue;
+            }
+            ++p; // X
+            if (!readNum(p) || p >= layout.size() || layout[p] != ',')
+            {
+                i = xPos + 1;
+                continue;
+            }
+            ++p; // Y
+            if (!readNum(p) || p >= layout.size())
+            {
+                i = xPos + 1;
+                continue;
+            }
+            if (layout[p] == ',' )
+            {
+                ++p;
+                const size_t idStart = p;
+                if (!readNum(p) || idStart == p)
+                {
+                    i = xPos + 1;
+                    continue;
+                }
+                ids.push_back("%" + std::string{ layout.substr(idStart, p - idStart) });
+                i = p;
+                continue;
+            }
+            // Split container: WxH,X,Y{...} or [...]
+            i = p;
+        }
+        return ids;
     }
 
     inline constexpr char InsertKeys = '1';

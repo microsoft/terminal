@@ -88,16 +88,25 @@ namespace winrt::TerminalApp::implementation
 
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        if (Feature_HtmIntegration::IsEnabled() && _htmSession && _htmSession->IsActive())
+        if (Feature_HtmIntegration::IsEnabled())
         {
-            // new-window is session-scoped and does not require a source pane.
-            // Requiring a focused HTM connection here made command-line
-            // new-tab actions intermittently fall through while focus was
-            // transitioning after a split.
-            if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+            // new-window is session-scoped. Prefer the focused HTM connection's
+            // session so a native HTM window can spawn another OS window.
+            if (auto* session{ _HtmSessionForConnection(_HtmFocusedConnection()) })
             {
-                _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr, follower));
-                return S_OK;
+                if (const auto follower{ session->CreateFollowerForUserTab() })
+                {
+                    _HtmOpenFollowerAsTab(follower);
+                    return S_OK;
+                }
+            }
+            else if (_htmSession && _htmSession->IsActive())
+            {
+                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                {
+                    _HtmOpenFollowerAsTab(follower);
+                    return S_OK;
+                }
             }
         }
         _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
@@ -551,6 +560,17 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
+            if (Feature_HtmIntegration::IsEnabled())
+            {
+                if (auto* session{ _HtmSessionForConnection(_HtmAnyConnectionInWindow()) })
+                {
+                    session->ClearNativeHostPage(this);
+                }
+                else if (_htmSession)
+                {
+                    _htmSession->ClearNativeHostPage(this);
+                }
+            }
             // If we are supposed to save state, make sure we clear it out
             // if the user manually closed all tabs.
             // Do this only if we are the last window; the monarch will notice

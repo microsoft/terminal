@@ -389,10 +389,16 @@ namespace winrt::TerminalApp::implementation
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
         void _HtmSplitExisting(const std::string& sourcePaneId, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower, bool vertical);
+        void _HtmNewWindow(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
         void _HtmNewTab(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
-        void _HtmClosePane(const std::string& paneId);
+        void _HtmOpenFollowerAsTab(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        void _HtmOpenFollowerAsWindow(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        bool _HtmClosePane(const std::string& paneId);
+        bool _HtmSetTabTitleForPane(const std::string& paneId, const winrt::hstring& title);
+        HtmSession* _HtmSessionForConnection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection) const;
         std::string _HtmPaneIdFromConnection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection) const;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _HtmFocusedConnection() const;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _HtmAnyConnectionInWindow() const;
         std::shared_ptr<Pane> _HtmFindPane(const std::string& paneId) const;
 
         void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
