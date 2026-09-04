@@ -317,6 +317,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
 
+        std::optional<SafeDispatcherTimer> _resizeOverlayTimer;
+        int _lastResizeOverlayCols{ 0 };
+        int _lastResizeOverlayRows{ 0 };
+        void _ShowResizeOverlay();
+
         bool _isBackgroundLight{ false };
         bool _detached{ false };
         til::CoordType _searchScrollOffset = 0;
