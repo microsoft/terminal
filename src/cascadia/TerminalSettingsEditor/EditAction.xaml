@@ -283,7 +283,11 @@
                         <Button x:Uid="Actions_Browse"
                                 Grid.Column="1"
                                 Click="{x:Bind BrowseForFile_Click}"
-                                Style="{StaticResource BrowseButtonStyle}" />
+                                Loaded="BrowseButton_Loaded"
+                                Style="{StaticResource BrowseButtonStyle}">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE838;" />
+                        </Button>
                     </Grid>
                 </local:SettingsCard>
             </DataTemplate>
@@ -306,7 +310,11 @@
                         <Button x:Uid="Actions_Browse"
                                 Grid.Column="1"
                                 Click="{x:Bind BrowseForFolder_Click}"
-                                Style="{StaticResource BrowseButtonStyle}" />
+                                Loaded="BrowseButton_Loaded"
+                                Style="{StaticResource BrowseButtonStyle}">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                      Glyph="&#xE838;" />
+                        </Button>
                     </Grid>
                 </local:SettingsCard>
             </DataTemplate>

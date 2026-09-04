@@ -1205,11 +1205,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
         }
 
-        const auto showAllFontsCheckboxTooltip{ ToolTipService::GetToolTip(ShowAllFontsCheckbox()) };
-        Automation::AutomationProperties::SetFullDescription(ShowAllFontsCheckbox(), unbox_value<hstring>(showAllFontsCheckboxTooltip));
-
-        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
-        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+        Automation::AutomationProperties::SetFullDescription(ShowAllFontsCheckbox(), RS_(L"Profile_FontFaceShowAllFonts/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), RS_(L"Profile_UseDesktopImage/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(BackgroundImageBrowse(), RS_(L"Profile_BackgroundImageBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }

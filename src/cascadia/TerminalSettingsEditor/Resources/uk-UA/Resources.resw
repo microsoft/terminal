@@ -790,7 +790,7 @@
     <value>Вгорі справа</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Огляд...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>

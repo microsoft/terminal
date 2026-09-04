@@ -18,8 +18,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
-        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
+        Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), RS_(L"Profile_StartingDirectoryUseParentCheckbox/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(CommandlineBrowse(), RS_(L"Profile_CommandlineBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(StartingDirectoryBrowse(), RS_(L"Profile_StartingDirectoryBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
         AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/Description")));

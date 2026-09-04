@@ -661,10 +661,14 @@
                                      IsSpellCheckEnabled="False"
                                      Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath.Path), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
-                            <Button x:Uid="Profile_BackgroundImageBrowse"
+                            <Button x:Name="BackgroundImageBrowse"
+                                    x:Uid="Profile_BackgroundImageBrowse"
                                     Click="BackgroundImage_Click"
                                     IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
-                                    Style="{StaticResource BrowseButtonStyle}" />
+                                    Style="{StaticResource BrowseButtonStyle}">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE838;" />
+                            </Button>
                             <local:SettingResetButton SettingName="BackgroundImagePath"
                                                       Target="{x:Bind Appearance}" />
                         </StackPanel>

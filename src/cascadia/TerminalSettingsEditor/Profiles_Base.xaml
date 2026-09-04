@@ -60,7 +60,8 @@
                                      IsSpellCheckEnabled="False"
                                      Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
-                            <Button x:Uid="Profile_CommandlineBrowse"
+                            <Button x:Name="CommandlineBrowse"
+                                    x:Uid="Profile_CommandlineBrowse"
                                     Click="Commandline_Click"
                                     Style="{StaticResource BrowseButtonStyle}">
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"

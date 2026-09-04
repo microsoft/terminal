@@ -809,7 +809,7 @@
     <value>En haut à droite</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1129,7 +1129,7 @@
     <value>Emplacement de l’image ou emoji pour l’icône du profil.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2101,7 +2101,7 @@
     <value>Aucune couleur</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
-  <data name="Actions_Browse.Content" xml:space="preserve">
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
