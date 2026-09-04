@@ -6,6 +6,7 @@
 
 #include <mmsystem.h>
 
+#include "HtmConnections.h"
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
 
@@ -227,6 +228,7 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
+        bool closePane = false;
         if (_profile)
         {
             const auto mode = _profile.CloseOnExit();
@@ -242,8 +244,23 @@ namespace winrt::TerminalApp::implementation
                 // See GH #13325 for discussion.
                 (mode == CloseOnExitMode::Automatic && _isDefTermSession))
             {
-                CloseRequested.raise(nullptr, nullptr);
+                closePane = true;
             }
+        }
+        // HTM followers are virtual mux panes: when ForceCloseUi / kill-pane marks
+        // them Closed, the TermControl must tear down even if closeOnExit is never
+        // (otherwise detach leaves inert native windows the e2e had to WM_CLOSE).
+        if (!closePane &&
+            Feature_HtmIntegration::IsEnabled() &&
+            newConnectionState == ConnectionState::Closed &&
+            _control &&
+            _control.Connection().try_as<HtmFollowerConnection>())
+        {
+            closePane = true;
+        }
+        if (closePane)
+        {
+            CloseRequested.raise(nullptr, nullptr);
         }
     }
 
