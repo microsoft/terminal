@@ -303,7 +303,8 @@
                 -->
                 <StackPanel>
                     <local:SettingsCard x:Name="FontFaceContainer"
-                                        x:Uid="Profile_FontFace">
+                                        x:Uid="Profile_FontFace"
+                                        Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
 
                         <StackPanel Margin="0,8,0,0">
                             <StackPanel Style="{StaticResource SettingControlStackStyle}">
@@ -330,6 +331,7 @@
                                         Margin="0,6,0,0"
                                         Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
                                         Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                         Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}">
                         <local:SettingsCard.HeaderIcon>
                             <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
@@ -343,6 +345,7 @@
                                         Margin="0,6,0,0"
                                         Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
                                         Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                         Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}">
                         <local:SettingsCard.HeaderIcon>
                             <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
@@ -355,7 +358,8 @@
 
                 <!--  Font Size  -->
                 <local:SettingsCard x:Name="FontSize"
-                                    x:Uid="Profile_FontSize">
+                                    x:Uid="Profile_FontSize"
+                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <muxc:NumberBox x:Name="_fontSizeBox"
                                         x:Uid="Profile_FontSizeBox"
@@ -372,7 +376,8 @@
 
                 <!--  Line Height  -->
                 <local:SettingsCard x:Name="LineHeight"
-                                    x:Uid="Profile_LineHeight">
+                                    x:Uid="Profile_LineHeight"
+                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <muxc:NumberBox x:Name="_lineHeightBox"
                                         x:Uid="Profile_LineHeightBox"
@@ -389,7 +394,8 @@
 
                 <!--  Cell Width  -->
                 <local:SettingsCard x:Name="CellWidth"
-                                    x:Uid="Profile_CellWidth">
+                                    x:Uid="Profile_CellWidth"
+                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <muxc:NumberBox x:Name="_cellWidthBox"
                                         x:Uid="Profile_CellWidthBox"
@@ -406,7 +412,8 @@
 
                 <!--  Font Weight  -->
                 <local:SettingsCard x:Name="FontWeight"
-                                    x:Uid="Profile_FontWeight">
+                                    x:Uid="Profile_FontWeight"
+                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                     <StackPanel>
                         <StackPanel Style="{StaticResource SettingControlStackStyle}">
                             <ComboBox x:Name="FontWeightComboBox"
@@ -513,7 +520,8 @@
             <!--  Builtin Glyphs  -->
             <local:SettingsCard x:Name="EnableBuiltinGlyphs"
                                 x:Uid="Profile_EnableBuiltinGlyphs"
-                                Margin="0,4,0,0">
+                                Margin="0,4,0,0"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
@@ -526,7 +534,8 @@
             <!--  Color Glyphs  -->
             <local:SettingsCard x:Name="EnableColorGlyphs"
                                 x:Uid="Profile_EnableColorGlyphs"
-                                Margin="0,4,0,0">
+                                Margin="0,4,0,0"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
@@ -539,7 +548,8 @@
             <!--  Retro Terminal Effect  -->
             <local:SettingsCard x:Name="RetroTerminalEffect"
                                 x:Uid="Profile_RetroTerminalEffect"
-                                Margin="0,4,0,0">
+                                Margin="0,4,0,0"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
@@ -552,7 +562,8 @@
             <!--  Adjust Indistinguishable Colors  -->
             <local:SettingsCard x:Name="AdjustIndistinguishableColors"
                                 x:Uid="Profile_AdjustIndistinguishableColors"
-                                Margin="0,4,0,0">
+                                Margin="0,4,0,0"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -571,7 +582,8 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Cursor Shape  -->
             <local:SettingsCard x:Name="CursorShape"
-                                x:Uid="Profile_CursorShape">
+                                x:Uid="Profile_CursorShape"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -586,7 +598,8 @@
             <!--  Cursor Height  -->
             <local:SettingsCard x:Name="CursorHeight"
                                 x:Uid="Profile_CursorHeight"
-                                IsEnabled="{x:Bind IsVintageCursor, Mode=OneWay}">
+                                IsEnabled="{x:Bind IsVintageCursor, Mode=OneWay}"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -901,7 +914,8 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Intense is bold, bright  -->
             <local:SettingsCard x:Name="IntenseTextStyle"
-                                x:Uid="Appearance_IntenseTextStyle">
+                                x:Uid="Appearance_IntenseTextStyle"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"

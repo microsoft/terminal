@@ -151,7 +151,8 @@
 
             <!--  Tab Title  -->
             <local:SettingsCard x:Name="TabTitle"
-                                x:Uid="Profile_TabTitle">
+                                x:Uid="Profile_TabTitle"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />

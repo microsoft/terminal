@@ -38,7 +38,8 @@
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Antialiasing Mode  -->
             <local:SettingsCard x:Name="AntialiasingMode"
-                                x:Uid="Profile_AntialiasingMode">
+                                x:Uid="Profile_AntialiasingMode"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -52,7 +53,8 @@
 
             <!--  AltGr Aliasing  -->
             <local:SettingsCard x:Name="AltGrAliasing"
-                                x:Uid="Profile_AltGrAliasing">
+                                x:Uid="Profile_AltGrAliasing"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
@@ -64,7 +66,8 @@
 
             <!--  Snap On Input  -->
             <local:SettingsCard x:Name="SnapOnInput"
-                                x:Uid="Profile_SnapOnInput">
+                                x:Uid="Profile_SnapOnInput"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
@@ -76,7 +79,8 @@
 
             <!--  History Size  -->
             <local:SettingsCard x:Name="HistorySize"
-                                x:Uid="Profile_HistorySize">
+                                x:Uid="Profile_HistorySize"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
                                     LargeChange="100"
@@ -91,7 +95,8 @@
 
             <!--  Close On Exit  -->
             <local:SettingsCard x:Name="CloseOnExit"
-                                x:Uid="Profile_CloseOnExit">
+                                x:Uid="Profile_CloseOnExit"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -225,7 +230,8 @@
 
             <!--  RightClickContextMenu  -->
             <local:SettingsCard x:Name="RightClickContextMenu"
-                                x:Uid="Profile_RightClickContextMenu">
+                                x:Uid="Profile_RightClickContextMenu"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Profile.RightClickContextMenu, Mode=TwoWay}"
@@ -238,6 +244,7 @@
             <!--  ShowMarks  -->
             <local:SettingsCard x:Name="ShowMarks"
                                 x:Uid="Profile_ShowMarks"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                 Visibility="{x:Bind Profile.ShowMarksAvailable}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
@@ -251,6 +258,7 @@
             <!--  AutoMarkPrompts  -->
             <local:SettingsCard x:Name="AutoMarkPrompts"
                                 x:Uid="Profile_AutoMarkPrompts"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                 Visibility="{x:Bind Profile.AutoMarkPromptsAvailable}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
@@ -263,7 +271,8 @@
 
             <!--  ReloadEnvVars  -->
             <local:SettingsCard x:Name="ReloadEnvVars"
-                                x:Uid="Profile_ReloadEnvVars">
+                                x:Uid="Profile_ReloadEnvVars"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
@@ -276,6 +285,7 @@
             <!--  RepositionCursorWithMouse  -->
             <local:SettingsCard x:Name="RepositionCursorWithMouse"
                                 x:Uid="Profile_RepositionCursorWithMouse"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                 Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
@@ -288,7 +298,8 @@
 
             <!--  RainbowSuggestions  -->
             <local:SettingsCard x:Name="RainbowSuggestions"
-                                x:Uid="Profile_RainbowSuggestions">
+                                x:Uid="Profile_RainbowSuggestions"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
@@ -300,7 +311,8 @@
 
             <!--  Path Translation  -->
             <local:SettingsCard x:Name="PathTranslationStyle"
-                                x:Uid="Profile_PathTranslationStyle">
+                                x:Uid="Profile_PathTranslationStyle"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -314,7 +326,8 @@
 
             <!--  Drag Drop Delimiter  -->
             <local:SettingsCard x:Name="DragDropDelimiter"
-                                x:Uid="Profile_DragDropDelimiter">
+                                x:Uid="Profile_DragDropDelimiter"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />

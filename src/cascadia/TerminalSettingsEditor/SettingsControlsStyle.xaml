@@ -469,6 +469,13 @@
         </Setter>
     </Style>
 
+    <!--  Used to align SettingsResetButtons when a page has a mix of SettingsCards and SettingsExpanders  -->
+    <Style x:Key="ExpanderAlignedSettingsCardStyle"
+           BasedOn="{StaticResource DefaultSettingsCardStyle}"
+           TargetType="local:SettingsCard">
+        <Setter Property="Padding" Value="16,16,44,16" />
+    </Style>
+
     <!--  ============ SettingsExpander ============  -->
 
     <Style BasedOn="{StaticResource DefaultSettingsExpanderStyle}"
