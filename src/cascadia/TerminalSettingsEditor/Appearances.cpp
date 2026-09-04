@@ -232,19 +232,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Foreground")
             {
-                _NotifyChanges(L"ForegroundPreview");
+                _NotifyChanges(L"ForegroundPreview", L"ForegroundAccessibleName");
             }
             else if (viewModelProperty == L"Background")
             {
-                _NotifyChanges(L"BackgroundPreview");
+                _NotifyChanges(L"BackgroundPreview", L"BackgroundAccessibleName");
             }
             else if (viewModelProperty == L"SelectionBackground")
             {
-                _NotifyChanges(L"SelectionBackgroundPreview");
+                _NotifyChanges(L"SelectionBackgroundPreview", L"SelectionBackgroundAccessibleName");
             }
             else if (viewModelProperty == L"CursorColor")
             {
-                _NotifyChanges(L"CursorColorPreview");
+                _NotifyChanges(L"CursorColorPreview", L"CursorColorAccessibleName");
             }
             else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
             {
@@ -252,7 +252,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
-                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview", L"ForegroundAccessibleName", L"BackgroundAccessibleName", L"SelectionBackgroundAccessibleName", L"CursorColorAccessibleName");
             }
         });
 
@@ -1145,6 +1145,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
     {
         return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
+    }
+
+    hstring AppearanceViewModel::ForegroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Foreground/Header"), ColorToHexString(ForegroundPreview()));
+    }
+
+    hstring AppearanceViewModel::BackgroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Background/Header"), ColorToHexString(BackgroundPreview()));
+    }
+
+    hstring AppearanceViewModel::SelectionBackgroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_SelectionBackground/Header"), ColorToHexString(SelectionBackgroundPreview()));
+    }
+
+    hstring AppearanceViewModel::CursorColorAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_CursorColor/Header"), ColorToHexString(CursorColorPreview()));
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };

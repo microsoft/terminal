@@ -165,12 +165,13 @@
             <!--  Tab Color  -->
             <local:SettingsExpander x:Name="TabColor"
                                     x:Uid="Profile_TabColor"
-                                    AutomationProperties.Name="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
+                                    AutomationProperties.Name="{x:Bind Profile.TabColorAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <ContentControl VerticalAlignment="Center"
                                         Content="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
-                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                        ContentTemplate="{StaticResource ColorPreviewTemplate}"
+                                        IsTabStop="False" />
                         <local:SettingResetButton SettingName="TabColor"
                                                   Target="{x:Bind Profile}" />
                     </StackPanel>
@@ -188,7 +189,7 @@
             <!--  Icon  -->
             <local:SettingsExpander x:Name="Icon"
                                     x:Uid="Profile_Icon"
-                                    AutomationProperties.Name="{x:Bind Profile.LocalizedIcon, Mode=OneWay}">
+                                    AutomationProperties.Name="{x:Bind Profile.IconAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <Grid>

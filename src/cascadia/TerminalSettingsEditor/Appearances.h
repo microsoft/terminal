@@ -141,6 +141,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Color SelectionBackgroundPreview() const;
         Windows::UI::Color CursorColorPreview() const;
 
+        hstring ForegroundAccessibleName() const;
+        hstring BackgroundAccessibleName() const;
+        hstring SelectionBackgroundAccessibleName() const;
+        hstring CursorColorAccessibleName() const;
+
         WINRT_PROPERTY(bool, IsDefault, false);
 
 // Inheritable appearance settings that expose a reset button.

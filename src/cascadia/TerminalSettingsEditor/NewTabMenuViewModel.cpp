@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring NewTabMenuViewModel::CurrentFolderNameAccessibleName() const
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"NewTabMenu_CurrentFolderName/Header"), CurrentFolderName());
+        return FormatAccessibleName(USES_RESOURCE(L"NewTabMenu_CurrentFolderName/Header"), CurrentFolderName());
     }
 
     void NewTabMenuViewModel::CurrentFolderName(const hstring& value)

@@ -53,6 +53,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Color SelectionBackgroundPreview { get; };
         Windows.UI.Color CursorColorPreview { get; };
 
+        String ForegroundAccessibleName { get; };
+        String BackgroundAccessibleName { get; };
+        String SelectionBackgroundAccessibleName { get; };
+        String CursorColorAccessibleName { get; };
+
         String MissingFontFaces { get; };
         String ProportionalFontFaces { get; };
         Boolean HasPowerlineCharacters { get; };

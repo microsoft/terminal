@@ -90,7 +90,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                L"IconPreview",
                                L"IconPath",
                                L"EvaluatedIcon",
-                               L"UsingNoIcon");
+                               L"UsingNoIcon",
+                               L"IconAccessibleName");
             }
             else if (viewModelProperty == L"CurrentBellSounds")
             {
@@ -122,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"TabColor" || viewModelProperty == L"TabThemeColorPreview")
             {
-                _NotifyChanges(L"TabColorPreview");
+                _NotifyChanges(L"TabColorPreview", L"TabColorAccessibleName");
             }
             else if (viewModelProperty == L"Hidden")
             {
@@ -216,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring ProfileViewModel::PaddingAccessibleName() const
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_Padding/Header"), Padding());
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Padding/Header"), Padding());
     }
 
     Control::IControlSettings ProfileViewModel::TermSettings() const
@@ -525,6 +526,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
     }
 
+    hstring ProfileViewModel::TabColorAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_TabColor/Header"), ColorToHexString(TabColorPreview()));
+    }
+
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const
     {
         return _defaultAppearanceViewModel;
@@ -658,6 +664,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return IconPath(); // For display as a string
     }
 
+    winrt::hstring ProfileViewModel::IconAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Icon/Header"), LocalizedIcon());
+    }
+
     Windows::UI::Xaml::Controls::IconElement ProfileViewModel::IconPreview() const
     {
         // IconWUX sets the icon width/height to 32 by default
@@ -722,7 +733,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring ProfileViewModel::BellStyleAccessibleName() const
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellStyle/Header"), BellStylePreview());
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_BellStyle/Header"), BellStylePreview());
     }
 
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)
@@ -870,7 +881,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring ProfileViewModel::BellSoundAccessibleName()
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellSound/Header"), BellSoundPreview());
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_BellSound/Header"), BellSoundPreview());
     }
 
     void ProfileViewModel::RequestAddBellSound(hstring path)

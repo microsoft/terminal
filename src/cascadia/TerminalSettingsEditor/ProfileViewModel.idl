@@ -99,11 +99,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
+        String IconAccessibleName { get; };
         String IconPath;
         Boolean UsingNoIcon { get; };
 
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };
+        String TabColorAccessibleName { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

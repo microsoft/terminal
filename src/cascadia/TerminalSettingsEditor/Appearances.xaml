@@ -220,7 +220,7 @@
                             <!--  Foreground Color  -->
                             <local:SettingsExpander x:Name="Foreground"
                                                     x:Uid="Profile_Foreground"
-                                                    AutomationProperties.Name="{x:Bind Appearance.ForegroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
+                                                    AutomationProperties.Name="{x:Bind Appearance.ForegroundAccessibleName, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
                                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                                         <ContentControl VerticalAlignment="Center"
@@ -243,7 +243,7 @@
                             <!--  Background Color  -->
                             <local:SettingsExpander x:Name="Background"
                                                     x:Uid="Profile_Background"
-                                                    AutomationProperties.Name="{x:Bind Appearance.BackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
+                                                    AutomationProperties.Name="{x:Bind Appearance.BackgroundAccessibleName, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
                                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                                         <ContentControl VerticalAlignment="Center"
@@ -266,7 +266,7 @@
                             <!--  Selection Background Color  -->
                             <local:SettingsExpander x:Name="SelectionBackground"
                                                     x:Uid="Profile_SelectionBackground"
-                                                    AutomationProperties.Name="{x:Bind Appearance.SelectionBackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
+                                                    AutomationProperties.Name="{x:Bind Appearance.SelectionBackgroundAccessibleName, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
                                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                                         <ContentControl VerticalAlignment="Center"
@@ -624,7 +624,7 @@
             <!--  Cursor Color  -->
             <local:SettingsExpander x:Name="CursorColor"
                                     x:Uid="Profile_CursorColor"
-                                    AutomationProperties.Name="{x:Bind Appearance.CursorColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
+                                    AutomationProperties.Name="{x:Bind Appearance.CursorColorAccessibleName, Mode=OneWay}">
                 <local:SettingsExpander.Content>
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <ContentControl VerticalAlignment="Center"

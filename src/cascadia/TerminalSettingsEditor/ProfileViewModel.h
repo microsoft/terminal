@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         Windows::UI::Xaml::Controls::IconElement IconPreview() const;
         winrt::hstring LocalizedIcon() const;
+        winrt::hstring IconAccessibleName() const;
         winrt::hstring IconPath() const { return _profile.Icon().Path(); }
         void IconPath(const winrt::hstring& path)
         {
@@ -116,6 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;
+        hstring TabColorAccessibleName() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
