@@ -15,10 +15,15 @@
 #include <propvarutil.h>
 
 #include "AppHost.h"
+#include "TerminalProtocolComServer.h"
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
 #include "../../types/inc/User32Utils.hpp"
 #include "../../types/inc/utils.hpp"
+
+#include <bcrypt.h>
+#include <fstream>
+#pragma comment(lib, "bcrypt.lib")
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
@@ -27,6 +32,13 @@ using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+
+WindowEmperor::WindowEmperor() = default;
+WindowEmperor::~WindowEmperor()
+{
+    // Revoke COM class factory before destroying resources.
+    LOG_IF_FAILED(TerminalProtocolComServer::s_StopListening());
+}
 
 #ifdef _WIN64
 static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERMINAL'
@@ -560,6 +572,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _setupGlobalHotkeys();
     _checkWindowsForNotificationIcon();
     _setupSessionPersistence(_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout());
+
+    // Initialize the protocol server for AI CLI integration.
+    _initializeProtocolServer();
 
     // When the settings change, we'll want to update our global hotkeys
     // and our notification icon based on the new settings.
@@ -1720,3 +1735,15 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
 }
 
 #pragma endregion
+
+// ============================================================================
+// Protocol Server
+// ============================================================================
+
+void WindowEmperor::_initializeProtocolServer()
+{
+    // Register COM class factory for cross-process access (runs on MTA thread).
+    TerminalProtocolComServer::s_setEmperor(this);
+    SUCCEEDED_LOG(TerminalProtocolComServer::s_StartListening());
+    OutputDebugStringA("WT Protocol Server started\n");
+}
