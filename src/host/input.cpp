@@ -333,6 +333,18 @@ void ProcessCtrlEvents()
 
     const auto ctrl = ServiceLocator::LocateConsoleControl();
 
+    // EndTask() below relies on CSRSS recognizing this process as the
+    // legitimate console host for its target(s). A handoff-received session
+    // (see ConsoleEstablishHandoff in srvinit.cpp) never gets that
+    // recognition - every prior handoff target was headless ConPTY, which
+    // never exercises this native-window Ctrl+Close path at all - so
+    // EndTask() reports success without ever delivering CTRL_CLOSE_EVENT to
+    // the target, and the window would never close on its own. Fall back to
+    // terminating the process(es) directly in that case; a normal
+    // (non-handoff) launch already closes correctly via EndTask() and is
+    // unaffected.
+    const auto isHandoffCloseWorkaround = EventType == CTRL_CLOSE_EVENT && ServiceLocator::LocateGlobals().handoffTarget;
+
     for (const auto& r : termRecords)
     {
         // Older versions of Windows would do various things if the EndTask() call failed:
@@ -361,5 +373,10 @@ void ProcessCtrlEvents()
         // the process was already dead, or if the request actually failed for some reason.
         // Hopefully there aren't any regressions, but we can't know without trying.
         ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags);
+
+        if (isHandoffCloseWorkaround && r.hProcess)
+        {
+            TerminateProcess(r.hProcess.get(), 0);
+        }
     }
 }

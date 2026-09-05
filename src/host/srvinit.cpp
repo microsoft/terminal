@@ -416,6 +416,25 @@ try
     g.handoffTarget = true;
 
     g.delegationPair = DelegationConfig::s_GetDelegationPair();
+
+    // Configured (via DelegationTerminal == CLSID_Standalone) to stay a plain
+    // standalone window instead of handing off again to a Terminal over
+    // ConPTY. Reuse the session/handles the in-box conhost already
+    // established for us (Server/driverInputEvent/connectMessage) rather than
+    // creating a new one - otherwise this is identical to a normal,
+    // non-handoff launch (see ConsoleCreateIoThreadLegacy below).
+    if (g.delegationPair.terminal == DelegationConfig::CLSID_Standalone)
+    {
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_ReceiveHandoff_Standalone",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        ConsoleArguments standaloneArgs;
+        RETURN_IF_FAILED(standaloneArgs.ParseCommandline());
+        return ConsoleCreateIoThread(Server, &standaloneArgs, driverInputEvent, connectMessage);
+    }
+
     // We've been handed off to (we're OpenConsole, not conhost).
     // If we get here and there's not a custom defterm set, then it must be because
     // conhost defaulted to us for DxD. Set up Terminal as the thing to handoff too.

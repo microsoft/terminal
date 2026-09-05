@@ -107,6 +107,15 @@ public:
     static constexpr CLSID CLSID_WindowsTerminalTerminal{ 0xe12cff52, 0xa866, 0x4c77, { 0x9a, 0x90, 0xf5, 0x70, 0xa7, 0xaa, 0x2c, 0x6b } };
     static constexpr CLSID CLSID_WindowsTerminalConsoleDev{ 0x1f9f2bf5, 0x5bc3, 0x4f17, { 0xb0, 0xe6, 0x91, 0x24, 0x13, 0xf1, 0xf4, 0x51 } };
     static constexpr CLSID CLSID_WindowsTerminalTerminalDev{ 0x051f34ee, 0xc1fd, 0x4b19, { 0xaf, 0x75, 0x9b, 0xa5, 0x46, 0x48, 0x43, 0x4c } };
+    // Sentinel DelegationTerminal value (never used as a DelegationConsole
+    // value, and never actually activated via COM): tells
+    // ConsoleEstablishHandoff (srvinit.cpp) that, once activated as the
+    // DelegationConsole, it should stay a normal standalone window instead of
+    // handing off again to a Terminal over ConPTY. Unmodified conhost.exe/
+    // Windows Terminal builds never resolve this CLSID themselves, since only
+    // the DelegationConsole side is ever activated by the in-box console
+    // host.
+    static constexpr CLSID CLSID_Standalone{ 0x5c2a1f8e, 0x8e3b, 0x4a2b, { 0x9b, 0x4c, 0x2f, 0x6a, 0x1d, 0x7e, 0x3c, 0x0a } };
     static constexpr DelegationPair DefaultDelegationPair{ DelegationPairKind::Default, CLSID_Default, CLSID_Default };
     static constexpr DelegationPair ConhostDelegationPair{ DelegationPairKind::Conhost, CLSID_Conhost, CLSID_Conhost };
     static constexpr DelegationPair TerminalDelegationPair{ DelegationPairKind::Custom, CLSID_WindowsTerminalConsole, CLSID_WindowsTerminalTerminal };
