@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -121,7 +121,7 @@
     <value>この配色は、組み込みの設定またはインストールされている拡張機能の一部です</value>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Description" xml:space="preserve">
-    <value>この配色パターンを変更するには、コピーを作成する必要があります。</value>
+    <value>この配色を変更するには、配色のコピーを作成する必要があります。</value>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>コピーを作成</value>
@@ -132,7 +132,7 @@
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
   <data name="ColorScheme_SetAsDefault.Description" xml:space="preserve">
-    <value>既定ですべてのプロファイルにこの配色を適用します。個々のプロファイルは、引き続き独自の配色を選択できます。</value>
+    <value>既定では、この配色をすべてのプロファイルに適用します。個々のプロファイルでは、独自の配色を選択できます。</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
@@ -297,7 +297,7 @@
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
   <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>[+] アイコンをクリックするか、新しい tab キーのバインドを入力すると表示されるプロファイルです。</value>
+    <value>[+] アイコンをクリックするか、新しい Tab キーのバインドを入力すると表示されるプロファイルです。</value>
     <comment>A description for what the default profile is and when it's used.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
@@ -330,7 +330,7 @@
     <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>既定では、テキスト レンダラーは FLIP_SEQUENTIAL Swap Chain を使用し、Present1 API を介してダーティ四角形を宣言します。この設定を有効にすると、代わりに FLIP_DISCARD スワップ チェーンが使用され、ダーティ四角形は宣言されません。どちらか一方が望ましいかどうかは、お使いのハードウェアとその他のさまざまな要因によって異なります。</value>
+    <value>デフォルトでは、テキストレンダラーは FLIP_SEQUENTIAL スワップチェーンを使用し、Present1 API を介してダーティ長方形を宣言します。この設定を有効にすると、代わりに FLIP_DISCARD スワップ チェーンが使用され、ダーティ四角形は宣言されません。どちらが優れているかは、ハードウェアやその他のさまざまな要因によって異なります。</value>
     <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
@@ -338,7 +338,7 @@
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>有効にすると、ターミナルはソフトウェア ラスターライザー (WARP) を使用します。この設定は、ほとんどの状況で無効のままにする必要があります。</value>
+    <value>有効にすると、ターミナルはソフトウェア ラスタライザー (WARP) を使用します。この設定は、ほとんどすべての状況で無効のままにしておく必要があります。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
@@ -346,7 +346,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>入力したテキストをセルにグループ化する方法を変更します。"Grapheme clusters" オプションは最も新しく Unicode で正しい方法ですが、UNIX では "wcswidth" は一般的な方法であり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要です。この設定は、その中から起動されたアプリケーションにのみ適用されます。</value>
+    <value>これにより、受信テキストをセルにグループ化する方法が変わります。"書記素クラスター" オプションは、最も最新で Unicode で実行するのに適した方法ですが、"wcswidth" は UNIX の一般的なアプローチであり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要で、Windows ターミナル内から起動したアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>書記素クラスター</value>
@@ -574,11 +574,11 @@
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
-    <value>この設定を有効にすると、一部のアプリケーションでキーボード入力が正しく動作しなくなる可能性があります。</value>
+    <value>この設定を有効にすると、一部のアプリケーションの特定のキーボード入力が正しく動作しなくなる可能性があります。</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>これにより、ウィンドウが開かなくても、グローバル デコレーションや Quake モードのアクションなどのアクションを実行できます。</value>
+    <value>これにより、ウィンドウが開いていない場合でも、Global Summon や Quake Mode などのアクションを実行できるようになります。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -634,7 +634,7 @@
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
   <data name="Globals_WordDelimiters.Description" xml:space="preserve">
-    <value>これらの記号は、ターミナル内のテキストをダブルクリックするか、"マーク モード".をアクティブにするときに使用されます。</value>
+    <value>これらの記号は、ターミナル内のテキストをダブルクリックしたとき、または "マーク モード" をアクティブにしたときに使用されます。</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
@@ -678,12 +678,12 @@
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>操作</value>
+    <value>ショートカット</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>アクションの編集...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>ショートカットの編集</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>拡張機能</value>
@@ -714,7 +714,7 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
-    <value>既定では、WindowsはCtrl+Altを AltGr のエイリアスとして扱います。この設定は、Windowsの既定の動作をオーバーライドします。</value>
+    <value>デフォルトでは、Windows は Ctrl+Alt を AltGr のエイリアスとして扱います。この設定は、Windows の既定の動作をオーバーライドします。</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -758,7 +758,7 @@
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImage.Description" xml:space="preserve">
-    <value>ウィンドウの背景として使用されるイメージのファイルの場所を指定します。</value>
+    <value>ウィンドウの背景で使用される画像のファイルの場所。</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -851,7 +851,7 @@
     <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Description" xml:space="preserve">
-    <value>背景画像のサイズをウィンドウに合わせて変更する方法を設定します。</value>
+    <value>ウィンドウに合わせて背景画像のサイズを変更する方法を設定します。</value>
     <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
   </data>
   <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
@@ -899,7 +899,7 @@
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
   <data name="Profile_ColorScheme.Description" xml:space="preserve">
-    <value>展開して、前景、背景、選択の背景をオーバーライドします。</value>
+    <value>展開して、前景、背景、選択範囲の背景をオーバーライドします。</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1022,7 +1022,7 @@
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
   <data name="Profile_CellWidth.Description" xml:space="preserve">
-    <value>ターミナルのセル幅をオーバーライドします。フォント サイズの倍数として計測されます。既定値はフォントによって異なり、通常は 0.6 前後です。</value>
+    <value>ターミナルのセル幅をオーバーライドします。フォント サイズの倍数として測定されます。既定値はフォントによって異なりますが、通常は約 0.6 です。</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
@@ -1094,15 +1094,19 @@
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
   <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>有効にした場合、プロファイルはプロファイルの一覧に表示されません。これを使用すると、既定のプロファイルや動的に生成されたプロファイルを設定ファイルに残したまま非表示にすることができます。</value>
+    <value>有効にすると、プロファイルはプロファイルの一覧に表示されなくなります。これは、既定のプロファイルと動的に生成されたプロファイルを非表示にし、設定ファイルに残すために使用できます。</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
+  </data>
+  <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>ドロップダウン メニューから非表示になっています</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
   <data name="Profile_Elevate.Header" xml:space="preserve">
     <value>このプロファイルを管理者として実行する</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>有効にすると、プロファイルは自動的にターミナル ウィンドウ管理開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
+    <value>有効にすると、プロファイルは管理ターミナル ウィンドウで自動的に開きます。現在のウィンドウが既に管理者として実行されている場合は、このウィンドウで開きます。</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1222,7 +1226,7 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Description" xml:space="preserve">
-    <value>タイトルの変更要求を無視します (OSC 2)。</value>
+    <value>タイトル (OSC 2) を変更するアプリケーション要求を無視します。</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1254,7 +1258,7 @@
     <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.Description" xml:space="preserve">
-    <value>半透明のテクスチャをウィンドウの背景に適用します。</value>
+    <value>ウィンドウの背景に半透明のテクスチャを適用します。</value>
     <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
@@ -1283,7 +1287,43 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>プロファイル</value>
-    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+    <comment>Header for the "profiles" menu item. Navigates to a landing page that lists profile-related settings (defaults, color schemes, the list of terminal profiles, and the add-profile button).</comment>
+  </data>
+  <data name="Nav_Profiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>プロファイル</value>
+    <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
+  </data>
+  <data name="Profiles_TerminalProfilesHeader.Header" xml:space="preserve">
+    <value>ターミナル プロファイル</value>
+    <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Header" xml:space="preserve">
+    <value>既定値</value>
+    <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Description" xml:space="preserve">
+    <value>ここで行った変更は、特定のプロファイルによってオーバーライドされない限り、すべてのプロファイルに適用されます。これらの設定は、Windows ターミナルの外観には影響しません。</value>
+    <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
+    <value>配色</value>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the color schemes page.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
+    <value>プロファイルで使用できる配色を追加、編集、または削除します。</value>
+    <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>新しいプロファイルを追加します</value>
+    <comment>Tooltip (and accessible name) for the split button on the Profiles landing page whose primary "+" action creates a new empty profile and whose flyout lists existing profiles to duplicate.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton_DefaultLabel.Text" xml:space="preserve">
+    <value>新しいプロファイルの追加</value>
+    <comment>Default label shown next to the "+" icon on the add-profile split button when no source profile has been selected from the flyout. Clicking the button in this state creates a brand-new empty profile.</comment>
+  </data>
+  <data name="Profiles_AddProfileMenu_NewEmptyProfile.Text" xml:space="preserve">
+    <value>新しい空のプロファイル</value>
+    <comment>Label for the first item in the add-profile split button's flyout. Clicking this creates a new profile with default settings.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>フォーカス</value>
@@ -1338,7 +1378,7 @@
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
   <data name="Profile_ShowMarks.Description" xml:space="preserve">
-    <value>有効にすると、ターミナルでテキストを検索するとき、またはシェル統合が有効になっているときに、スクロール バーにマークが表示されます。</value>
+    <value>有効にすると、テキストを検索するとき、またはシェル統合が有効になっているときに、ターミナルのスクロール バーにマークが表示されます。</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
@@ -1346,7 +1386,7 @@
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
-    <value>有効にすると、ターミナルは Enter キーを押したときにコマンドの終了位置を示すマークを自動的に追加します。</value>
+    <value>有効にすると、Enter キーを押したときに、コマンドの終了位置を示すマークがターミナルに自動的に追加されます。</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
@@ -1522,7 +1562,7 @@
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
   <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>最初の読み込み時にウィンドウに表示される行と列の数。文字数で計測されます。</value>
+    <value>最初の読み込み時にウィンドウに表示される行と列の数。文字数で測定されます。</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
@@ -1566,7 +1606,7 @@
     <comment>Button label that deletes the current profile that is being viewed.</comment>
   </data>
   <data name="Profile_Name.Description" xml:space="preserve">
-    <value>ドロップダウンに表示されるプロファイルの名前です。</value>
+    <value>ドロップダウンに表示されるプロファイルの名前。</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
   </data>
   <data name="Profile_Name.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1640,6 +1680,18 @@
   <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>このプロファイルを削除しますか?</value>
     <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Header" xml:space="preserve">
+    <value>このプロフィールを削除</value>
+    <comment>Header for a settings card that deletes the profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Description" xml:space="preserve">
+    <value>このプロファイルを完全に削除します</value>
+    <comment>Description for the delete profile settings card.</comment>
+  </data>
+  <data name="Profile_DeleteProfileButton.Content" xml:space="preserve">
+    <value>削除</value>
+    <comment>Button label to delete a profile.</comment>
   </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>保存されていない設定をすべて保存します。</value>
@@ -1754,28 +1806,48 @@
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
-    <value>操作の詳細を表示します</value>
+    <value>ショートカットに関する詳細情報</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>
   <data name="Actions_DeleteButton2.Text" xml:space="preserve">
-    <value>アクションの削除</value>
+    <value>ショートカットを削除</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
   <data name="Actions_Name.Text" xml:space="preserve">
-    <value>操作名</value>
+    <value>ショートカット名</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
   <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
-    <value>操作名</value>
+    <value>ショートカット名</value>
     <comment>Placeholder text for the text box where the user can edit the action name.</comment>
   </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
-    <value>操作の種類</value>
+    <value>ショートカットの種類</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
   <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>キー バインド</value>
+    <value>ショートカット</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>キー バインド</value>
+    <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>新しいキー バインド</value>
+    <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>追加</value>
+    <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
+    <value>追加のカスタマイズ</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>キー バインド #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual keyboard shortcut on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Key binding #1").</comment>
   </data>
   <data name="Actions_CommandDetails.Text" xml:space="preserve">
     <value>コマンドの詳細</value>
@@ -1786,11 +1858,11 @@
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
   </data>
   <data name="Actions_Keybindings.Text" xml:space="preserve">
-    <value>キー バインド</value>
+    <value>ショートカット</value>
     <comment>Label for the list of editable keybindings for the current command.</comment>
   </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
-    <value>キー バインドの追加</value>
+    <value>ショートカットを追加</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
   <data name="Actions_AdditionalKeyChords" xml:space="preserve">
@@ -1806,15 +1878,15 @@
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
-    <value>はい、アクションを削除します</value>
+    <value>はい。ショートカットを削除します</value>
     <comment>Button label that confirms deletion of an action.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>このアクションを削除してよろしいですか?</value>
+    <value>このショートカットを削除してもよろしいですか?</value>
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>無効なキーコードです。有効なキーコードを入力してください。</value>
+    <value>ショートカットが無効です。有効なキーボード ショートカットを入力してください。</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
@@ -1822,7 +1894,7 @@
     <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
-    <value>指定されたキーコードは、次のアクションによって既に使用されています:</value>
+    <value>指定されたキー バインドは、次のショートカットですでに使用されています:</value>
     <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
@@ -1849,8 +1921,12 @@
     <value>編集</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>{} を編集</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>新規追加</value>
+    <value>新しいショートカットを追加</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2209,9 +2285,6 @@
     <value>複数のタブまたはウィンドウ</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
-    <value>[タッチ キーボードと手書きパネル サービス] が無効になっている場合に警告する</value>
-  </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
     <value>5 KiB を超える貼り付け時に警告する</value>
   </data>
@@ -2314,7 +2387,7 @@
     <comment>Header for a control to determine the color of the cursor.</comment>
   </data>
   <data name="Profile_Foreground.Description" xml:space="preserve">
-    <value>配色から前景色をオーバーライドします。</value>
+    <value>配色の前景色をオーバーライドします。</value>
     <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
   </data>
   <data name="Profile_CursorColor.Description" xml:space="preserve">
@@ -2326,7 +2399,7 @@
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
   <data name="Profile_SelectionBackground.Description" xml:space="preserve">
-    <value>選択した背景色を配色からオーバーライドします。</value>
+    <value>配色の選択背景色をオーバーライドします。</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
@@ -2414,7 +2487,7 @@
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
-    <value>"残りのプロファイル" エントリは 1 つしか指定できません</value>
+    <value>"残りのプロファイル" エントリは 1 つしか存在できません</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
@@ -2494,7 +2567,7 @@
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
-    <value>有効にすると、フォルダーに 1 つのエントリしかない場合、エントリは直接表示され、フォルダーは表示されません。</value>
+    <value>有効にすると、フォルダーにエントリが 1 つしかない場合、エントリが直接表示され、フォルダーはレンダリングされません。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
@@ -2502,7 +2575,7 @@
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
-    <value>有効にすると、フォルダーにエントリがない場合でも表示されます。それ以外の場合、フォルダーは表示されません。</value>
+    <value>有効にすると、フォルダーにエントリがない場合でも表示されます。そうしないと、フォルダーはレンダリングされません。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
   <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
@@ -2582,7 +2655,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>これらのキー バインドは、選択したテキスト、または選択したテキストのすべてのインスタンスを指定された色で強調表示できます。</value>
+    <value>これらのキー バインドは、選択したテキストまたは選択したテキストのすべてのインスタンスを指定した色で強調表示できます。</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
@@ -2610,7 +2683,7 @@
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.Description" xml:space="preserve">
-    <value>ドラッグ アンド ドロップ操作中にファイルパスとディレクトリ パスを変換する方法を制御します。</value>
+    <value>ドラッグ アンド ドロップ操作中にファイルとディレクトリのパスを変換する方法を制御します。</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
   <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
@@ -2637,7 +2710,11 @@
     <value>プロファイルは検出されなくなりました</value>
   </data>
   <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
-    <value>この自動的に検出されたプロファイルはアンインストールされた可能性があります。行った変更は保存されますが、再インストールされるまでは使用できません。</value>
+    <value>この自動的に検出されたプロファイルは、アンインストールされたようです。変更内容は保持されますが、再インストールされるまで使用できません。</value>
+  </data>
+  <data name="Profile_OrphanedBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>プロファイルは検出されなくなりました</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile's source software is no longer installed.</comment>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>元のソース</value>
@@ -2763,5 +2840,9 @@
   <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
     <value>このテキストは、ターミナルにドロップされた複数のファイルのパスの間に挿入されます。</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
+  <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
+    <value>なし</value>
+    <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
   </data>
 </root>
