@@ -520,8 +520,8 @@ void Selection::InitializeMarkSelection()
 // Routine Description:
 // - Resets the current selection and selects a new region from the start to end coordinates
 // Arguments:
-// - coordStart - Position to start selection area from
-// - coordEnd - Position to select up to
+// - coordStart - Position to start selection area from (inclusive)
+// - coordEnd - Position to select up to (inclusive)
 // Return Value:
 // - <none>
 void Selection::SelectNewRegion(const til::point coordStart, const til::point coordEnd)

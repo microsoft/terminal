@@ -63,8 +63,9 @@ class SearchTests
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
+        // GH#20152: end is inclusive. Add 1 to point to the last column of the 2-wide match, not 1 past it.
         auto coordEndExpected = coordStartExpected;
-        coordEndExpected.x += 2;
+        coordEndExpected.x += 1;
 
         VERIFY_IS_TRUE(s.SelectCurrent());
         VERIFY_ARE_EQUAL(coordStartExpected, gci.renderData.GetSelectionAnchor());
