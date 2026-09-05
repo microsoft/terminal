@@ -1718,8 +1718,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::OpenCWD()
     {
-        const auto workingDirectory = WorkingDirectory();
-        ShellExecute(nullptr, nullptr, L"explorer", workingDirectory.c_str(), nullptr, SW_SHOW);
+        if (const auto cwd = WorkingDirectory(); Utils::IsValidDirectory(cwd.c_str()))
+        {
+            ShellExecute(nullptr, nullptr, L"explorer", cwd.c_str(), nullptr, SW_SHOW);
+        }
     }
 
     void ControlCore::ClearQuickFix()
