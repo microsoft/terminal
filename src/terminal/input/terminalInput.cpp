@@ -71,9 +71,9 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 
     // But if we're changing the encoding, we only clear out the other encoding modes
     // when enabling a new encoding - not when disabling.
-    if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding) && enabled)
+    if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding || mode == Mode::SgrPixelMouseEncoding) && enabled)
     {
-        _inputMode.reset(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
+        _inputMode.reset(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding, Mode::SgrPixelMouseEncoding);
     }
 
     _inputMode.set(mode, enabled);
