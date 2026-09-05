@@ -8,6 +8,7 @@
 #include "../host/globals.h"
 #include "../host/handle.h"
 #include "../host/server.h"
+#include "../host/screenInfo.hpp"
 
 #include "../host/ntprivapi.hpp"
 
@@ -61,6 +62,33 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 
     // TODO: MSFT: 9115192 - This should probably just ask through GetOutputCP and convert it ourselves on this side.
     return m->_pApiRoutines->GetConsoleLangIdImpl(a->LangId);
+}
+
+// Routine Description:
+// - kernel32/kernelbase's CreateConsoleScreenBuffer issues this as a private
+//   follow-up call, invisible to the caller, immediately after successfully
+//   creating a CONSOLE_GRAPHICS_BUFFER buffer - it copies the two OUT fields
+//   this returns directly into the caller's own CONSOLE_GRAPHICS_BUFFER_INFO
+//   (hMutex/lpBitMap). See directio.cpp's CreateGraphicsBuffer for where the
+//   client-mapped bitmap and its synchronizing Mutant are produced.
+[[nodiscard]] HRESULT ApiDispatchers::ServerMapBitmap(_Inout_ CONSOLE_API_MSG* const m,
+                                                      _Inout_ BOOL* const /*pbReplyPending*/)
+{
+    const auto a = &m->u.consoleMsgL1.MapBitmap;
+
+    const auto pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pObj;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
+
+    const auto graphicsBuffer = pObj->GetGraphicsBuffer();
+    RETURN_HR_IF_NULL(E_INVALIDARG, graphicsBuffer);
+
+    a->Mutex = graphicsBuffer->ClientMutex();
+    a->Bitmap = graphicsBuffer->ClientBits();
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG* const m,

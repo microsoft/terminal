@@ -101,6 +101,48 @@ void RenderData::UnlockConsole() noexcept
     gci.UnlockConsole();
 }
 
+// Routine Description:
+// - True when the active screen buffer is a CONSOLE_GRAPHICS_BUFFER.
+bool RenderData::IsConsoleBitmapActive() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().IsGraphicsBuffer();
+}
+
+// Routine Description:
+// - The BITMAPINFO describing the active CONSOLE_GRAPHICS_BUFFER's pixel
+//   format, or nullptr if the active buffer isn't a graphics buffer.
+const BITMAPINFO* RenderData::GetConsoleBitmapInfo() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto graphicsBuffer = gci.GetActiveOutputBuffer().GetGraphicsBuffer();
+    return graphicsBuffer ? graphicsBuffer->BitmapInfo() : nullptr;
+}
+
+// Routine Description:
+// - Pointer to the active CONSOLE_GRAPHICS_BUFFER's pixel data (conhost's own
+//   mapped view), or nullptr if the active buffer isn't a graphics buffer.
+const void* RenderData::GetConsoleBitmapBits() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto graphicsBuffer = gci.GetActiveOutputBuffer().GetGraphicsBuffer();
+    return graphicsBuffer ? graphicsBuffer->Bits() : nullptr;
+}
+
+ULONG RenderData::GetConsoleBitmapUsage() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto graphicsBuffer = gci.GetActiveOutputBuffer().GetGraphicsBuffer();
+    return graphicsBuffer ? graphicsBuffer->DibUsage() : DIB_RGB_COLORS;
+}
+
+HPALETTE RenderData::GetConsoleBitmapPalette() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto graphicsBuffer = gci.GetActiveOutputBuffer().GetGraphicsBuffer();
+    return graphicsBuffer ? graphicsBuffer->Palette() : nullptr;
+}
+
 TimerDuration RenderData::GetBlinkInterval() noexcept
 {
     if (!_cursorBlinkInterval)

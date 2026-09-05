@@ -818,6 +818,15 @@ void BackendD3D::_resetGlyphAtlas(const RenderingPayload& p, u32 minWidth, u32 m
     }
     _glyphAtlasBitmaps.clear();
 
+    // Any row with an alwaysRefresh bitmap (see common.h) has a slot reserved
+    // directly in the just-cleared atlas texture, tracked outside of
+    // _glyphAtlasBitmaps - invalidate those too, so _drawBitmap() knows to
+    // reallocate instead of drawing into now-stale/nonexistent atlas space.
+    for (const auto row : p.rows)
+    {
+        row->bitmap.backendAllocated = false;
+    }
+
     _d2dBeginDrawing();
     _d2dRenderTarget->Clear();
 
@@ -1892,17 +1901,33 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     }
 }
 
-void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y)
+void BackendD3D::_drawBitmap(const RenderingPayload& p, ShapedRow* row, u16 y)
 {
-    const auto& b = row->bitmap;
-    auto ab = _glyphAtlasBitmaps.lookup(b.revision);
-    if (!ab)
+    auto& b = row->bitmap;
+    u16x2 quadSize;
+    u16x2 quadTexcoord;
+
+    if (b.alwaysRefresh)
     {
-        stbrp_rect rect{
-            .w = p.s->font->cellSize.x * b.targetWidth,
-            .h = p.s->font->cellSize.y,
-        };
-        _drawGlyphAtlasAllocate(p, rect);
+        // Ever-changing content (e.g. live video): don't ask the shared glyph
+        // atlas for fresh space every single frame - that space would never
+        // get reclaimed (nothing ever un-allocates a rect from the packer)
+        // and the atlas would grow without bound. Instead allocate this row's
+        // slot once and keep re-uploading new pixel data into the same slot.
+        // backendAllocated is cleared by _resetGlyphAtlas() whenever the
+        // atlas texture itself gets recreated, since the old slot no longer
+        // exists in that case.
+        const auto w = static_cast<u16>(b.targetPixelRight - b.targetPixelLeft);
+        const auto h = static_cast<u16>(b.targetPixelBottom - b.targetPixelTop);
+        if (!b.backendAllocated || b.backendAtlasSize.x != w || b.backendAtlasSize.y != h)
+        {
+            stbrp_rect rect{ .w = w, .h = h };
+            _drawGlyphAtlasAllocate(p, rect);
+            b.backendAllocated = true;
+            b.backendAtlasSize = { w, h };
+            b.backendAtlasTexcoord = { static_cast<u16>(rect.x), static_cast<u16>(rect.y) };
+        }
+
         _d2dBeginDrawing();
 
         const D2D1_SIZE_U size{
@@ -1918,29 +1943,78 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
         THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
 
         const D2D1_RECT_F rectF{
-            static_cast<f32>(rect.x),
-            static_cast<f32>(rect.y),
-            static_cast<f32>(rect.x + rect.w),
-            static_cast<f32>(rect.y + rect.h),
+            static_cast<f32>(b.backendAtlasTexcoord.x),
+            static_cast<f32>(b.backendAtlasTexcoord.y),
+            static_cast<f32>(b.backendAtlasTexcoord.x + b.backendAtlasSize.x),
+            static_cast<f32>(b.backendAtlasTexcoord.y + b.backendAtlasSize.y),
         };
         _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
 
-        ab = _glyphAtlasBitmaps.insert(b.revision).first;
-        ab->size.x = static_cast<u16>(rect.w);
-        ab->size.y = static_cast<u16>(rect.h);
-        ab->texcoord.x = static_cast<u16>(rect.x);
-        ab->texcoord.y = static_cast<u16>(rect.y);
+        quadSize = b.backendAtlasSize;
+        quadTexcoord = b.backendAtlasTexcoord;
+    }
+    else
+    {
+        auto ab = _glyphAtlasBitmaps.lookup(b.revision);
+        if (!ab)
+        {
+            stbrp_rect rect{
+                .w = p.s->font->cellSize.x * b.targetWidth,
+                .h = p.s->font->cellSize.y,
+            };
+            _drawGlyphAtlasAllocate(p, rect);
+            _d2dBeginDrawing();
+
+            const D2D1_SIZE_U size{
+                static_cast<UINT32>(b.sourceSize.x),
+                static_cast<UINT32>(b.sourceSize.y),
+            };
+            const D2D1_BITMAP_PROPERTIES bitmapProperties{
+                .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+                .dpiX = static_cast<f32>(p.s->font->dpi),
+                .dpiY = static_cast<f32>(p.s->font->dpi),
+            };
+            wil::com_ptr<ID2D1Bitmap> bitmap;
+            THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+
+            const D2D1_RECT_F rectF{
+                static_cast<f32>(rect.x),
+                static_cast<f32>(rect.y),
+                static_cast<f32>(rect.x + rect.w),
+                static_cast<f32>(rect.y + rect.h),
+            };
+            _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+
+            ab = _glyphAtlasBitmaps.insert(b.revision).first;
+            ab->size.x = static_cast<u16>(rect.w);
+            ab->size.y = static_cast<u16>(rect.h);
+            ab->texcoord.x = static_cast<u16>(rect.x);
+            ab->texcoord.y = static_cast<u16>(rect.y);
+        }
+
+        quadSize = ab->size;
+        quadTexcoord = ab->texcoord;
     }
 
-    const auto left = p.s->font->cellSize.x * (b.targetOffset - p.scrollOffsetX);
-    const auto top = p.s->font->cellSize.y * y;
+    i32 left;
+    i32 top;
+    if (b.alwaysRefresh)
+    {
+        left = b.targetPixelLeft;
+        top = b.targetPixelTop;
+    }
+    else
+    {
+        left = p.s->font->cellSize.x * (b.targetOffset - p.scrollOffsetX);
+        top = p.s->font->cellSize.y * y;
+    }
 
     _appendQuad() = {
         .shadingType = static_cast<u16>(ShadingType::TextPassthrough),
         .renditionScale = { 1, 1 },
         .position = { static_cast<i16>(left), static_cast<i16>(top) },
-        .size = ab->size,
-        .texcoord = ab->texcoord,
+        .size = quadSize,
+        .texcoord = quadTexcoord,
     };
 }
 

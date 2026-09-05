@@ -111,6 +111,7 @@ BITOPERATION
 BKCOLOR
 BKGND
 Bksp
+Blitting
 Blt
 blu
 BLUESCROLL
@@ -239,6 +240,7 @@ CONSOLEENDTASK
 consolegit
 consolehost
 CONSOLEIME
+Consolep
 CONSOLESETFOREGROUND
 consoletaeftemplates
 consoleuwp
@@ -279,6 +281,7 @@ csbiex
 CSHORT
 Cspace
 CSRSS
+csrss
 csrutil
 CSTYLE
 CSwitch
@@ -896,9 +899,11 @@ LOGFONT
 LOGFONTA
 LOGFONTW
 logissue
+LOGPALETTE
 losslessly
 loword
 lparam
+LPBITMAPINFO
 lpch
 LPCPLINFO
 LPCREATESTRUCT
@@ -1078,6 +1083,7 @@ NOACTIVATEKEYBOARDLAYOUT
 NOACTIVATETIP
 NOAPPLYNOW
 NOCLIP
+NOCOLLAPSE
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
@@ -1128,6 +1134,7 @@ nrcs
 NRNW
 NSTATUS
 ntapi
+ntddk
 ntdef
 NTDEV
 ntdll
@@ -1137,6 +1144,7 @@ ntstatus
 nttree
 ntuser
 NTVDM
+ntvdm
 nugetversions
 NUKTA
 nullability
@@ -1196,6 +1204,8 @@ pagedown
 pageup
 PAINTPARAMS
 PAINTSTRUCT
+PALETTEENTRY
+palettized
 PALPC
 pankaj
 parentable
@@ -1631,6 +1641,7 @@ SYSKEYUP
 SYSLIB
 SYSLINK
 SYSMENU
+SYSPAL
 sysparams
 SYSTEMHAND
 SYSTEMMENU
@@ -1798,6 +1809,7 @@ Vanara
 vararg
 vclib
 vcxitems
+vdm
 VERCTRL
 VERTBAR
 VFT
@@ -1974,6 +1986,7 @@ XFG
 XFORM
 XIn
 xorg
+XPDM
 xstyler
 XTPOPSGR
 XTPUSHSGR

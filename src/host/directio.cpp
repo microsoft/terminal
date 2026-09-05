@@ -13,12 +13,16 @@
 #include "misc.h"
 #include "readDataDirect.hpp"
 #include "ApiRoutines.h"
+#include "screenInfo.hpp"
 
 #include "../types/inc/convert.hpp"
 #include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/viewport.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/ProcessHandle.h"
+
+#include <wil/resource.h>
 
 #pragma hdrstop
 
@@ -715,36 +719,288 @@ CATCH_RETURN();
 
 // There used to be a text mode and a graphics mode flag.
 // Text mode was used for regular applications like CMD.exe.
-// Graphics mode was used for bitmap VDM buffers and is no longer supported.
+// Graphics mode was used for bitmap VDM buffers, and was cut out of the
+// modern host for a long time - CONSOLE_GRAPHICS_BUFFER is resurrected below,
+// generalized so any client (not just NTVDM) can request one.
 // OEM console font mode used to represent rewriting the entire buffer into codepage 437 so the renderer could handle it with raster fonts.
 //  But now the entire buffer is always kept in Unicode and the renderer asks for translation when/if necessary for raster fonts only.
-// We keep these definitions here so the API can enforce that the only one we support any longer is the original text mode.
 // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms682122(v=vs.85).aspx
 #define CONSOLE_TEXTMODE_BUFFER 1
-//#define CONSOLE_GRAPHICS_BUFFER 2
+#define CONSOLE_GRAPHICS_BUFFER 2
 //#define CONSOLE_OEMFONT_DISPLAY 4
 
+// The original NT4/2k console server used 0x1F0001 (MUTANT_ALL_ACCESS) here;
+// spelled out explicitly since it isn't universally pulled in by the SDK headers.
+#ifndef MUTANT_ALL_ACCESS
+#define MUTANT_ALL_ACCESS 0x1F0001
+#endif
+
+// Routine Description:
+// - Builds the shared pixel buffer backing a CONSOLE_GRAPHICS_BUFFER screen
+//   buffer. A pagefile-backed section is created and mapped once into this
+//   process (so the renderer can read it) and once directly into the
+//   requesting client's process (so the client can write pixels with zero IPC
+//   per frame), plus a Mutant duplicated into the client so both sides can
+//   synchronize access to the pixel data with nothing but kernel objects.
+//   This is the same mechanism NTVDM's full-screen DOS graphics mode
+//   originally relied on, generalized to any client.
+// Arguments:
+// - Message - The originating create-screen-buffer request; supplies the
+//   client's process and the BITMAPINFO payload describing the desired pixel
+//   format (sent as the message's input buffer, alongside the fixed struct).
+// - a - The fixed portion of the create-screen-buffer request.
+// - graphicsBuffer - Receives the constructed GraphicsBuffer on success.
+// - pixelSize - Receives the buffer's dimensions, in pixels.
+// Return Value:
+// - STATUS_SUCCESS, or an error from the underlying section/mapping/mutant calls.
+[[nodiscard]] static NTSTATUS CreateGraphicsBuffer(_In_ PCONSOLE_API_MSG Message,
+                                                   _In_ PCONSOLE_CREATESCREENBUFFER_MSG a,
+                                                   _Out_ std::unique_ptr<GraphicsBuffer>& graphicsBuffer,
+                                                   _Out_ til::size& pixelSize)
+{
+    // Arbitrary but generous ceilings so a hostile/buggy client can't make us
+    // commit an unreasonable amount of shared memory.
+    constexpr ULONG maxBitmapInfoLength = 64 * 1024;
+    constexpr ULONGLONG maxBitmapImageSize = 256ULL * 1024 * 1024;
+    constexpr LONG maxDimension = 16384;
+
+    if (a->BitmapInfoLength < sizeof(BITMAPINFOHEADER) || a->BitmapInfoLength > maxBitmapInfoLength)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    PVOID inputBuffer{};
+    ULONG inputBufferSize{};
+    auto Status = NTSTATUS_FROM_HRESULT(Message->GetInputBuffer(&inputBuffer, &inputBufferSize));
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    // For a CD_IO_OBJECT_TYPE_NEW_OUTPUT create, GetInputBuffer()'s default
+    // read offset (0) points at the start of the fixed
+    // CD_CREATE_OBJECT_INFORMATION + CONSOLE_CREATESCREENBUFFER_MSG structs
+    // themselves (the same data already available via Information/a) - the
+    // client's actual BITMAPINFO payload was appended after those in the
+    // NtCreateFile EA blob, so skip past them to reach it.
+    constexpr ULONG fixedStructSize = sizeof(CD_CREATE_OBJECT_INFORMATION) + sizeof(CONSOLE_CREATESCREENBUFFER_MSG);
+    if (inputBufferSize < fixedStructSize + a->BitmapInfoLength)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+    const auto bitmapInfoBytes = static_cast<const BYTE*>(inputBuffer) + fixedStructSize;
+
+    // Copy the client's BITMAPINFO (header + optional color table) into our
+    // own storage - both so we're free to normalize it below, and so it
+    // outlives this call (it's retained on the GraphicsBuffer for later
+    // queries, e.g. by the renderer).
+    std::vector<BYTE> bitmapInfoStorage(a->BitmapInfoLength);
+    memcpy(bitmapInfoStorage.data(), bitmapInfoBytes, a->BitmapInfoLength);
+    auto& header = *reinterpret_cast<BITMAPINFOHEADER*>(bitmapInfoStorage.data());
+
+    if (header.biSize < sizeof(BITMAPINFOHEADER) ||
+        header.biPlanes != 1 ||
+        header.biWidth <= 0 || header.biWidth > maxDimension ||
+        header.biHeight == 0 || header.biHeight < -maxDimension || header.biHeight > maxDimension ||
+        (header.biBitCount != 8 && header.biBitCount != 16 && header.biBitCount != 24 && header.biBitCount != 32) ||
+        (a->Usage != DIB_RGB_COLORS && a->Usage != DIB_PAL_COLORS))
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    // For DIB_PAL_COLORS, bmiColors[] is an array of WORD palette indices
+    // (not RGBQUAD) sized by biClrUsed (or 2^biBitCount if unset) - make sure
+    // the client actually sent that many bytes, since the renderer reads
+    // straight from this storage later (GdiEngine::PaintConsoleBitmap).
+    if (a->Usage == DIB_PAL_COLORS && header.biBitCount <= 8)
+    {
+        const ULONG numColorTableEntries = header.biClrUsed != 0 ? header.biClrUsed : (1u << header.biBitCount);
+        const auto requiredLength = static_cast<ULONGLONG>(header.biSize) + static_cast<ULONGLONG>(numColorTableEntries) * sizeof(WORD);
+        if (a->BitmapInfoLength < requiredLength)
+        {
+            return STATUS_INVALID_PARAMETER;
+        }
+    }
+
+    // Match the original implementation: always top-down, always uncompressed.
+    if (header.biHeight > 0)
+    {
+        header.biHeight = -header.biHeight;
+    }
+    header.biCompression = BI_RGB;
+
+    // Don't trust the client's biSizeImage - recompute it ourselves from the
+    // (now validated) width/height/bit depth.
+    const auto strideBytes = ((static_cast<ULONGLONG>(header.biWidth) * header.biBitCount + 31) / 32) * 4;
+    const auto sizeImage64 = strideBytes * static_cast<ULONGLONG>(-header.biHeight);
+    if (sizeImage64 == 0 || sizeImage64 > maxBitmapImageSize)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+    header.biSizeImage = static_cast<ULONG>(sizeImage64);
+
+    const SIZE_T bitmapSize = gsl::narrow_cast<SIZE_T>(sizeImage64);
+
+    wil::unique_handle hSection;
+    LARGE_INTEGER maximumSize;
+    maximumSize.QuadPart = bitmapSize;
+    Status = NtCreateSection(&hSection,
+                             SECTION_ALL_ACCESS,
+                             nullptr,
+                             &maximumSize,
+                             PAGE_READWRITE,
+                             SEC_COMMIT,
+                             nullptr);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    PVOID bitMap = nullptr;
+    auto viewSize = bitmapSize;
+    Status = NtMapViewOfSection(hSection.get(),
+                                GetCurrentProcess(),
+                                &bitMap,
+                                0,
+                                bitmapSize,
+                                nullptr,
+                                &viewSize,
+                                NT_VIEW_UNMAP,
+                                0,
+                                PAGE_READWRITE);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+    auto unmapSelf = wil::scope_exit([&]() noexcept {
+        if (bitMap)
+        {
+            NtUnmapViewOfSection(GetCurrentProcess(), bitMap);
+        }
+    });
+
+    // Duplicate our own handle to the client's process (rather than trusting
+    // one out of the message directly) - this GraphicsBuffer, and thus this
+    // handle, may outlive the specific call that created it.
+    const auto clientProcess = Message->GetProcessHandle();
+    if (!clientProcess)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    wil::unique_handle hClientProcess;
+    Status = NtDuplicateObject(GetCurrentProcess(),
+                               clientProcess->GetRawHandle(),
+                               GetCurrentProcess(),
+                               &hClientProcess,
+                               0,
+                               0,
+                               DUPLICATE_SAME_ACCESS);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    PVOID clientBitMap = nullptr;
+    auto clientViewSize = bitmapSize;
+    Status = NtMapViewOfSection(hSection.get(),
+                                hClientProcess.get(),
+                                &clientBitMap,
+                                0,
+                                bitmapSize,
+                                nullptr,
+                                &clientViewSize,
+                                NT_VIEW_UNMAP,
+                                0,
+                                PAGE_READWRITE);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+    auto unmapClient = wil::scope_exit([&]() noexcept {
+        if (clientBitMap)
+        {
+            NtUnmapViewOfSection(hClientProcess.get(), clientBitMap);
+        }
+    });
+
+    wil::unique_handle hMutex;
+    Status = NtCreateMutant(&hMutex, MUTANT_ALL_ACCESS, nullptr, FALSE);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    HANDLE hClientMutex = nullptr;
+    Status = NtDuplicateObject(GetCurrentProcess(),
+                               hMutex.get(),
+                               hClientProcess.get(),
+                               &hClientMutex,
+                               0,
+                               0,
+                               DUPLICATE_SAME_ACCESS);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    // Everything succeeded - ownership of bitMap/clientBitMap is moving to the
+    // GraphicsBuffer below, so don't unmap them on the way out.
+    unmapSelf.release();
+    unmapClient.release();
+
+    pixelSize = til::size{ header.biWidth, -header.biHeight };
+    graphicsBuffer = std::make_unique<GraphicsBuffer>(std::move(hSection),
+                                                       std::move(hClientProcess),
+                                                       std::move(hMutex),
+                                                       hClientMutex,
+                                                       bitMap,
+                                                       clientBitMap,
+                                                       bitmapSize,
+                                                       std::move(bitmapInfoStorage),
+                                                       a->Usage);
+
+    return STATUS_SUCCESS;
+}
+
 [[nodiscard]] NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
-                                                 _In_ PCONSOLE_API_MSG /*Message*/,
+                                                 _In_ PCONSOLE_API_MSG Message,
                                                  _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                                  _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    // If any buffer type except the one we support is set, it's invalid.
-    if (WI_IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
+    // Exactly one of the two supported buffer kinds must be requested.
+    const auto wantsTextBuffer = WI_IsFlagSet(a->Flags, CONSOLE_TEXTMODE_BUFFER);
+    const auto wantsGraphicsBuffer = WI_IsFlagSet(a->Flags, CONSOLE_GRAPHICS_BUFFER);
+    if (WI_IsAnyFlagSet(a->Flags, ~(CONSOLE_TEXTMODE_BUFFER | CONSOLE_GRAPHICS_BUFFER)) ||
+        wantsTextBuffer == wantsGraphicsBuffer)
     {
-        // We no longer support anything other than a textmode buffer
         return STATUS_INVALID_PARAMETER;
     }
 
     const auto HandleType = ConsoleHandleData::HandleType::Output;
 
     const auto& siExisting = gci.GetActiveOutputBuffer();
-
-    // Create new screen buffer.
-    auto WindowSize = siExisting.GetViewport().Dimensions();
     const auto& existingFont = siExisting.GetCurrentFont();
+
+    // For a text buffer this is the new buffer's window/screen-buffer size, as
+    // before. For a graphics buffer it gets overwritten below with the pixel
+    // dimensions from the client's BITMAPINFO - CreateInstance doesn't need to
+    // know the difference, it just sizes the (otherwise unused, for a graphics
+    // buffer) backing TextBuffer to match.
+    auto WindowSize = siExisting.GetViewport().Dimensions();
+
+    std::unique_ptr<GraphicsBuffer> graphicsBuffer;
+    if (wantsGraphicsBuffer)
+    {
+        const auto Status = CreateGraphicsBuffer(Message, a, graphicsBuffer, WindowSize);
+        if (FAILED_NTSTATUS(Status))
+        {
+            return Status;
+        }
+    }
+
     SCREEN_INFORMATION* ScreenInfo = nullptr;
     auto Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                      existingFont,
@@ -757,6 +1013,11 @@ CATCH_RETURN();
     if (FAILED_NTSTATUS(Status))
     {
         goto Exit;
+    }
+
+    if (wantsGraphicsBuffer)
+    {
+        ScreenInfo->AttachGraphicsBuffer(std::move(graphicsBuffer));
     }
 
     Status = NTSTATUS_FROM_HRESULT(ScreenInfo->AllocateIoHandle(HandleType,
@@ -778,4 +1039,158 @@ Exit:
     }
 
     return Status;
+}
+
+// Routine Description:
+// - ConsolepRegisterVDM's real logic. Registers the calling process as THE
+//   VDM for this console (only one is allowed at a time) and creates a
+//   shared VDM text buffer - the mechanism NTVDM relies on during its own
+//   startup (the RegisterConsoleVDM() call in nt_det.c's initTextSection()).
+//   The older fullscreen hardware-video-state section (GdiFullscreenControl
+//   and the three hardware events) worked through Windows 7 under the XPDM
+//   display driver model, but stopped functioning once WDDM (required for
+//   newer display drivers) replaced it - WDDM's composited model doesn't
+//   support the exclusive/direct hardware access the mechanism relied on.
+//   It was also always #ifdef i386-only in the original source, since there
+//   was no x64 NTVDM to support, so there's nothing to port for this build
+//   regardless of the WDDM issue. NTVDM already tolerates it being absent
+//   gracefully (a->StateLength == 0 means "fullscreen [hardware state] is
+//   disabled in the console"), so this doesn't build it either.
+// - a->RegisterFlags == 0 is the unregister case.
+[[nodiscard]] NTSTATUS RegisterConsoleVdm(_In_ PCONSOLE_API_MSG Message,
+                                          _Inout_ PCONSOLE_REGISTERVDM_MSG a)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    const auto clientProcess = Message->GetProcessHandle();
+    if (!clientProcess)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    if (a->RegisterFlags == 0)
+    {
+        if (!gci.IsVdmRegistered())
+        {
+            return STATUS_ACCESS_DENIED;
+        }
+
+        gci.DetachVdmRegistration();
+        ServiceLocator::LocateGlobals().accessibilityNotifier.ApplicationEnd(clientProcess->dwProcessId);
+
+        return STATUS_SUCCESS;
+    }
+
+    if (gci.IsVdmRegistered())
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    // The original verified the caller was really a VDM process via
+    // NtVdmControl(VdmQueryVdmProcess, ...) here. That's not viable on this
+    // platform - the entire kernel-mode VDM subsystem (NtVdmControl included)
+    // was never ported to x64 Windows, so the call unconditionally returns
+    // STATUS_NOT_IMPLEMENTED there regardless of who's actually calling
+    // (confirmed empirically: 0xC0000002 against a genuine ntvdmx64 caller).
+    // Dropped: the one-VDM-per-console exclusivity is still enforced above
+    // via IsVdmRegistered(), just not a check on the caller's identity/type.
+    wil::unique_handle hClientProcess;
+    auto Status = NtDuplicateObject(GetCurrentProcess(),
+                               clientProcess->GetRawHandle(),
+                               GetCurrentProcess(),
+                               &hClientProcess,
+                               0,
+                               0,
+                               DUPLICATE_SAME_ACCESS);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    // The modern CONSOLE_REGISTERVDM_MSG dropped the old VDMBufferSize IN
+    // field entirely - there's nothing left in the wire message to read a
+    // requested size from. Hardcoded to 80x50 cells at 4 bytes/cell
+    // (char+attr as WORDs each, per the non-i386 branch of the original
+    // SrvRegisterConsoleVDM), matching what NTVDM's own client side always
+    // requests anyway (nt_det.c's initTextSection():
+    // textBufferSize.X = 80; .Y = 50;).
+    constexpr til::size vdmBufferSize{ 80, 50 };
+    constexpr ULONGLONG bufferSize = static_cast<ULONGLONG>(vdmBufferSize.width) * vdmBufferSize.height * 4;
+
+    wil::unique_handle hSection;
+    LARGE_INTEGER maximumSize;
+    maximumSize.QuadPart = static_cast<LONGLONG>(bufferSize);
+    Status = NtCreateSection(&hSection,
+                             SECTION_ALL_ACCESS,
+                             nullptr,
+                             &maximumSize,
+                             PAGE_READWRITE,
+                             SEC_COMMIT,
+                             nullptr);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    PVOID buffer = nullptr;
+    auto viewSize = static_cast<SIZE_T>(bufferSize);
+    Status = NtMapViewOfSection(hSection.get(),
+                                GetCurrentProcess(),
+                                &buffer,
+                                0,
+                                static_cast<SIZE_T>(bufferSize),
+                                nullptr,
+                                &viewSize,
+                                NT_VIEW_UNMAP,
+                                0,
+                                PAGE_READWRITE);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+    auto unmapSelf = wil::scope_exit([&]() noexcept {
+        if (buffer)
+        {
+            NtUnmapViewOfSection(GetCurrentProcess(), buffer);
+        }
+    });
+
+    PVOID clientBuffer = nullptr;
+    auto clientViewSize = static_cast<SIZE_T>(bufferSize);
+    Status = NtMapViewOfSection(hSection.get(),
+                                hClientProcess.get(),
+                                &clientBuffer,
+                                0,
+                                static_cast<SIZE_T>(bufferSize),
+                                nullptr,
+                                &clientViewSize,
+                                NT_VIEW_UNMAP,
+                                0,
+                                PAGE_READWRITE);
+    if (FAILED_NTSTATUS(Status))
+    {
+        return Status;
+    }
+
+    // Everything succeeded - ownership of buffer is moving to the
+    // VdmRegistration below, so don't unmap it on the way out.
+    unmapSelf.release();
+
+    const auto isWow = WI_IsFlagSet(a->RegisterFlags, CONSOLE_REGISTER_WOW);
+    gci.AttachVdmRegistration(std::make_unique<VdmRegistration>(std::move(hClientProcess),
+                                                                 std::move(hSection),
+                                                                 buffer,
+                                                                 clientBuffer,
+                                                                 vdmBufferSize,
+                                                                 isWow));
+
+    // Match the original's "fullscreen hardware state disabled" contract -
+    // see the routine description above.
+    a->StateLength = 0;
+    a->StateBuffer = nullptr;
+    a->VDMBuffer = clientBuffer;
+
+    ServiceLocator::LocateGlobals().accessibilityNotifier.ApplicationStart(clientProcess->dwProcessId);
+
+    return STATUS_SUCCESS;
 }

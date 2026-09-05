@@ -469,17 +469,26 @@ try
     // C. Prepare the engine with additional information before we start drawing.
     RETURN_IF_FAILED(_PrepareRenderInfo(pEngine));
 
-    // 1. Paint Background
-    RETURN_IF_FAILED(_PaintBackground(pEngine));
+    if (_pData->IsConsoleBitmapActive())
+    {
+        // A CONSOLE_GRAPHICS_BUFFER is pixel data, not a character grid - none
+        // of the usual background/text/selection/cursor painting applies.
+        RETURN_IF_FAILED(_PaintConsoleBitmap(pEngine));
+    }
+    else
+    {
+        // 1. Paint Background
+        RETURN_IF_FAILED(_PaintBackground(pEngine));
 
-    // 2. Paint Rows of Text
-    _PaintBufferOutput(pEngine);
+        // 2. Paint Rows of Text
+        _PaintBufferOutput(pEngine);
 
-    // 4. Paint Selection
-    _PaintSelection(pEngine);
+        // 4. Paint Selection
+        _PaintSelection(pEngine);
 
-    // 5. Paint Cursor
-    _PaintCursor(pEngine);
+        // 5. Paint Cursor
+        _PaintCursor(pEngine);
+    }
 
     // 6. Paint window title
     RETURN_IF_FAILED(_PaintTitle(pEngine));
@@ -1022,6 +1031,25 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
 [[nodiscard]] HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->PaintBackground();
+}
+
+// Routine Description:
+// - Paint helper for a CONSOLE_GRAPHICS_BUFFER's pixel data, in place of the
+//   usual background/text/selection/cursor painting.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+[[nodiscard]] HRESULT Renderer::_PaintConsoleBitmap(_In_ IRenderEngine* const pEngine)
+{
+    const auto bitmapInfo = _pData->GetConsoleBitmapInfo();
+    const auto bits = _pData->GetConsoleBitmapBits();
+    if (!bitmapInfo || !bits)
+    {
+        return S_OK;
+    }
+
+    return pEngine->PaintConsoleBitmap(*bitmapInfo, bits, _pData->GetConsoleBitmapUsage(), _pData->GetConsoleBitmapPalette());
 }
 
 // Routine Description:

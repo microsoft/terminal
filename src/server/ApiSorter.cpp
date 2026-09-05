@@ -50,7 +50,11 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer1[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServerWriteConsole, CONSOLE_WRITECONSOLE_MSG, "WriteConsole"),
     CONSOLE_API_DEPRECATED_NO_PARAM(), // ApiDispatchers::ServerConsoleNotifyLastClose
     CONSOLE_API_STRUCT(ApiDispatchers::ServerGetConsoleLangId, CONSOLE_LANGID_MSG, "GetConsoleLangId"),
-    CONSOLE_API_DEPRECATED(CONSOLE_MAPBITMAP_MSG),
+    // ConsolepMapBitmap: kernel32/kernelbase's CreateConsoleScreenBuffer still
+    // issues this as a private follow-up call after creating a
+    // CONSOLE_GRAPHICS_BUFFER buffer, to retrieve the client-mapped bitmap
+    // pointer and its synchronizing Mutant - see ApiDispatchers::ServerMapBitmap.
+    CONSOLE_API_STRUCT(ApiDispatchers::ServerMapBitmap, CONSOLE_MAPBITMAP_MSG, "MapBitmap"),
 };
 
 const CONSOLE_API_DESCRIPTOR ConsoleApiLayer2[] = {
@@ -86,14 +90,28 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServerGetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG, "GetCurrentConsoleFont"),
     CONSOLE_API_DEPRECATED(CONSOLE_SETFONT_MSG),
     CONSOLE_API_DEPRECATED(CONSOLE_SETICON_MSG),
-    CONSOLE_API_DEPRECATED(CONSOLE_INVALIDATERECT_MSG),
+    // ConsolepInvalidateBitmapRect: the client-side InvalidateConsoleDIBits()
+    // API calls this to tell us it wrote new pixels into a CONSOLE_GRAPHICS_BUFFER
+    // and we should repaint - see ApiDispatchers::ServerInvalidateConsoleBitmapRect.
+    CONSOLE_API_STRUCT(ApiDispatchers::ServerInvalidateConsoleBitmapRect, CONSOLE_INVALIDATERECT_MSG, "InvalidateConsoleBitmapRect"),
     CONSOLE_API_DEPRECATED(CONSOLE_VDM_MSG),
     CONSOLE_API_DEPRECATED(CONSOLE_SETCURSOR_MSG),
     CONSOLE_API_DEPRECATED(CONSOLE_SHOWCURSOR_MSG),
     CONSOLE_API_DEPRECATED(CONSOLE_MENUCONTROL_MSG),
-    CONSOLE_API_DEPRECATED(CONSOLE_SETPALETTE_MSG),
+    // ConsolepSetPalette: SetConsolePalette() - the client creates a real
+    // HPALETTE locally and sends the handle value across. GDI's
+    // CreatePalette() returns a handle private to the creating process by
+    // default, so the client is expected to publish it (e.g. by placing it on
+    // the clipboard, which has the side effect of making the handle public)
+    // before calling this. Used for a palettized (DIB_PAL_COLORS)
+    // CONSOLE_GRAPHICS_BUFFER - see ApiDispatchers::ServerSetConsolePalette
+    // and GdiEngine::PaintConsoleBitmap.
+    CONSOLE_API_STRUCT(ApiDispatchers::ServerSetConsolePalette, CONSOLE_SETPALETTE_MSG, "SetConsolePalette"),
     CONSOLE_API_STRUCT(ApiDispatchers::ServerSetConsoleDisplayMode, CONSOLE_SETDISPLAYMODE_MSG, "SetConsoleDisplayMode"),
-    CONSOLE_API_DEPRECATED(CONSOLE_REGISTERVDM_MSG),
+    // ConsolepRegisterVDM: RegisterConsoleVDM() - NTVDM's own startup
+    // (initTextSection() in nt_det.c) calls this before it ever touches
+    // CONSOLE_GRAPHICS_BUFFER; see directio.cpp's RegisterConsoleVdm.
+    CONSOLE_API_STRUCT(ApiDispatchers::ServerRegisterConsoleVDM, CONSOLE_REGISTERVDM_MSG, "RegisterConsoleVDM"),
     CONSOLE_API_DEPRECATED(CONSOLE_GETHARDWARESTATE_MSG),
     CONSOLE_API_DEPRECATED(CONSOLE_SETHARDWARESTATE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServerGetConsoleDisplayMode, CONSOLE_GETDISPLAYMODE_MSG, "GetConsoleDisplayMode"),

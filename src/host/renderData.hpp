@@ -25,6 +25,12 @@ public:
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
 
+    bool IsConsoleBitmapActive() const noexcept override;
+    const BITMAPINFO* GetConsoleBitmapInfo() const noexcept override;
+    const void* GetConsoleBitmapBits() const noexcept override;
+    ULONG GetConsoleBitmapUsage() const noexcept override;
+    HPALETTE GetConsoleBitmapPalette() const noexcept override;
+
     Microsoft::Console::Render::TimerDuration GetBlinkInterval() noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     bool IsGridLineDrawingAllowed() noexcept override;

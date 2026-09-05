@@ -34,6 +34,7 @@ namespace ApiDispatchers
     [[nodiscard]] HRESULT ServerReadConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerWriteConsole(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerMapBitmap(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
 #pragma endregion
 
 #pragma region L2
@@ -63,9 +64,12 @@ namespace ApiDispatchers
 
 #pragma region L3
     [[nodiscard]] HRESULT ServerGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerInvalidateConsoleBitmapRect(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerSetConsolePalette(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
+    [[nodiscard]] HRESULT ServerRegisterConsoleVDM(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);
     [[nodiscard]] HRESULT ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const pbReplyPending);

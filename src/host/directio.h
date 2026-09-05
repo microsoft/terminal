@@ -35,3 +35,6 @@ class SCREEN_INFORMATION;
                                                  _In_ PCONSOLE_API_MSG Message,
                                                  _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                                  _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);
+
+[[nodiscard]] NTSTATUS RegisterConsoleVdm(_In_ PCONSOLE_API_MSG Message,
+                                          _Inout_ PCONSOLE_REGISTERVDM_MSG a);

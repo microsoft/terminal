@@ -76,6 +76,13 @@ HRESULT RenderEngineBase::PaintImageSlice(const ImageSlice& /*imageSlice*/,
     return S_FALSE;
 }
 
+// Default: not implemented by this engine yet. Renderer::_PaintConsoleBitmap
+// treats S_FALSE as "nothing to do" rather than an error.
+HRESULT RenderEngineBase::PaintConsoleBitmap(const BITMAPINFO& /*bitmapInfo*/, const void* const /*bits*/, const ULONG /*dibUsage*/, HPALETTE /*hPalette*/) noexcept
+{
+    return S_FALSE;
+}
+
 // Method Description:
 // - By default, no one should need continuous redraw. It ruins performance
 //   in terms of CPU, memory, and battery life to just paint forever.

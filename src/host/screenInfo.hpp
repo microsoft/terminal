@@ -26,7 +26,67 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 #include "../server/ObjectHeader.h"
 
+#include <wil/resource.h>
+
 class ConversionAreaInfo; // forward decl window. circular reference
+
+// Backs a CONSOLE_GRAPHICS_BUFFER screen buffer: a shared, pagefile-backed
+// section holding a raw DIB (top-down, BI_RGB), mapped once into conhost's own
+// process for rendering (Bits()) and once directly into the requesting client's
+// process (ClientBits()) so the client can blit pixels with zero IPC per frame.
+// A Mutant is duplicated into the client alongside it so both sides can
+// synchronize access using only kernel objects, no round-trips through the
+// console driver. This mirrors the mechanism NTVDM originally used for
+// full-screen DOS graphics mode, generalized so any client can request one.
+class GraphicsBuffer
+{
+public:
+    GraphicsBuffer(wil::unique_handle hSection,
+                   wil::unique_handle hClientProcess,
+                   wil::unique_handle hMutex,
+                   HANDLE hClientMutex,
+                   PVOID bitMap,
+                   PVOID clientBitMap,
+                   size_t bitmapSize,
+                   std::vector<BYTE> bitmapInfoStorage,
+                   ULONG dibUsage) noexcept;
+    ~GraphicsBuffer();
+
+    GraphicsBuffer(const GraphicsBuffer&) = delete;
+    GraphicsBuffer& operator=(const GraphicsBuffer&) = delete;
+
+    const BITMAPINFO* BitmapInfo() const noexcept;
+    PVOID Bits() const noexcept;
+    PVOID ClientBits() const noexcept;
+    HANDLE ClientMutex() const noexcept;
+    size_t BitmapSize() const noexcept;
+
+    // DIB_RGB_COLORS or DIB_PAL_COLORS, from the client's original create call
+    // (CONSOLE_CREATESCREENBUFFER_MSG.Usage) - tells a render engine how to
+    // interpret BitmapInfo()'s color table, and which iUsage to pass a GDI
+    // blit function.
+    ULONG DibUsage() const noexcept;
+
+    // Set via ConsolepSetPalette (ApiDispatchers::ServerSetConsolePalette).
+    // Stored as received - the client owns its lifetime, we never delete it.
+    // The client is responsible for making the handle usable across
+    // processes before sending it (GDI's CreatePalette() returns a handle
+    // private to the creating process by default).
+    void SetPalette(HPALETTE hPalette) noexcept;
+    HPALETTE Palette() const noexcept;
+
+private:
+    wil::unique_handle _hSection;
+    wil::unique_handle _hClientProcess;
+    wil::unique_handle _hMutex;
+    HANDLE _hClientMutex; // Owned by the client process; not ours to close.
+    PVOID _bitMap; // Mapped into conhost's own process.
+    PVOID _clientBitMap; // Mapped into the client's process.
+    size_t _bitmapSize;
+    std::vector<BYTE> _bitmapInfoStorage; // Holds a BITMAPINFOHEADER (+ optional color table).
+    ULONG _dibUsage;
+    HPALETTE _hPalette = nullptr; // Not owned - see SetPalette.
+};
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
@@ -74,6 +134,15 @@ public:
     [[nodiscard]] static NTSTATUS CreateInstance(til::size windowSize, FontInfo fontInfo, til::size screenBufferSize, TextAttribute defaultAttributes, TextAttribute popupAttributes, UINT cursorSize, SCREEN_INFORMATION** screen);
     static void s_InsertScreenBuffer(SCREEN_INFORMATION* screenInfo);
     static void s_RemoveScreenBuffer(SCREEN_INFORMATION* screenInfo);
+
+    // Graphics (CONSOLE_GRAPHICS_BUFFER) buffers
+    // NOTE: the buffer is still created via CreateInstance() with the desired
+    // pixel dimensions passed as the window/screen buffer size - this method
+    // only attaches the pixel storage on top of the resulting instance.
+    void AttachGraphicsBuffer(std::unique_ptr<GraphicsBuffer> graphicsBuffer) noexcept;
+    bool IsGraphicsBuffer() const noexcept;
+    GraphicsBuffer* GetGraphicsBuffer() noexcept;
+    const GraphicsBuffer* GetGraphicsBuffer() const noexcept;
 
     // Buffer
     TextBuffer& GetTextBuffer() noexcept;
@@ -201,6 +270,11 @@ private:
 
     Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
     std::unique_ptr<TextBuffer> _textBuffer{ nullptr };
+    // Non-null only for a CONSOLE_GRAPHICS_BUFFER instance. The underlying
+    // _textBuffer above is still allocated (sized to match the pixel
+    // dimensions) so the rest of this class's invariants keep holding; it is
+    // simply not what gets rendered for this buffer. See AttachGraphicsBuffer.
+    std::unique_ptr<GraphicsBuffer> _graphicsBuffer{ nullptr };
     ConhostInternalGetSet _api{ *this };
     std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     // Specifies which coordinates of the screen buffer are visible in the

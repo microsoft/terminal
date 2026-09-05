@@ -203,6 +203,14 @@ public:
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
 
+    // A Terminal is never backed by a CONSOLE_GRAPHICS_BUFFER - that's a
+    // conhost/SCREEN_INFORMATION-only concept - so these are always inert.
+    bool IsConsoleBitmapActive() const noexcept override;
+    const BITMAPINFO* GetConsoleBitmapInfo() const noexcept override;
+    const void* GetConsoleBitmapBits() const noexcept override;
+    ULONG GetConsoleBitmapUsage() const noexcept override;
+    HPALETTE GetConsoleBitmapPalette() const noexcept override;
+
     // These methods are defined in TerminalRenderData.cpp
     Microsoft::Console::Render::TimerDuration GetBlinkInterval() noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;

@@ -216,6 +216,31 @@ void Terminal::UnlockConsole() noexcept
     _readWriteLock.unlock();
 }
 
+bool Terminal::IsConsoleBitmapActive() const noexcept
+{
+    return false;
+}
+
+const BITMAPINFO* Terminal::GetConsoleBitmapInfo() const noexcept
+{
+    return nullptr;
+}
+
+const void* Terminal::GetConsoleBitmapBits() const noexcept
+{
+    return nullptr;
+}
+
+ULONG Terminal::GetConsoleBitmapUsage() const noexcept
+{
+    return DIB_RGB_COLORS;
+}
+
+HPALETTE Terminal::GetConsoleBitmapPalette() const noexcept
+{
+    return nullptr;
+}
+
 bool Terminal::IsUiaDataInitialized() const noexcept
 {
     // GH#11135: Windows Terminal needs to create and return an automation peer

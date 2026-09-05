@@ -47,6 +47,8 @@ namespace Microsoft::Console::Render
                                               const til::CoordType targetRow,
                                               const til::CoordType viewportLeft) noexcept override;
 
+        [[nodiscard]] HRESULT PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* bits, ULONG dibUsage, HPALETTE hPalette) noexcept override;
+
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;

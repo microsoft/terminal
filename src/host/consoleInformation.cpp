@@ -19,6 +19,72 @@
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
+#pragma region VdmRegistration
+
+VdmRegistration::VdmRegistration(wil::unique_handle hClientProcess,
+                                 wil::unique_handle hBufferSection,
+                                 PVOID buffer,
+                                 PVOID clientBuffer,
+                                 til::size bufferSize,
+                                 bool isWow) noexcept :
+    _hClientProcess{ std::move(hClientProcess) },
+    _hBufferSection{ std::move(hBufferSection) },
+    _buffer{ buffer },
+    _clientBuffer{ clientBuffer },
+    _bufferSize{ bufferSize },
+    _isWow{ isWow }
+{
+}
+
+VdmRegistration::~VdmRegistration()
+{
+    if (_clientBuffer && _hClientProcess)
+    {
+        LOG_IF_NTSTATUS_FAILED(NtUnmapViewOfSection(_hClientProcess.get(), _clientBuffer));
+    }
+    if (_buffer)
+    {
+        LOG_IF_NTSTATUS_FAILED(NtUnmapViewOfSection(GetCurrentProcess(), _buffer));
+    }
+}
+
+bool VdmRegistration::IsWow() const noexcept
+{
+    return _isWow;
+}
+
+PVOID VdmRegistration::Buffer() const noexcept
+{
+    return _buffer;
+}
+
+til::size VdmRegistration::BufferSize() const noexcept
+{
+    return _bufferSize;
+}
+
+void CONSOLE_INFORMATION::AttachVdmRegistration(std::unique_ptr<VdmRegistration> vdm) noexcept
+{
+    _vdmRegistration = std::move(vdm);
+}
+
+void CONSOLE_INFORMATION::DetachVdmRegistration() noexcept
+{
+    _vdmRegistration.reset();
+}
+
+bool CONSOLE_INFORMATION::IsVdmRegistered() const noexcept
+{
+    return _vdmRegistration != nullptr;
+}
+
+VdmRegistration* CONSOLE_INFORMATION::GetVdmRegistration() noexcept
+{
+    return _vdmRegistration.get();
+}
+
+#pragma endregion
+
 bool CONSOLE_INFORMATION::IsConsoleLocked() const noexcept
 {
     return _lock.is_locked();

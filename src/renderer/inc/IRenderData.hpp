@@ -58,6 +58,18 @@ namespace Microsoft::Console::Render
         virtual void LockConsole() noexcept = 0;
         virtual void UnlockConsole() noexcept = 0;
 
+        // True when the active screen buffer is a CONSOLE_GRAPHICS_BUFFER
+        // (pixel-addressable, not a character grid) - GetConsoleBitmapInfo()/
+        // GetConsoleBitmapBits() are only valid to call when this is true.
+        virtual bool IsConsoleBitmapActive() const noexcept = 0;
+        virtual const BITMAPINFO* GetConsoleBitmapInfo() const noexcept = 0;
+        virtual const void* GetConsoleBitmapBits() const noexcept = 0;
+        // DIB_RGB_COLORS or DIB_PAL_COLORS - see GraphicsBuffer::DibUsage().
+        virtual ULONG GetConsoleBitmapUsage() const noexcept = 0;
+        // Set via ConsolepSetPalette; null if the client never called it (or
+        // GetConsoleBitmapUsage() isn't DIB_PAL_COLORS, in which case it's unused).
+        virtual HPALETTE GetConsoleBitmapPalette() const noexcept = 0;
+
         // This block used to be the original IRenderData.
         virtual TimerDuration GetBlinkInterval() noexcept = 0; // Return ::zero() or ::max() for no blink.
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;

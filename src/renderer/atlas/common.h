@@ -461,6 +461,38 @@ namespace Microsoft::Console::Render::Atlas
         i32 targetWidth = 0;
         // This is used to track unused bitmaps, so that we can free them up.
         bool active = false;
+
+        // Set for content that changes every time revision changes (e.g. a live
+        // CONSOLE_GRAPHICS_BUFFER video frame), as opposed to Sixel-style inline
+        // images where a given revision's pixel content is assumed immutable and
+        // cacheable forever. A backend must not treat a revision bump here as
+        // "brand new, allocate fresh atlas space" - BackendD3D::_drawBitmap
+        // instead keeps reusing the same atlas slot (backendAtlasTexcoord/Size)
+        // across frames and just re-uploads into it, using backendAllocated to
+        // know whether that slot still exists (it's invalidated on an atlas
+        // reset - see BackendD3D::_resetGlyphAtlas). Without this, ever-changing
+        // content would need brand new atlas space every single frame, with the
+        // previous frame's space never reclaimed, growing the shared glyph atlas
+        // (which text glyphs live in too) without bound until allocation
+        // eventually fails outright.
+        bool alwaysRefresh = false;
+        // Only meaningful when alwaysRefresh is true: this row's on-screen
+        // position/size directly in swap-chain pixels (RenderingPayload::s->
+        // targetSize), bypassing the targetOffset/targetWidth * cellSize math
+        // the Sixel-style path above uses. For a CONSOLE_GRAPHICS_BUFFER the
+        // "columns" concept doesn't apply - conhost feeds AtlasEngine a
+        // viewportCellCount that's actually the buffer's pixel dimensions in
+        // disguise (see SCREEN_INFORMATION::GetScreenFontSize()), which is
+        // NOT the same thing as how many real font cells fit in the window,
+        // so multiplying it by the real font's cellSize would place the quad
+        // far outside the actual swap chain.
+        i32 targetPixelLeft = 0;
+        i32 targetPixelTop = 0;
+        i32 targetPixelRight = 0;
+        i32 targetPixelBottom = 0;
+        bool backendAllocated = false;
+        u16x2 backendAtlasSize{};
+        u16x2 backendAtlasTexcoord{};
     };
 
     struct ShapedRow

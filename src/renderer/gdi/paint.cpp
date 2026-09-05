@@ -725,6 +725,128 @@ try
 CATCH_RETURN();
 
 // Routine Description:
+// - Paints a CONSOLE_GRAPHICS_BUFFER's raw pixel data, stretched to fill the
+//   whole client area, in place of the usual character-grid painting.
+// Arguments:
+// - bitmapInfo - Format of the pixel data. Always top-down/BI_RGB - see
+//   directio.cpp's CreateGraphicsBuffer, which normalizes it that way.
+// - bits - Pointer to the pixel data (conhost's own mapped view of the shared
+//   section backing the buffer - see GraphicsBuffer::Bits()).
+// Return Value:
+// - S_OK or suitable GDI HRESULT error.
+[[nodiscard]] HRESULT GdiEngine::PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* const bits, const ULONG dibUsage, HPALETTE hPalette) noexcept
+try
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, bits);
+
+    RECT rcClient;
+    RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, &rcClient)));
+    const auto szClient = _GetRectSize(&rcClient);
+
+    const auto srcWidth = bitmapInfo.bmiHeader.biWidth;
+    const auto srcHeight = bitmapInfo.bmiHeader.biHeight < 0 ? -bitmapInfo.bmiHeader.biHeight : bitmapInfo.bmiHeader.biHeight;
+
+    RETURN_HR_IF(S_OK, srcWidth <= 0 || srcHeight <= 0 || szClient.width <= 0 || szClient.height <= 0);
+
+    // Resolve palette indices to real RGB ourselves in software rather than
+    // relying on GDI's SelectPalette/RealizePalette + StretchDIBits(DIB_PAL_COLORS)
+    // path. Both approaches work once the client's HPALETTE is actually usable
+    // here (CreatePalette() returns a handle private to the creating process by
+    // default - the client is expected to publish it, e.g. via the clipboard,
+    // before calling SetConsolePalette; see "doc/specs/#246 - Console Graphics
+    // Buffer.md" for why. A private handle fails GetPaletteEntries/SelectPalette
+    // identically with ERROR_INVALID_HANDLE). Doing the resolution here directly
+    // means we don't depend on DC palette-selection state surviving between calls.
+    std::vector<BYTE> rgbBuffer;
+    BITMAPINFO rgbInfo{};
+    auto pBlitInfo = &bitmapInfo;
+    auto pBlitBits = bits;
+
+    if (dibUsage == DIB_PAL_COLORS && hPalette && bitmapInfo.bmiHeader.biBitCount == 8)
+    {
+        std::vector<PALETTEENTRY> entries(256);
+        const auto numEntries = GetPaletteEntries(hPalette, 0, 256, entries.data());
+        if (numEntries > 0)
+        {
+            // bmiColors[] (WORD entries, not RGBQUAD, for DIB_PAL_COLORS)
+            // immediately follows the header - directio.cpp's
+            // CreateGraphicsBuffer guarantees it's present and large enough
+            // whenever Usage is DIB_PAL_COLORS and biBitCount <= 8.
+            const auto colorTable = reinterpret_cast<const WORD*>(reinterpret_cast<const BYTE*>(&bitmapInfo) + bitmapInfo.bmiHeader.biSize);
+
+            const auto srcStride = ((srcWidth * 8 + 31) / 32) * 4;
+            const auto dstStride = ((srcWidth * 24 + 31) / 32) * 4;
+            rgbBuffer.resize(static_cast<size_t>(dstStride) * srcHeight);
+
+            const auto srcBytes = static_cast<const BYTE*>(bits);
+            for (LONG y = 0; y < srcHeight; y++)
+            {
+                const auto srcRow = srcBytes + static_cast<size_t>(y) * srcStride;
+                auto dstRow = rgbBuffer.data() + static_cast<size_t>(y) * dstStride;
+                for (LONG x = 0; x < srcWidth; x++)
+                {
+                    auto paletteIndex = static_cast<size_t>(colorTable[srcRow[x]]);
+                    if (paletteIndex >= static_cast<size_t>(numEntries))
+                    {
+                        paletteIndex = 0;
+                    }
+                    const auto& e = entries[paletteIndex];
+                    dstRow[x * 3 + 0] = e.peBlue;
+                    dstRow[x * 3 + 1] = e.peGreen;
+                    dstRow[x * 3 + 2] = e.peRed;
+                }
+            }
+
+            rgbInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            rgbInfo.bmiHeader.biWidth = srcWidth;
+            rgbInfo.bmiHeader.biHeight = -srcHeight;
+            rgbInfo.bmiHeader.biPlanes = 1;
+            rgbInfo.bmiHeader.biBitCount = 24;
+            rgbInfo.bmiHeader.biCompression = BI_RGB;
+            rgbInfo.bmiHeader.biSizeImage = static_cast<DWORD>(rgbBuffer.size());
+
+            pBlitInfo = &rgbInfo;
+            pBlitBits = rgbBuffer.data();
+        }
+    }
+
+    // dibUsage==DIB_PAL_COLORS means bmiColors[] is an array of WORD palette
+    // indices, not RGBQUAD - if the conversion above didn't run (no palette
+    // set yet, e.g. the very first paint can land before the client's first
+    // SetConsolePalette call; or an unsupported bit depth), pBlitInfo/Bits
+    // are still the raw, un-converted source. Blitting that as DIB_RGB_COLORS
+    // would have GDI misinterpret the index/WORD data as RGBQUAD/pixel
+    // bytes - garbage, not a graceful degradation. Skip this frame instead;
+    // the next InvalidateConsoleDIBits (or ConsolepSetPalette) triggers a
+    // proper repaint once a palette is available.
+    RETURN_HR_IF(S_OK, dibUsage == DIB_PAL_COLORS && pBlitInfo == &bitmapInfo);
+
+    const auto result = StretchDIBits(_hdcMemoryContext,
+                                      0,
+                                      0,
+                                      szClient.width,
+                                      szClient.height,
+                                      0,
+                                      0,
+                                      srcWidth,
+                                      srcHeight,
+                                      pBlitBits,
+                                      pBlitInfo,
+                                      DIB_RGB_COLORS,
+                                      SRCCOPY);
+    RETURN_HR_IF(E_FAIL, result == 0 || result == GDI_ERROR);
+
+    // StartPaint() already captured _psInvalidData.rcPaint for this frame from
+    // _rcInvalid, and calling _InvalidateRect() here would only affect the
+    // *next* frame's capture (see ScrollFrame/EndPaint). Force this frame's
+    // EndPaint() to copy the whole client area, since we just redrew all of it.
+    _psInvalidData.rcPaint = rcClient;
+
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
 // - options - Parameters that affect the way that the cursor is drawn

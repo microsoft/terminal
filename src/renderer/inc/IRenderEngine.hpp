@@ -81,6 +81,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF gridlineColor, COLORREF underlineColor, size_t cchLine, til::point coordTarget) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintImageSlice(const ImageSlice& imageSlice, til::CoordType targetRow, til::CoordType viewportLeft) noexcept = 0;
+        // Paints a CONSOLE_GRAPHICS_BUFFER's raw pixel data, stretched to fill the
+        // whole viewport, in place of the usual character-grid painting. Engines
+        // that don't yet implement this should return S_FALSE (see RenderEngineBase).
+        // dibUsage is DIB_RGB_COLORS or DIB_PAL_COLORS; hPalette is set (via
+        // ConsolepSetPalette) only when dibUsage is DIB_PAL_COLORS; otherwise null.
+        [[nodiscard]] virtual HRESULT PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* bits, ULONG dibUsage, HPALETTE hPalette) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(const til::rect& rect) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;

@@ -16,6 +16,105 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
 
+#pragma region Graphics Buffer
+
+GraphicsBuffer::GraphicsBuffer(wil::unique_handle hSection,
+                               wil::unique_handle hClientProcess,
+                               wil::unique_handle hMutex,
+                               HANDLE hClientMutex,
+                               PVOID bitMap,
+                               PVOID clientBitMap,
+                               size_t bitmapSize,
+                               std::vector<BYTE> bitmapInfoStorage,
+                               ULONG dibUsage) noexcept :
+    _hSection{ std::move(hSection) },
+    _hClientProcess{ std::move(hClientProcess) },
+    _hMutex{ std::move(hMutex) },
+    _hClientMutex{ hClientMutex },
+    _bitMap{ bitMap },
+    _clientBitMap{ clientBitMap },
+    _bitmapSize{ bitmapSize },
+    _bitmapInfoStorage{ std::move(bitmapInfoStorage) },
+    _dibUsage{ dibUsage }
+{
+}
+
+GraphicsBuffer::~GraphicsBuffer()
+{
+    // _hClientMutex is deliberately not closed here - it's a handle value that
+    // only means something in the client's own handle table; the client owns it.
+    if (_clientBitMap && _hClientProcess)
+    {
+        LOG_IF_NTSTATUS_FAILED(NtUnmapViewOfSection(_hClientProcess.get(), _clientBitMap));
+    }
+    if (_bitMap)
+    {
+        LOG_IF_NTSTATUS_FAILED(NtUnmapViewOfSection(GetCurrentProcess(), _bitMap));
+    }
+}
+
+const BITMAPINFO* GraphicsBuffer::BitmapInfo() const noexcept
+{
+    return reinterpret_cast<const BITMAPINFO*>(_bitmapInfoStorage.data());
+}
+
+PVOID GraphicsBuffer::Bits() const noexcept
+{
+    return _bitMap;
+}
+
+PVOID GraphicsBuffer::ClientBits() const noexcept
+{
+    return _clientBitMap;
+}
+
+HANDLE GraphicsBuffer::ClientMutex() const noexcept
+{
+    return _hClientMutex;
+}
+
+size_t GraphicsBuffer::BitmapSize() const noexcept
+{
+    return _bitmapSize;
+}
+
+ULONG GraphicsBuffer::DibUsage() const noexcept
+{
+    return _dibUsage;
+}
+
+void GraphicsBuffer::SetPalette(HPALETTE hPalette) noexcept
+{
+    _hPalette = hPalette;
+}
+
+HPALETTE GraphicsBuffer::Palette() const noexcept
+{
+    return _hPalette;
+}
+
+void SCREEN_INFORMATION::AttachGraphicsBuffer(std::unique_ptr<GraphicsBuffer> graphicsBuffer) noexcept
+{
+    _graphicsBuffer = std::move(graphicsBuffer);
+}
+
+bool SCREEN_INFORMATION::IsGraphicsBuffer() const noexcept
+{
+    return _graphicsBuffer != nullptr;
+}
+
+GraphicsBuffer* SCREEN_INFORMATION::GetGraphicsBuffer() noexcept
+{
+    return _graphicsBuffer.get();
+}
+
+const GraphicsBuffer* SCREEN_INFORMATION::GetGraphicsBuffer() const noexcept
+{
+    return _graphicsBuffer.get();
+}
+
+#pragma endregion
+
 #pragma region Construct_Destruct
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
@@ -478,7 +577,16 @@ til::size SCREEN_INFORMATION::GetScreenFontSize() const
     // (which is used almost everywhere around the code as * and / calls) should just be 1,1 so those operations will do
     // effectively nothing.
     til::size coordRet = { 1, 1 };
-    if (ServiceLocator::LocateGlobals().pRender != nullptr)
+
+    // A graphics buffer's "size in chars"/"window size" is really just its
+    // pixel dimensions (see CreateGraphicsBuffer/ConsoleCreateScreenBuffer in
+    // directio.cpp - the pixel size is reused as the character-cell window
+    // size so the rest of the buffer machinery doesn't need to know the
+    // difference). Keep the font-size scale factor at 1,1 here so all the
+    // "* coordFont"/"/ coordFont" math throughout the code (window rect
+    // sizing in particular) treats those dimensions as pixels, not as a
+    // character grid to be blown up by the real font's cell size.
+    if (ServiceLocator::LocateGlobals().pRender != nullptr && !IsGraphicsBuffer())
     {
         coordRet = GetCurrentFont().GetSize();
     }

@@ -10,6 +10,12 @@
 #include "../host/stream.h"
 #include "../host/srvinit.h"
 #include "../host/cmdline.h"
+#include "../host/handle.h"
+#include "../host/screenInfo.hpp"
+
+#include "../interactivity/inc/ServiceLocator.hpp"
+
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Assumes that it will find <m> in the calling environment.
 #define TraceConsoleAPICallWithOrigin(ApiName, ...)                  \
@@ -1221,6 +1227,149 @@ constexpr T saturate(auto val)
         TraceLoggingUInt32(a->NumButtons, "NumButtons"));
 
     return S_OK;
+}
+
+// Routine Description:
+// - Client-side InvalidateConsoleDIBits() lands here. The client (NTVDM or
+//   otherwise) writes pixels directly into its mapped view of the shared
+//   section - see GraphicsBuffer::ClientBits() - bypassing every normal
+//   console write API, so this is the only signal we ever get that the
+//   buffer changed and a repaint is due.
+[[nodiscard]] HRESULT ApiDispatchers::ServerInvalidateConsoleBitmapRect(_Inout_ CONSOLE_API_MSG* const m,
+                                                                        _Inout_ BOOL* const /*pbReplyPending*/)
+{
+    const auto a = &m->u.consoleMsgL3.InvalidateConsoleBitmapRect;
+
+    const auto pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pObj;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    if (pObj->IsGraphicsBuffer())
+    {
+        // The renderer currently redraws a graphics buffer's entire pixel data
+        // on every frame it paints (Renderer::_PaintConsoleBitmap /
+        // GdiEngine::PaintConsoleBitmap), rather than tracking sub-rects, so
+        // all that's needed here is to get a frame painted at all. a->Rect (in
+        // pixels here) is available for a future partial-redraw optimization
+        // but isn't consulted yet.
+        if (const auto pRender = ServiceLocator::LocateGlobals().pRender)
+        {
+            pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+
+    // NTVDM's own windowed text-mode rendering also calls
+    // InvalidateConsoleDIBits, but against its normal (non-graphics) output
+    // handle. It writes character+attribute cells directly into the shared
+    // RegisterConsoleVDM buffer rather than through WriteConsoleOutput, and
+    // this is the only signal telling us those changes happened. There's no
+    // separate rendering path for this: the invalidated rectangle gets
+    // translated into real CHAR_INFO cells and fed through the same
+    // WriteConsoleOutputW machinery any other client's writes already go
+    // through, so the existing text renderer just works.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto vdm = gci.GetVdmRegistration();
+    RETURN_HR_IF(E_INVALIDARG, !vdm);
+
+    const auto vdmSize = vdm->BufferSize();
+    const auto vdmView = Microsoft::Console::Types::Viewport::FromDimensions({ 0, 0 }, vdmSize);
+    const auto requestRectangle = vdmView.Clamp(Microsoft::Console::Types::Viewport::FromInclusive(til::wrap_small_rect(a->Rect)));
+    RETURN_HR_IF(S_OK, !requestRectangle.IsValid());
+
+    // {BYTE char (OEM codepage); BYTE attributes; BYTE reserved; BYTE reserved;}
+    // per cell, row-major, stride == vdmSize.width - this is the layout
+    // NTVDM's own client side writes into the shared buffer.
+    const auto cells = static_cast<const BYTE*>(vdm->Buffer());
+    std::vector<CHAR_INFO> charInfo(static_cast<size_t>(requestRectangle.Width()) * requestRectangle.Height());
+
+    size_t i = 0;
+    for (auto y = requestRectangle.Top(); y <= requestRectangle.BottomInclusive(); y++)
+    {
+        const auto row = cells + (static_cast<size_t>(y) * vdmSize.width * 4);
+        for (auto x = requestRectangle.Left(); x <= requestRectangle.RightInclusive(); x++)
+        {
+            const auto cell = row + (static_cast<size_t>(x) * 4);
+            WCHAR wch = L' ';
+            MultiByteToWideChar(gci.OutputCP, 0, reinterpret_cast<LPCSTR>(cell), 1, &wch, 1);
+            charInfo[i].Char.UnicodeChar = wch;
+            charInfo[i].Attributes = cell[1];
+            i++;
+        }
+    }
+
+    auto writtenRectangle = Microsoft::Console::Types::Viewport::Empty();
+    RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(*pObj, charInfo, requestRectangle.Width(), requestRectangle, writtenRectangle));
+
+    if (const auto pRender = ServiceLocator::LocateGlobals().pRender)
+    {
+        pRender->TriggerRedrawAll();
+    }
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Client-side SetConsolePalette() lands here. The value the client sends
+//   (its own local CreatePalette() handle) is usable here as-is; we never own
+//   or delete it, the client's lifetime management applies. Note that GDI's
+//   CreatePalette() returns a handle private to the creating process by
+//   default - the client is expected to have published it (e.g. via the
+//   clipboard, which has the side effect of making the handle public) before
+//   calling this, or later uses of the handle here (GetPaletteEntries, etc.)
+//   will fail.
+[[nodiscard]] HRESULT ApiDispatchers::ServerSetConsolePalette(_Inout_ CONSOLE_API_MSG* const m,
+                                                              _Inout_ BOOL* const /*pbReplyPending*/)
+{
+    const auto a = &m->u.consoleMsgL3.SetConsolePalette;
+
+    const auto pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    SCREEN_INFORMATION* pObj;
+    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    const auto graphicsBuffer = pObj->GetGraphicsBuffer();
+    RETURN_HR_IF_NULL(E_INVALIDARG, graphicsBuffer);
+
+    graphicsBuffer->SetPalette(a->hPalette);
+
+    if (const auto pRender = ServiceLocator::LocateGlobals().pRender)
+    {
+        pRender->TriggerRedrawAll();
+    }
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Client-side RegisterConsoleVDM() lands here - NTVDM's own startup calls
+//   this (initTextSection() in nt_det.c) before it ever touches
+//   CreateConsoleScreenBuffer/CONSOLE_GRAPHICS_BUFFER. Unlike other L3
+//   handlers this doesn't resolve a per-call object handle - "which console"
+//   is implicit in this architecture (one conhost process = one console
+//   session), matching how the original's ApiPreamble(a->ConsoleHandle, ...)
+//   became unnecessary once console handles stopped being multiplexed across
+//   a shared csrss.exe. The real logic lives in directio.cpp's
+//   RegisterConsoleVdm, alongside the other NT-native section/mapping calls.
+[[nodiscard]] HRESULT ApiDispatchers::ServerRegisterConsoleVDM(_Inout_ CONSOLE_API_MSG* const m,
+                                                               _Inout_ BOOL* const /*pbReplyPending*/)
+{
+    const auto a = &m->u.consoleMsgL3.RegisterConsoleVDM;
+
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    return HRESULT_FROM_NT(RegisterConsoleVdm(m, a));
 }
 
 [[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleFontSize(_Inout_ CONSOLE_API_MSG* const m,

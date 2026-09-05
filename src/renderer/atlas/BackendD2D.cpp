@@ -826,12 +826,30 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
     wil::com_ptr<ID2D1Bitmap> bitmap;
     THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
 
-    const i32 cellWidth = p.s->font->cellSize.x;
-    const i32 cellHeight = p.s->font->cellSize.y;
-    const auto left = (b.targetOffset - p.scrollOffsetX) * cellWidth;
-    const auto right = left + b.targetWidth * cellWidth;
-    const auto top = y * cellHeight;
-    const auto bottom = top + cellHeight;
+    i32 left;
+    i32 right;
+    i32 top;
+    i32 bottom;
+    if (b.alwaysRefresh)
+    {
+        // See the identical comment in BackendD3D::_drawBitmap: for a
+        // CONSOLE_GRAPHICS_BUFFER, targetOffset/targetWidth (columns) and
+        // viewportCellCount are not what they seem - use the pixel-space
+        // fields AtlasEngine::PaintConsoleBitmap computed directly instead.
+        left = b.targetPixelLeft;
+        right = b.targetPixelRight;
+        top = b.targetPixelTop;
+        bottom = b.targetPixelBottom;
+    }
+    else
+    {
+        const i32 cellWidth = p.s->font->cellSize.x;
+        const i32 cellHeight = p.s->font->cellSize.y;
+        left = (b.targetOffset - p.scrollOffsetX) * cellWidth;
+        right = left + b.targetWidth * cellWidth;
+        top = y * cellHeight;
+        bottom = top + cellHeight;
+    }
 
     const D2D1_RECT_F rectF{
         static_cast<f32>(left),

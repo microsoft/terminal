@@ -256,7 +256,7 @@ namespace Microsoft::Console::Render::Atlas
         static AtlasGlyphEntry* _drawGlyphAllocateEntry(const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         static void _splitDoubleHeightGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, AtlasGlyphEntry* glyphEntry);
         ATLAS_ATTR_COLD void _drawGridlines(const RenderingPayload& p, u16 y);
-        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y);
+        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, ShapedRow* row, u16 y);
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);

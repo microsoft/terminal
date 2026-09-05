@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <array>
+
 #include <til/unicode.h>
 
 #include "Backend.h"
@@ -541,6 +543,150 @@ try
     const auto from = gsl::narrow_cast<u16>(clamp<til::CoordType>(x << shift, 0, _p.s->viewportCellCount.x - 1));
     const auto to = gsl::narrow_cast<u16>(clamp<size_t>((x + cchLine) << shift, from, _p.s->viewportCellCount.x));
     _p.rows[y]->gridLineRanges.emplace_back(lines, from, to);
+    return S_OK;
+}
+CATCH_RETURN()
+
+// Renders a CONSOLE_GRAPHICS_BUFFER (see directio.cpp/GdiEngine::PaintConsoleBitmap)
+// by piggybacking on the row-bitmap mechanism PaintImageSlice() below already
+// feeds to the backends for inline (Sixel-style) images: each visible row gets
+// a horizontal slice of the source DIB as that row's ShapedRow::bitmap, sized
+// to span the full viewport width. Both backends already know how to
+// composite an arbitrary-resolution Bitmap::source into a
+// cellWidth*targetWidth x cellHeight destination rect via D2D's DrawBitmap
+// (see BackendD3D::_drawBitmap/BackendD2D::_drawBitmap), so no new backend or
+// shader code is needed - just slicing/format-converting the source pixels.
+[[nodiscard]] HRESULT AtlasEngine::PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* const bits, const ULONG dibUsage, HPALETTE hPalette) noexcept
+try
+{
+    if (!bits)
+    {
+        return S_OK;
+    }
+
+    const auto& header = bitmapInfo.bmiHeader;
+    const auto srcWidth = header.biWidth;
+    const auto srcHeight = header.biHeight < 0 ? -header.biHeight : header.biHeight;
+    if (srcWidth <= 0 || srcHeight <= 0)
+    {
+        return S_OK;
+    }
+
+    const til::CoordType viewportRows = std::max<til::CoordType>(1, _p.s->viewportCellCount.y);
+
+    // Resolve DIB_PAL_COLORS (8bpp palette-indexed) into a 256-entry BGRA
+    // lookup table - same technique, and same reason, as
+    // GdiEngine::PaintConsoleBitmap: CreatePalette() returns a handle private
+    // to the creating process, so this fails with ERROR_INVALID_HANDLE until
+    // the client publishes it (e.g. via the clipboard - see
+    // "doc/specs/#246 - Console Graphics Buffer.md" for why).
+    std::array<u32, 256> palette{};
+    const auto usePalette = dibUsage == DIB_PAL_COLORS && header.biBitCount == 8;
+    if (usePalette)
+    {
+        std::array<PALETTEENTRY, 256> entries{};
+        const auto numEntries = GetPaletteEntries(hPalette, 0, 256, entries.data());
+        if (numEntries == 0)
+        {
+            // Not resolvable yet - skip this frame rather than draw garbage
+            // index values as color. The next InvalidateConsoleDIBits (or
+            // ConsolepSetPalette) retries.
+            return S_OK;
+        }
+        for (UINT i = 0; i < numEntries; ++i)
+        {
+            const auto& e = entries[i];
+            palette[i] = 0xff000000u | (static_cast<u32>(e.peRed) << 16) | (static_cast<u32>(e.peGreen) << 8) | e.peBlue;
+        }
+        for (auto i = numEntries; i < 256u; ++i)
+        {
+            palette[i] = palette[0];
+        }
+    }
+    else if (header.biBitCount != 24 && header.biBitCount != 32)
+    {
+        // Unsupported bit depth for the direct-RGB path.
+        return S_OK;
+    }
+
+    const size_t srcStride = ((static_cast<size_t>(srcWidth) * header.biBitCount + 31) / 32) * 4;
+    const auto srcBytes = static_cast<const BYTE*>(bits);
+    const auto revision = ++_consoleBitmapRevision;
+
+    // conhost feeds us a viewportCellCount that, for a graphics buffer, is
+    // actually the buffer's pixel dimensions in disguise (see
+    // SCREEN_INFORMATION::GetScreenFontSize() - the same trick that made the
+    // *window* size out to the right physical pixels). That's NOT the same
+    // thing as how many of our own font's cells fit on screen, so we must not
+    // multiply it by our real font's cellSize to get a target size (that
+    // would place the quad far outside the actual swap chain). Use the real
+    // swap-chain pixel size instead, and slice it into viewportRows pixel
+    // bands the same proportional way the source is sliced below.
+    const auto targetW = static_cast<til::CoordType>(_p.s->targetSize.x);
+    const auto targetH = static_cast<til::CoordType>(_p.s->targetSize.y);
+
+    for (til::CoordType y = 0; y < viewportRows; ++y)
+    {
+        const auto row = _p.rows[y];
+        auto& b = row->bitmap;
+
+        const auto dstY0 = static_cast<til::CoordType>((static_cast<int64_t>(y) * targetH) / viewportRows);
+        const auto dstY1 = static_cast<til::CoordType>((static_cast<int64_t>(y + 1) * targetH) / viewportRows);
+
+        const auto srcY0 = static_cast<LONG>((static_cast<int64_t>(y) * srcHeight) / viewportRows);
+        const auto srcY1 = static_cast<LONG>((static_cast<int64_t>(y + 1) * srcHeight) / viewportRows);
+        const auto bandHeight = std::max<LONG>(1, srcY1 - srcY0);
+        const auto bandPixels = static_cast<size_t>(srcWidth) * static_cast<size_t>(bandHeight);
+
+        if (b.source.size() != bandPixels)
+        {
+            b.source = Buffer<u32, 32>{ bandPixels };
+        }
+
+        for (LONG line = 0; line < bandHeight; ++line)
+        {
+            const auto srcRow = srcBytes + static_cast<size_t>(srcY0 + line) * srcStride;
+            const auto dstRow = b.source.data() + static_cast<size_t>(line) * static_cast<size_t>(srcWidth);
+
+            if (usePalette)
+            {
+                for (LONG x = 0; x < srcWidth; ++x)
+                {
+                    dstRow[x] = palette[srcRow[x]];
+                }
+            }
+            else if (header.biBitCount == 24)
+            {
+                for (LONG x = 0; x < srcWidth; ++x)
+                {
+                    const auto p3 = srcRow + static_cast<size_t>(x) * 3;
+                    dstRow[x] = 0xff000000u | (static_cast<u32>(p3[2]) << 16) | (static_cast<u32>(p3[1]) << 8) | p3[0];
+                }
+            }
+            else // 32bpp DIB_RGB_COLORS
+            {
+                const auto p4 = reinterpret_cast<const u32*>(srcRow);
+                for (LONG x = 0; x < srcWidth; ++x)
+                {
+                    dstRow[x] = 0xff000000u | (p4[x] & 0x00ffffffu);
+                }
+            }
+        }
+
+        b.sourceSize = { srcWidth, bandHeight };
+        b.active = true;
+        b.alwaysRefresh = true;
+        b.revision = revision;
+        b.targetPixelLeft = 0;
+        b.targetPixelRight = targetW;
+        b.targetPixelTop = dstY0;
+        b.targetPixelBottom = std::max(dstY0 + 1, dstY1);
+
+        row->dirtyTop = b.targetPixelTop;
+        row->dirtyBottom = b.targetPixelBottom;
+    }
+
+    _p.MarkAllAsDirty();
     return S_OK;
 }
 CATCH_RETURN()

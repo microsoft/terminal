@@ -57,6 +57,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
                                               const til::CoordType targetRow,
                                               const til::CoordType viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* bits, ULONG dibUsage, HPALETTE hPalette) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;

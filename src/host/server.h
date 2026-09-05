@@ -26,6 +26,7 @@ Revision History:
 #include "../server/WaitQueue.h"
 
 #include <til/ticket_lock.h>
+#include <wil/resource.h>
 
 // clang-format off
 // Flags flags
@@ -68,6 +69,37 @@ Revision History:
 
 class COOKED_READ_DATA;
 class CommandHistory;
+
+// Console-wide VDM registration state - see ConsolepRegisterVDM
+// (ApiDispatchers::ServerRegisterConsoleVDM / directio.cpp's
+// RegisterConsoleVdm). Only one VDM may be registered per console at a time,
+// unlike CONSOLE_GRAPHICS_BUFFER screen buffers, of which there can be many.
+class VdmRegistration
+{
+public:
+    VdmRegistration(wil::unique_handle hClientProcess,
+                    wil::unique_handle hBufferSection,
+                    PVOID buffer,
+                    PVOID clientBuffer,
+                    til::size bufferSize,
+                    bool isWow) noexcept;
+    ~VdmRegistration();
+
+    VdmRegistration(const VdmRegistration&) = delete;
+    VdmRegistration& operator=(const VdmRegistration&) = delete;
+
+    bool IsWow() const noexcept;
+    PVOID Buffer() const noexcept;
+    til::size BufferSize() const noexcept;
+
+private:
+    wil::unique_handle _hClientProcess;
+    wil::unique_handle _hBufferSection;
+    PVOID _buffer; // Mapped into conhost's own process.
+    PVOID _clientBuffer; // Mapped into the VDM's process.
+    til::size _bufferSize;
+    bool _isWow;
+};
 
 class CONSOLE_INFORMATION :
     public Settings,
@@ -149,6 +181,13 @@ public:
 
     RenderData renderData;
 
+    // VDM registration (ConsolepRegisterVDM) - see directio.cpp's
+    // RegisterConsoleVdm for how a VdmRegistration actually gets built.
+    void AttachVdmRegistration(std::unique_ptr<VdmRegistration> vdm) noexcept;
+    void DetachVdmRegistration() noexcept;
+    bool IsVdmRegistered() const noexcept;
+    VdmRegistration* GetVdmRegistration() noexcept;
+
 private:
     til::recursive_ticket_lock _lock;
 
@@ -164,6 +203,8 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     MidiAudio _midiAudio;
+
+    std::unique_ptr<VdmRegistration> _vdmRegistration;
 };
 
 #define CONSOLE_STATUS_WAIT ((HRESULT)0xC0030001)

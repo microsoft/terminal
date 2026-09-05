@@ -44,6 +44,7 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice, til::CoordType targetRow, til::CoordType viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintConsoleBitmap(const BITMAPINFO& bitmapInfo, const void* bits, ULONG dibUsage, HPALETTE hPalette) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
@@ -125,6 +126,10 @@ namespace Microsoft::Console::Render::Atlas
 
         std::unique_ptr<IBackend> _b;
         RenderingPayload _p;
+        // Bumped on every PaintConsoleBitmap() call so each frame's per-row
+        // Bitmap::revision is treated as "new" by the backends' atlas caches
+        // (0 is reserved to mean "empty" - see Bitmap::revision in common.h).
+        u64 _consoleBitmapRevision = 0;
 
         struct ApiState
         {
