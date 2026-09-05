@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "TermControl.h"
 
+#include <DefaultSettings.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
@@ -2746,16 +2747,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                         int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
+        // Floor at MINIMUM_VISIBLE_CELLS so wt --size 1,1 / initialCols:1 cannot
+        // open a 1-cell viewport (GH#19996).
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
         const auto cols = static_cast<float>(std::max(commandlineCols > 0 ?
                                                           commandlineCols :
                                                           settings.InitialCols(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
         const auto rows = static_cast<float>(std::max(commandlineRows > 0 ?
                                                           commandlineRows :
                                                           settings.InitialRows(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2847,8 +2850,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - a size containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const winrt::Windows::Foundation::Size& sizeInChars)
     {
-        const auto cols = ::base::saturated_cast<int32_t>(sizeInChars.Width);
-        const auto rows = ::base::saturated_cast<int32_t>(sizeInChars.Height);
+        const auto cols = std::max(::base::saturated_cast<int32_t>(sizeInChars.Width), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(::base::saturated_cast<int32_t>(sizeInChars.Height), MINIMUM_VISIBLE_CELLS);
         const auto fontSize = _core.FontSize();
         const auto scrollState = _core.Settings().ScrollState();
         const auto padding = _core.Settings().Padding();
@@ -2889,20 +2892,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the absolute minimum size that this control can be resized to and
-    //   still have 1x1 character visible. This includes the space needed for
+    //   still have 2x2 characters visible. This includes the space needed for
     //   the scrollbar and the padding.
+    //   2x2 is the VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell
+    //   viewport can hang TextBuffer::Reflow on a wide glyph (GH#19996).
     // Arguments:
     // - <none>
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
-    //   have a visible character.
+    //   have a usable character grid.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSizeInDips();
-            auto width = fontSize.Width;
-            auto height = fontSize.Height;
+            auto width = fontSize.Width * MINIMUM_VISIBLE_CELLS;
+            auto height = fontSize.Height * MINIMUM_VISIBLE_CELLS;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {

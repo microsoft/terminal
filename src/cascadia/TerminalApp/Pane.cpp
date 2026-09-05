@@ -2849,13 +2849,12 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
-//   have 1x1 character visible, in each of its children. If we're a leaf, we'll
-//   include the space needed for borders _within_ us.
+//   satisfy each child's MinimumSize. If we're a leaf, we'll include the
+//   space needed for borders _within_ us.
 // Arguments:
 // - <none>
 // Return Value:
-// - The minimum size that this pane can be resized to and still have a visible
-//   character.
+// - The minimum size that this pane can be resized to and still fit its content.
 Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())

@@ -414,12 +414,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
-            const auto width = vp.Width();
-            const auto height = vp.Height();
+            const til::size viewportSize{ Utils::ClampToShortMax(vp.Width(), MINIMUM_VISIBLE_CELLS),
+                                          Utils::ClampToShortMax(vp.Height(), MINIMUM_VISIBLE_CELLS) };
 
             if (_connection)
             {
-                _connection.Resize(height, width);
+                _connection.Resize(viewportSize.height, viewportSize.width);
             }
 
             if (_owningHwnd != 0)
@@ -429,10 +429,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     conpty.ReparentWindow(_owningHwnd);
                 }
             }
-
-            // Override the default width and height to match the size of the swapChainPanel
-            const til::size viewportSize{ Utils::ClampToShortMax(width, 1),
-                                          Utils::ClampToShortMax(height, 1) };
 
             // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
             _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
@@ -1228,10 +1224,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto cx = gsl::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
         auto cy = gsl::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
 
-        // Don't actually resize so small that a single character wouldn't fit
-        // in either dimension. The buffer really doesn't like being size 0.
-        cx = std::max(cx, _actualFont.GetSize().width);
-        cy = std::max(cy, _actualFont.GetSize().height);
+        // Don't resize below the visible minimum. A 1-cell viewport can hang
+        // TextBuffer::Reflow on a wide glyph (GH#19996). The buffer also
+        // doesn't like being size 0.
+        const auto cell = _actualFont.GetSize();
+        cx = std::max(cx, cell.width * MINIMUM_VISIBLE_CELLS);
+        cy = std::max(cy, cell.height * MINIMUM_VISIBLE_CELLS);
 
         // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
@@ -1247,7 +1245,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
-        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        const auto cols = std::max(vp.Width(), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(vp.Height(), MINIMUM_VISIBLE_CELLS);
+        const auto hr = _terminal->UserResize({ cols, rows });
         if (FAILED(hr) || hr == S_FALSE)
         {
             return;
@@ -1255,7 +1255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_connection)
         {
-            _connection.Resize(vp.Height(), vp.Width());
+            _connection.Resize(rows, cols);
         }
 
         // TermControl will call Search() once the OutputIdle even fires after 100ms.

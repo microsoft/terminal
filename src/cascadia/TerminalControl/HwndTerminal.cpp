@@ -434,10 +434,10 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
     const auto viewInPixels = Viewport::FromDimensions({}, windowSize);
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-    // Guard against resizing the window to 0 columns/rows, which the text buffer classes don't really support.
+    // Guard against resizing below the visible minimum (GH#19996).
     auto size = vp.Dimensions();
-    size.width = std::max(size.width, 1);
-    size.height = std::max(size.height, 1);
+    size.width = std::max(size.width, MINIMUM_VISIBLE_CELLS);
+    size.height = std::max(size.height, MINIMUM_VISIBLE_CELLS);
 
     // If this function succeeds with S_FALSE, then the terminal didn't
     //      actually change size. No need to notify the connection of this
