@@ -781,8 +781,12 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
 
     const auto vkey = gsl::narrow_cast<uint32_t>(msg.wParam);
     const auto scanCode = gsl::narrow_cast<uint8_t>(msg.lParam >> 16);
+    // Bit 24 of lParam indicates an extended key (e.g. RightAlt/RightCtrl).
+    // We need to forward it, so that the key event can be translated to an
+    // INPUT_RECORD with the ENHANCED_KEY flag set (GH#18120).
+    const bool extended = (msg.lParam & 0x01000000) != 0;
     const bool keyDown = (msg.message & 1) == 0;
-    window->OnDirectKeyEvent(vkey, scanCode, keyDown);
+    window->OnDirectKeyEvent(vkey, scanCode, extended, keyDown);
 }
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)

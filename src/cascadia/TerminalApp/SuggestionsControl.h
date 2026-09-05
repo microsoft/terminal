@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetCommands(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command>& actions);
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down);
 
         void SelectNextItem(const bool moveDown);
 
