@@ -1372,9 +1372,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - withControlSequences: if enabled, the copied plain text contains color/style ANSI escape codes from the selection
     // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
     //             if we should defer which formats are copied to the global setting
+    // - suppressWhitespaceOnly: don't raise a clipboard event if the selected plain text is empty or only whitespace
     bool ControlCore::CopySelectionToClipboard(bool singleLine,
                                                bool withControlSequences,
-                                               const CopyFormat formats)
+                                               const CopyFormat formats,
+                                               const bool suppressWhitespaceOnly)
     {
         ::Microsoft::Terminal::Core::Terminal::TextCopyData payload;
         {
@@ -1392,6 +1394,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // extract text from buffer
             // RetrieveSelectedTextFromBuffer will lock while it's reading
             payload = _terminal->RetrieveSelectedTextFromBuffer(singleLine, withControlSequences, copyHtml, copyRtf);
+        }
+
+        if (suppressWhitespaceOnly &&
+            std::all_of(payload.plainText.cbegin(), payload.plainText.cend(), [](const wchar_t ch) {
+                return ch <= L' ';
+            }))
+        {
+            return false;
         }
 
         WriteToClipboard.raise(
