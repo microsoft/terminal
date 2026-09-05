@@ -18,6 +18,35 @@ using namespace WEX::Common;
 
 namespace SettingsModelUnitTests
 {
+    // Shared inbox settings blob used by the GH#11457 fragment-origin tests below.
+    static constexpr std::string_view s_inboxSettings{ R"({
+        "schemes": [
+            {
+                "background": "#0C0C0C",
+                "black": "#0C0C0C",
+                "blue": "#0037DA",
+                "brightBlack": "#767676",
+                "brightBlue": "#3B78FF",
+                "brightCyan": "#61D6D6",
+                "brightGreen": "#16C60C",
+                "brightPurple": "#B4009E",
+                "brightRed": "#E74856",
+                "brightWhite": "#F2F2F2",
+                "brightYellow": "#F9F1A5",
+                "cursorColor": "#FFFFFF",
+                "cyan": "#3A96DD",
+                "foreground": "#CCCCCC",
+                "green": "#13A10E",
+                "name": "Campbell",
+                "purple": "#881798",
+                "red": "#C50F1F",
+                "selectionBackground": "#FFFFFF",
+                "white": "#CCCCCC",
+                "yellow": "#C19C00"
+            }
+        ]
+    })" };
+
     class ColorSchemeTests : public JsonTestClass
     {
         TEST_CLASS(ColorSchemeTests);
@@ -30,6 +59,10 @@ namespace SettingsModelUnitTests
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles);
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionWithFragments);
         TEST_METHOD(LayerColorSchemesWithUserOwnedMultipleCollisions);
+
+        TEST_METHOD(IncompleteFragmentSchemeReferencedByUserWarns);
+        TEST_METHOD(BrokenSchemeReferencedByFragmentProfileIsSilent);
+        TEST_METHOD(UserOverrideOfInboxColorSchemeTypoWarns);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -1044,6 +1077,202 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(rgb(0x11, 0x11, 0x11), scheme2->Foreground());
         VERIFY_ARE_EQUAL(rgb(0x11, 0x11, 0x11), scheme2->Background());
         VERIFY_ARE_EQUAL(Model::OriginTag::InBox, scheme2->Origin());
+    }
+
+    // GH#11457 case (b): a profile in the *user's own* settings.json references a color
+    // scheme that a fragment defined incompletely (missing colors). The user can fix this
+    // by editing their own reference (or their own copy of the scheme), so this must keep
+    // warning -- this is precisely the scenario #11457 was filed about.
+    void ColorSchemeTests::IncompleteFragmentSchemeReferencedByUserWarns()
+    {
+        // This fragment scheme is missing "cyan", so it is incomplete and gets rejected.
+        static constexpr std::string_view fragment{ R"({
+            "schemes": [
+                {
+                    "name": "FragmentIncomplete",
+                    "foreground": "#F2F2F2",
+                    "background": "#000000",
+                    "black": "#000000",
+                    "red": "#CC0000",
+                    "green": "#4E9A06",
+                    "yellow": "#C4A000",
+                    "blue": "#3465A4",
+                    "purple": "#75507B",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753",
+                    "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234",
+                    "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF",
+                    "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2",
+                    "brightWhite": "#EEEEEC"
+                }
+            ]
+        })" };
+
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "colorScheme": "FragmentIncomplete"
+                }
+            ]
+        })" };
+
+        SettingsLoader loader{ userSettings, s_inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(L"TestFragment", {}, fragment);
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // The incomplete fragment scheme should raise the incomplete warning, and it should
+        // NOT be misreported as an unknown scheme.
+        auto foundIncomplete = false;
+        auto foundUnknown = false;
+        for (const auto& warning : settings->Warnings())
+        {
+            if (warning == winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::IncompleteColorScheme)
+            {
+                foundIncomplete = true;
+            }
+            if (warning == winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::UnknownColorScheme)
+            {
+                foundUnknown = true;
+            }
+        }
+        VERIFY_IS_TRUE(foundIncomplete);
+        VERIFY_IS_FALSE(foundUnknown);
+    }
+
+    // GH#11457 cases (c) and (d): a profile contributed BY a fragment references a broken
+    // scheme. The user cannot edit either file, so a warning here would be inescapable.
+    // We must stay completely silent.
+    //
+    // Note that the fragment profile does not survive into _allProfiles as itself -- it is
+    // merged into a user-owned child that FinalizeLayering() stamps OriginTag::User. This
+    // test is what proves we resolve the origin through the inheritance graph rather than
+    // off the leaf profile.
+    void ColorSchemeTests::BrokenSchemeReferencedByFragmentProfileIsSilent()
+    {
+        // (c) an incomplete scheme (missing "cyan") plus a profile referencing it, and
+        // (d) a second profile referencing a scheme that exists nowhere at all.
+        static constexpr std::string_view fragment{ R"({
+            "schemes": [
+                {
+                    "name": "FragmentIncomplete",
+                    "foreground": "#F2F2F2", "background": "#000000",
+                    "black": "#000000", "red": "#CC0000", "green": "#4E9A06",
+                    "yellow": "#C4A000", "blue": "#3465A4", "purple": "#75507B",
+                    "white": "#D3D7CF",
+                    "brightBlack": "#555753", "brightRed": "#EF2929",
+                    "brightGreen": "#8AE234", "brightYellow": "#FCE94F",
+                    "brightBlue": "#729FCF", "brightPurple": "#AD7FA8",
+                    "brightCyan": "#34E2E2", "brightWhite": "#EEEEEC"
+                }
+            ],
+            "profiles": [
+                { "name": "fragmentProfileIncomplete", "colorScheme": "FragmentIncomplete" },
+                { "name": "fragmentProfileMissing",    "colorScheme": "DoesNotExistAnywhere" }
+            ]
+        })" };
+
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [ { "name": "profile0" } ]
+        })" };
+
+        SettingsLoader loader{ userSettings, s_inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(L"TestFragment", {}, fragment);
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // The fragment profiles really did make it into the settings...
+        VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
+        // ...and produced no warnings whatsoever. This is a pure negative control: the
+        // positive control (that a genuinely-unresolvable/user-owned broken reference still
+        // warns) is covered independently by UserOverrideOfInboxColorSchemeTypoWarns, so we
+        // don't dilute this test with a second concern -- `foundUnknownScheme` in
+        // _validateAllSchemesExist() is a single bool accumulated across every profile, so
+        // mixing a real warning into this test would make it indistinguishable from a
+        // regression that lets a fragment-suppressed reference through.
+        VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
+    }
+
+    // GH#11457 regression for the leaf-vs-parent origin bug: an InBox profile sets a valid
+    // colorScheme, and the user's own settings.json overrides the *same* profile (matched by
+    // guid, so SettingsLoader::_addUserProfileParent() makes the InBox profile a parent of
+    // the user's) with a misspelled colorScheme name. The user's own layer -- the leaf --
+    // is the one that actually determines the effective (broken) name, so this must still warn.
+    //
+    // IInheritable's public <NAME>OverrideSource() only walks *parents* and never inspects
+    // the leaf (see IInheritable.h); if AppearanceConfig::ColorSchemeNameOrigin() trusted a
+    // non-null override source without first checking whether the leaf itself set the
+    // value, it would misattribute this to the InBox parent and silently swallow the
+    // user's typo.
+    void ColorSchemeTests::UserOverrideOfInboxColorSchemeTypoWarns()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "Campbell" }
+            ],
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                }
+            ]
+        })" };
+
+        // Guid matches the InBox profile above, so this is layered as a child of it --
+        // not a brand-new, unrelated profile.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                { "name": "Windows PowerShell", "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "colorScheme": "NoSuchScheme" }
+            ]
+        })" };
+
+        SettingsLoader loader{ userSettings, inboxSettings };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        loader.FixupUserSettings();
+        const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
+
+        // Guards against a silent guid-matching regression: if it broke, the user profile
+        // would stop layering onto the InBox one and would show up as a second, unrelated
+        // profile instead, degrading this test into a duplicate of TestInvalidColorSchemeName.
+        VERIFY_ARE_EQUAL(1u, settings->AllProfiles().Size());
+
+        auto foundUnknown = false;
+        for (const auto& warning : settings->Warnings())
+        {
+            if (warning == winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::UnknownColorScheme)
+            {
+                foundUnknown = true;
+            }
+        }
+        VERIFY_IS_TRUE(foundUnknown);
     }
 
 }

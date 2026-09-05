@@ -131,6 +131,10 @@
     <value>Found a profile with an invalid "colorScheme". Defaulting that profile to the default colors. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="IncompleteColorSchemeText" xml:space="preserve">
+    <value>Found a profile that references an incomplete color scheme. A color scheme with that "name" exists, but it doesn't define all of its colors, so it was ignored. Add the missing colors to that scheme, or point the profile at a different one.</value>
+    <comment>{Locked="\"name\""}</comment>
+  </data>
   <data name="NoProfilesText" xml:space="preserve">
     <value>No profiles were found in your settings.</value>
   </data>
