@@ -698,6 +698,14 @@ void AtlasEngine::_handleSettingsUpdate()
     const auto fontChanged = _p.s->font != _api.s->font;
     const auto cellCountChanged = _p.s->viewportCellCount != _api.s->viewportCellCount;
 
+    // GH#20269: The _recreate*() calls below read _p.s, so it must be advanced first, but they
+    // also allocate and may throw. Roll _p.s back on failure so that the next StartPaint() call
+    // retries the update, otherwise we'd keep painting against buffers that were never rebuilt.
+    auto previousSettings = _p.s;
+    auto restoreSettings = wil::scope_exit([&]() noexcept {
+        _p.s = std::move(previousSettings);
+    });
+
     _p.s = _api.s;
 
     if (targetChanged)
@@ -716,6 +724,8 @@ void AtlasEngine::_handleSettingsUpdate()
     }
 
     _api.invalidatedRows = invalidatedRowsAll;
+
+    restoreSettings.release();
 }
 
 void AtlasEngine::_recreateFontDependentResources()
