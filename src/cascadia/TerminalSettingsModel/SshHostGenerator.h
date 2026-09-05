@@ -34,5 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static bool _tryFindSshExePath(std::wstring& sshExePath) noexcept;
         static bool _tryParseConfigKeyValue(const std::wstring_view& line, std::wstring& key, std::wstring& value) noexcept;
         static void _getHostNamesFromConfigFile(const std::wstring_view& configPath, std::vector<std::wstring>& hostNames) noexcept;
+        static void _processIncludeDirective(const std::filesystem::path& configDir, const std::wstring_view& includePattern, std::vector<std::wstring>& hostNames) noexcept;
+        static bool _matchesPattern(const std::wstring_view& filename, const std::wstring_view& pattern) noexcept;
     };
 };
