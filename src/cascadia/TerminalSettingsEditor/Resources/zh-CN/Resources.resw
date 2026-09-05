@@ -1798,11 +1798,11 @@
     <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
-    <value>是，删除密钥绑定</value>
+    <value>是，删除按键绑定</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
   </data>
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>是否确实要删除此密钥绑定？</value>
+    <value>是否确实要删除此按键绑定？</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
@@ -1814,7 +1814,7 @@
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>键弦无效。请输入有效的密钥弦。</value>
+    <value>按键组合无效。请输入有效的按键组合。</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
