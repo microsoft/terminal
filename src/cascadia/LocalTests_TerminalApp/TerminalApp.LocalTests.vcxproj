@@ -41,6 +41,7 @@
   <ItemGroup>
     <ClCompile Include="CommandlineTest.cpp" />
     <ClCompile Include="SettingsTests.cpp" />
+    <ClCompile Include="SettingsEditorTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
 	<ClCompile Include="FilteredCommandTests.cpp" />
     <ClCompile Include="pch.cpp">
