@@ -57,10 +57,23 @@ namespace
         ExitProcess(1);
     }
 
-    void WaitForKey(const wchar_t* prompt)
+    // Switches to the text buffer to show a prompt, then waits for a key -
+    // for use before/between graphics buffers exist, or once one is done
+    // with and about to be torn down.
+    void PromptOnText(const wchar_t* prompt)
     {
         SetConsoleActiveScreenBuffer(g_hText);
         wprintf(L"\n%s\n", prompt);
+        _getch();
+    }
+
+    // Waits for a key without switching away from whichever buffer is
+    // currently active, so a just-drawn graphics buffer stays visible while
+    // waiting - printing the prompt would corrupt the pixel content, so it
+    // goes to the window title instead.
+    void WaitOnGraphics(const wchar_t* prompt)
+    {
+        SetConsoleTitleW(prompt);
         _getch();
     }
 
@@ -130,7 +143,7 @@ namespace
 
     void TestPalettizedGraphicsBuffer()
     {
-        WaitForKey(L"Press any key to test an 8bpp, palette-indexed CONSOLE_GRAPHICS_BUFFER (diagonal color-bar pattern)...");
+        PromptOnText(L"Press any key to test an 8bpp, palette-indexed CONSOLE_GRAPHICS_BUFFER (diagonal color-bar pattern)...");
 
         constexpr LONG width = 320, height = 200;
         auto bitmapInfo = MakeBitmapInfo(width, height, 8);
@@ -177,7 +190,7 @@ namespace
             Fail(L"InvalidateConsoleDIBits(full rect)");
         }
 
-        WaitForKey(L"Now redrawing just the top-left quadrant and invalidating only that rect, to test partial/dirty-rect updates...");
+        WaitOnGraphics(L"8bpp color bars showing - press any key to redraw the top-left quadrant only");
 
         for (LONG y = 0; y < height / 2; y++)
         {
@@ -189,7 +202,9 @@ namespace
         SMALL_RECT quadrant{ 0, 0, static_cast<SHORT>(width / 2 - 1), static_cast<SHORT>(height / 2 - 1) };
         pInvalidateConsoleDIBits(hBuf, &quadrant);
 
-        WaitForKey(L"8bpp palette test done - press any key to move on to the 32bpp true-color test.");
+        WaitOnGraphics(L"Top-left quadrant redrawn (inverted) - rest unchanged if dirty-rect works - press any key to continue");
+
+        PromptOnText(L"8bpp palette test done - press any key to move on to the 32bpp true-color test.");
 
         DeleteObject(hPalette);
         CloseHandle(hBuf);
@@ -197,6 +212,8 @@ namespace
 
     void TestTrueColorGraphicsBuffer()
     {
+        PromptOnText(L"Press any key to test a 32bpp true-color CONSOLE_GRAPHICS_BUFFER (RGB gradient, no palette)...");
+
         constexpr LONG width = 320, height = 200;
         auto bitmapInfo = MakeBitmapInfo(width, height, 32);
 
@@ -240,8 +257,9 @@ namespace
             Fail(L"InvalidateConsoleDIBits(full rect)");
         }
 
-        WaitForKey(L"32bpp true-color test done (no palette involved) - press any key to finish.");
+        WaitOnGraphics(L"32bpp RGB gradient showing - press any key to finish");
 
+        SetConsoleActiveScreenBuffer(g_hText);
         CloseHandle(hBuf);
     }
 }
