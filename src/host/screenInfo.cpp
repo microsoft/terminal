@@ -1402,6 +1402,19 @@ NT_CATCH_RETURN()
         if (fDoScrollBarUpdate)
         {
             UpdateScrollBars();
+
+            // The window's outer pixel rect may have been sized to reserve
+            // room for a scroll bar based on the *previous* buffer size (see
+            // Window::s_CalculateWindowRect's buffer-vs-window comparison).
+            // UpdateScrollBars() above only hides/shows the scroll bar
+            // control itself - it doesn't shrink or grow the window to match,
+            // so without this, a buffer resize that removes (or newly
+            // creates) a size mismatch leaves stale, unpainted space where a
+            // scroll bar used to be reserved. Callers that already trigger a
+            // window resize of their own right after this (the
+            // fDoScrollBarUpdate == false cases) skip this to avoid posting
+            // it twice.
+            PostUpdateWindowSize();
         }
         ScreenBufferSizeChange(coordNewScreenSize);
     }
