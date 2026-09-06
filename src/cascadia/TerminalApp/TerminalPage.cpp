@@ -5639,11 +5639,11 @@ namespace winrt::TerminalApp::implementation
 
             subMenu.Text(label);
 
+            // A MenuFlyoutSubItem can't be clicked, so the automatic split is an explicit entry.
             WUX::Controls::MenuFlyoutItem autoItem{};
             autoItem.Text(splitPaneAutomaticText);
             autoItem.Click(makeCallback(ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ splitType, SplitDirection::Automatic, .5, args } }));
             subMenu.Items().Append(autoItem);
-
             subMenu.Items().Append(WUX::Controls::MenuFlyoutSeparator{});
 
             makeMenuFlyoutItem(splitPaneRightText, L"", ActionAndArgs{ ShortcutAction::SplitPane, SplitPaneArgs{ splitType, SplitDirection::Right, .5, args } }, subMenu);
