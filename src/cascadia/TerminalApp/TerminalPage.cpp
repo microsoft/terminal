@@ -5796,11 +5796,22 @@ namespace winrt::TerminalApp::implementation
 
                     auto trashIcon = UI::IconPathConverter::IconWUX(L"\xE74D"); // Delete  glyph
 
-                    deleteItem.Click([weakThis{ get_weak() }, name](auto&&, auto&&) -> safe_void_coroutine {
+                    deleteItem.Click([weakThis{ get_weak() }, name, deleteFlyout](auto&&, auto&&) -> safe_void_coroutine {
                         auto page{ weakThis.get() };
                         if (!page)
                         {
                             co_return;
+                        }
+
+                        // The delete item lives in an attached context flyout, so
+                        // clicking it does not dismiss the parent workspace menu.
+                        // ContentDialog is a separate popup and will not light-
+                        // dismiss that menu either, which leaves it sitting over
+                        // the confirmation (GH#20636). Close both first.
+                        deleteFlyout.Hide();
+                        if (page->_workspaceFlyout)
+                        {
+                            page->_workspaceFlyout.Hide();
                         }
 
                         // Build and show a confirmation ContentDialog.
