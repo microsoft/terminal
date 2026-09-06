@@ -141,6 +141,31 @@ namespace
         return CreatePalette(&buffer.header);
     }
 
+    // GDI's CreatePalette() returns a handle private to the creating
+    // process - the server can't do anything useful with the raw handle
+    // value unless it's been published first (see ServerSetConsolePalette's
+    // comment in src/server/ApiDispatchers.cpp). The clipboard is the
+    // standard way to hand a GDI object like this to another process:
+    // placing it there releases the creating process's exclusive ownership,
+    // making the same handle value usable anywhere, including in
+    // conhost/OpenConsole's own process once the raw value is sent over via
+    // SetConsolePalette. The object must not be deleted afterwards - once
+    // published, it's the clipboard/system's to clean up.
+    void PublishPaletteToClipboard(HPALETTE hPalette)
+    {
+        if (!OpenClipboard(nullptr))
+        {
+            Fail(L"OpenClipboard");
+        }
+        EmptyClipboard();
+        const auto published = SetClipboardData(CF_PALETTE, hPalette);
+        CloseClipboard();
+        if (!published)
+        {
+            Fail(L"SetClipboardData(CF_PALETTE)");
+        }
+    }
+
     void TestPalettizedGraphicsBuffer()
     {
         PromptOnText(L"Press any key to test an 8bpp, palette-indexed CONSOLE_GRAPHICS_BUFFER (diagonal color-bar pattern)...");
@@ -174,7 +199,12 @@ namespace
         }
 
         const auto hPalette = CreateRainbowPalette();
-        if (!hPalette || !pSetConsolePalette(hBuf, hPalette, SYSPAL_STATIC))
+        if (!hPalette)
+        {
+            Fail(L"CreatePalette");
+        }
+        PublishPaletteToClipboard(hPalette);
+        if (!pSetConsolePalette(hBuf, hPalette, SYSPAL_STATIC))
         {
             Fail(L"SetConsolePalette");
         }
@@ -206,7 +236,8 @@ namespace
 
         PromptOnText(L"8bpp palette test done - press any key to move on to the 32bpp true-color test.");
 
-        DeleteObject(hPalette);
+        // hPalette was handed off via the clipboard above - it's the
+        // clipboard/system's to clean up now, not ours to DeleteObject().
         CloseHandle(hBuf);
     }
 
