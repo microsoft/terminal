@@ -1411,6 +1411,7 @@ rerasterize
 rescap
 RESETCONTENT
 resheader
+resizewindowtest
 resmimetype
 resultmacros
 resw
