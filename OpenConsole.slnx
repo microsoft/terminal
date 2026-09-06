@@ -951,6 +951,18 @@
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
+    <Project Path="src/tools/graphicsbuffertest/graphicsbuffertest.vcxproj" Id="d0dce30e-c20d-4683-8a07-45b883eb5f27">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
     <Project Path="src/tools/nihilist/Nihilist.vcxproj" Id="fc802440-ad6a-4919-8f2c-7701f2b38d79">
       <BuildType Solution="AuditMode|ARM64" Project="Release" />
       <BuildType Solution="AuditMode|x64" Project="Release" />
