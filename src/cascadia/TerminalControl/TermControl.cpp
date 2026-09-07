@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TermControl.h"
+#include <Utils.h>
 
 #include <inputpaneinterop.h>
 
@@ -429,7 +430,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
-                const auto& menu{ control->ContextMenu() };
+                const auto menu{ control->ContextMenu() };
+                control->_takeFocusBackFromContextMenu(menu);
                 menu.PrimaryCommands().Clear();
                 menu.SecondaryCommands().Clear();
                 for (const auto& e : control->_originalPrimaryElements)
@@ -445,7 +447,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SelectionContextMenu().Closed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto control{ weakThis.get() }; control && !control->_IsClosing())
             {
-                const auto& menu{ control->SelectionContextMenu() };
+                const auto menu{ control->SelectionContextMenu() };
+                control->_takeFocusBackFromContextMenu(menu);
                 menu.PrimaryCommands().Clear();
                 menu.SecondaryCommands().Clear();
                 for (const auto& e : control->_originalSelectedPrimaryElements)
@@ -3929,6 +3932,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             cursorPos.X * fontSize.Width + static_cast<float>(padding.Left),
             cursorPos.Y * fontSize.Height + static_cast<float>(padding.Top),
         };
+    }
+
+    // Method Description:
+    // - GH#20593: when the pane context menu is dismissed with Esc, XAML leaves
+    //   keyboard focus on the AppBarButton that had it, even though the flyout
+    //   is gone. The button is off screen but alive, so Enter would invoke it.
+    //   If the flyout closed with focus still on one of its own commands, nothing
+    //   else took focus, so hand it back to the control. We verify membership against
+    //   the closing menu specifically to avoid cross-pane focus stealing in
+    //   multi-pane layouts.
+    // Arguments:
+    // - menu: the CommandBarFlyout that was closed.
+    // Return Value:
+    // - <none>
+    void TermControl::_takeFocusBackFromContextMenu(const winrt::Microsoft::UI::Xaml::Controls::CommandBarFlyout& menu)
+    {
+        if (!menu)
+        {
+            return;
+        }
+
+        const auto root = XamlRoot();
+        if (!root)
+        {
+            return;
+        }
+
+        const auto focused = FocusManager::GetFocusedElement(root);
+        if (!focused)
+        {
+            return;
+        }
+
+        if (const auto focusedDo = focused.try_as<DependencyObject>())
+        {
+            if (IsElementInCommandBarFlyout(focusedDo, menu))
+            {
+                // GH#10112: if the search box is active/open, return focus to it;
+                // otherwise restore focus to the terminal control.
+                if (_searchBox && _searchBox->IsOpen())
+                {
+                    _searchBox->SetFocusOnTextbox();
+                }
+                else
+                {
+                    Focus(FocusState::Programmatic);
+                }
+            }
+        }
     }
 
     void TermControl::_contextMenuHandler(IInspectable /*sender*/,
