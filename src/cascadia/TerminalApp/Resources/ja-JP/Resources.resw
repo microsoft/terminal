@@ -150,10 +150,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>ユーザー設定の読み込み中にエラーが発生しました</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" がお使いのマシンで実行されていません。 これにより、ターミナルがキーボード入力を受信できなくなる可能性があります。</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>
