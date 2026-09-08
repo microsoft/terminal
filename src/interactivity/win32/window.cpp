@@ -33,9 +33,6 @@
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
-// The WS_EX_NOREDIRECTIONBITMAP cannot be used; as it will cause the
-// window content to become invisible in GDI mode and the scroll bar
-// to become invisible in DX mode.
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
 // Window class name
