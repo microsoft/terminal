@@ -177,6 +177,10 @@ void EndDlgPage(const HWND hDlg, const BOOL fSaveNow)
 #define TOOLTIP_MAXLENGTH (256)
 void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, const UINT idsToolTip)
 {
+    // The WS_EX_NOREDIRECTIONBITMAP cannot be used, as it
+    // will cause tooltips on the property page to become
+    // invisible. For example, when hovering the mouse over
+    // "Enable Ctrl key shortcuts".
     auto hwndTooltip = CreateWindowEx(0 /*dwExtStyle*/,
                                       TOOLTIPS_CLASS,
                                       nullptr /*lpWindowName*/,

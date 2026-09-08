@@ -909,6 +909,8 @@ void GdiEngine::_CreateDebugWindow()
 
         THROW_LAST_ERROR_IF(0 == RegisterClassExW(&wc));
 
+        // The WS_EX_NOREDIRECTIONBITMAP cannot be used; as it will
+        // cause the window content will become invisible.
         _debugWindow = CreateWindowExW(0,
                                        className,
                                        L"ConhostGdiDebugWindow",
