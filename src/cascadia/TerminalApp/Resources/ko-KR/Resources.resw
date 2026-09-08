@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>사용자 설정을 로드하는 동안 오류가 발생했습니다.</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" 컴퓨터에서 실행되고 있지 않습니다. 단자가 키보드 입력을 수신할 수 없게 됩니다.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>확인</value>
   </data>

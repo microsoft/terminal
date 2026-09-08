@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Εŋĉőųņŧзяëď зяѓōяś ŵħΐļê ŀθαðĩήġ ùŝéѓ śзťŧĭпģŝ !!! !!! !!! !!! !</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>Ŧħє "{0}" ĭşп'ţ řμллĭиġ оŉ ўόùг мàςĥįńë. Ŧħїś ¢áⁿ φřэνєńτ тнэ Тэґмïñăĺ ƒŕöm ŗеς℮íνίиĝ ķēỳвŏαŗδ ĭⁿрΰţ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>ФĶ </value>
   </data>

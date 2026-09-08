@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Si sono verificati errori durante il caricamento delle impostazioni utente</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>Il "{0}" non è in esecuzione nel computer. Ciò può impedire al terminale di ricevere l'input da tastiera.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>
