@@ -173,6 +173,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void SettingsCard::OnKeyDown(const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!IsClickKeyFromContent(*this, e))
+        {
+            base_type::OnKeyDown(e);
+        }
+    }
+
+    void SettingsCard::OnKeyUp(const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!IsClickKeyFromContent(*this, e))
+        {
+            base_type::OnKeyUp(e);
+        }
+    }
+
     void SettingsCard::OnApplyTemplate()
     {
         // Match WCT's SettingsCard.OnApplyTemplate() which calls base first so the

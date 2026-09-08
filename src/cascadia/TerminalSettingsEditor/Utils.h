@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings
     safe_void_coroutine ExpandAncestorsAndBringIntoView(winrt::Windows::UI::Xaml::FrameworkElement root, winrt::Windows::UI::Xaml::Controls::Control control);
     Editor::KeyChordListener FindKeyChordListener(const winrt::Windows::UI::Xaml::DependencyObject& root);
     winrt::Windows::UI::Xaml::Controls::Control FindFirstFocusable(const winrt::Windows::UI::Xaml::DependencyObject& root);
+    bool IsClickKeyFromContent(const winrt::Windows::UI::Xaml::DependencyObject& self, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 }
 
 // BODGY!

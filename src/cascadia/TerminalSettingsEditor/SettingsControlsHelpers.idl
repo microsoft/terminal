@@ -62,4 +62,9 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         static void EnsureImplicitStylesMergedInto(Windows.UI.Xaml.FrameworkElement target);
     }
+
+    [default_interface] runtimeclass SettingsExpanderHeaderToggleButton : Windows.UI.Xaml.Controls.Primitives.ToggleButton
+    {
+        SettingsExpanderHeaderToggleButton();
+    }
 }

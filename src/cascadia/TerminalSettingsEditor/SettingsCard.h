@@ -8,6 +8,9 @@ Module Name:
 Abstract:
 - A base control for building consistent settings experiences. Based
   on the Windows Community Toolkit's SettingsCard.
+- Deviation from the toolkit: OnKeyDown/OnKeyUp refuse to hand Space/Enter to
+  ButtonBase when the key came from hosted content, so a TextBox in a card can
+  still be typed into.
 
 Author(s):
 - Carlos Zamora - 2026 May
@@ -29,6 +32,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnApplyTemplate();
         void OnPointerPressed(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void OnPointerReleased(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void OnKeyDown(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void OnKeyUp(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
 
         // Automation peer override.
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();

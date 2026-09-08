@@ -21,6 +21,7 @@ Author(s):
 #include "BottomCornerRadiusFilterConverter.g.h"
 #include "StringDefaultTemplateSelector.g.h"
 #include "StyleExtensions.g.h"
+#include "SettingsExpanderHeaderToggleButton.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -88,6 +89,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static Windows::UI::Xaml::ResourceDictionary _sharedImplicitStylesDictionary;
     };
+
+    struct SettingsExpanderHeaderToggleButton : SettingsExpanderHeaderToggleButtonT<SettingsExpanderHeaderToggleButton>
+    {
+        SettingsExpanderHeaderToggleButton() = default;
+
+        void OnKeyDown(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void OnKeyUp(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
@@ -97,4 +106,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
     BASIC_FACTORY(BottomCornerRadiusFilterConverter);
     BASIC_FACTORY(StringDefaultTemplateSelector);
     BASIC_FACTORY(StyleExtensions);
+    BASIC_FACTORY(SettingsExpanderHeaderToggleButton);
 }

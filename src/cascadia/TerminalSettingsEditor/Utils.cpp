@@ -221,4 +221,19 @@ namespace winrt::Microsoft::Terminal::Settings
         }
         return nullptr;
     }
+
+    // BODGY: ButtonBase handles Space/Enter as a Click and marks them handled,
+    // eating the character before a TextBox in the Content can type it. Callers
+    // specifically refuse to call the base method when the key came from their Content,
+    // so a TextBox can still type Space/Enter.
+    // Important for SettingsCard/SettingsExpander.
+    bool IsClickKeyFromContent(const DependencyObject& self, const Input::KeyRoutedEventArgs& e)
+    {
+        const auto key = e.Key();
+        if (key != VirtualKey::Enter && key != VirtualKey::Space && key != VirtualKey::GamepadA)
+        {
+            return false;
+        }
+        return e.OriginalSource() != self;
+    }
 }

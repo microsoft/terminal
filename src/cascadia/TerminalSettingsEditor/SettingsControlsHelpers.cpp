@@ -8,6 +8,7 @@
 #include "BottomCornerRadiusFilterConverter.g.cpp"
 #include "StringDefaultTemplateSelector.g.cpp"
 #include "StyleExtensions.g.cpp"
+#include "SettingsExpanderHeaderToggleButton.g.cpp"
 
 #include <limits>
 
@@ -260,6 +261,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             resources.Insert(markerKey, box_value(true));
         }
         CATCH_LOG();
+    }
+
+#pragma endregion
+
+#pragma region SettingsExpanderHeaderToggleButton
+
+    void SettingsExpanderHeaderToggleButton::OnKeyDown(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!IsClickKeyFromContent(*this, e))
+        {
+            base_type::OnKeyDown(e);
+        }
+    }
+
+    void SettingsExpanderHeaderToggleButton::OnKeyUp(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!IsClickKeyFromContent(*this, e))
+        {
+            base_type::OnKeyUp(e);
+        }
     }
 
 #pragma endregion
