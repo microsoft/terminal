@@ -1605,6 +1605,10 @@
     <value>Profile</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>Profile Defaults</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
   <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Name</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>

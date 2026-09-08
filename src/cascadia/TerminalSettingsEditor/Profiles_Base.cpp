@@ -37,6 +37,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _weakWindowRoot = args.WindowRoot();
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
+        // Update the primary expander for profile defaults
+        if (_Profile.IsBaseLayer())
+        {
+            Name().Header(box_value(RS_(L"Profile_NameBaseLayer/Header")));
+            Name().Description(nullptr);
+            Automation::AutomationProperties::SetName(Name(), RS_(L"Profile_NameBaseLayer/Header"));
+        }
+        else
+        {
+            Name().Header(box_value(RS_(L"Profile_Name/Header")));
+            Name().Description(box_value(RS_(L"Profile_Name/Description")));
+            Automation::AutomationProperties::SetName(Name(), RS_(L"Profile_Name/[using:Windows.UI.Xaml.Automation]AutomationProperties/Name"));
+        }
+
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())
         {
