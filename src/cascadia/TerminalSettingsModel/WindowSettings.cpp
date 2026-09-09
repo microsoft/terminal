@@ -3,60 +3,281 @@
 
 #include "pch.h"
 #include "WindowSettings.h"
+#include "../../types/inc/Utils.hpp"
+#include "JsonUtils.h"
+#include "KeyChordSerialization.h"
+
 #include "WindowSettings.g.cpp"
+#include "Docking.g.cpp"
 
-#include "GlobalAppSettings.h"
+#include "ProfileEntry.h"
+#include "FolderEntry.h"
+#include "MatchProfilesEntry.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Settings::Model;
+
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Settings;
+
+using namespace winrt::Microsoft::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::Foundation::Collections;
+
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view ThemeKey{ "theme" };
+static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
+static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
+
+// Method Description:
+// - Copies any extraneous data from the parent before completing a CreateChild call
+void WindowSettings::_FinalizeInheritance()
 {
-    void WindowSettings::Initialize(const com_ptr<GlobalAppSettings>& globals)
+    for (const auto& parent : _parents)
     {
-        _globals = globals;
+        parent;
+    }
+}
+
+winrt::com_ptr<WindowSettings> WindowSettings::Copy() const
+{
+    auto globals{ winrt::make_self<WindowSettings>() };
+
+    globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    globals->_defaultProfile = _defaultProfile;
+    globals->SourceBasePath = SourceBasePath;
+
+#define WINDOW_SETTINGS_COPY(type, name, jsonKey, ...) \
+    globals->_##name = _##name;
+    MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_COPY)
+#undef WINDOW_SETTINGS_COPY
+
+    if (_NewTabMenu)
+    {
+        globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
+        for (const auto& entry : *_NewTabMenu)
+        {
+            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
+        }
+    }
+    if (_SafeUriSchemes)
+    {
+        globals->_SafeUriSchemes = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_SafeUriSchemes)
+        {
+            globals->_SafeUriSchemes->Append(src);
+        }
     }
 
-    hstring WindowSettings::Name() const
+    for (const auto& parent : _parents)
     {
-        // In the WIP implementation, there is only one set of window settings
-        // (backed by GlobalAppSettings), so the name is always empty.
-        return L"";
+        globals->AddLeastImportantParent(parent->Copy());
+    }
+    return globals;
+}
+
+#pragma region DefaultProfile
+
+void WindowSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
+{
+    _defaultProfile = defaultProfile;
+    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
+}
+
+winrt::guid WindowSettings::DefaultProfile() const
+{
+    return _defaultProfile;
+}
+
+#pragma endregion
+
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+winrt::com_ptr<WindowSettings> WindowSettings::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<WindowSettings>();
+    result->LayerJson(json);
+    return result;
+}
+
+void WindowSettings::LayerJson(const Json::Value& json)
+{
+    hstring name;
+    JsonUtils::GetValueForKey(json, NameKey, name);
+    if (!name.empty())
+    {
+        Name(name);
     }
 
-    winrt::guid WindowSettings::DefaultProfile() const
+    // If the name is _quake, set up some default window settings:
+    if (Name() == L"_quake")
     {
-        return _globals->DefaultProfile();
+        InitializeForQuakeMode();
     }
 
-    void WindowSettings::DefaultProfile(const winrt::guid& value)
+    JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
+    // GH#8076 - when adding enum values to this key, we also changed it from
+    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
+    // "useTabSwitcher", but prefer "tabSwitcherMode"
+    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+
+    JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste);
+    JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+
+#define WINDOW_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
+    _logSettingIfSet(jsonKey, _##name.has_value());
+    MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_LAYER_JSON)
+#undef WINDOW_SETTINGS_LAYER_JSON
+
+    // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values.
+    if (HasInitialCols())
     {
-        _globals->DefaultProfile(value);
+        InitialCols(std::clamp(InitialCols(), 1, 999));
+    }
+    if (HasInitialRows())
+    {
+        InitialRows(std::clamp(InitialRows(), 1, 999));
+    }
+}
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+Json::Value WindowSettings::ToJson()
+{
+    // These experimental options should be removed from the settings file if they're at their default value.
+    if (_GraphicsAPI == winrt::Microsoft::Terminal::Control::GraphicsAPI::Automatic)
+    {
+        _GraphicsAPI.reset();
+    }
+    if (_TextMeasurement == winrt::Microsoft::Terminal::Control::TextMeasurement::Graphemes)
+    {
+        _TextMeasurement.reset();
+    }
+    if (_DefaultInputScope == winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)
+    {
+        _DefaultInputScope.reset();
+    }
+    if (_DisablePartialInvalidation == false)
+    {
+        _DisablePartialInvalidation.reset();
+    }
+    if (_SoftwareRendering == false)
+    {
+        _SoftwareRendering.reset();
     }
 
-    hstring WindowSettings::UnparsedDefaultProfile() const
+    Json::Value json{ Json::ValueType::objectValue };
+
+    JsonUtils::SetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
+
+#define WINDOW_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
+    MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_TO_JSON)
+#undef WINDOW_SETTINGS_TO_JSON
+
+    return json;
+}
+
+void WindowSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver, const bool resolveParents)
+{
+    if (_NewTabMenu)
     {
-        return _globals->UnparsedDefaultProfile();
+        for (const auto& entry : *_NewTabMenu)
+        {
+            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
+            {
+                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+            }
+        }
     }
 
-    void WindowSettings::UnparsedDefaultProfile(const hstring& value)
+    if (resolveParents)
     {
-        _globals->UnparsedDefaultProfile(value);
+        for (auto& parent : _parents)
+        {
+            parent->ResolveMediaResources(resolver);
+        }
     }
+}
 
-    bool WindowSettings::HasUnparsedDefaultProfile() const
+void WindowSettings::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void WindowSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
     {
-        return _globals->HasUnparsedDefaultProfile();
+        _logSettingSet(setting);
     }
+}
 
-    void WindowSettings::ClearUnparsedDefaultProfile()
+void WindowSettings::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
     {
-        _globals->ClearUnparsedDefaultProfile();
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
+}
 
-    void WindowSettings::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+// Set up anything that we need that's quake-mode specific.
+void WindowSettings::InitializeForQuakeMode()
+{
+    _LaunchMode = LaunchMode::FocusMode;
+
+    auto dockSettings{ winrt::make_self<Docking>() };
+    dockSettings->Side(Model::DockPosition::Top);
+    dockSettings->Width(1.0);
+    dockSettings->Height(0.5);
+    _DockWindow = *dockSettings;
+    _MinimizeToNotificationArea = true;
+}
+
+static constexpr std::string_view SideKey{ "side" };
+static constexpr std::string_view WidthKey{ "width" };
+static constexpr std::string_view HeightKey{ "height" };
+
+winrt::com_ptr<Docking> Docking::FromJson(const Json::Value& json)
+{
+    auto result = winrt::make_self<Docking>();
+
+    if (json.isObject())
     {
-        _globals->LogSettingChanges(changes, context);
+        Model::DockPosition side{};
+        double width{ 1.0 };
+        double height{ 1.0 };
+        JsonUtils::GetValueForKey(json, SideKey, side);
+        JsonUtils::GetValueForKey(json, WidthKey, width);
+        JsonUtils::GetValueForKey(json, HeightKey, height);
+        result->Side(side);
+        result->Width(width);
+        result->Height(height);
     }
+    return result;
+}
 
-    // The MTSM_WINDOW_SETTINGS delegate methods are defined inline
-    // in WindowSettings.h via the WINDOW_SETTINGS_DELEGATE macro.
+Json::Value Docking::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
 
+    const Model::DockPosition side = Side();
+    const double width = Width();
+    const double height = Height();
+    JsonUtils::SetValueForKey(json, SideKey, side);
+    JsonUtils::SetValueForKey(json, WidthKey, width);
+    JsonUtils::SetValueForKey(json, HeightKey, height);
+    return json;
+}
+
+winrt::com_ptr<Docking> Docking::Copy() const
+{
+    auto pair{ winrt::make_self<Docking>() };
+    pair->Side(Side());
+    pair->Width(Width());
+    pair->Height(Height());
+    return pair;
 }

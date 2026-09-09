@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
         Reset(settings, windowSettings);
     }
 
-    std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
+    std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile, const MTSM::WindowSettings& windowSettings)
     {
         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
         // GH#2455: If there are any panes with controls that had been
@@ -35,7 +35,7 @@ namespace winrt::TerminalApp::implementation
             auto& pair{ found->second };
             if (!pair.second)
             {
-                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, _windowSettings, pair.first);
+                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, windowSettings, pair.first);
             }
             return std::optional{ TerminalSettingsPair{ *pair.second } };
         }
