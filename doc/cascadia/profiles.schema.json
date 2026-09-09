@@ -2392,6 +2392,11 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
+        "enableTabDragDrop": {
+          "default": true,
+          "description": "When set to true, tabs can be reordered and torn out into new windows by dragging them. When set to false, dragging tabs is disabled (they can still be moved with the \"moveTab\" actions). Dragging is also disabled automatically when running elevated or as a different user, where it would otherwise crash the window.",
+          "type": "boolean"
+        },
         "compatibility.enableUnfocusedAcrylic": {
           "default": true,
           "description": "When set to true, unfocused windows can have acrylic instead of opaque.",

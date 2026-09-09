@@ -83,6 +83,15 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingsCard>
 
+            <!--  Enable Tab Drag and Drop  -->
+            <local:SettingContainer x:Name="EnableTabDragDrop"
+                                    x:Uid="Globals_EnableTabDragDrop"
+                                    HelpText="{x:Bind ViewModel.TabDragDropStatefulHelpText, Mode=OneWay}">
+                <ToggleSwitch IsEnabled="{x:Bind ViewModel.CanEnableTabDragDrop}"
+                              IsOn="{x:Bind ViewModel.EnableTabDragDrop, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingsCard x:Name="FocusFollowMouse"
                                 x:Uid="Globals_FocusFollowMouse">

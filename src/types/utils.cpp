@@ -6,10 +6,14 @@
 
 #include <til/string.h>
 #include <wil/token_helpers.h>
+#include <wil/resource.h>
 
 #include "inc/colorTable.hpp"
 
 #include <icu.h>
+
+#include <wtsapi32.h>
+#pragma comment(lib, "wtsapi32.lib")
 
 using namespace Microsoft::Console;
 
@@ -955,10 +959,86 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     return EndianSwap(newGuid);
 }
 
+// True if this process runs as a user other than the session's logged-on user
+// (e.g. launched via `runas /user:...`). XAML's drag/drop broker denies such a
+// process with E_ACCESSDENIED and fail-fasts the process, same as elevation.
+// GH#15689.
+static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
+{
+    try
+    {
+        const auto tokenUser = wil::get_token_information<TOKEN_USER>(processToken);
+
+        DWORD sessionId = 0;
+        THROW_IF_WIN32_BOOL_FALSE(ProcessIdToSessionId(GetCurrentProcessId(), &sessionId));
+
+        // WTS has no info class for the session user's SID, so fetch the account
+        // name/domain and resolve it to a SID below.
+        LPWSTR wtsUserName = nullptr;
+        LPWSTR wtsDomainName = nullptr;
+        const auto freeWts = wil::scope_exit([&]() noexcept {
+            if (wtsUserName)
+            {
+                WTSFreeMemory(wtsUserName);
+            }
+            if (wtsDomainName)
+            {
+                WTSFreeMemory(wtsDomainName);
+            }
+        });
+
+        DWORD bytesReturned = 0;
+        THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSUserName, &wtsUserName, &bytesReturned));
+        THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSDomainName, &wtsDomainName, &bytesReturned));
+
+        // No interactive user (e.g. a service session) -> empty name; can't judge.
+        if (!wtsUserName || !*wtsUserName)
+        {
+            return false;
+        }
+
+        std::wstring account;
+        if (wtsDomainName && *wtsDomainName)
+        {
+            account.append(wtsDomainName);
+            account.push_back(L'\\');
+        }
+        account.append(wtsUserName);
+
+        // Resolve to a SID and compare by identity, not by display name.
+        DWORD sidSize = 0;
+        DWORD domainSize = 0;
+        SID_NAME_USE sidUse{};
+        // First call fails with ERROR_INSUFFICIENT_BUFFER and returns the sizes.
+        LookupAccountNameW(nullptr, account.c_str(), nullptr, &sidSize, nullptr, &domainSize, &sidUse);
+        if (sidSize == 0)
+        {
+            return false;
+        }
+
+        std::vector<std::byte> sidBuffer(sidSize);
+        std::vector<wchar_t> domainBuffer(domainSize);
+        THROW_IF_WIN32_BOOL_FALSE(LookupAccountNameW(nullptr, account.c_str(), sidBuffer.data(), &sidSize, domainBuffer.data(), &domainSize, &sidUse));
+
+        const auto sessionSid = reinterpret_cast<PSID>(sidBuffer.data());
+        // A different SID means a different user -> drag/drop would crash us.
+        return !EqualSid(tokenUser->User.Sid, sessionSid);
+    }
+    catch (...)
+    {
+        // Fail safe: report "same user" on any failure so we never disable
+        // drag/drop for the normal case. Elevation checks still apply.
+        LOG_CAUGHT_EXCEPTION();
+        return false;
+    }
+}
+
 // * Elevated users cannot use the modern drag drop experience. This is
 //   specifically normal users running the Terminal as admin
 // * The Default Administrator, who does not have a split token, CAN drag drop
 //   perfectly fine. So in that case, we want to return false.
+// * Running as a different user than the session owner (e.g. `runas`) also
+//   breaks drag drop. See _isRunningAsDifferentSessionUser and GH#15689.
 // * This has to be kept separate from IsRunningElevated, which is exclusively
 //   used for "is this instance running as admin".
 bool Utils::CanUwpDragDrop()
@@ -970,6 +1050,14 @@ bool Utils::CanUwpDragDrop()
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
+
+            // Different-user (runas) breaks drag/drop like elevation does, and
+            // independently of our own elevation. Check it first. GH#15689.
+            if (_isRunningAsDifferentSessionUser(processToken.get()))
+            {
+                return true;
+            }
+
             const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
             const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
             if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)

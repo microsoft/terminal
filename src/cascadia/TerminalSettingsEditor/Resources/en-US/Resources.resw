@@ -509,6 +509,18 @@
     <value>When disabled, the title bar will be 'Terminal'.</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>Reorder and tear out tabs by dragging</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop.HelpText" xml:space="preserve">
+    <value>When disabled, tabs can still be moved with the "move tab" actions.</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>Dragging tabs is unavailable because Terminal is running as administrator or as a different user, where it would crash the window. Use the "move tab" actions instead.</value>
+    <comment>Shown in place of the help text when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
