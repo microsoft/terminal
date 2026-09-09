@@ -1167,7 +1167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // LOAD-BEARING: closing the suggestion list moves focus back to the search box,
         // which would fight elementToFocus if we navigated first. Since Text() raises
         // TextChanged as a ProgrammaticChange (which is ignored), we have to drop the stale
-        // results ourselves. Otherwise the query button would reuse them on the next click.
+        // results ourselves. Otherwise, the query button would reuse them on the next click.
         const auto& searchBox{ SettingsSearchBox() };
         searchBox.Text(L"");
         searchBox.ItemsSource(nullptr);
