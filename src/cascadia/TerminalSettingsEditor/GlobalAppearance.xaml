@@ -130,30 +130,30 @@
         </local:SettingsExpander>
 
         <!--  Position of new tab  -->
-        <local:SettingsExpander x:Name="NewTabPosition"
-                                x:Uid="Globals_NewTabPosition"
-                                IsExpanded="True">
-            <local:SettingsExpander.HeaderIcon>
+        <local:SettingsCard x:Name="NewTabPosition"
+                            x:Uid="Globals_NewTabPosition">
+            <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xECC8;" />
-            </local:SettingsExpander.HeaderIcon>
+            </local:SettingsCard.HeaderIcon>
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.NewTabPositionList, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.CurrentNewTabPosition, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
-            <local:SettingsExpander.Items>
-                <!--  Tab Width Mode  -->
-                <local:SettingsCard x:Name="TabWidthMode"
-                                    x:Uid="Globals_TabWidthMode">
-                    <ComboBox AutomationProperties.AccessibilityView="Content"
-                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                              ItemsSource="{x:Bind ViewModel.TabWidthModeList, Mode=OneWay}"
-                              SelectedItem="{x:Bind ViewModel.CurrentTabWidthMode, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingsCard>
+        </local:SettingsCard>
 
-            </local:SettingsExpander.Items>
-        </local:SettingsExpander>
+        <!--  Tab Width Mode  -->
+        <local:SettingsCard x:Name="TabWidthMode"
+                            x:Uid="Globals_TabWidthMode">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE75D;" />
+            </local:SettingsCard.HeaderIcon>
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.TabWidthModeList, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.CurrentTabWidthMode, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
 
         <!--  Section: Window behavior  -->
         <TextBlock x:Uid="Globals_Section_WindowBehavior"
