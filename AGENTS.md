@@ -23,7 +23,7 @@ Allowed:
 
 Banned:
 - Any AI-use in public contributions and interactions not explicitly allowed above.
-  In particular, AI-authored comments not explicitly permitted above are banned.
+  In particular, AI-authored interactions (GitHub comments, etc.) not explicitly permitted above are banned.
 - Commits with `Co-authored-by`, crediting an AI.
 
 Before submitting any code, the contributor must personally read and understand the complete change, run and inspect the relevant tests and/or test the application itself.
