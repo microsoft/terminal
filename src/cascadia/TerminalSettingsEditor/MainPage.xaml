@@ -85,7 +85,15 @@
                                     ItemsSource="{x:Bind Breadcrumbs}">
                     <muxc:BreadcrumbBar.ItemTemplate>
                         <DataTemplate x:DataType="local:Breadcrumb">
-                            <TextBlock Text="{x:Bind Label}" />
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="6">
+                                <ContentControl Width="16"
+                                                Height="16"
+                                                Content="{x:Bind Icon, Mode=OneWay}"
+                                                IsTabStop="False"
+                                                Visibility="{x:Bind mtu:Converters.BooleanToVisibility(HasIcon), Mode=OneWay}" />
+                                <TextBlock Text="{x:Bind Label}" />
+                            </StackPanel>
                         </DataTemplate>
                     </muxc:BreadcrumbBar.ItemTemplate>
                     <muxc:BreadcrumbBar.Resources>

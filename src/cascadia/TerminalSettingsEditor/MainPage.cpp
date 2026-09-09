@@ -513,7 +513,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _breadcrumbs.Clear();
                     _AppendProfilesRootCrumb();
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None));
+                    const auto profileIcon{ profile.IsBaseLayer() || profile.UsingNoIcon() ? Controls::IconElement{ nullptr } : profile.IconPreview() };
+                    _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None, profileIcon));
                 }
                 _NavigateToProfileSubPage(profile, currentPage, breadcrumbTag, {});
             }
@@ -666,7 +667,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (profile.Orphaned())
             {
                 contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
+                const auto profileIcon{ profile.UsingNoIcon() ? Controls::IconElement{ nullptr } : profile.IconPreview() };
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None, profileIcon));
                 profile.CurrentPage(ProfileSubPage::Base);
                 _SetupProfileEventHandling(profile);
             }
@@ -677,7 +679,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 profile.CurrentPage(profileSubPage);
 
                 // Navigate directly to the correct sub-page
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
+                const auto profileIcon{ profile.UsingNoIcon() ? Controls::IconElement{ nullptr } : profile.IconPreview() };
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None, profileIcon));
                 _NavigateToProfileSubPage(profile, profileSubPage, vm, elementToFocus);
 
                 // Register handler for future user-driven sub-page changes

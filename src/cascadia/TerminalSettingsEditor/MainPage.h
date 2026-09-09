@@ -13,16 +13,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Breadcrumb : BreadcrumbT<Breadcrumb>
     {
-        Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage) :
+        Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage, const Windows::UI::Xaml::Controls::IconElement& icon = nullptr) :
             _Tag{ tag },
             _Label{ label },
-            _SubPage{ subPage } {}
+            _SubPage{ subPage },
+            _Icon{ icon } {}
 
         hstring ToString() { return _Label; }
+        bool HasIcon() const noexcept { return static_cast<bool>(_Icon); }
 
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
+        WINRT_PROPERTY(Windows::UI::Xaml::Controls::IconElement, Icon);
     };
 
     struct NavigateToPageArgs : NavigateToPageArgsT<NavigateToPageArgs>

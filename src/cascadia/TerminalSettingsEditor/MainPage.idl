@@ -41,6 +41,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable Tag;
         String Label;
         BreadcrumbSubPage SubPage;
+        Windows.UI.Xaml.Controls.IconElement Icon { get; };
+        Boolean HasIcon { get; };
     }
 
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
