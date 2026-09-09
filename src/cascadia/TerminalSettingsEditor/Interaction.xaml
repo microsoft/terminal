@@ -183,27 +183,17 @@
 
 
         <!--  Confirm Close On  -->
-        <local:SettingsExpander x:Name="ConfirmOnClose"
-                                x:Uid="Globals_ConfirmOnClose"
-                                IsExpanded="True">
-            <local:SettingsExpander.HeaderIcon>
+        <local:SettingsCard x:Name="ConfirmOnClose"
+                            x:Uid="Globals_ConfirmOnClose">
+            <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xE7BA;" />
-            </local:SettingsExpander.HeaderIcon>
+            </local:SettingsCard.HeaderIcon>
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.ConfirmOnCloseList}"
                       SelectedItem="{x:Bind ViewModel.CurrentConfirmOnClose, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
-            <local:SettingsExpander.Items>
-                <!--  Input Service Warning  -->
-                <local:SettingsCard HorizontalContentAlignment="Stretch"
-                                    ContentAlignment="Left">
-                    <CheckBox x:Name="InputServiceWarning"
-                              x:Uid="Globals_InputServiceWarning_Checkbox"
-                              IsChecked="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}" />
-                </local:SettingsCard>
-            </local:SettingsExpander.Items>
-        </local:SettingsExpander>
+        </local:SettingsCard>
 
         <!--  Section: URLs & external actions  -->
         <TextBlock x:Uid="Interaction_Section_UrlsExternal"
