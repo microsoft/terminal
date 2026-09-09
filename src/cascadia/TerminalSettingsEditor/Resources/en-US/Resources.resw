@@ -2789,7 +2789,8 @@
     <value>Clear</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
-    <value>This action is applied immediately and cannot be undone.</value>
+    <value>All settings across all pages will be reset to their default values.
+This action is applied immediately and cannot be undone.</value>
   </data>
   <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
     <value>This action is applied immediately and cannot be undone.</value>
