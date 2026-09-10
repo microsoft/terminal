@@ -13,11 +13,9 @@
     already the child of another element" the second time a control merges the
     same shared instance. The C++ helper instead copies the entries (Styles, which
     unlike UIElements can be shared) into each target's own Resources.
-    - No BasedOn: a Source=-loaded dictionary has no parent scope at parse time, so
-    a cross-file {StaticResource} wouldn't resolve. It doesn't need one anyway.
-    In WinUI 2 an implicit style that sets only setters (no Template, no BasedOn)
-    applies on top of the built-in template rather than replacing it, keeping the
-    control's default brushes/corner radius/popup intact.
+    - Every style below needs its BasedOn. Without it, the control drops to the
+    pre-Fluent OS default template corner radius and borders. WCT doesn't hit this,
+    since in WinUI 3 the Fluent styles are the built-in defaults.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -28,7 +26,8 @@
         OffContent / OnContent are blanked so the default "Off" / "On" labels
         don't steal horizontal space next to the switch.
     -->
-    <Style TargetType="ToggleSwitch">
+    <Style BasedOn="{StaticResource DefaultToggleSwitchStyle}"
+           TargetType="ToggleSwitch">
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Right" />
@@ -43,15 +42,18 @@
         right-aligned controls in adjacent cards line up in a column. Mirrors
         WCT's implicit styles.
     -->
-    <Style TargetType="ComboBox">
+    <Style BasedOn="{StaticResource DefaultComboBoxStyle}"
+           TargetType="ComboBox">
         <Setter Property="MinWidth" Value="120" />
     </Style>
 
-    <Style TargetType="Slider">
+    <Style BasedOn="{StaticResource DefaultSliderStyle}"
+           TargetType="Slider">
         <Setter Property="MinWidth" Value="120" />
     </Style>
 
-    <Style TargetType="TextBox">
+    <Style BasedOn="{StaticResource DefaultTextBoxStyle}"
+           TargetType="TextBox">
         <Setter Property="MinWidth" Value="120" />
     </Style>
 

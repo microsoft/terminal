@@ -207,19 +207,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return {};
         }
 
+        // TSF wants screen coordinates, and localOrigin below is relative to the root of our visual tree,
+        // which sits at the origin of the owning window's client area. GH#20318: GetWindowRect() is not
+        // that origin. While the window is maximized the client area starts below the resize borders, so
+        // the rect ended up a resize handle height too high, which is enough for the IME candidate window
+        // to cover the text being composed.
         const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-        RECT clientRect;
-        GetWindowRect(hwnd, &clientRect);
+        POINT windowOrigin{};
+        ClientToScreen(hwnd, &windowOrigin);
 
-        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        const auto scaleFactor = _termControl->SwapChainPanel().CompositionScaleX();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
-        const auto left = clientRect.left + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
-        const auto top = clientRect.top + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto left = windowOrigin.x + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = windowOrigin.y + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
         const auto right = left + fontSize.Width;
         const auto bottom = top + fontSize.Height;
 

@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>加载用户设置时遇到错误</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>你的计算机上未运行 "{0}"。这可能会阻止终端接收键盘输入。</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>确定</value>
   </data>

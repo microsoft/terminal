@@ -142,13 +142,6 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingsCard>
 
-            <!--  Input Service Warning  -->
-            <local:SettingsCard x:Name="InputServiceWarning"
-                                x:Uid="Globals_InputServiceWarning">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
-
             <!--  Large Paste Warning  -->
             <local:SettingsCard x:Name="WarnAboutLargePaste"
                                 x:Uid="Globals_WarnAboutLargePaste">

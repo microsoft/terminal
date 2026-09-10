@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -132,7 +132,7 @@
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
   <data name="ColorScheme_SetAsDefault.Description" xml:space="preserve">
-    <value>기본적으로 모든 프로필에 이 색 구성표를 적용합니다. 개별 프로필은 자신의 색 구성표를 선택할 수 있습니다.</value>
+    <value>기본적으로 모든 프로필에 이 색 구성표를 적용합니다. 개별 프로필은 여전히 고유한 색 구성표를 선택할 수 있습니다.</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
@@ -257,7 +257,7 @@
     <comment>Header for a control to select position of newly created tabs.</comment>
   </data>
   <data name="Globals_NewTabPosition.Description" xml:space="preserve">
-    <value>탭 행에 새 탭이 표시되는 위치를 지정합니다.</value>
+    <value>탭 행에서 새 탭이 나타나는 위치를 지정합니다.</value>
     <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
   <data name="Globals_NewTabPositionAfterLastTab.Content" xml:space="preserve">
@@ -297,7 +297,7 @@
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
   <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>'+' 아이콘을 클릭하거나 새 탭 키 바인딩을 입력하여 열리는 프로필입니다.</value>
+    <value>'+' 아이콘을 클릭하거나 새 탭 키 바인딩을 입력할 때 열리는 프로필입니다.</value>
     <comment>A description for what the default profile is and when it's used.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
@@ -305,7 +305,7 @@
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>시작 메뉴나 실행 대화 상자와 같이 기존 세션이 없으면 명령 줄 응용 프로그램을 실행하고 있는 터미널 응용 프로그램입니다.</value>
+    <value>시작 메뉴 또는 실행 대화 상자와 같은 기존 세션 없이 명령줄 응용 프로그램을 실행할 때 시작하는 터미널 응용 프로그램입니다.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
@@ -313,7 +313,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Description" xml:space="preserve">
-    <value>Direct3D 11은 성능과 기능이 풍부한 환경을 제공하는 반면 Direct2D는 더욱 안정적입니다. 기본 옵션 "자동"은 그래픽 하드웨어에 가장 적합한 API를 선택합니다. 심각한 문제가 발생하는 경우 Direct2D를 사용하는 것이 좋습니다.</value>
+    <value>Direct3D 11은 성능이 더 뛰어나고 기능이 풍부한 환경을 제공하는 반면, Direct2D는 안정성이 더 높습니다. 기본 옵션인 "자동"은 그래픽 하드웨어에 가장 적합한 API를 선택합니다. 심각한 문제가 발생하면 Direct2D 사용을 고려하세요.</value>
   </data>
   <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
     <value>자동</value>
@@ -330,7 +330,7 @@
     <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>기본적으로 텍스트 렌더러는 FLIP_SEQUENTIAL 스왑 체인을 사용하고 Present1 API를 통해 더티 사각형을 선언합니다. 이 설정을 사용하면 FLIP_DISCARD 스왑 체인이 대신 사용되며 더티 사각형이 선언되지 않습니다. 하나 또는 다른 요소가 더 좋은지 여부는 하드웨어 및 다양한 다른 요인에 따라 달라집니다.</value>
+    <value>기본적으로 텍스트 렌더러는 FLIP_SEQUENTIAL 스왑 체인을 사용하고 Present1 API를 통해 더티 사각형을 선언합니다. 이 설정을 활성화하면 대신 FLIP_DISCARD 스왑 체인이 사용되며 더티 사각형은 선언되지 않습니다. 어느 쪽이 더 나은지는 하드웨어와 여러 다른 요인에 따라 달라집니다.</value>
     <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
@@ -338,7 +338,7 @@
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널에서 소프트웨어 래스터라이저(WARP)를 사용합니다. 거의 모든 상황에서는 이 설정을 사용하지 않도록 설정해야 합니다.</value>
+    <value>사용하도록 설정하면 터미널에서 소프트웨어 래스터라이저(WARP)를 사용합니다. 거의 모든 상황에서 이 설정을 사용하지 않도록 설정해야 합니다.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
@@ -346,7 +346,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>들어오는 텍스트가 셀로 그룹화되는 방식을 변경합니다. "Grapheme 클러스터" 옵션은 가장 최신이며 유니코드로 올바른 방법이며, "wcswidth"는 UNIX에서 일반적인 접근 방식이며 "Windows 콘솔"은 Windows에서 작동하는 방식을 복제합니다. 이 설정을 변경하려면 Windows 터미널 다시 시작해야 하며 이 설정 내에서 시작된 애플리케이션에만 적용됩니다.</value>
+    <value>이 설정은 들어오는 텍스트가 셀로 그룹화되는 방식을 변경합니다. "문자 클러스터" 옵션은 이를 수행하는 가장 현대적이고 유니코드에 맞는 방법이며, "wcswidth"는 UNIX에서 일반적인 접근 방식이고, "Windows 콘솔"은 Windows에서 사용되던 방식을 복제합니다. 이 설정을 변경하려면 Windows 터미널을 다시 시작해야 하며, 이는 터미널 내에서 실행된 애플리케이션에만 적용됩니다.</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 클러스터</value>
@@ -427,7 +427,7 @@
     <comment>Header for a control to select how the terminal should load its first window.</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>첫 번째 터미널이 만들어질 때 표시할 항목입니다.</value>
+    <value>첫 번째 터미널을 만들 때 표시할 항목입니다.</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>기본 프로필이 있는 탭 열기</value>
@@ -474,7 +474,7 @@
     <comment>Header for a control to select how new app instances are handled.</comment>
   </data>
   <data name="Globals_WindowingBehavior.Description" xml:space="preserve">
-    <value>새 터미널 인스턴스가 기존 창에 어떻게 연결하는지 제어합니다.</value>
+    <value>새 터미널 인스턴스가 기존 창에 연결하는 방법을 제어합니다.</value>
     <comment>A description for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
   </data>
   <data name="Globals_WindowingBehaviorUseNew.Content" xml:space="preserve">
@@ -522,7 +522,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>Windows 로그인할 때 터미널을 자동으로 시작합니다.</value>
+    <value>Windows에 로그인할 때 터미널을 자동으로 시작합니다.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
@@ -578,7 +578,7 @@
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>이렇게 하면 창이 열려 있지 않아도 전역 관리자 및 관리자 모드 작업과 같은 작업이 작동할 수 있습니다.</value>
+    <value>이렇게 하면 창이 열려 있지 않을 때도 전역 호출 및 Quake 모드 같은 동작이 작동합니다.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -678,12 +678,12 @@
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>작업</value>
+    <value>바로 가기</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>작업 편집...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>바로 가기 편집</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>확장</value>
@@ -714,7 +714,7 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
-    <value>기본적으로 Windows Ctrl+Alt AltGr의 별칭으로 간주합니다. 이 설정은 Windows 기본 동작을 재정의합니다.</value>
+    <value>기본적으로 Windows는 Ctrl+Alt를 AltGr의 별칭으로 취급합니다. 이 설정은 Windows의 기본 동작을 재정의합니다.</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -758,7 +758,7 @@
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImage.Description" xml:space="preserve">
-    <value>창 배경에 사용되는 이미지의 파일 위치입니다.</value>
+    <value>창의 배경에 사용되는 이미지의 파일 위치입니다.</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -851,7 +851,7 @@
     <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Description" xml:space="preserve">
-    <value>창을 채우도록 배경 이미지 크기가 조정되는 방법을 설정합니다.</value>
+    <value>배경 이미지가 창을 채우도록 크기를 조정하는 방법을 설정합니다.</value>
     <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
   </data>
   <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
@@ -899,7 +899,7 @@
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
   <data name="Profile_ColorScheme.Description" xml:space="preserve">
-    <value>확장하여 전경, 배경 및 선택 배경을 재정의합니다.</value>
+    <value>확장하여 전경, 배경 및 선택 영역 배경을 재정의합니다.</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1022,7 +1022,7 @@
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
   <data name="Profile_CellWidth.Description" xml:space="preserve">
-    <value>터미널의 셀 너비를 재정의합니다. 글꼴 크기의 배수로 측정되었습니다. 기본값은 글꼴에 따라 달라지며 대개 약 0.6입니다.</value>
+    <value>터미널의 셀 너비를 재정의합니다. 글꼴 크기의 배수로 설정합니다. 기본값은 글꼴에 따라 달라지며 일반적으로 약 0.6입니다.</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
@@ -1094,15 +1094,19 @@
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
   <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 프로필 목록에 나타나지 않습니다. 기본 프로필 및 동적으로 생성된 프로필을 설정 파일에 그대로 두는 데 사용할 수 있습니다.</value>
+    <value>사용하도록 설정하면 프로필이 프로필 목록에 표시되지 않습니다. 기본 프로필과 동적으로 생성된 프로필을 숨기는 데 사용할 수 있지만 설정 파일에는 그대로 둘 수 있습니다.</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
+  </data>
+  <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>드롭다운 메뉴에 표시하지 않음</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
   <data name="Profile_Elevate.Header" xml:space="preserve">
     <value>이 프로필을 관리자 권한으로 실행</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 관리자 권한으로 이미 실행되고 있는 경우 이 창에서 열립니다.</value>
+    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 이미 관리자 권한으로 실행 중인 경우 이 창에서 열립니다.</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1146,7 +1150,7 @@
     <comment>Header for a control to determine the amount of space between text in a terminal and the edge of the window. The space can be any combination of the top, bottom, left, and right side of the window.</comment>
   </data>
   <data name="Profile_Padding.Description" xml:space="preserve">
-    <value>창 내에서 텍스트를 안쪽 여백으로 설정합니다.</value>
+    <value>창 내에서 텍스트 주위의 안쪽 여백을 설정합니다.</value>
     <comment>A description for what the "padding" setting does. Presented near "Profile_Padding".</comment>
   </data>
   <data name="Profile_RetroTerminalEffect.Header" xml:space="preserve">
@@ -1222,7 +1226,7 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Description" xml:space="preserve">
-    <value>제목 변경 요청을 무시합니다(OSC 2).</value>
+    <value>제목(OSC 2)을 변경하는 애플리케이션 요청을 무시합니다.</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1234,7 +1238,7 @@
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
   <data name="Profile_TabTitle.Description" xml:space="preserve">
-    <value>시작할 때 셸에 전달되는 프로필 이름을 제목으로 바꿉니다.</value>
+    <value>시작 시 셸에 전달할 제목으로 프로필 이름을 바꿉니다.</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
@@ -1254,7 +1258,7 @@
     <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
   <data name="Profile_UseAcrylic.Description" xml:space="preserve">
-    <value>창의 배경에 대응 텍스트를 적용합니다.</value>
+    <value>창의 배경에 반투명 질감을 적용합니다.</value>
     <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
   <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
@@ -1283,7 +1287,43 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>프로필</value>
-    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+    <comment>Header for the "profiles" menu item. Navigates to a landing page that lists profile-related settings (defaults, color schemes, the list of terminal profiles, and the add-profile button).</comment>
+  </data>
+  <data name="Nav_Profiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>프로필</value>
+    <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
+  </data>
+  <data name="Profiles_TerminalProfilesHeader.Header" xml:space="preserve">
+    <value>터미널 프로필</value>
+    <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Header" xml:space="preserve">
+    <value>기본값</value>
+    <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Description" xml:space="preserve">
+    <value>여기서 변경한 내용은 특정 프로필에서 재정의하지 않는 한 모든 프로필에 적용됩니다. 이 설정은 Windows 터미널의 모양에는 영향을 주지 않습니다.</value>
+    <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
+    <value>색 구성표</value>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the color schemes page.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
+    <value>프로필에서 사용할 수 있는 색 구성표를 추가, 편집 또는 제거합니다.</value>
+    <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>새 프로필 추가</value>
+    <comment>Tooltip (and accessible name) for the split button on the Profiles landing page whose primary "+" action creates a new empty profile and whose flyout lists existing profiles to duplicate.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton_DefaultLabel.Text" xml:space="preserve">
+    <value>새 프로필 추가</value>
+    <comment>Default label shown next to the "+" icon on the add-profile split button when no source profile has been selected from the flyout. Clicking the button in this state creates a brand-new empty profile.</comment>
+  </data>
+  <data name="Profiles_AddProfileMenu_NewEmptyProfile.Text" xml:space="preserve">
+    <value>새 빈 프로필</value>
+    <comment>Label for the first item in the add-profile split button's flyout. Clicking this creates a new profile with default settings.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>포커스</value>
@@ -1330,7 +1370,7 @@
     <comment>This controls how a right-click behaves in the terminal</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널에서 마우스 오른쪽 단추를 클릭할 때 메뉴가 표시됩니다. 사용하지 않도록 설정하면 마우스 오른쪽 단추를 클릭하면 선택한 텍스트가 복사됩니다(또는 선택 항목이 없는 경우 붙여넣기).</value>
+    <value>사용하도록 설정하면 터미널에서 마우스 오른쪽 단추를 클릭할 때 메뉴가 표시됩니다. 사용하지 않도록 설정한 경우 마우스 오른쪽 단추를 클릭하면 선택한 텍스트가 복사됩니다(선택 영역이 없는 경우 붙여넣기).</value>
     <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
   </data>
   <data name="Profile_ShowMarks.Header" xml:space="preserve">
@@ -1338,7 +1378,7 @@
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
   <data name="Profile_ShowMarks.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널은 텍스트를 검색하거나 셸 통합을 사용할 때 스크롤 막대에 표시를 표시합니다.</value>
+    <value>사용하도록 설정하면 터미널은 텍스트를 검색할 때 또는 셸 통합을 사용하도록 설정할 때 스크롤 막대에 표시를 표시합니다.</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
@@ -1346,7 +1386,7 @@
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 Enter 키를 누를 때 터미널에서 명령의 끝 위치를 나타내는 표시를 자동으로 추가합니다.</value>
+    <value>활성화하면 Enter 키를 누를 때 터미널이 명령 끝 위치를 나타내는 표시를 자동으로 추가합니다.</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
@@ -1522,7 +1562,7 @@
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
   <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>처음 로드할 때 창에 표시되는 행 및 열 수입니다. 문자로 측정되었습니다.</value>
+    <value>처음 로드할 때 창에 표시되는 행 및 열의 수입니다. 문자로 측정됩니다.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
@@ -1641,6 +1681,18 @@
     <value>이 프로필을 삭제하시겠습니까?</value>
     <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
   </data>
+  <data name="Profile_DeleteProfile.Header" xml:space="preserve">
+    <value>이 프로필 삭제하기</value>
+    <comment>Header for a settings card that deletes the profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Description" xml:space="preserve">
+    <value>이 프로필을 영구적으로 제거</value>
+    <comment>Description for the delete profile settings card.</comment>
+  </data>
+  <data name="Profile_DeleteProfileButton.Content" xml:space="preserve">
+    <value>삭제</value>
+    <comment>Button label to delete a profile.</comment>
+  </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>저장하지 않은 설정을 모두 저장합니다.</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
@@ -1754,28 +1806,48 @@
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
-    <value>작업에 대해 자세히 알아봅니다.</value>
+    <value>바로 가기에 대해 자세히 알아보기</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>
   <data name="Actions_DeleteButton2.Text" xml:space="preserve">
-    <value>작업 삭제</value>
+    <value>바로 가기 삭제</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
   <data name="Actions_Name.Text" xml:space="preserve">
-    <value>동작 이름</value>
+    <value>바로 가기 이름</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
   <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
-    <value>동작 이름</value>
+    <value>바로 가기 이름</value>
     <comment>Placeholder text for the text box where the user can edit the action name.</comment>
   </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
-    <value>동작 유형</value>
+    <value>바로 가기 유형</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
   <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>키 바인딩</value>
+    <value>바로 가기</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>키 바인딩</value>
+    <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>새 키 바인딩</value>
+    <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>추가</value>
+    <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
+    <value>추가 사용자 지정</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>키 바인딩 #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual keyboard shortcut on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Key binding #1").</comment>
   </data>
   <data name="Actions_CommandDetails.Text" xml:space="preserve">
     <value>명령 세부 사항</value>
@@ -1786,11 +1858,11 @@
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
   </data>
   <data name="Actions_Keybindings.Text" xml:space="preserve">
-    <value>키 바인딩</value>
+    <value>바로 가기</value>
     <comment>Label for the list of editable keybindings for the current command.</comment>
   </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
-    <value>키 바인딩 추가</value>
+    <value>바로 가기 추가</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
   <data name="Actions_AdditionalKeyChords" xml:space="preserve">
@@ -1806,15 +1878,15 @@
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
-    <value>예, 작업을 삭제할게요</value>
+    <value>예, 바로 가기 삭제</value>
     <comment>Button label that confirms deletion of an action.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>이 액션을 삭제하시겠습니까?</value>
+    <value>이 바로 가기를 삭제하시겠습니까?</value>
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>잘못된 키. 유효한 키 입력.(R)</value>
+    <value>바로 가기가 잘못되었습니다. 올바른 바로 가기 키를 입력하세요.</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
@@ -1822,7 +1894,7 @@
     <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
-    <value>지정된 키 체계는 이미 다음 작업에서 사용되고 있습니다.</value>
+    <value>제공된 키 바인딩은 다음 바로 가기에서 이미 사용 중입니다.</value>
     <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
@@ -1849,8 +1921,12 @@
     <value>편집</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>{} 편집</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>새로 추가</value>
+    <value>새 바로 가기 추가</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2209,9 +2285,6 @@
     <value>여러 탭 또는 창</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
-    <value>"터치 키보드 및 필기 패널 서비스"를 사용할 수 없는 경우 경고</value>
-  </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
     <value>붙여넣기가 5KiB를 초과하는 경우 경고</value>
   </data>
@@ -2263,7 +2336,7 @@
     <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
   <data name="Profile_BellSound.Description" xml:space="preserve">
-    <value>응용 프로그램에서 BEL 문자를 내보낸 경우 재생되는 소리를 제어합니다. "벨 알림 스타일"에는 "가청"이 포함되어야 합니다.</value>
+    <value>애플리케이션이 BEL 문자를 내보낼 때 재생되는 소리를 제어합니다. "벨 알림 스타일"에는 "Audible"이 포함되어야 합니다.</value>
     <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
   </data>
   <data name="Profile_AddBellSound.Text" xml:space="preserve">
@@ -2322,11 +2395,11 @@
     <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
   </data>
   <data name="Profile_Background.Description" xml:space="preserve">
-    <value>색 구성표의 배경색을 재정의합니다.</value>
+    <value>색 구성표에서 배경색을 재정의합니다.</value>
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
   <data name="Profile_SelectionBackground.Description" xml:space="preserve">
-    <value>색 구성표의 선택 영역 배경색을 재정의합니다.</value>
+    <value>색 구성표에서 선택 배경색을 재정의합니다.</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
@@ -2410,11 +2483,11 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.Description" xml:space="preserve">
-    <value>정의된 정규식 속성 중 하나 이상과 일치하는 프로필 그룹을 추가합니다.</value>
+    <value>정의된 정규식 속성 중 하나 이상과 일치하는 프로필 그룹 추가</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
-    <value>"남은 프로필" 항목은 하나만 있을 수 있습니다.</value>
+    <value>"나머지 프로필" 항목은 하나만 있을 수 있음</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
@@ -2494,7 +2567,7 @@
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 폴더에 단일 항목만 있는 경우 항목이 직접 표시되고 폴더가 렌더링되지 않습니다.</value>
+    <value>사용하도록 설정하면 폴더에 항목이 하나만 있는 경우 항목이 직접 표시되고 폴더가 렌더링되지 않습니다.</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
@@ -2502,7 +2575,7 @@
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 폴더에 항목이 없으면 계속 표시됩니다. 그렇지 않으면 폴더가 렌더링되지 않습니다.</value>
+    <value>사용하도록 설정하면 폴더에 항목이 없어도 계속 표시됩니다. 그렇지 않으면 폴더가 렌더링되지 않습니다.</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
   <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
@@ -2582,7 +2655,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>이러한 키 바인딩은 선택한 텍스트 또는 선택한 텍스트의 모든 인스턴스를 지정한 색으로 강조 표시할 수 있습니다.</value>
+    <value>이러한 키 바인딩은 선택한 텍스트 또는 선택한 텍스트의 모든 인스턴스를 지정된 색으로 강조 표시할 수 있습니다.</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
@@ -2610,7 +2683,7 @@
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.Description" xml:space="preserve">
-    <value>끌어서 놓기 작업 중에 파일 및 디렉터리 경로를 변환하는 방법을 제어합니다.</value>
+    <value>끌어서 놓기 작업 중에 파일 및 디렉터리 경로가 변환되는 방법을 제어합니다.</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
   <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
@@ -2637,7 +2710,11 @@
     <value>프로필이 더 이상 검색되지 않음</value>
   </data>
   <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
-    <value>자동으로 검색된 이 프로필은 제거된 것 같습니다. 변경한 내용은 유지되지만 다시 설치할 때까지 사용할 수 없습니다.</value>
+    <value>자동으로 검색된 이 프로필은 제거된 것으로 나타납니다. 변경한 내용은 유지되지만 다시 설치할 때까지 사용할 수 없습니다.</value>
+  </data>
+  <data name="Profile_OrphanedBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>프로필이 더 이상 검색되지 않음</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile's source software is no longer installed.</comment>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>원본 소스</value>
@@ -2763,5 +2840,9 @@
   <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
     <value>이 텍스트는 터미널에 놓인 여러 파일의 경로 사이에 삽입됩니다.</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
+  <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
+    <value>없음</value>
+    <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
   </data>
 </root>

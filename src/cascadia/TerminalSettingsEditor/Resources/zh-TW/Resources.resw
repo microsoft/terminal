@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -121,7 +121,7 @@
     <value>此色彩配置是內建設定或已安裝擴充功能的一部分</value>
   </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Description" xml:space="preserve">
-    <value>若要變更此色彩配置，您必須製作色彩配置的複本。</value>
+    <value>若要變更此色彩配置，您必須製作其複本。</value>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
     <value>建立複本</value>
@@ -330,7 +330,7 @@
     <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>根據預設，文字轉譯器會使用 FLIP_SEQUENTIAL 交換鏈結，並透過 Present1 API 宣告變更的矩形。啟用此設定時，將改為使用 FLIP_DISCARD 交換鏈結，而且不會宣告任何已變更的矩形。一個或另一個比較好取決於您的硬體和各種其他因素。</value>
+    <value>根據預設，文字轉譯器會使用 FLIP_SEQUENTIAL 交換鏈結，並透過 Present1 API 宣告變更矩形。啟用此設定後，系統會改用 FLIP_DISCARD 交換鏈結，且不會宣告任何變更矩形。哪一種方式較佳，取決於您的硬體以及其他多項因素。</value>
     <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
@@ -338,7 +338,7 @@
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>啟用時，終端機將使用軟體點陣器 (WARP)。在幾乎所有情況下，此設定都應該保留停用。</value>
+    <value>啟用時，終端機將使用軟體轉譯器 (WARP)。在幾乎所有情況下，此設定都應保持停用狀態。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
@@ -346,7 +346,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>這會變更內送文字群組到儲存格的方式。[Grapheme 叢集] 選項是最新式且更正確的 Unicode 方法，而 “wcswidth” 是 UNIX 的常見方法，而 [Windows 控制台] 則會復寫它在 Windows 上運作的方式。變更此設定需要重新啟動Windows 終端機，且只適用於從其中啟動的應用程式。</value>
+    <value>這會變更傳入文字分組到儲存格的方式。[Grapheme 叢集] 選項是最新式且符合 Unicode 的做法，而 [wcswidth] 是 UNIX 上常見的方法，[Windows 主控台] 則重現了它過去在 Windows 上的運作方式。變更此設定後，需重新啟動 Windows 終端機，且僅適用於從 Windows 終端機內啟動的應用程式。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 叢集</value>
@@ -522,7 +522,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>當您登入Windows時，會自動啟動終端機。</value>
+    <value>登入 Windows 時自動啟動終端機。</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
@@ -570,7 +570,7 @@
     <comment>Header for a control to toggle debug features.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Description" xml:space="preserve">
-    <value>終端機永遠是桌面最上方的視窗。</value>
+    <value>終端機一律會是桌面上最上層的視窗。</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
@@ -578,7 +578,7 @@
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>這可允許全域傳送與「受擷取模式」等動作運作，即使沒有開啟視窗也可運作。</value>
+    <value>這可讓像是 Global Summon 和 Quake 模式等動作，即使在沒有開啟任何視窗時也能運作。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -678,12 +678,12 @@
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>動作</value>
+    <value>捷徑</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>編輯動作...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>編輯捷徑</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>延伸模組</value>
@@ -714,7 +714,7 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
-    <value>根據預設，Windows會將Ctrl+Alt視為 AltGr 的別名。此設定將會覆寫Windows的預設行為。</value>
+    <value>根據預設，Windows 會將 Ctrl+Alt 視為 AltGr 的別名。此設定將覆寫 Windows 的預設行為。</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -758,7 +758,7 @@
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImage.Description" xml:space="preserve">
-    <value>視窗背景中所使用之圖像的檔案位置。</value>
+    <value>視窗背景中所使用影像的檔案位置。</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -851,7 +851,7 @@
     <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
   <data name="Profile_BackgroundImageStretchMode.Description" xml:space="preserve">
-    <value>設定背景圖像調整大小以填滿視窗。</value>
+    <value>設定如何調整背景影像大小以填滿視窗。</value>
     <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
   </data>
   <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
@@ -927,7 +927,7 @@
     <comment>Header for a control to determine the height of the text cursor.</comment>
   </data>
   <data name="Profile_CursorHeight.Description" xml:space="preserve">
-    <value>從底部開始設定游標的百分比高度。僅適用于復古游標形狀。</value>
+    <value>從底部開始設定游標的百分比高度。僅適用於復古游標形狀。</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
   </data>
   <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -987,7 +987,7 @@
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
   <data name="Profile_FontFace.Description" xml:space="preserve">
-    <value>您可以使用 ASCII 逗號分隔多個字型。</value>
+    <value>您可以使用多種字型，方法是使用 ASCII 逗號加以分隔。</value>
   </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>字型大小</value>
@@ -1097,12 +1097,16 @@
     <value>如果啟用，設定檔將不會顯示在設定檔清單中。這可用來隱藏預設設定檔和動態產生的設定檔，同時將它們留在您的設定檔案中。</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
+  <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>已從下拉式功能表中隱藏</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
+  </data>
   <data name="Profile_Elevate.Header" xml:space="preserve">
     <value>以系統管理員身分執行此設定檔</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
   <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>如果啟用，配置檔將會自動在 管理員 終端機視窗中開啟。如果目前的視窗已以系統管理員身分執行，則會在此視窗中開啟。</value>
+    <value>如果啟用，設定檔將自動在管理員終端機視窗中開啟。如果目前視窗已以系統管理員身分執行，它將在此視窗中開啟。</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -1114,7 +1118,7 @@
     <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
   </data>
   <data name="Profile_HistorySize.Description" xml:space="preserve">
-    <value>視窗中顯示的行數，您可以在視窗中顯示。</value>
+    <value>除了視窗中顯示的行數之外，還能向後捲動查看的行數。</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
   </data>
   <data name="Profile_Icon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1222,7 +1226,7 @@
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Description" xml:space="preserve">
-    <value>忽略應用程式要求以變更標題 (OSC 2)。</value>
+    <value>忽略應用程式變更標題 (OSC 2) 的要求。</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1283,7 +1287,43 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>設定檔</value>
-    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+    <comment>Header for the "profiles" menu item. Navigates to a landing page that lists profile-related settings (defaults, color schemes, the list of terminal profiles, and the add-profile button).</comment>
+  </data>
+  <data name="Nav_Profiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>設定檔</value>
+    <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
+  </data>
+  <data name="Profiles_TerminalProfilesHeader.Header" xml:space="preserve">
+    <value>終端機設定檔</value>
+    <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Header" xml:space="preserve">
+    <value>預設</value>
+    <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Description" xml:space="preserve">
+    <value>此處所做的變更會套用到所有設定檔，除非被特定設定檔覆寫。這些設定不會影響 Windows 終端機的外觀。</value>
+    <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
+    <value>色彩配置</value>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the color schemes page.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
+    <value>新增、編輯或移除設定檔可以使用的色彩配置。</value>
+    <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>新增一個新的設定檔</value>
+    <comment>Tooltip (and accessible name) for the split button on the Profiles landing page whose primary "+" action creates a new empty profile and whose flyout lists existing profiles to duplicate.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton_DefaultLabel.Text" xml:space="preserve">
+    <value>新增新的設定檔</value>
+    <comment>Default label shown next to the "+" icon on the add-profile split button when no source profile has been selected from the flyout. Clicking the button in this state creates a brand-new empty profile.</comment>
+  </data>
+  <data name="Profiles_AddProfileMenu_NewEmptyProfile.Text" xml:space="preserve">
+    <value>新的空白設定檔</value>
+    <comment>Label for the first item in the add-profile split button's flyout. Clicking this creates a new profile with default settings.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>焦點</value>
@@ -1330,7 +1370,7 @@
     <comment>This controls how a right-click behaves in the terminal</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Description" xml:space="preserve">
-    <value>啟用時，終端機會在單擊滑鼠右鍵時顯示功能表。停用時，若沒有選取專案)，按鼠右鍵將會複製選取的文字 (或貼上。</value>
+    <value>啟用時，終端機將會在您按右鍵時顯示功能表。停用時，按右鍵將會複製已選取的文字；如果沒有選取文字，則會貼上。</value>
     <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
   </data>
   <data name="Profile_ShowMarks.Header" xml:space="preserve">
@@ -1338,7 +1378,7 @@
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
   <data name="Profile_ShowMarks.Description" xml:space="preserve">
-    <value>啟用時，當搜尋文字或啟用殼層整合時，終端機會在滾動條中顯示標記。</value>
+    <value>啟用時，終端將在搜尋文字或啟用殼層整合時，在捲軸中顯示標記。</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
@@ -1346,7 +1386,7 @@
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
-    <value>啟用時，當您按下 Enter 時，終端機會自動新增指示命令結尾位置的標記。</value>
+    <value>啟用時，終端機會在您按 Enter 時，自動新增標記，指出命令結尾的位置。</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
@@ -1354,7 +1394,7 @@
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
-    <value>啟用時，按一下提示內部就會將游標移到該位置。這需要啟用您殼層中的殼層整合，才能如預期地運作。</value>
+    <value>啟用時，按一下提示內部就會將游標移動到該位置。此動作需要在命令介面中啟用命令介面整合，才能如預期運作。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
@@ -1566,7 +1606,7 @@
     <comment>Button label that deletes the current profile that is being viewed.</comment>
   </data>
   <data name="Profile_Name.Description" xml:space="preserve">
-    <value>出現在下拉式清單中的設定檔名稱。</value>
+    <value>顯示在下拉式清單中的設定檔名稱。</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
   </data>
   <data name="Profile_Name.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1640,6 +1680,18 @@
   <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>確定要刪除此設定檔嗎?</value>
     <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Header" xml:space="preserve">
+    <value>刪除此個人資料</value>
+    <comment>Header for a settings card that deletes the profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Description" xml:space="preserve">
+    <value>永久移除此設定檔</value>
+    <comment>Description for the delete profile settings card.</comment>
+  </data>
+  <data name="Profile_DeleteProfileButton.Content" xml:space="preserve">
+    <value>刪除</value>
+    <comment>Button label to delete a profile.</comment>
   </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>儲存所有未儲存設定。</value>
@@ -1754,28 +1806,48 @@
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
-    <value>深入了解動作</value>
+    <value>深入了解捷徑</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>
   <data name="Actions_DeleteButton2.Text" xml:space="preserve">
-    <value>刪除動作</value>
+    <value>刪除捷徑</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
   <data name="Actions_Name.Text" xml:space="preserve">
-    <value>動作名稱</value>
+    <value>捷徑名稱</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
   <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
-    <value>動作名稱</value>
+    <value>捷徑名稱</value>
     <comment>Placeholder text for the text box where the user can edit the action name.</comment>
   </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
-    <value>動作類型</value>
+    <value>捷徑類型</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
   <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>按鍵繫結</value>
+    <value>捷徑</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>按鍵繫結</value>
+    <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>新的按鍵繫結</value>
+    <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>新增</value>
+    <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
+    <value>其他自訂</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>按鍵繫結 #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual keyboard shortcut on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Key binding #1").</comment>
   </data>
   <data name="Actions_CommandDetails.Text" xml:space="preserve">
     <value>命令詳細資料</value>
@@ -1786,11 +1858,11 @@
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
   </data>
   <data name="Actions_Keybindings.Text" xml:space="preserve">
-    <value>按鍵繫結</value>
+    <value>捷徑</value>
     <comment>Label for the list of editable keybindings for the current command.</comment>
   </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
-    <value>新增按鍵繫結</value>
+    <value>新增捷徑</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
   <data name="Actions_AdditionalKeyChords" xml:space="preserve">
@@ -1806,15 +1878,15 @@
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
-    <value>是，刪除動作</value>
+    <value>是的，刪除捷徑</value>
     <comment>Button label that confirms deletion of an action.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>您是否確定要刪除此動作?</value>
+    <value>您確定要刪除這個捷徑嗎?</value>
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>按鍵和同步選取無效。請輸入有效的按鍵和同步選取。</value>
+    <value>無效的捷徑。請輸入有效的鍵盤快速鍵。</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
@@ -1822,7 +1894,7 @@
     <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
-    <value>提供的按鍵同步選取已由下列動作使用：</value>
+    <value>提供的按鍵繫結已由下列捷徑使用：</value>
     <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
@@ -1849,8 +1921,12 @@
     <value>編輯</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>編輯 {}</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>新增</value>
+    <value>新增新捷徑​</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2209,9 +2285,6 @@
     <value>多個索引標籤或窗格</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
-    <value>停用「觸控式鍵盤和手寫面板服務」時發出警告</value>
-  </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
     <value>在貼上超過 5 KiB 時警告</value>
   </data>
@@ -2263,7 +2336,7 @@
     <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
   <data name="Profile_BellSound.Description" xml:space="preserve">
-    <value>控制應用程式發出 BEL 字元時播放的音效。「鈴聲通知樣式」必須包含「可聽」。</value>
+    <value>控制應用程式發出 BEL 字元時要播放的音效。「鈴聲通知樣式」必須包含「可聽見」。</value>
     <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
   </data>
   <data name="Profile_AddBellSound.Text" xml:space="preserve">
@@ -2326,7 +2399,7 @@
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
   <data name="Profile_SelectionBackground.Description" xml:space="preserve">
-    <value>覆寫色彩配置中選取的背景色彩。</value>
+    <value>覆寫色彩配置的選取背景色彩。</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
@@ -2410,11 +2483,11 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.Description" xml:space="preserve">
-    <value>新增至少符合其中一個已定義正則表達式屬性的配置檔群組</value>
+    <value>新增至少符合一個已定義規則運算式屬性的設定檔群組</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
-    <value>只能有一個「剩餘配置檔」專案</value>
+    <value>只能有一個「剩餘設定檔」項目</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
@@ -2494,7 +2567,7 @@
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
-    <value>啟用時，如果資料夾只有一個專案，則專案會直接顯示，而且不會轉譯資料夾。</value>
+    <value>啟用時，如果資料夾只有一個項目，則會直接顯示該項目，而不會呈現任何資料夾。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
@@ -2502,7 +2575,7 @@
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
-    <value>啟用時，如果資料夾沒有專案，它仍會顯示。否則，將不會轉譯資料夾。</value>
+    <value>啟用後，即使資料夾沒有任何項目，仍會顯示。否則，資料夾不會呈現。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
   <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
@@ -2566,7 +2639,7 @@
     <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
   </data>
   <data name="Profile_AnswerbackMessage.Description" xml:space="preserve">
-    <value>接收到 ENQ 控制順序時所傳送的回應。</value>
+    <value>收到 ENQ 控制順序時所傳送的回應。</value>
     <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
   </data>
   <data name="Globals_DebugFeaturesEnabled.Description" xml:space="preserve">
@@ -2582,7 +2655,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>這些索引鍵系結可以醒目提示選取文字或具有指定色彩之選取文字的所有實例。</value>
+    <value>這些按鍵繫結可以以指定的色彩醒目提示選取的文字或選取文字的所有執行個體。</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
@@ -2598,7 +2671,7 @@
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
   </data>
   <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>啟用時，當應用程式使用全螢幕時，將會顯示索引標籤。</value>
+    <value>啟用時，當應用程式以全螢幕顯示時，將會顯示索引標籤列。</value>
     <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2610,7 +2683,7 @@
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.Description" xml:space="preserve">
-    <value>控制在拖放操作期間如何翻譯檔案和目錄路徑。</value>
+    <value>控制拖放作業期間如何轉譯檔案和目錄路徑。</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
   <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
@@ -2637,13 +2710,17 @@
     <value>已不再偵測到設定檔</value>
   </data>
   <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
-    <value>這個自動偵測到的配置檔似乎已卸載。您對它的變更會被保留，但是在重新安裝之前無法使用。</value>
+    <value>這個自動偵測的設定檔似乎已解除安裝。您對它所做的變更會保留，但在重新安裝之前無法使用。</value>
+  </data>
+  <data name="Profile_OrphanedBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>已不再偵測到設定檔</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile's source software is no longer installed.</comment>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>原始來源</value>
   </data>
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
-    <value>指示原始建立此配置檔的軟體。</value>
+    <value>指示最初建立此設定檔的軟體。</value>
   </data>
   <data name="Profile_TabTitleNone" xml:space="preserve">
     <value>無</value>
@@ -2761,7 +2838,11 @@
     <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
   </data>
   <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
-    <value>這些文字會插入多個丟入終端機的檔案路徑之間。</value>
+    <value>此文字將插入置放到終端機的多個檔案路徑之間。</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
+  <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
+    <value>無</value>
+    <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
   </data>
 </root>

@@ -132,7 +132,6 @@ namespace SettingsModelUnitTests
                 "trimPaste": true,
 
                 "warning.confirmOnClose": "automatic",
-                "warning.inputService" : true,
                 "warning.largePaste" : true,
                 "warning.multiLinePaste" : "automatic",
 

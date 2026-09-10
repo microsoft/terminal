@@ -83,6 +83,9 @@
     <ClInclude Include="KeyChordListener.h">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="KeyChordVisual.h">
+      <DependentUpon>KeyChordVisual.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
@@ -220,6 +223,9 @@
     <Page Include="KeyChordListener.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="KeyChordVisual.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -303,6 +309,9 @@
     </ClCompile>
     <ClCompile Include="KeyChordListener.cpp">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordVisual.cpp">
+      <DependentUpon>KeyChordVisual.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -438,6 +447,10 @@
     </Midl>
     <Midl Include="KeyChordListener.idl">
       <DependentUpon>KeyChordListener.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="KeyChordVisual.idl">
+      <DependentUpon>KeyChordVisual.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">
