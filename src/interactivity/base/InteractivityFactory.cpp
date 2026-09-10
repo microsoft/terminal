@@ -296,7 +296,10 @@ using namespace Microsoft::Console::Interactivity;
                 // will return the console handle again, not the owning
                 // terminal's handle. It's not entirely clear why, but WS_POPUP
                 // is absolutely vital for this to work correctly.
-                hwnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+                // redirection surface for reduced memory usage, because this window
+                // is never shown and never paints anything.
+                hwnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP,
                                        reinterpret_cast<LPCWSTR>(windowClassAtom),
                                        nullptr,
                                        WS_POPUP,

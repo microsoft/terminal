@@ -250,8 +250,10 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) noexcept :
 
     if (RegisterTermClass(hInstance))
     {
+        // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI redirection surface
+        // for reduced memory usage, because the window is fully rendered in DX.
         CreateWindowExW(
-            0,
+            WS_EX_NOREDIRECTIONBITMAP,
             term_window_class,
             nullptr,
             WS_CHILD |

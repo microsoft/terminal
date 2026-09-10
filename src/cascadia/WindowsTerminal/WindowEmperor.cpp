@@ -1041,8 +1041,11 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
     // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
     // message handler, which then stores the HWND in this->_window.
+    // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+    // redirection surface for reduced memory usage, because this window
+    // is never shown and never paints anything.
     WINRT_VERIFY(CreateWindowExW(
-        /* dwExStyle    */ 0,
+        /* dwExStyle    */ WS_EX_NOREDIRECTIONBITMAP,
         /* lpClassName  */ className,
         /* lpWindowName */ L"Windows Terminal",
         /* dwStyle      */ 0,
