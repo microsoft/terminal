@@ -1105,6 +1105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& searchBox = SettingsSearchBox();
             searchBox.ItemsSource(nullptr);
             searchBox.IsSuggestionListOpen(false);
+            _highlightedSearchResult = nullptr;
             co_return;
         }
 
@@ -1115,6 +1116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& searchBox = SettingsSearchBox();
             searchBox.ItemsSource(nullptr);
             searchBox.IsSuggestionListOpen(false);
+            _highlightedSearchResult = nullptr;
             co_return;
         }
 
@@ -1135,36 +1137,81 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Update the UI with the results
         const auto& searchBox = SettingsSearchBox();
+        _highlightedSearchResult = nullptr;
         searchBox.ItemsSource(results);
         searchBox.IsSuggestionListOpen(true);
     }
 
-    void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    void MainPage::_NavigateToSearchResult(const IInspectable& result)
     {
-        if (args.ChosenSuggestion())
+        const auto searchResult{ result.try_as<Editor::FilteredSearchResult>() };
+        if (!searchResult)
         {
-            const auto& chosenResult{ args.ChosenSuggestion().as<FilteredSearchResult>() };
-            if (chosenResult->IsNoResultsPlaceholder())
-            {
-                // don't navigate anywhere
-                return;
-            }
+            return;
+        }
 
-            // Navigate to the target page
-            const auto& indexEntry{ chosenResult->SearchIndexEntry() };
-            const auto& navigationArg{ chosenResult->NavigationArg() };
-            const auto& subpage{ indexEntry.Entry->SubPage };
-            const hstring elementToFocus{ indexEntry.Entry->ElementName };
-            _Navigate(navigationArg, subpage, elementToFocus);
-            SettingsSearchBox().Text(L"");
+        const auto searchResultImpl{ get_self<implementation::FilteredSearchResult>(searchResult) };
+        if (searchResultImpl->IsNoResultsPlaceholder())
+        {
+            // don't navigate anywhere
+            return;
+        }
+
+        // Navigate to the target page
+        const auto& indexEntry{ searchResultImpl->SearchIndexEntry() };
+        const auto navigationArg{ searchResultImpl->NavigationArg() };
+        const auto subpage{ indexEntry.Entry->SubPage };
+        const hstring elementToFocus{ indexEntry.Entry->ElementName };
+
+        // Reset the search box before navigating
+        // LOAD-BEARING: closing the suggestion list moves focus back to the search box,
+        // which would fight elementToFocus if we navigated first. Since Text() raises
+        // TextChanged as a ProgrammaticChange (which is ignored), we have to drop the stale
+        // results ourselves. Otherwise, the query button would reuse them on the next click.
+        const auto& searchBox{ SettingsSearchBox() };
+        searchBox.Text(L"");
+        searchBox.ItemsSource(nullptr);
+        searchBox.IsSuggestionListOpen(false);
+        _highlightedSearchResult = nullptr;
+
+        _Navigate(navigationArg, subpage, elementToFocus);
+    }
+
+    void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    {
+        if (const auto& chosenSuggestion{ args.ChosenSuggestion() })
+        {
+            _NavigateToSearchResult(chosenSuggestion);
+            return;
+        }
+        else if (_currentSearch)
+        {
+            // a search for the current query is still running, so the results are stale
+            return;
+        }
+        else if (_highlightedSearchResult)
+        {
+            // navigate to the suggestion the user highlighted with the arrow keys
+            _NavigateToSearchResult(_highlightedSearchResult);
+            return;
+        }
+        else if (const auto& itemsSource{ sender.ItemsSource() })
+        {
+            if (const auto& results{ itemsSource.try_as<IObservableVector<IInspectable>>() }; results && results.Size() > 0)
+            {
+                // otherwise, navigate to the top result
+                _NavigateToSearchResult(results.GetAt(0));
+            }
         }
     }
 
-    void MainPage::SettingsSearchBox_SuggestionChosen(const AutoSuggestBox&, const AutoSuggestBoxSuggestionChosenEventArgs&)
+    void MainPage::SettingsSearchBox_SuggestionChosen(const AutoSuggestBox&, const AutoSuggestBoxSuggestionChosenEventArgs& args)
     {
         // Don't navigate on arrow keys
         // Handle Enter/Click with QuerySubmitted() to instead
-        // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion()
+        // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion().
+        // Just record the highlighted suggestion so that the query button can navigate to it.
+        _highlightedSearchResult = args.SelectedItem();
     }
 
     safe_void_coroutine MainPage::_UpdateSearchIndex()
