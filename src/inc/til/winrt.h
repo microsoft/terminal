@@ -57,15 +57,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #ifdef WINRT_Windows_Foundation_H
 
-    // A function cannot expand to the two arguments required by C++/WinRT's
-    // auto_revoke overload, and C++20 cannot turn a bare member name into its
-    // member pointer. Keep these macros focused on just that syntactic gap.
-    // Overloaded handlers must use the explicit spelling with a static_cast.
-#define TIL_WEAK_DELEGATE(handler) \
-    { this->get_weak(), &std::remove_cvref_t<decltype(*this)>::handler }
-#define TIL_AUTO_REVOKE(handler) \
-    ::winrt::auto_revoke, TIL_WEAK_DELEGATE(handler)
-
     template<typename ArgsT>
     struct event
     {
@@ -84,6 +75,30 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
     using typed_event = til::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>>;
+
+    // Creates an auto-revoked event registration backed by a weak reference to
+    // its handler owner. The event member pointer selects the generated
+    // two-argument auto_revoke overload and allows its delegate type to be
+    // deduced without naming it at the call site.
+    template<typename Source, typename EventBase, typename Revoker, typename Delegate, typename Owner, typename Handler>
+        requires std::is_member_function_pointer_v<Handler>
+    [[nodiscard]] Revoker event_handler(const Source& source,
+                                        Revoker (EventBase::*event)(winrt::auto_revoke_t, const Delegate&) const,
+                                        winrt::weak_ref<Owner> owner,
+                                        Handler handler)
+    {
+        return (source.*event)(winrt::auto_revoke, Delegate{ std::move(owner), std::move(handler) });
+    }
+
+    template<typename Source, typename EventBase, typename Revoker, typename Delegate, typename Owner, typename Handler>
+        requires std::is_member_function_pointer_v<Handler>
+    [[nodiscard]] Revoker event_handler(const Source& source,
+                                        Revoker (EventBase::*event)(winrt::auto_revoke_t, const Delegate&) const,
+                                        Owner* owner,
+                                        Handler handler)
+    {
+        return event_handler(source, event, owner->get_weak(), std::move(handler));
+    }
 
     // C++/WinRT generates a distinct revoker type for every event, which makes
     // storing them unnecessarily verbose. This move-only type erases those
@@ -227,6 +242,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class event_revoker_set
     {
     public:
+        template<typename Source, typename Owner>
+        class handler_binder
+        {
+        public:
+            handler_binder(event_revoker_set& revokers, const Source& source, Owner* owner) :
+                _revokers{ revokers },
+                _source{ source },
+                _owner{ owner->get_weak() }
+            {
+            }
+
+            handler_binder(const handler_binder&) = delete;
+            handler_binder& operator=(const handler_binder&) = delete;
+            handler_binder(handler_binder&&) = delete;
+            handler_binder& operator=(handler_binder&&) = delete;
+
+            template<typename EventBase, typename Revoker, typename Delegate, typename Handler>
+                requires std::is_member_function_pointer_v<Handler>
+            void add_handler(Revoker (EventBase::*event)(winrt::auto_revoke_t, const Delegate&) const,
+                             Handler handler)
+            {
+                _revokers.add(event_handler(_source, event, winrt::weak_ref<Owner>{ _owner }, std::move(handler)));
+            }
+
+        private:
+            event_revoker_set& _revokers;
+            Source _source;
+            winrt::weak_ref<Owner> _owner;
+        };
+
         event_revoker_set() noexcept = default;
 
         event_revoker_set(event_revoker_set&& other) noexcept
@@ -255,6 +300,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void add(T&& revoker)
         {
             _revokers.emplace_back(std::forward<T>(revoker));
+        }
+
+        template<typename Source, typename Owner>
+        [[nodiscard]] auto bind(const Source& source, Owner* owner) &
+        {
+            return handler_binder<Source, Owner>{ *this, source, owner };
         }
 
         void revoke() noexcept

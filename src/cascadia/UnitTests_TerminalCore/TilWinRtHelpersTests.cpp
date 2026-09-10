@@ -41,11 +41,6 @@ namespace TerminalCoreUnitTests
             return {};
         }
 
-        til::event_revoker Subscribe(const winrt::Windows::Foundation::Collections::IObservableVector<int>& source)
-        {
-            return source.VectorChanged(TIL_AUTO_REVOKE(OnVectorChanged));
-        }
-
         void OnVectorChanged(const winrt::Windows::Foundation::Collections::IObservableVector<int>&,
                              const winrt::Windows::Foundation::Collections::IVectorChangedEventArgs&)
         {
@@ -71,7 +66,7 @@ class TerminalCoreUnitTests::TilWinRtHelpersTests final
 
     TEST_METHOD(TestEventRevoker);
     TEST_METHOD(TestEventRevokerSet);
-    TEST_METHOD(TestAutoRevokeMacro);
+    TEST_METHOD(TestEventHandler);
 
     TEST_METHOD(TestTypedEvent);
 
@@ -428,24 +423,27 @@ void TilWinRtHelpersTests::TestEventRevokerSet()
     VERIFY_IS_FALSE(static_cast<bool>(revokers));
 }
 
-void TilWinRtHelpersTests::TestAutoRevokeMacro()
+void TilWinRtHelpersTests::TestEventHandler()
 {
     auto source = winrt::single_threaded_observable_vector<int>();
     auto calls = 0;
-    til::event_revoker revoker;
+    til::event_revoker_set revokers;
+    auto sink = winrt::make_self<WeakEventSink>(calls);
+    auto handlers = revokers.bind(source, sink.get());
 
-    {
-        auto sink = winrt::make_self<WeakEventSink>(calls);
-        revoker = sink->Subscribe(source);
-        source.Append(1);
-        VERIFY_ARE_EQUAL(1, calls);
-    }
+    handlers.add_handler(&winrt::Windows::Foundation::Collections::IObservableVector<int>::VectorChanged,
+                         &WeakEventSink::OnVectorChanged);
+    source.Append(1);
+    VERIFY_ARE_EQUAL(1, calls);
 
-    // The macro creates a weak delegate. Keeping the source and revoker alive
-    // must not keep the handler owner alive or invoke it after destruction.
+    // add_handler creates a weak delegate. Keeping the source and revokers
+    // alive must not keep the handler owner alive or invoke it after destruction.
+    sink = nullptr;
+    handlers.add_handler(&winrt::Windows::Foundation::Collections::IObservableVector<int>::VectorChanged,
+                         &WeakEventSink::OnVectorChanged);
     source.Append(2);
     VERIFY_ARE_EQUAL(1, calls);
-    revoker.revoke();
+    revokers.revoke();
 }
 
 void TilWinRtHelpersTests::TestTypedEvent()

@@ -280,6 +280,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+        auto coreHandlers = _revokers.bind(_core, this);
+        auto interactivityHandlers = _revokers.bind(_interactivity, this);
 
         // If high contrast mode was changed, update the appearance appropriately.
         _core.SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
@@ -292,47 +294,47 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }));
 
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
-        _revokers.add(_core.RendererEnteredErrorState(TIL_AUTO_REVOKE(_RendererEnteredErrorState)));
+        coreHandlers.add_handler(&Control::ControlCore::RendererEnteredErrorState, &TermControl::_RendererEnteredErrorState);
 
         // IMPORTANT! Set this callback up sooner rather than later. If we do it
         // after Enable, then it'll be possible to paint the frame once
         // _before_ the warning handler is set up, and then warnings from
         // the first paint will be ignored!
-        _revokers.add(_core.RendererWarning(TIL_AUTO_REVOKE(_RendererWarning)));
+        coreHandlers.add_handler(&Control::ControlCore::RendererWarning, &TermControl::_RendererWarning);
         // ALSO IMPORTANT: Make sure to set this callback up in the ctor, so
         // that we won't miss any swap chain changes.
-        _revokers.add(_core.SwapChainChanged(TIL_AUTO_REVOKE(RenderEngineSwapChainChanged)));
+        coreHandlers.add_handler(&Control::ControlCore::SwapChainChanged, &TermControl::RenderEngineSwapChainChanged);
 
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _revokers.add(_core.BackgroundColorChanged(TIL_AUTO_REVOKE(_coreBackgroundColorChanged)));
-        _revokers.add(_core.FontSizeChanged(TIL_AUTO_REVOKE(_coreFontSizeChanged)));
-        _revokers.add(_core.TransparencyChanged(TIL_AUTO_REVOKE(_coreTransparencyChanged)));
-        _revokers.add(_core.RaiseNotice(TIL_AUTO_REVOKE(_coreRaisedNotice)));
-        _revokers.add(_core.HoveredHyperlinkChanged(TIL_AUTO_REVOKE(_hoveredHyperlinkChanged)));
-        _revokers.add(_core.OutputIdle(TIL_AUTO_REVOKE(_coreOutputIdle)));
-        _revokers.add(_core.UpdateSelectionMarkers(TIL_AUTO_REVOKE(_updateSelectionMarkers)));
-        _revokers.add(_core.OpenHyperlink(TIL_AUTO_REVOKE(_HyperlinkHandler)));
-        _revokers.add(_interactivity.OpenHyperlink(TIL_AUTO_REVOKE(_HyperlinkHandler)));
-        _revokers.add(_interactivity.ScrollPositionChanged(TIL_AUTO_REVOKE(_ScrollPositionChanged)));
-        _revokers.add(_interactivity.ContextMenuRequested(TIL_AUTO_REVOKE(_contextMenuHandler)));
+        coreHandlers.add_handler(&Control::ControlCore::BackgroundColorChanged, &TermControl::_coreBackgroundColorChanged);
+        coreHandlers.add_handler(&Control::ControlCore::FontSizeChanged, &TermControl::_coreFontSizeChanged);
+        coreHandlers.add_handler(&Control::ControlCore::TransparencyChanged, &TermControl::_coreTransparencyChanged);
+        coreHandlers.add_handler(&Control::ControlCore::RaiseNotice, &TermControl::_coreRaisedNotice);
+        coreHandlers.add_handler(&Control::ControlCore::HoveredHyperlinkChanged, &TermControl::_hoveredHyperlinkChanged);
+        coreHandlers.add_handler(&Control::ControlCore::OutputIdle, &TermControl::_coreOutputIdle);
+        coreHandlers.add_handler(&Control::ControlCore::UpdateSelectionMarkers, &TermControl::_updateSelectionMarkers);
+        coreHandlers.add_handler(&Control::ControlCore::OpenHyperlink, &TermControl::_HyperlinkHandler);
+        interactivityHandlers.add_handler(&Control::ControlInteractivity::OpenHyperlink, &TermControl::_HyperlinkHandler);
+        interactivityHandlers.add_handler(&Control::ControlInteractivity::ScrollPositionChanged, &TermControl::_ScrollPositionChanged);
+        interactivityHandlers.add_handler(&Control::ControlInteractivity::ContextMenuRequested, &TermControl::_contextMenuHandler);
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
-        _revokers.add(_core.TitleChanged(TIL_AUTO_REVOKE(_bubbleTitleChanged)));
-        _revokers.add(_core.TabColorChanged(TIL_AUTO_REVOKE(_bubbleTabColorChanged)));
-        _revokers.add(_core.TaskbarProgressChanged(TIL_AUTO_REVOKE(_bubbleSetTaskbarProgress)));
-        _revokers.add(_core.ConnectionStateChanged(TIL_AUTO_REVOKE(_bubbleConnectionStateChanged)));
-        _revokers.add(_core.ShowWindowChanged(TIL_AUTO_REVOKE(_bubbleShowWindowChanged)));
-        _revokers.add(_core.CloseTerminalRequested(TIL_AUTO_REVOKE(_bubbleCloseTerminalRequested)));
-        _revokers.add(_core.CompletionsChanged(TIL_AUTO_REVOKE(_bubbleCompletionsChanged)));
-        _revokers.add(_core.RestartTerminalRequested(TIL_AUTO_REVOKE(_bubbleRestartTerminalRequested)));
-        _revokers.add(_core.SearchMissingCommand(TIL_AUTO_REVOKE(_bubbleSearchMissingCommand)));
-        _revokers.add(_core.ShowNotification(TIL_AUTO_REVOKE(_bubbleShowNotification)));
-        _revokers.add(_core.WindowSizeChanged(TIL_AUTO_REVOKE(_bubbleWindowSizeChanged)));
-        _revokers.add(_core.WriteToClipboard(TIL_AUTO_REVOKE(_bubbleWriteToClipboard)));
+        coreHandlers.add_handler(&Control::ControlCore::TitleChanged, &TermControl::_bubbleTitleChanged);
+        coreHandlers.add_handler(&Control::ControlCore::TabColorChanged, &TermControl::_bubbleTabColorChanged);
+        coreHandlers.add_handler(&Control::ControlCore::TaskbarProgressChanged, &TermControl::_bubbleSetTaskbarProgress);
+        coreHandlers.add_handler(&Control::ControlCore::ConnectionStateChanged, &TermControl::_bubbleConnectionStateChanged);
+        coreHandlers.add_handler(&Control::ControlCore::ShowWindowChanged, &TermControl::_bubbleShowWindowChanged);
+        coreHandlers.add_handler(&Control::ControlCore::CloseTerminalRequested, &TermControl::_bubbleCloseTerminalRequested);
+        coreHandlers.add_handler(&Control::ControlCore::CompletionsChanged, &TermControl::_bubbleCompletionsChanged);
+        coreHandlers.add_handler(&Control::ControlCore::RestartTerminalRequested, &TermControl::_bubbleRestartTerminalRequested);
+        coreHandlers.add_handler(&Control::ControlCore::SearchMissingCommand, &TermControl::_bubbleSearchMissingCommand);
+        coreHandlers.add_handler(&Control::ControlCore::ShowNotification, &TermControl::_bubbleShowNotification);
+        coreHandlers.add_handler(&Control::ControlCore::WindowSizeChanged, &TermControl::_bubbleWindowSizeChanged);
+        coreHandlers.add_handler(&Control::ControlCore::WriteToClipboard, &TermControl::_bubbleWriteToClipboard);
 
-        _revokers.add(_interactivity.PasteFromClipboard(TIL_AUTO_REVOKE(_bubblePasteFromClipboard)));
+        interactivityHandlers.add_handler(&Control::ControlInteractivity::PasteFromClipboard, &TermControl::_bubblePasteFromClipboard);
 
         _revokers.add(_core.RefreshQuickFixUI(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             RefreshQuickFixMenu();
@@ -392,12 +394,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // NOTE: _ScrollPositionChanged has to be registered after we set up the
         // _updateScrollBar func. Otherwise, we could get a callback from an
         // attached content before we set up the throttled func, and that'll A/V
-        _revokers.add(_core.ScrollPositionChanged(TIL_AUTO_REVOKE(_ScrollPositionChanged)));
-        _revokers.add(_core.WarningBell(TIL_AUTO_REVOKE(_coreWarningBell)));
+        coreHandlers.add_handler(&Control::ControlCore::ScrollPositionChanged, &TermControl::_ScrollPositionChanged);
+        coreHandlers.add_handler(&Control::ControlCore::WarningBell, &TermControl::_coreWarningBell);
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick(TIL_WEAK_DELEGATE(_UpdateAutoScroll));
+        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
 
@@ -3406,7 +3408,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (RootGrid().ActualSize() != zeroSize && !_bellLightTimer.IsEnabled())
         {
             _bellLightTimer.Interval(std::chrono::milliseconds(TerminalWarningBellInterval));
-            _bellLightTimer.Tick(TIL_WEAK_DELEGATE(_BellLightOff));
+            _bellLightTimer.Tick({ get_weak(), &TermControl::_BellLightOff });
             _bellLightTimer.Start();
 
             // Switch on the light and animate the intensity to fade out
