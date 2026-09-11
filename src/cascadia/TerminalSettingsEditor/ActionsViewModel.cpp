@@ -363,6 +363,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ActionArgsVM(*actionArgsVM);
         if (!_command.HasName())
         {
+            // Invalidate the cache to make the getter recompute the display name for the "action name" field
+            _cachedDisplayName.clear();
             _NotifyChanges(L"DisplayName");
         }
     }

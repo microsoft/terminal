@@ -49,6 +49,7 @@ namespace Microsoft::Console::TSF
         void Focus(IDataProvider* provider) const;
         void Unfocus(IDataProvider* provider) const;
         bool HasActiveComposition() const noexcept;
+        void FlushPendingComposition() const noexcept;
 
     private:
         void _destroy() noexcept;

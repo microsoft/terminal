@@ -1,6 +1,14 @@
+parameters:
+- name: nugetFeed
+  type: string
+  default: unspecified
+
 steps:
+- ${{ if eq(parameters.nugetFeed, 'unspecified') }}:
+  - "nugetFeed was not specified": error
+
 - pwsh: |-
-    nuget install -source "https://pkgs.dev.azure.com/microsoft/_packaging/WindowsTerminal/nuget/v3/index.json" TerrapinRetrievalTool -Prerelease -OutputDirectory _trt
+    nuget install -source "${{ parameters.nugetFeed }}" TerrapinRetrievalTool -Prerelease -OutputDirectory _trt
     $TerrapinRetrievalToolPath = (Get-Item _trt\TerrapinRetrievalTool.*\win-x64\TerrapinRetrievalTool.exe).FullName
     Write-Host "##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES]x-script,${TerrapinRetrievalToolPath} -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u None -p {url} -s {sha512} -d {dst};x-block-origin"
-  displayName: Set up the Terrapin Retrieval Tool (vcpkg cache)
+  displayName: Install the Terrapin Retrieval Tool (vcpkg cache)

@@ -1000,4 +1000,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>잘못된 정규식을 찾았습니다.</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>참고: 인식할 수 없는 인수는 'new-tab' 하위 명령으로 자동 전달됩니다.
+예를 들어 'wt -p "Ubuntu" -d C:\'는 'wt new-tab -p "Ubuntu" -d C:\'와 같습니다.
+사용 가능한 모든 옵션에 대해 'wt new-tab --help'를 실행합니다.</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

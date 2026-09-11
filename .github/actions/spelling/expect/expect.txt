@@ -1,8 +1,8 @@
 aaaaabbb
+ABANDONFONT
 abbcc
 abcc
 abgr
-ABANDONFONT
 ABORTIFHUNG
 ACCESSTOKEN
 acidev
@@ -29,6 +29,7 @@ allocing
 alpc
 ALTERNATENAME
 ALTF
+ALTGR
 ALTNUMPAD
 ALWAYSTIP
 ansicpg
@@ -76,6 +77,7 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZERTY
 azurecr
 backgrounded
 Backgrounder
@@ -164,6 +166,7 @@ changelist
 CHARSETINFO
 chshdng
 CHT
+CInput
 CLASSSTRING
 cleartype
 CLICKACTIVE
@@ -663,6 +666,7 @@ GHIJK
 GHIJKL
 gitcheckin
 gitfilters
+gksks
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -841,6 +845,8 @@ kinda
 KIYEOK
 KKP
 KLF
+klid
+KLLF
 KLMNO
 KOK
 KPRIORITY
@@ -1075,7 +1081,6 @@ NOCONTEXTHELP
 NOCOPYBITS
 nodiscard
 NODUP
-NODEFAULT
 noexcepts
 NOFONT
 NOHIDDENTEXT
@@ -1104,9 +1109,9 @@ NOSELECTION
 NOSENDCHANGING
 NOSIZE
 NOSNAPSHOT
+NOTELLSHELL
 NOTHOUSANDS
 NOTICKS
-notif
 NOTIMEOUTIFNOTHUNG
 NOTIMPL
 NOTOPMOST
@@ -1563,7 +1568,6 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
-SND
 snk
 SOLIDBOX
 Solutiondir
@@ -1687,6 +1691,7 @@ TMAE
 TMPF
 tmultiple
 tofrom
+Tombstoning
 toolbars
 TOOLINFO
 TOOLWINDOW
@@ -1751,6 +1756,7 @@ Unittesting
 unittests
 unknwn
 UNORM
+unsend
 untextured
 UPDATEDISPLAY
 UPDOWN

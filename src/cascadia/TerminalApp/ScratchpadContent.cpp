@@ -27,7 +27,8 @@ namespace winrt::TerminalApp::implementation
         _root.Children().Append(_box);
     }
 
-    void ScratchpadContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    void ScratchpadContent::UpdateSettings(const CascadiaSettings& /*settings*/,
+                                           const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& /*windowSettings*/)
     {
         // Nothing to do.
     }

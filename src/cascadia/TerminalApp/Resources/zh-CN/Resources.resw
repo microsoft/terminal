@@ -1000,4 +1000,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>发现无效的正则表达式。</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>注意: 无法识别的参数会自动传递给 "new-tab" 子命令。
+例如，"wt -p "Ubuntu" -d C:\" 等同于 "wt new-tab -p "Ubuntu" -d C:\"。
+如需了解所有可用选项，请运行 "wt new-tab --help"。</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

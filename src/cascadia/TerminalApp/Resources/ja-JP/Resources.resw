@@ -1001,4 +1001,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>無効な正規表現が見つかりました。</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>注: 認識されない引数は、自動的に 'new-tab' サブコマンドに渡されます。
+たとえば、'wt -p "Ubuntu" -d C:\' は 'wt new-tab -p "Ubuntu" -d C:\' と同じです。
+使用できるすべてのオプションについては、'wt new-tab --help' を実行します。</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

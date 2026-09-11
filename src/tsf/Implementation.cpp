@@ -42,9 +42,15 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 //   while this method is called. The keyboard layout will be adjusted when the
 //   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
 // - TF_TMAE_CONSOLE: A text service is activated for console usage.
-//   Some IMEs are known to use this as a hint. Particularly a Korean IME can benefit
-//   from this, because Korean relies on "recomposing" previously finished compositions.
-//   That can't work in a terminal, since we submit composed text to the shell immediately.
+//   TSF uses this flag in CInputContextAdapter (adapts TSF3 TIPs to TSF1 or IMM clients),
+//   flags the client as IMM-style, and disables "single character composition" for Korean IMEs.
+//   The latter would cause every syllable to be an "interim character": not marked as composing,
+//   yet still being rewritten by the IME. Since we send any non-composing text to the shell and
+//   can't unsend it, this would break the IME. We could fix that by recognizing `fInterimChar`
+//   and only finalizing the text in front of it of course, and conhost v1 did just that
+//   (see _IsInterimSelection/_MakeInterimString). But it also set TF_TMAE_CONSOLE,
+//   so there were no interim characters in the first place (lol).
+//   To test this, type "gksks" with a Korean IME: 하난 is correct, 하나ㄴ is wrong.
 //
 // ...with the exception of, for the following reason:
 // - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
@@ -222,6 +228,27 @@ void Implementation::Unfocus(IDataProvider* provider)
 bool Implementation::HasActiveComposition() const noexcept
 {
     return _compositions > 0;
+}
+
+// OnEndComposition() can only request TF_ES_ASYNC, because it runs from within an active
+// edit session. If the composition ended due to a relevant terminal key (arrow keys,
+// Enter, etc.), the terminal will receive and handle that key input synchronously, before
+// we got around to handling the completion asynchronously. This method allows you to
+// synchronously flush it from inside the key handler. GH#20244
+void Implementation::FlushPendingComposition() noexcept
+{
+    // Nothing to flush unless a composition has ended and its edit session is still pending.
+    if (_compositions > 0 || !_editSessionCompositionUpdate.referenceCount || !_context)
+    {
+        return;
+    }
+
+    // NOTE: _request() would reject this, because the pending TF_ES_ASYNC request still
+    // references the proxy. Letting that request run afterwards is harmless, because
+    // _doCompositionUpdate() derives everything from the current state of the context.
+    HRESULT hr = S_OK;
+    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionUpdate, TF_ES_READWRITE | TF_ES_SYNC, &hr));
+    LOG_IF_FAILED(hr);
 }
 
 #pragma region IUnknown
@@ -626,6 +653,11 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
+            // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
+            // In other words, don't put text that's in the middle between two active compositions into the finalized string.
+            const auto isActiveComposition = composing || activeCompositionEncountered;
+            auto& target = isActiveComposition ? activeComposition : finalizedString;
+
             size_t totalLen = 0;
             for (;;)
             {
@@ -637,17 +669,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
-                // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
-                // In other words, don't put text that's in the middle between two active compositions into the finalized string.
-                if (!composing && !activeCompositionEncountered)
-                {
-                    finalizedString.append(buf, len);
-                }
-                else
-                {
-                    activeComposition.append(buf, len);
-                }
-
+                target.append(buf, len);
                 totalLen += len;
 
                 if (len < bufCap)
@@ -656,8 +678,10 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
-            const auto attr = _textAttributeFromAtom(atom);
-            activeCompositionRanges.emplace_back(totalLen, attr);
+            if (isActiveComposition)
+            {
+                activeCompositionRanges.emplace_back(totalLen, _textAttributeFromAtom(atom));
+            }
 
             activeCompositionEncountered |= composing;
         }

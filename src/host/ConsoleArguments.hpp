@@ -27,7 +27,7 @@ public:
 
     ConsoleArguments();
 
-    ConsoleArguments& operator=(const ConsoleArguments& other);
+    ConsoleArguments& operator=(const ConsoleArguments& other) = default;
 
     [[nodiscard]] HRESULT ParseCommandline();
 
@@ -114,25 +114,25 @@ private:
 
     std::wstring _clientCommandline;
 
-    HANDLE _vtInHandle;
+    HANDLE _vtInHandle = nullptr;
 
-    HANDLE _vtOutHandle;
+    HANDLE _vtOutHandle = nullptr;
 
     std::wstring _textMeasurement;
     bool _ambiguousIsWide = false;
 
-    bool _forceNoHandoff;
-    bool _forceV1;
-    bool _headless;
+    bool _forceNoHandoff = false;
+    bool _forceV1 = false;
+    bool _headless = false;
 
-    short _width;
-    short _height;
+    short _width = 0;
+    short _height = 0;
 
-    bool _runAsComServer;
-    bool _createServerHandle;
-    DWORD _serverHandle;
-    DWORD _signalHandle;
-    bool _inheritCursor;
+    bool _runAsComServer = false;
+    bool _createServerHandle = true;
+    DWORD _serverHandle = 0;
+    DWORD _signalHandle = 0;
+    bool _inheritCursor = false;
 
     [[nodiscard]] HRESULT _GetClientCommandline(_Inout_ std::vector<std::wstring>& args,
                                                 const size_t index,

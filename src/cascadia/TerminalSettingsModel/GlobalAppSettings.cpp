@@ -367,19 +367,25 @@ bool GlobalAppSettings::FixupsAppliedDuringLoad()
     return _fixupsAppliedDuringLoad || _actionMap->FixupsAppliedDuringLoad();
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme(const Model::WindowSettings& window) noexcept
 {
     auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 
+    const auto themePair = window ? window.Theme() : nullptr;
+    if (!themePair)
+    {
+        return nullptr;
+    }
+
     switch (requestedTheme)
     {
     case winrt::Windows::UI::Xaml::ElementTheme::Light:
-        return _themes.TryLookup(Theme().LightName());
+        return _themes.TryLookup(themePair.LightName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-        return _themes.TryLookup(Theme().DarkName());
+        return _themes.TryLookup(themePair.DarkName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Default:
     default:

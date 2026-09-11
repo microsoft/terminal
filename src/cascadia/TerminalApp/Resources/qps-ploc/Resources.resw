@@ -1000,4 +1000,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>Дŉ ΐňνãľîδ ŗěğµℓдř ë×ρяēѕšιбή ẃăѕ ƒοůŉđ. !!! !!! !!! !!!</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>Ŋõŧέ: Цňřέ¢ŏĝŋìźēđ дŗġμмēηţś ąřё àűтόmąťΐċâľĺŷ φαššеď ťò ťĥз 'new-tab' šüьçόmмãŉð. !!! !!! !!! !!! !!! !!! !!! !!! 
+₣őѓ ęхäмρĺё, 'wt -p "Űьűņŧυ" -d Ç:\' ĩś еqυϊνаℓэпţ ťõ 'wt new-tab -p "Űвũлτũ" -d Ć:\'. !!! !!! !!! !!! !!! !!! !!! !!! !
+₣òŕ ăłļ åνãϊłάвļê ôφŧιôņş, ґùη 'wt new-tab --help'. !!! !!! !!! !!! !!!</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

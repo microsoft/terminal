@@ -1000,4 +1000,10 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>Foi encontrada uma expressão regular inválida.</value>
   </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>Observação: argumentos não reconhecidos são passados automaticamente para o subcomando 'new-tab'.
+Por exemplo, 'wt -p "Ubuntu" -d C:\' é equivalente a 'wt new-tab -p "Ubuntu" -d C:\'.
+Para todas as opções disponíveis, execute 'wt new-tab --help'.</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
 </root>

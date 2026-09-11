@@ -2558,10 +2558,11 @@
         },
         "firstWindowPreference": {
           "default": "defaultProfile",
-          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "description": "Defines how the terminal behaves when it starts. \"defaultProfile\" launches one tab using the default profile. \"persistedWindowLayout\" saves the window layout on close and restores it on open. \"persistedLayoutAndContent\" saves both the layout and the tab content on close and restores them on open.",
           "enum": [
             "defaultProfile",
-            "persistedWindowLayout"
+            "persistedWindowLayout",
+            "persistedLayoutAndContent"
           ],
           "type": "string"
         },

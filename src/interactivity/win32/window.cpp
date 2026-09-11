@@ -45,13 +45,7 @@ using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
 
-Window::Window() :
-    _fIsInFullscreen(false),
-    _pSettings(nullptr),
-    _hWnd(nullptr),
-    _pUiaProvider(nullptr),
-    _fWasMaximizedBeforeFullscreen(false),
-    _dpiBeforeFullscreen(0)
+Window::Window()
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcWindowBeforeFullscreen, sizeof(_rcWindowBeforeFullscreen));
