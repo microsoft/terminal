@@ -1,0 +1,58 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+// Classic-COM protocol interface consumed by wtcli.exe. Marshaled by the
+// MIDL proxy/stub in OpenConsoleProxy.dll, so activation/marshaling does
+// not go through the WinRT activation catalog (CWinRTActivationStoreCatalog)
+// that crashes on affected combase builds.
+//
+// Design (per-method + JSON payloads): scalar inputs stay typed (GUID / BSTR /
+// integers / float / boolean); every complex result crosses the wire as a JSON
+// string (BSTR). This avoids SAFEARRAY/struct marshaling entirely and reuses the
+// JSON the rest of the system already speaks. The server serializes its existing
+// WinRT result structs to JSON; wtcli parses the JSON back for display.
+
+import "unknwn.idl";
+
+// LOAD BEARING (same discipline as ITerminalHandoff): OpenConsoleProxy.dll is a
+// single shared proxy/stub DLL. Never change or reuse the UUIDs below.
+
+// Terminal protocol — implemented by WindowsTerminal.exe, activated by the
+// client via CoCreateInstance(CLSCTX_LOCAL_SERVER) with the per-brand CLSID.
+[
+    object,
+    uuid(D999831E-7EBD-4B14-9D2F-8B09417582D4),
+    pointer_default(unique)
+] interface ITerminalProtocol : IUnknown
+{
+    // ── Queries (complex results as JSON) ──
+    HRESULT GetActivePane([out, retval] BSTR* json);
+    HRESULT ListWindows([out, retval] BSTR* json);
+    HRESULT ListTabs([in] unsigned hyper windowIdFilter, [out, retval] BSTR* json);
+    HRESULT ListPanes([in] unsigned hyper windowIdFilter, [in] unsigned long tabIdFilter, [out, retval] BSTR* json);
+    HRESULT ReadPaneOutput([in] GUID sessionId, [in] BSTR source, [in] long maxLines, [out, retval] BSTR* json);
+    HRESULT GetProcessStatus([in] GUID sessionId, [out, retval] BSTR* json);
+    HRESULT GetSessionVariable([in] GUID sessionId, [in] BSTR name, [out, retval] BSTR* json);
+    HRESULT GetSettings([out, retval] BSTR* json);
+
+    // ── Mutations ──
+    HRESULT CreateTab([in] unsigned hyper windowId,
+                      [in] BSTR profile,
+                      [in] BSTR commandline,
+                      [in] BSTR title,
+                      [in] BSTR startingDirectory,
+                      [in] boolean suppressAppTitle,
+                      [in] boolean background,
+                      [out, retval] BSTR* json);
+    HRESULT SplitPane([in] GUID sessionId,
+                      [in] BSTR direction,
+                      [in] float size,
+                      [in] BSTR profile,
+                      [in] BSTR commandline,
+                      [in] boolean background,
+                      [out, retval] BSTR* json);
+    HRESULT ClosePane([in] GUID sessionId);
+    HRESULT SendInput([in] GUID sessionId, [in] BSTR text);
+    HRESULT FocusPane([in] GUID sessionId);
+    HRESULT SetSessionVariable([in] GUID sessionId, [in] BSTR name, [in] BSTR value);
+};

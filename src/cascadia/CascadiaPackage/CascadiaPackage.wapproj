@@ -18,6 +18,8 @@
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
     <OCExecutionAliasName Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">wtd</OCExecutionAliasName>
     <OCExecutionAliasName Condition="'$(OCExecutionAliasName)'==''">wt</OCExecutionAliasName>
+    <OCCliExecutionAliasName Condition="'$(WindowsTerminalBranding)'=='' or '$(WindowsTerminalBranding)'=='Dev'">wtdcli</OCCliExecutionAliasName>
+    <OCCliExecutionAliasName Condition="'$(OCCliExecutionAliasName)'==''">wtcli</OCCliExecutionAliasName>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
@@ -92,6 +94,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\tools\wtcli\wtcli.vcxproj">
+      <Project>{8A3B5E2F-1C4D-4F6A-9B8C-0D1E2F3A4B5C}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
@@ -105,6 +110,7 @@
         </SourceProject>
         <!-- Replace the filename for wt/wtd.exe with the one that the manifest wants. -->
         <TargetPath Condition="'%(Filename)' == 'wt' and '%(Extension)' == '.exe'">$(OCExecutionAliasName).exe</TargetPath>
+        <TargetPath Condition="'%(Filename)' == 'wtcli' and '%(Extension)' == '.exe'">$(OCCliExecutionAliasName).exe</TargetPath>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>

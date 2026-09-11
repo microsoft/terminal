@@ -171,6 +171,7 @@ namespace Microsoft.Terminal.Control
         void EnablePainting();
 
         String ReadEntireBuffer();
+        String ReadLastPrompt();
         CommandHistoryContext CommandHistory();
         Boolean QuickFixesAvailable { get; };
 
