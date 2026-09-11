@@ -111,6 +111,7 @@
     ON_ALL_ACTIONS(RestartConnection)       \
     ON_ALL_ACTIONS(ToggleBroadcastInput)    \
     ON_ALL_ACTIONS(OpenScratchpad)          \
+    ON_ALL_ACTIONS(OpenSftpBrowser)         \
     ON_ALL_ACTIONS(OpenAbout)               \
     ON_ALL_ACTIONS(QuickFix)                \
     ON_ALL_ACTIONS(OpenCWD)                 \

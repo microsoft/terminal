@@ -155,6 +155,17 @@
     </feature>
 
     <feature>
+        <name>Feature_SftpBrowser</name>
+        <description>Allow the user to create SFTP browser panes. Experimental, to validate embedded remote file management.</description>
+        <id>46617</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_KeypadModeEnabled</name>
         <description>Enables the DECKPAM, DECKPNM sequences to work as intended </description>
         <id>16654</id>

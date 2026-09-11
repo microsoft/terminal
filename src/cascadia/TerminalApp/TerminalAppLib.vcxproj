@@ -80,6 +80,9 @@
     <Page Include="MarkdownPaneContent.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="SftpBrowserContent.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -182,6 +185,10 @@
     <ClInclude Include="MarkdownPaneContent.h">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SftpBrowserContent.h">
+      <DependentUpon>SftpBrowserContent.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SftpClient.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -297,6 +304,11 @@
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="SftpBrowserContent.cpp">
+      <DependentUpon>SftpBrowserContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="SftpClient.cpp" />
 
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -366,6 +378,10 @@
     </Midl>
     <Midl Include="MarkdownPaneContent.idl">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SftpBrowserContent.idl">
+      <DependentUpon>SftpBrowserContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

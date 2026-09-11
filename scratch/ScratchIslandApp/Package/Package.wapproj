@@ -42,6 +42,10 @@
     <PRIResource Include="Resources\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- App icon and tile images referenced from Package.appxmanifest -->
+    <Content Include="Images\**\*.png" />
+  </ItemGroup>
 
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
   <ItemGroup>

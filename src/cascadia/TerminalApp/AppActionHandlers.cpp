@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "ScratchpadContent.h"
+#include "SftpBrowserContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
@@ -1585,6 +1586,19 @@ namespace winrt::TerminalApp::implementation
             const auto resultPane = std::make_shared<Pane>(*scratchPane);
             _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, resultPane);
             args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleOpenSftpBrowser(const IInspectable& sender,
+                                              const ActionEventArgs& args)
+    {
+        if (Feature_SftpBrowser::IsEnabled())
+        {
+            if (const auto& newPane{ _MakePane(BaseContentArgs(L"sftp-browser"), *_senderOrFocusedTab(sender), nullptr) })
+            {
+                _SplitPane(_senderOrFocusedTab(sender), SplitDirection::Automatic, 0.5f, newPane);
+                args.Handled(true);
+            }
         }
     }
 

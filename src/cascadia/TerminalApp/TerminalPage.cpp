@@ -20,6 +20,7 @@
 #include "Remoting.h"
 #include "ScratchpadContent.h"
 #include "SettingsPaneContent.h"
+#include "SftpBrowserContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
@@ -3978,6 +3979,21 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 content = *markdownContent;
+            }
+        }
+        else if (paneType == L"sftp-browser")
+        {
+            if (Feature_SftpBrowser::IsEnabled())
+            {
+                const auto& sftpContent{ winrt::make_self<SftpBrowserContent>() };
+                sftpContent->UpdateSettings(_settings, _currentWindowSettings());
+                sftpContent->GetRoot().KeyDown({ get_weak(), &TerminalPage::_KeyDownHandler });
+                if (_hostingHwnd.has_value())
+                {
+                    sftpContent->SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
+                }
+
+                content = *sftpContent;
             }
         }
 

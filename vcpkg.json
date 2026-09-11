@@ -2,7 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "fmt",
-    "ms-gsl"
+    "ms-gsl",
+    "libssh2"
   ],
   "features": {
     "terminal": {
@@ -34,6 +35,10 @@
     {
       "name": "cmark",
       "version": "0.31.1"
+    },
+    {
+      "name": "libssh2",
+      "version": "1.11.1#3"
     }
   ],
   "builtin-baseline": "927f62e4b8838bd7e441e9c45103a16ffd75007e",

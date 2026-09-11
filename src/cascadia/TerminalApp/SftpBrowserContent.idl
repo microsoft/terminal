@@ -1,0 +1,36 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+
+namespace TerminalApp
+{
+    runtimeclass SftpFileEntry
+    {
+        SftpFileEntry();
+
+        String Name { get; set; };
+        String FullPath { get; set; };
+        String Permissions { get; set; };
+        String SizeText { get; set; };
+        String ModTimeText { get; set; };
+        String Glyph { get; set; };
+        Boolean IsDirectory { get; set; };
+    }
+
+    runtimeclass SftpProfileItem
+    {
+        SftpProfileItem();
+
+        String Host { get; set; };
+        String Username { get; set; };
+    }
+
+    [default_interface] runtimeclass SftpBrowserContent : Windows.UI.Xaml.Controls.UserControl,
+                                                          IPaneContent
+    {
+        SftpBrowserContent();
+        void Initialize(String host, UInt32 port, String username, String password, String privateKeyPath);
+        void Navigate(String path);
+    }
+}

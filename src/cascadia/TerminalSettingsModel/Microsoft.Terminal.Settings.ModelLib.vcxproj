@@ -315,6 +315,9 @@
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Lib>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);user32.lib</AdditionalDependencies>
     </Link>
