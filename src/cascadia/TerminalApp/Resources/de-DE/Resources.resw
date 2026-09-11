@@ -192,7 +192,7 @@
     <value>Bereich teilen</value>
   </data>
   <data name="SplitPaneToolTipText" xml:space="preserve">
-    <value>Mit der rechten Maustaste klicken für Richtungen zum Teilen – rechts/unten/oben/links</value>
+    <value>Klicken Sie mit der rechten Maustaste, um die Teilungsrichtung auszuwählen: rechts, unten, oben oder links.</value>
   </data>
   <data name="SplitPaneDownText" xml:space="preserve">
     <value>Bereich nach unten teilen</value>
