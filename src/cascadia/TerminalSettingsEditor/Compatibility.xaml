@@ -113,7 +113,7 @@
                                        Style="{StaticResource CustomFlyoutTextStyle}" />
                             <Button x:Uid="Settings_ResetApplicationStateConfirmationButton"
                                     Click="ResetApplicationStateButton_Click"
-                                    Style="{StaticResource DeleteButtonStyle}"/>
+                                    Style="{StaticResource DeleteButtonStyle}" />
                         </StackPanel>
                     </Flyout>
                 </Button.Flyout>
@@ -138,7 +138,7 @@
                                        Style="{StaticResource CustomFlyoutTextStyle}" />
                             <Button x:Uid="Settings_ResetToDefaultSettingsConfirmationButton"
                                     Click="{x:Bind ViewModel.ResetToDefaultSettings}"
-                                    Style="{StaticResource DeleteButtonStyle}"/>
+                                    Style="{StaticResource DeleteButtonStyle}" />
                         </StackPanel>
                     </Flyout>
                 </Button.Flyout>
