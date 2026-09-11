@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <chrono>
+#include <optional>
+
 #include "TaskbarState.h"
 #include "TerminalPaneContent.h"
 
@@ -262,6 +265,14 @@ private:
     bool _zoomed{ false };
     bool _broadcastEnabled{ false };
 
+    // Key auto-repeat can fire resizePane faster than XAML + every terminal
+    // in the tree can reflow. Apply the latest split position at a rate
+    // that tracks recent layout cost.
+    std::optional<float> _lastAppliedSplitPosition;
+    std::chrono::steady_clock::time_point _lastSplitLayoutAt{};
+    std::chrono::milliseconds _splitLayoutInterval{ 125 };
+    winrt::Windows::System::DispatcherQueueTimer _splitLayoutTimer{ nullptr };
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
@@ -275,6 +286,9 @@ private:
                                                                    std::shared_ptr<Pane> newPane);
 
     void _CreateRowColDefinitions();
+    void _ApplySplitLayoutNow();
+    void _ScheduleSplitLayout();
+    void _AdoptSplitLayoutCost(std::chrono::steady_clock::duration cost);
     void _ApplySplitDefinitions();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
