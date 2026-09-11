@@ -350,13 +350,30 @@ void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, cons
     CreateNewWindow(std::move(request));
 }
 
-AppHost* WindowEmperor::_mostRecentWindow() const noexcept
+// Method Description:
+// - Get the most recently used window.
+// Arguments:
+// - ignoreQuakeWindow: if true, then don't return the _quake window when we
+//   find it. This allows us to change our behavior for glomming vs.
+//   summoning. When glomming a new tab into an existing window, this
+//   parameter should be true. When summoning, this should be false.
+// Return Value:
+// - the most recently used window, otherwise nullptr if we could not find one.
+AppHost* WindowEmperor::_mostRecentWindow(const bool ignoreQuakeWindow) const noexcept
 {
     int64_t max = INT64_MIN;
     AppHost* mostRecent = nullptr;
 
     for (const auto& w : _windows)
     {
+        if (ignoreQuakeWindow && w->Logic().IsQuakeWindow())
+        {
+            // The _quake window should never be treated as the MRU window.
+            // Skip it if we see it. Users can still target it with `wt -w
+            // _quake`, which will hit GetWindowByName instead.
+            continue;
+        }
+
         const auto lastActivatedTime = w->GetLastActivatedTime();
         if (lastActivatedTime > max)
         {
@@ -772,7 +789,7 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
     // Fallback.
     if (!window)
     {
-        window = _mostRecentWindow();
+        window = _mostRecentWindow(false);
         if (!window)
         {
             return;
@@ -851,7 +868,8 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         switch (windowingBehavior)
         {
         case WindowingMode::UseAnyExisting:
-            window = _mostRecentWindow();
+            // Don't glom to the _quake window.
+            window = _mostRecentWindow(true);
             break;
         case WindowingMode::UseExisting:
             _dispatchCommandlineCurrentDesktop(std::move(args));
@@ -892,6 +910,14 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
         int64_t max = INT64_MIN;
         for (const auto& w : _windows)
         {
+            if (w->Logic().IsQuakeWindow())
+            {
+                // The _quake window should never be treated as the MRU
+                // window when glomming. Users can still target it with
+                // `wt -w _quake`, which will hit GetWindowByName instead.
+                continue;
+            }
+
             const auto lastActivatedTime = w->GetLastActivatedTime();
             const auto desktopId = co_await w->GetVirtualDesktopId();
             if (desktopId == currentDesktop && lastActivatedTime > max)
@@ -909,7 +935,7 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
     {
         // If virtual desktops have never been used, and in turn Explorer never set them up,
         // GetCurrentVirtualDesktopId will return false. In this case just use the current (only) desktop.
-        window = _mostRecentWindow();
+        window = _mostRecentWindow(true);
     }
 
     if (window)
@@ -952,7 +978,7 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
     }
     else
     {
-        window = _mostRecentWindow();
+        window = _mostRecentWindow(false);
     }
 
     if (!window)
