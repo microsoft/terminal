@@ -295,9 +295,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AttachToNewControl()
     {
         _setupDispatcherAndCallbacks();
-        const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
+        _raiseFontSizeChanged();
 
         // The renderer will be re-enabled in Initialize
 
@@ -461,6 +460,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
 
+        _raiseFontSizeChanged();
         return true;
     }
 
@@ -932,46 +932,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _hasUnfocusedAppearance = static_cast<bool>(newAppearance);
         _unfocusedAppearance = _hasUnfocusedAppearance ? newAppearance : settings;
 
-        const auto lock = _terminal->LockForWriting();
-
-        _builtinGlyphs = _settings.EnableBuiltinGlyphs();
-        _colorGlyphs = _settings.EnableColorGlyphs();
-        _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
-        _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
-        _runtimeOpacity = std::nullopt;
-        _runtimeFocusedOpacity = std::nullopt;
-
-        // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
-
-        const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
-
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
-
-        if (!_initializedTerminal.load(std::memory_order_relaxed))
         {
-            // If we haven't initialized, there's no point in continuing.
-            // Initialization will handle the renderer settings.
-            return;
+            const auto lock = _terminal->LockForWriting();
+
+            _builtinGlyphs = _settings.EnableBuiltinGlyphs();
+            _colorGlyphs = _settings.EnableColorGlyphs();
+            _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
+            _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
+            _runtimeOpacity = std::nullopt;
+            _runtimeFocusedOpacity = std::nullopt;
+
+            // Manually turn off acrylic if they turn off transparency.
+            _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
+
+            const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
+
+            // Update the terminal core with its new Core settings
+            _terminal->UpdateSettings(_settings);
+
+            if (_initializedTerminal.load(std::memory_order_relaxed))
+            {
+                _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
+                _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
+                _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+                // Inform the renderer of our opacity
+                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+                _renderFailures = 0; // We may have changed the engine; reset the failure counter.
+
+                // Trigger a redraw to repaint the window background and tab colors.
+                _renderer->TriggerRedrawAll(true, true);
+
+                _updateAntiAliasingMode();
+
+                if (sizeChanged)
+                {
+                    _refreshSizeUnderLock();
+                }
+            }
         }
 
-        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
-        _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-        // Inform the renderer of our opacity
-        _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-        _renderFailures = 0; // We may have changed the engine; reset the failure counter.
-
-        // Trigger a redraw to repaint the window background and tab colors.
-        _renderer->TriggerRedrawAll(true, true);
-
-        _updateAntiAliasingMode();
-
-        if (sizeChanged)
-        {
-            _refreshSizeUnderLock();
-        }
+        _raiseFontSizeChanged();
     }
 
     // Method Description:
@@ -1146,7 +1146,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
         }
+    }
 
+    void ControlCore::_raiseFontSizeChanged()
+    {
         const auto actualNewSize = _actualFont.GetSize();
         FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
@@ -1197,12 +1200,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _accumulatedFontSizeDelta += fontSizeDelta;
 
-        const auto lock = _terminal->LockForWriting();
-
-        if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
         {
-            _refreshSizeUnderLock();
+            const auto lock = _terminal->LockForWriting();
+
+            if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
+            {
+                _refreshSizeUnderLock();
+            }
         }
+
+        _raiseFontSizeChanged();
     }
 
     // Method Description:
@@ -1299,13 +1306,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _panelHeight = height;
         _compositionScale = scale;
 
-        const auto lock = _terminal->LockForWriting();
+        {
+            const auto lock = _terminal->LockForWriting();
+            if (scaleChanged)
+            {
+                // _updateFont relies on the new _compositionScale set above
+                _updateFont();
+            }
+            _refreshSizeUnderLock();
+        }
+
         if (scaleChanged)
         {
-            // _updateFont relies on the new _compositionScale set above
-            _updateFont();
+            _raiseFontSizeChanged();
         }
-        _refreshSizeUnderLock();
     }
 
     void ControlCore::SetSelectionAnchor(const til::point position)
@@ -1589,26 +1603,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text. This is just the
-    //   height of the viewport.
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int ControlCore::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size ControlCore::ViewportSize() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetViewport().Height();
-    }
-
-    // Function Description:
-    // - Gets the width of the terminal in columns. This is just the
-    //   width of the viewport.
-    // Return Value:
-    // - The width of the terminal in columns
-    int ControlCore::ViewWidth() const
-    {
-        const auto lock = _terminal->LockForReading();
-        return _terminal->GetViewport().Width();
+        return _terminal->GetViewport().Dimensions().to_core_size();
     }
 
     // Function Description:
@@ -2705,7 +2704,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
-        const auto viewHeight = ViewHeight();
+        const auto viewHeight = ViewportSize().Height;
         const auto bufferSize = BufferHeight();
 
         // UserScrollViewport, to update the Terminal about where the viewport should be

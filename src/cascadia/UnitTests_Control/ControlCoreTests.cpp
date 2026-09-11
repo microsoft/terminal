@@ -32,6 +32,7 @@ namespace ControlUnitTests
         TEST_METHOD(TestFreeAfterClose);
 
         TEST_METHOD(TestFontInitializedInCtor);
+        TEST_METHOD(TestFontSizeChangedAfterViewportResize);
 
         TEST_METHOD(TestClearScrollback);
         TEST_METHOD(TestClearScreen);
@@ -259,7 +260,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer viewport before the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
@@ -268,7 +269,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(0, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(20, core->BufferHeight());
 
         // In this test, we can't actually check if we cleared the buffer
@@ -296,7 +297,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer viewport before the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
@@ -305,7 +306,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         // In this test, we can't actually check if we cleared the buffer
@@ -333,7 +334,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer viewport before the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Clear the buffer");
@@ -342,7 +343,7 @@ namespace ControlUnitTests
         Log::Comment(L"Check the buffer after the clear");
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(0, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(20, core->BufferHeight());
 
         // In this test, we can't actually check if we cleared the buffer

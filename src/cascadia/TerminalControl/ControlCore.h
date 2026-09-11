@@ -171,8 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
-        int ViewHeight() const;
-        int ViewWidth() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -316,6 +315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
+        void _raiseFontSizeChanged();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
