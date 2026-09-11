@@ -577,8 +577,8 @@ try
     const auto lock = publicTerminal->_terminal->LockForReading();
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 
-    dimensions->width = viewInCharacters.Width();
-    dimensions->height = viewInCharacters.Height();
+    dimensions->width = std::max(viewInCharacters.Width(), MINIMUM_VISIBLE_CELLS);
+    dimensions->height = std::max(viewInCharacters.Height(), MINIMUM_VISIBLE_CELLS);
 
     return S_OK;
 }
