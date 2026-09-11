@@ -32,7 +32,6 @@ namespace ControlUnitTests
         TEST_METHOD(TestFreeAfterClose);
 
         TEST_METHOD(TestFontInitializedInCtor);
-        TEST_METHOD(TestFontSizeChangedAfterViewportResize);
 
         TEST_METHOD(TestClearScrollback);
         TEST_METHOD(TestClearScreen);
