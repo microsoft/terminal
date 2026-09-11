@@ -608,7 +608,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto obj{ d.try_as<Editor::SettingsCard>() };
         const auto self = get_self<SettingsCard>(obj);
         self->_UpdateHeaderIconVisibility();
-        // HeaderIcon type may have flipped between BitmapIcon and other icon types — re-evaluate
+        // HeaderIcon type may have flipped between BitmapIcon and other icon types. Re-evaluate
         // the BitmapHeaderIcon visual state so the disabled-opacity setter is applied (or cleared).
         self->_CheckHeaderIconState();
     }

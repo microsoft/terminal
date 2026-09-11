@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    // The primary "+" half of the SplitButton — adds either a new empty
+    // The primary "+" half of the SplitButton. Adds either a new empty
     // profile or a duplicate of the currently selected source profile,
     // depending on what the user picked from the flyout.
     void Profiles::AddProfile_Click(const winrt::Microsoft::UI::Xaml::Controls::SplitButton& /*sender*/,
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Rebuilds the MenuFlyout each time it opens so newly added/removed
     // profiles are reflected without having to subscribe to VectorChanged.
     // Selecting a flyout item updates which profile the SplitButton's primary
-    // action will use as its source — it does NOT add a profile on its own.
+    // action will use as its source. It does NOT add a profile on its own.
     void Profiles::AddProfileFlyout_Opening(const IInspectable& sender, const IInspectable& /*args*/)
     {
         const auto flyout = sender.try_as<MenuFlyout>();
@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto selected = _ViewModel.SelectedSourceProfile();
         const auto weakViewModel = winrt::make_weak(_ViewModel);
 
-        // "New empty profile" item — picking this resets the SplitButton to its
+        // "New empty profile" item. Picking this resets the SplitButton to its
         // default state where the primary action creates a brand-new profile.
         {
             winrt::Microsoft::UI::Xaml::Controls::RadioMenuFlyoutItem newEmptyItem;
@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         items.Append(MenuFlyoutSeparator{});
 
-        // One RadioMenuFlyoutItem per existing profile — picking one swaps the
+        // One RadioMenuFlyoutItem per existing profile. Picking one swaps the
         // SplitButton's primary action over to "duplicate this profile".
         for (const auto& profileVM : _ViewModel.Profiles())
         {

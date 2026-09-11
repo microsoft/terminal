@@ -1,6 +1,7 @@
 aci
 addref
 allcolors
+Affordance
 breadcrumb
 breadcrumbs
 ccmp

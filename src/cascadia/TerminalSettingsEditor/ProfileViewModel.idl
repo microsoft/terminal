@@ -33,10 +33,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Base = 0,
         Appearance = 1,
         Terminal = 2,
-        Advanced = 3
+        Advanced = 3,
+        UnfocusedAppearance = 4
     };
 
-    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, IInheritableViewModel
     {
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
@@ -88,6 +89,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean HasUnfocusedAppearance { get; };
         Boolean EditableUnfocusedAppearance { get; };
         Boolean ShowUnfocusedAppearance { get; };
+        String UnfocusedAppearanceCardValue { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
 
         Boolean ShowMarksAvailable { get; };
@@ -97,14 +99,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
+        String IconAccessibleName { get; };
         String IconPath;
         Boolean UsingNoIcon { get; };
 
-        String TabTitlePreview { get; };
-        String AnswerbackMessagePreview { get; };
-        String AnswerbackMessageAccessibleName { get; };
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };
+        String TabColorAccessibleName { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

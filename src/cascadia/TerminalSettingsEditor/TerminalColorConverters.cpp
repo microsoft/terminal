@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::IInspectable ColorToStringConverter::Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& /*targetType*/, Windows::Foundation::IInspectable const& /*parameter*/, hstring const& /*language*/)
     {
         const auto color = value.as<Windows::UI::Color>();
-        return winrt::box_value(fmt::format(FMT_COMPILE(L"#{:02X}{:02X}{:02X}"), color.R, color.G, color.B));
+        return winrt::box_value(winrt::Microsoft::Terminal::Settings::ColorToHexString(color));
     }
 
     Windows::Foundation::IInspectable ColorToStringConverter::ConvertBack(Windows::Foundation::IInspectable const& /*value*/, Windows::UI::Xaml::Interop::TypeName const& /*targetType*/, Windows::Foundation::IInspectable const& /*parameter*/, hstring const& /*language*/)
