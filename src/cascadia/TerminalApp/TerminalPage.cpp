@@ -1890,7 +1890,7 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
-    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool /*extended*/, const bool down)
     {
         const auto modifiers = _GetPressedModifierKeys();
         if (vkey == VK_SPACE && modifiers.IsAltPressed() && down)

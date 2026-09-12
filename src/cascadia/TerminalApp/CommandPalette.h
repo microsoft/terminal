@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& mruTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down);
 
         void SelectNextItem(const bool moveDown);
 
