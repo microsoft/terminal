@@ -219,14 +219,6 @@
     <value>黃色</value>
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
-  <data name="Globals_Language.Header" xml:space="preserve">
-    <value>語言 (需要重新啟動)</value>
-    <comment>The header for a control allowing users to choose the app's language.</comment>
-  </data>
-  <data name="Globals_Language.Description" xml:space="preserve">
-    <value>選取應用程式的顯示語言。這將會覆寫您的預設 Windows 介面語言。</value>
-    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
     <value>預設</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
@@ -235,22 +227,11 @@
     <value>預設 IME 輸入模式</value>
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
-  <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
-    <value>通知 IME 預設使用的語言。對於依賴 IME 且預設不使用拉丁字元的語言，此設定可用來強制啟動英文輸入。</value>
-  </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
     <value>預設</value>
   </data>
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>英數字元半寬 (英文)</value>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
-    <value>永遠顯示索引標籤</value>
-    <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>若停用，建立新索引標籤時，將會顯示索引標籤列。當 [隱藏標題列] 開啟時，無法停用。</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>新建立索引標籤的位置</value>
@@ -268,45 +249,21 @@
     <value>在目前索引標籤之後</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
-    <value>自動將選取項目複製到剪貼簿</value>
-    <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
-  </data>
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
     <value>自動偵測 URL 並使連結可點選</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
-  </data>
-  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
-    <value>用於「搜尋 Web」動作的預設 URL</value>
-    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>預留位置 "%s" 將以搜尋查詢取代。</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
-    <value>移除矩形選取範圍中的尾端空白區域</value>
-    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
-  </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
-    <value>貼上時移除尾端空白字元</value>
-    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>預設設定檔</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>按一下 '+' 圖示或輸入新索引標籤的按鍵繫結時所開啟的設定檔。</value>
-    <comment>A description for what the default profile is and when it's used.</comment>
-  </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
     <value>預設終端應用程式</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
-  </data>
-  <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>當執行命令列應用程式且不使用現有工作模式而啟動的終端機應用程式 (例如從 [開始] 功能表或 [執行] 對話方塊)。</value>
-    <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
     <value>圖形 API</value>
@@ -345,9 +302,6 @@
     <value>文字測量模式</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>這會變更傳入文字分組到儲存格的方式。[Grapheme 叢集] 選項是最新式且符合 Unicode 的做法，而 [wcswidth] 是 UNIX 上常見的方法，[Windows 主控台] 則重現了它過去在 Windows 上的運作方式。變更此設定後，需重新啟動 Windows 終端機，且僅適用於從 Windows 終端機內啟動的應用程式。</value>
-  </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 叢集</value>
     <comment>The default choice between multiple graphics APIs.</comment>
@@ -363,9 +317,6 @@
     <value>模糊字元寬度</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
-    <value>設定東亞模糊字元的寬度。「窄」(預設) 以相容性為優先，而「寬」則以多數中日韓字型的可讀性為優先。在「寬」模式下，部分應用程式可能無法正常運作，導致游標移動異常。變更此設定後，需重新啟動 Windows 終端機，且僅適用於從 Windows 終端機內啟動的應用程式。</value>
-  </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>窄</value>
     <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
@@ -373,14 +324,6 @@
   <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
     <value>寬</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
-  </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
-    <value>欄</value>
-    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
-    <value>列</value>
-    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>初始資料行</value>
@@ -414,10 +357,6 @@
     <value>Y</value>
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
-  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>讓 Windows 決定</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
-  </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>如果啟用，請使用系統預設啟動位置。</value>
     <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
@@ -425,9 +364,6 @@
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>終端機啟動時</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
-  </data>
-  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>建立第一個終端機時應顯示的內容。</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>開啟具有預設設定的索引標籤</value>
@@ -444,14 +380,6 @@
   <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
     <value>還原視窗版面配置</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
-    <value>啟動參數</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value>控制終端機啟動方式的設定</value>
-    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>啟動模式</value>
@@ -489,26 +417,6 @@
     <value>附加到此桌面最近使用的視窗</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
-    <value>隱藏標題列 (需要重新啟動)</value>
-    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
-  </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>停用時，標題列會出現在索引標籤上方。</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
-  </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>在索引標籤列中使用壓克力材料</value>
-    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
-    <value>使用作用中的終端機標題做為應用程式標題</value>
-    <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>停用時，標題列會是 [Windows 終端機]。</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
-  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>將視窗大小調整為字元格線</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -517,21 +425,13 @@
     <value>停用時，視窗將會順暢地調整大小。</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
-    <value>在電腦啟動時啟動</value>
-    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>登入 Windows 時自動啟動終端機。</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>置中對齊</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
-  </data>
-  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
-    <value>啟動時置中</value>
-    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>最上層顯示</value>
@@ -576,10 +476,6 @@
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
     <value>啟用此設定時，某些應用程式中的某些鍵盤輸入可能會停止正常運作。</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
-  </data>
-  <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>這可讓像是 Global Summon 和 Quake 模式等動作，即使在沒有開啟任何視窗時也能運作。</value>
-    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>索引標籤寬度模式</value>
@@ -636,10 +532,6 @@
   <data name="Globals_WordDelimiters.Description" xml:space="preserve">
     <value>當您按兩下終端機中的文字或啟用「標記模式」時，將會使用到這些符號。</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
-  </data>
-  <data name="Nav_Appearance.Content" xml:space="preserve">
-    <value>外觀</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>色彩配置</value>
@@ -1561,10 +1453,6 @@
     <value>啟動大小</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
-  <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>第一次載入時顯示在視窗中的列和欄數目。以字元數測量。</value>
-    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
-  </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>啟動位置</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
@@ -1637,10 +1525,6 @@
     <value>文字</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
-  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
-    <value>警告</value>
-    <comment>Header for a group of settings that control the warnings in the app.</comment>
-  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>視窗</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1697,14 +1581,6 @@
     <value>儲存所有未儲存設定。</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
   </data>
-  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
-    <value>索引標籤切換器介面樣式</value>
-    <comment>Header for a control to choose how the tab switcher operates.</comment>
-  </data>
-  <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
-    <value>選取當您使用鍵盤切換索引標籤時要使用的介面。</value>
-    <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
-  </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
     <value>個別視窗，以最近使用的順序</value>
     <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in most recently used order.</comment>
@@ -1745,18 +1621,6 @@
     <value>此色彩配置名稱已在使用中。</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>滑鼠暫留時自動聚焦窗格</value>
-    <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
-  </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
-    <value>按住 Ctrl 鍵的同時捲動來調整終端字體大小</value>
-    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
-  </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
-    <value>按住 Ctrl 和 Shift 鍵的同時捲動來調整終端不透明度</value>
-    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
-  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>窗格動畫</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1764,10 +1628,6 @@
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
     <value>一律在通知區域中顯示圖示</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
-  </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
-    <value>將終端機最小化時，隱藏通知區域中的終端機</value>
-    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>重設為繼承值。</value>
@@ -2265,14 +2125,6 @@
     <value>關閉多個索引標籤時發出警告</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
-  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
-    <value>關閉時警告</value>
-    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
-  </data>
-  <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
-    <value>控制在關閉索引標籤或視窗之前出現確認對話方塊的時間。[永遠] 會在關閉任何窗格時顯示對話方塊。</value>
-    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
-  </data>
   <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
     <value>一律不要</value>
     <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
@@ -2285,19 +2137,12 @@
     <value>多個索引標籤或窗格</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>在貼上超過 5 KiB 時警告</value>
-  </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>在貼上新行列時警告</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Description" xml:space="preserve">
     <value>如果您的殼層不支援「括號貼上」模式，基於安全性考量，我們建議您將此設定為「一律」。</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
-    <value>僅在停用「括號式貼上」時</value>
-    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
     <value>一律</value>
@@ -2650,30 +2495,6 @@
     <value>實驗性：以彩虹色顯示建議的輸入</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
-  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>實驗性： 將按鍵系結新增到選取文字的色彩</value>
-    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
-  </data>
-  <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>這些按鍵繫結可以以指定的色彩醒目提示選取的文字或選取文字的所有執行個體。</value>
-    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
-  </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
-    <value>允許未聚焦視窗中的壓克力素材</value>
-    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
-  </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
-    <value>當 Windows 終端機 以系統管理員身分執行時，在標題欄中顯示遮罩</value>
-    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
-    <value>以全螢幕顯示索引標籤</value>
-    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>啟用時，當應用程式以全螢幕顯示時，將會顯示索引標籤列。</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
-  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>路徑翻譯</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
@@ -2794,17 +2615,11 @@
   <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
     <value>清除快取</value>
   </data>
-  <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
-    <value>快取會儲存與已儲存之工作階段和自動產生設定檔相關的資料。</value>
-  </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>重設</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
     <value>晴朗</value>
-  </data>
-  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
-    <value>此動作會立即套用且無法復原。</value>
   </data>
   <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
     <value>此動作會立即套用且無法復原。</value>

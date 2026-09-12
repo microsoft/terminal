@@ -219,14 +219,6 @@
     <value>노랑</value>
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
-  <data name="Globals_Language.Header" xml:space="preserve">
-    <value>언어(다시 시작 필요)</value>
-    <comment>The header for a control allowing users to choose the app's language.</comment>
-  </data>
-  <data name="Globals_Language.Description" xml:space="preserve">
-    <value>응용 프로그램의 표시 언어를 선택하세요. 기본 Windows 인터페이스 언어가 재정의됩니다.</value>
-    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
     <value>기본값</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
@@ -235,22 +227,11 @@
     <value>기본 IME 입력 모드</value>
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
-  <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
-    <value>기본적으로 사용할 언어를 IME에 알릴 수 있습니다. IME를 사용하고 기본적으로 라틴 문자를 사용하지 않는 언어의 경우 이 설정을 사용하여 시작할 때 영어 입력을 강제 적용할 수 있습니다.</value>
-  </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
     <value>기본값</value>
   </data>
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>영숫자 반자(영어)</value>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
-    <value>항상 탭 표시</value>
-    <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>비활성화하면 새 탭이 만들어질 때 탭 표시줄이 표시됩니다. "제목 표시줄 숨기기"가 켜져 있을 때는 비활성화할 수 없습니다.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>새로 만든 탭의 위치</value>
@@ -268,45 +249,21 @@
     <value>현재 탭 이후</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
-    <value>선택 영역을 클립보드에 자동으로 복사</value>
-    <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
-  </data>
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
     <value>자동으로 URL을 감지하고 클릭 가능한 상태로 만들기</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
-  </data>
-  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
-    <value>"웹 검색" 작업에 사용할 기본 URL</value>
-    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>자리 표시자 "%s"가 검색 쿼리로 바뀝니다.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
-    <value>직사각형 선택 영역의 후행 공백 제거</value>
-    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
-  </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
-    <value>붙여넣을 때 후행 공백 제거</value>
-    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>기본 프로필</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>'+' 아이콘을 클릭하거나 새 탭 키 바인딩을 입력할 때 열리는 프로필입니다.</value>
-    <comment>A description for what the default profile is and when it's used.</comment>
-  </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
     <value>기본 터미널 응용 프로그램</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
-  </data>
-  <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>시작 메뉴 또는 실행 대화 상자와 같은 기존 세션 없이 명령줄 응용 프로그램을 실행할 때 시작하는 터미널 응용 프로그램입니다.</value>
-    <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
     <value>Graphics API</value>
@@ -345,9 +302,6 @@
     <value>텍스트 측정 모드</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>이 설정은 들어오는 텍스트가 셀로 그룹화되는 방식을 변경합니다. "문자 클러스터" 옵션은 이를 수행하는 가장 현대적이고 유니코드에 맞는 방법이며, "wcswidth"는 UNIX에서 일반적인 접근 방식이고, "Windows 콘솔"은 Windows에서 사용되던 방식을 복제합니다. 이 설정을 변경하려면 Windows 터미널을 다시 시작해야 하며, 이는 터미널 내에서 실행된 애플리케이션에만 적용됩니다.</value>
-  </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 클러스터</value>
     <comment>The default choice between multiple graphics APIs.</comment>
@@ -363,9 +317,6 @@
     <value>모호한 문자 너비</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
-    <value>동아시아의 모호한 문자에 사용되는 너비를 설정하세요. "좁게"(기본값)는 호환성을 우선시하고, "넓게"는 많은 CJK 글꼴에서 가독성을 우선시합니다. "넓게" 모드에서는 일부 애플리케이션이 제대로 작동하지 않아 커서가 이상하게 움직일 수 있습니다. 이 설정을 변경하려면 Windows 터미널을 다시 시작해야 하며, 이 설정은 Windows 터미널 내에서 실행된 애플리케이션에만 적용됩니다.</value>
-  </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>좁게</value>
     <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
@@ -373,14 +324,6 @@
   <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
     <value>넓게</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
-  </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
-    <value>열</value>
-    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
-    <value>행</value>
-    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>초기 열</value>
@@ -414,10 +357,6 @@
     <value>Y</value>
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
-  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Windows가 결정하도록 허용</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
-  </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>사용하도록 설정된 경우 시스템 기본 시작 위치를 사용합니다.</value>
     <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
@@ -425,9 +364,6 @@
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>터미널이 시작되는 경우</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
-  </data>
-  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>첫 번째 터미널을 만들 때 표시할 항목입니다.</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>기본 프로필이 있는 탭 열기</value>
@@ -444,14 +380,6 @@
   <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
     <value>창 레이아웃 복원</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
-    <value>매개 변수 시작</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value>터미널 시작 방법을 제어하는 설정</value>
-    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>시작 모드</value>
@@ -489,26 +417,6 @@
     <value>이 데스크톱에서 가장 최근에 사용한 창에 첨부</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
-    <value>제목 표시줄 숨기기(다시 시작해야 함)</value>
-    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
-  </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>사용하지 않도록 설정하면 제목 표시줄이 탭 위에 표시됩니다.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
-  </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>탭 행에서 아크릴 재질 사용</value>
-    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
-    <value>활성 터미널 제목을 응용 프로그램 제목으로 사용</value>
-    <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>사용하지 않도록 설정하면 제목 표시줄이 '터미널'이 됩니다.</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
-  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>문자 눈금에 맞게 창 크기 조정</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -517,21 +425,13 @@
     <value>사용하지 않도록 설정하면 창의 크기가 원활하게 조정됩니다.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
-    <value>컴퓨터 시작 시 실행</value>
-    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>Windows에 로그인할 때 터미널을 자동으로 시작합니다.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>가운데</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
-  </data>
-  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
-    <value>시작 시 가운데 맞춤</value>
-    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>항상 위</value>
@@ -576,10 +476,6 @@
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
     <value>이 설정을 사용하면 일부 응용 프로그램의 특정 키보드 입력이 제대로 작동하지 않을 수 있습니다.</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
-  </data>
-  <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>이렇게 하면 창이 열려 있지 않을 때도 전역 호출 및 Quake 모드 같은 동작이 작동합니다.</value>
-    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>탭 너비 모드</value>
@@ -636,10 +532,6 @@
   <data name="Globals_WordDelimiters.Description" xml:space="preserve">
     <value>이러한 기호는 터미널에서 텍스트를 두 번 클릭하거나 ‘표시 모드’를 활성화할 때 사용됩니다.</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
-  </data>
-  <data name="Nav_Appearance.Content" xml:space="preserve">
-    <value>모양</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>색 구성표</value>
@@ -1561,10 +1453,6 @@
     <value>시작 크기</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
-  <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>처음 로드할 때 창에 표시되는 행 및 열의 수입니다. 문자로 측정됩니다.</value>
-    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
-  </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>시작 위치</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
@@ -1637,10 +1525,6 @@
     <value>텍스트</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
-  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
-    <value>경고</value>
-    <comment>Header for a group of settings that control the warnings in the app.</comment>
-  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>창</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1697,14 +1581,6 @@
     <value>저장하지 않은 설정을 모두 저장합니다.</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
   </data>
-  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
-    <value>탭 전환기 인터페이스 스타일</value>
-    <comment>Header for a control to choose how the tab switcher operates.</comment>
-  </data>
-  <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
-    <value>키보드를 사용하여 탭을 전환할 때 사용할 인터페이스를 선택합니다.</value>
-    <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
-  </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
     <value>최근 사용한 순서로 된 별도의 창</value>
     <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in most recently used order.</comment>
@@ -1745,18 +1621,6 @@
     <value>이 색 구성표 이름이 이미 사용 중입니다.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>마우스를 위에 가져다 대면 자동으로 포커스 창이 실행됨</value>
-    <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
-  </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
-    <value>Ctrl 키를 누른 상태에서 스크롤하여 터미널 글꼴 크기 조정</value>
-    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
-  </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
-    <value>Ctrl 키와 Shift 키를 누른 상태에서 스크롤하여 터미널 불투명도 조정</value>
-    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
-  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>창 애니메이션</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1764,10 +1628,6 @@
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
     <value>항상 알림 영역에 아이콘 표시</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
-  </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
-    <value>알림 영역이 최소화되면 알림 영역에서 터미널 숨기기</value>
-    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>상속된 값으로 다시 설정됩니다.</value>
@@ -2265,14 +2125,6 @@
     <value>두 개 이상의 탭을 닫을 때 경고</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
-  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
-    <value>닫을 때 경고 표시</value>
-    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
-  </data>
-  <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
-    <value>탭이나 창을 닫기 전에 확인 대화 상자가 나타나는 시기를 제어합니다. "항상"은 창을 닫을 때 대화 상자를 표시합니다.</value>
-    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
-  </data>
   <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
     <value>사용 안 함</value>
     <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
@@ -2285,19 +2137,12 @@
     <value>여러 탭 또는 창</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>붙여넣기가 5KiB를 초과하는 경우 경고</value>
-  </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>붙여넣기에 줄 바꿈이 포함된 경우 경고</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Description" xml:space="preserve">
     <value>셸이 "대괄호로 묶은 붙여넣기" 모드를 지원하지 않는 경우, 보안상의 이유로 이 설정을 "항상"으로 변경하는 것이 좋습니다.</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
-    <value>"대괄호로 묶은 붙여넣기"를 사용할 수 없는 경우에만</value>
-    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
     <value>항상</value>
@@ -2650,30 +2495,6 @@
     <value>실험적: 제안된 입력을 무지개 색으로 표시</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
-  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>실험적: 선택한 텍스트 색에 키 바인딩 추가</value>
-    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
-  </data>
-  <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>이러한 키 바인딩은 선택한 텍스트 또는 선택한 텍스트의 모든 인스턴스를 지정된 색으로 강조 표시할 수 있습니다.</value>
-    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
-  </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
-    <value>사용되지 않는 창에서 아크릴 재질 허용</value>
-    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
-  </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
-    <value>Windows 터미널 관리자 권한으로 실행 중일 때 제목 표시줄에 실드 표시</value>
-    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
-    <value>전체 화면으로 탭 표시</value>
-    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 앱이 전체 화면일 때 탭 표시줄이 표시됩니다.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
-  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>경로 변환</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
@@ -2794,17 +2615,11 @@
   <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
     <value>캐시 지우기</value>
   </data>
-  <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
-    <value>캐시는 저장된 세션과 관련된 데이터 및 자동으로 생성된 프로필을 저장합니다.</value>
-  </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>다시 설정</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
     <value>취소</value>
-  </data>
-  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
-    <value>이 작업은 즉시 적용되며 실행 취소할 수 없습니다.</value>
   </data>
   <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
     <value>이 작업은 즉시 적용되며 실행 취소할 수 없습니다.</value>

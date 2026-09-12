@@ -219,14 +219,6 @@
     <value>Jaune</value>
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
-  <data name="Globals_Language.Header" xml:space="preserve">
-    <value>Langue (nécessite une relance)</value>
-    <comment>The header for a control allowing users to choose the app's language.</comment>
-  </data>
-  <data name="Globals_Language.Description" xml:space="preserve">
-    <value>Sélectionne une langue d’affichage pour l’application. Cette opération remplace votre langue d’interface Windows par défaut.</value>
-    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
     <value>Par défaut</value>
     <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
@@ -235,22 +227,11 @@
     <value>Mode d’entrée IME par défaut</value>
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
-  <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
-    <value>Indique à IME la langue à utiliser par défaut. Pour les langues qui s'appuient sur un IME et qui n'utilisent pas les caractères latins par défaut, ce paramètre peut être utilisé pour forcer la saisie de l'anglais au démarrage.</value>
-  </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
     <value>Par défaut</value>
   </data>
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>Demi-largeur alphanumérique (anglais)</value>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
-    <value>Toujours afficher les onglets</value>
-    <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>Si cette option est désactivée, la barre d’onglets s’affiche lors de la création d’un nouvel onglet. Nous n’avons pas pu désactiver si « Masquer la barre de titre » est activé.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position des onglets nouvellement créés</value>
@@ -268,45 +249,21 @@
     <value>Après l'onglet actuel</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
-    <value>Copier automatiquement la sélection dans le Presse-papiers</value>
-    <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
-  </data>
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
     <value>Détecter automatiquement les URL et les rendre cliquables</value>
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
-  </data>
-  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
-    <value>URL par défaut à utiliser pour l’action « Rechercher sur le web »</value>
-    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>L’espace réservé "%s" sera remplacé par la requête de recherche.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
-    <value>Supprimer l’espace blanc de fin dans la sélection rectangulaire</value>
-    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
-  </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
-    <value>Supprimer les espaces blancs de fin lors du collage</value>
-    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Profil par défaut</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>Profil qui s’ouvre lorsque vous cliquez sur l’icône « + » ou en tapant la nouvelle combinaison de touches de tabulation.</value>
-    <comment>A description for what the default profile is and when it's used.</comment>
-  </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
     <value>Application Terminal par défaut</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
-  </data>
-  <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>L’application Terminal qui se lance lorsqu’une application de ligne de commande est exécutée sans session existante, par exemple à partir du menu Démarrer ou de la boîte de dialogue Exécuter.</value>
-    <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
     <value>Graphics API</value>
@@ -345,9 +302,6 @@
     <value>Mode de mesure de texte</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>Cela modifie la façon dont le texte entrant est regroupé en cellules. L'option « Clusters de graphèmes » est la méthode la plus moderne et la plus conforme à Unicode, tandis que « wcswidth » est une approche courante sous UNIX et la « Console Windows » reproduit la manière dont cela fonctionnait sous Windows. La modification de ce paramètre nécessite le redémarrage du Terminal Windows et ne s'applique qu'aux applications lancées à partir de celui-ci.</value>
-  </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Clusters de graphèmes</value>
     <comment>The default choice between multiple graphics APIs.</comment>
@@ -363,9 +317,6 @@
     <value>Largeur des caractères ambigus d’Asie de l’Est</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
-    <value>Définit la largeur utilisée pour les caractères ambigus d’Asie de l’Est. « Narrow » (par défaut) privilégie la compatibilité, tandis que « Wide » favorise la lisibilité avec de nombreuses polices CJK. En mode « Wide », certaines applications peuvent ne pas fonctionner correctement et provoquer un déplacement erratique du curseur. La modification de ce paramètre nécessite le redémarrage du Terminal Windows et ne s’applique qu’aux applications lancées à partir de celui-ci.</value>
-  </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>Étroites</value>
     <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
@@ -373,14 +324,6 @@
   <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
     <value>Larges</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
-  </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
-    <value>Colonnes</value>
-    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
-    <value>Lignes</value>
-    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Colonnes initiales</value>
@@ -414,10 +357,6 @@
     <value>Y</value>
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
-  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Laisser Windows décider</value>
-    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
-  </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Si cette option est activée, utilisez la position de lancement par défaut du système.</value>
     <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
@@ -425,9 +364,6 @@
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>Au démarrage du terminal</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
-  </data>
-  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>Ce qui doit être affiché lors de la création du premier terminal.</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>Ouvrir un onglet avec le profil par défaut</value>
@@ -444,14 +380,6 @@
   <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
     <value>Restaurer la disposition de la fenêtre</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
-    <value>Paramètres de lancement</value>
-    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
-  </data>
-  <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value>Paramètres qui contrôlent le lancement du terminal</value>
-    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>Mode de lancement</value>
@@ -489,26 +417,6 @@
     <value>Attacher à la dernière fenêtre utilisée sur ce bureau</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
-    <value>Masquer la barre de titre (redémarrage nécessaire)</value>
-    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
-  </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>Une fois désactivée, la barre de titre s’affiche au-dessus des onglets.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
-  </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
-    <value>Utiliser un matériau acrylique dans la ligne de l’onglet</value>
-    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
-    <value>Utilisez le titre du terminal actif comme titre de l’application</value>
-    <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>Une fois désactivée, la barre de titre est « Terminal ».</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
-  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Ajuster la dimension de la fenêtre à la grille de caractères</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -517,21 +425,13 @@
     <value>Une fois désactivée, la fenêtre se redimensionne sans à-coups.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
-    <value>Lancement au démarrage de l’ordinateur</value>
-    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>Lancez automatiquement le terminal lorsque vous vous connectez à Windows.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centré</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
-  </data>
-  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
-    <value>Centrer au lancement</value>
-    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Toujours au premier plan</value>
@@ -576,10 +476,6 @@
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
     <value>Certaines entrées au clavier dans certaines applications peuvent cesser de fonctionner correctement lorsque ce paramètre est activé.</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
-  </data>
-  <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>Cela permet aux actions telles que les actions en mode d’engagement global et de mode Dent de fonctionner même lorsqu’aucune fenêtre n’est ouverte.</value>
-    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Largeur des onglets</value>
@@ -636,10 +532,6 @@
   <data name="Globals_WordDelimiters.Description" xml:space="preserve">
     <value>Ces symboles seront utilisés lorsque vous double-cliquez sur du texte dans le terminal ou que vous activez le « mode Marquer ».</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
-  </data>
-  <data name="Nav_Appearance.Content" xml:space="preserve">
-    <value>Apparence</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Jeux de couleurs</value>
@@ -1561,10 +1453,6 @@
     <value>Taille au lancement</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
-  <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>Nombre de lignes et de colonnes affichées dans la fenêtre lors du premier chargement. Mesuré en caractères.</value>
-    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
-  </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>Position de lancement</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
@@ -1637,10 +1525,6 @@
     <value>Texte</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
   </data>
-  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
-    <value>Avertissements</value>
-    <comment>Header for a group of settings that control the warnings in the app.</comment>
-  </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Fenêtre</value>
     <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
@@ -1697,14 +1581,6 @@
     <value>Enregistrer tous les paramètres non enregistrés.</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
   </data>
-  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
-    <value>Style d’interface du sélecteur d’onglets</value>
-    <comment>Header for a control to choose how the tab switcher operates.</comment>
-  </data>
-  <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
-    <value>Sélectionne l’interface à utiliser lorsque vous changez d’onglet à l’aide du clavier.</value>
-    <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
-  </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
     <value>Fenêtre séparée, dans l’ordre des derniers onglets utilisés</value>
     <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in most recently used order.</comment>
@@ -1745,18 +1621,6 @@
     <value>Ce nom de modèle de couleurs est déjà utilisé.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>Mise au point automatique du volet au survol de la souris</value>
-    <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
-  </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
-    <value>Ajustez la taille de police du terminal en faisant défiler tout en maintenant la touche Ctrl enfoncée</value>
-    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
-  </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
-    <value>Ajustez l’opacité du terminal en faisant défiler tout en maintenant les touches Ctrl et Maj enfoncées</value>
-    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
-  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Animations du volet</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1764,10 +1628,6 @@
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
     <value>Toujours afficher une icône dans la zone de notification</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
-  </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
-    <value>Masquer le terminal dans la zone de notification lorsqu’il est réduit</value>
-    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Rétablir la valeur héritée.</value>
@@ -2265,14 +2125,6 @@
     <value>M'avertir lorsque je ferme plusieurs onglets</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
-  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
-    <value>Avertir lors de la fermeture</value>
-    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
-  </data>
-  <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
-    <value>Contrôle l’apparition d’une boîte de dialogue de confirmation avant la fermeture des onglets ou des fenêtres. « Toujours » affiche la boîte de dialogue lors de la fermeture de n’importe quel volet.</value>
-    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
-  </data>
   <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
     <value>Jamais</value>
     <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
@@ -2285,19 +2137,12 @@
     <value>Plusieurs onglets ou volets</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Avertir lors du collage de plus de 5 KiO</value>
-  </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>Avertir lors du collage de nouvelles lignes</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Description" xml:space="preserve">
     <value>Si votre interpréteur de commandes ne prend pas en charge le mode « collage entre crochets », nous vous recommandons de définir ce paramètre sur « Toujours » pour des raisons de sécurité.</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
-  </data>
-  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
-    <value>Uniquement si le collage entre crochets est désactivé</value>
-    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
     <value>Toujours</value>
@@ -2650,30 +2495,6 @@
     <value>Expérimental : afficher l’entrée suggérée dans les couleurs arc-en-ciel</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
-  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>Expérimental : ajouter des liaisons de touches au texte sélectionné en couleur</value>
-    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
-  </data>
-  <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>Ces combinaisons de touches peuvent mettre en surbrillance le texte sélectionné ou toutes les instances du texte sélectionné avec une couleur spécifiée.</value>
-    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
-  </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
-    <value>Autoriser les matériaux d’authentification dans les fenêtres sans focus</value>
-    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
-  </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
-    <value>Afficher un bouclier dans la barre de titre lorsque Terminal Windows s’exécute en tant qu’administrateur</value>
-    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
-    <value>Afficher les onglets en mode plein écran</value>
-    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>Lorsque cette option est activée, la barre d’onglets est visible lorsque l’application est en plein écran.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
-  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Traduction du chemin d’accès</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
@@ -2794,17 +2615,11 @@
   <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
     <value>Effacer le cache</value>
   </data>
-  <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
-    <value>Le cache stocke les données relatives aux sessions enregistrées et aux profils générés automatiquement.</value>
-  </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>Réinitialiser</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
     <value>Dégagé</value>
-  </data>
-  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
-    <value>Cette action est appliquée immédiatement et ne peut pas être annulée.</value>
   </data>
   <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
     <value>Cette action est appliquée immédiatement et ne peut pas être annulée.</value>
