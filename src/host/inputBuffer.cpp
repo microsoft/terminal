@@ -623,7 +623,7 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
 
-        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
+        if (const auto out = _termInput.HandleMouse(static_cast<float>(position.x), static_cast<float>(position.y), button, keyState, wheelDelta, state))
         {
             _writeString(*out);
             return true;
