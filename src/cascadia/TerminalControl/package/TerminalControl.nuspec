@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Microsoft.Windows.Terminal.Control</id>
+    <version>0.0.1</version>
+    <authors>Microsoft</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/microsoft/terminal</projectUrl>
+    <description>This package allows applications to host Windows Terminal sessions. It should work on all versions of Windows 10.0.17763.0 and above.</description>
+    <copyright>© Microsoft Corporation</copyright>
+    <dependencies />
+  </metadata>
+  <files>
+    <file src="managed/Microsoft.Windows.Terminal.Control.props" target="build" />
+    <file src="managed/Microsoft.Windows.Terminal.Control.targets" target="build" />
+    <file src="native/Microsoft.Windows.Terminal.Control.props" target="build/native" />
+    <file src="native/Microsoft.Windows.Terminal.Control.targets" target="build/native" />
+
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.winmd" target="lib\uap10.0" />
+    <file src="../../../../bin/x64/Release/TerminalCore/Microsoft.Terminal.Core.winmd" target="lib\uap10.0" />
+
+    <file src="../../../../bin/Win32/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.dll" target="runtimes/win-x86/native" />
+    <file src="../../../../bin/Win32/Release/Microsoft.Terminal.Control.Lib/Microsoft.Terminal.Control.pri" target="runtimes/win-x86/native" />
+    <file src="../../../../bin/Win32/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.dll" target="runtimes/win-x86/native" />
+    <file src="../../../../bin/Win32/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.pri" target="runtimes/win-x86/native" />
+    <file src="../../../../bin/Win32/Release/TerminalConnection/TerminalConnection.dll" target="runtimes/win-x86/native" />
+    <file src="../../../../bin/Win32/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.pri" target="runtimes/win-x86/native" />
+    
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.dll" target="runtimes/win-x64/native" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.Control.Lib/Microsoft.Terminal.Control.pri" target="runtimes/win-x64/native" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.dll" target="runtimes/win-x64/native" />
+    <file src="../../../../bin/x64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.pri" target="runtimes/win-x64/native" />
+    <file src="../../../../bin/x64/Release/TerminalConnection/TerminalConnection.dll" target="runtimes/win-x64/native" />
+    <file src="../../../../bin/x64/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.pri" target="runtimes/win-x64/native" />
+    
+    <file src="../../../../bin/ARM64/Release/Microsoft.Terminal.Control/Microsoft.Terminal.Control.dll" target="runtimes/win-arm64/native" />
+    <file src="../../../../bin/ARM64/Release/Microsoft.Terminal.Control.Lib/Microsoft.Terminal.Control.pri" target="runtimes/win-arm64/native" />
+    <file src="../../../../bin/ARM64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.dll" target="runtimes/win-arm64/native" />
+    <file src="../../../../bin/ARM64/Release/Microsoft.Terminal.UI/Microsoft.Terminal.UI.pri" target="runtimes/win-arm64/native" />
+    <file src="../../../../bin/ARM64/Release/TerminalConnection/TerminalConnection.dll" target="runtimes/win-arm64/native" />
+    <file src="../../../../bin/ARM64/Release/TerminalConnection/Microsoft.Terminal.TerminalConnection.pri" target="runtimes/win-arm64/native" />
+  </files>
+</package>
