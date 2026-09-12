@@ -455,11 +455,19 @@ void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, un
 {
     // Not implemented for conhost.
 }
+
 void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingCommand*/)
 {
     // Not implemented for conhost.
 }
+
 void ConhostInternalGetSet::ShowNotification(std::wstring_view /*title*/, std::wstring_view /*body*/)
 {
     // Not implemented for conhost.
+}
+
+std::function<bool(wchar_t)> ConhostInternalGetSet::EnterTmuxControl()
+{
+    // Not implemented for conhost.
+    return {};
 }

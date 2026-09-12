@@ -97,6 +97,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
+        String CurrentEmojiIcon;
+        IInspectable CurrentIconType;
+        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
+        Boolean UsingBuiltInIcon { get; };
+        Boolean UsingEmojiIcon { get; };
+        Boolean UsingImageIcon { get; };
+        Boolean TmuxControlEnabled { get; };
         String IconPath;
         Boolean UsingNoIcon { get; };
 
@@ -149,5 +156,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, DragDropDelimiter);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowOscNotifications);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowTmuxControl);
     }
 }

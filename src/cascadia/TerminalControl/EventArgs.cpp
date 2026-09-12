@@ -21,3 +21,4 @@
 #include "StringSentEventArgs.g.cpp"
 #include "SearchMissingCommandEventArgs.g.cpp"
 #include "WindowSizeChangedEventArgs.g.cpp"
+#include "EnterTmuxControlEventArgs.g.cpp"

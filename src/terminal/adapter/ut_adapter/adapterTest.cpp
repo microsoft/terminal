@@ -238,6 +238,12 @@ public:
         Log::Comment(L"ShowNotification MOCK called...");
     }
 
+    std::function<bool(wchar_t)> EnterTmuxControl() override
+    {
+        Log::Comment(L"EnterTmuxControl MOCK called...");
+        return nullptr;
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.

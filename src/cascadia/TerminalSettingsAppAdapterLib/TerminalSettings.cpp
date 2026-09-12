@@ -356,6 +356,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _AllowOscNotifications = profile.AllowOscNotifications();
         _PathTranslationStyle = profile.PathTranslationStyle();
         _DragDropDelimiter = profile.DragDropDelimiter();
+        _AllowTmuxControl = profile.AllowTmuxControl();
     }
 
     // Method Description:
