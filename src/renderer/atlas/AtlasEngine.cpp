@@ -824,6 +824,19 @@ void AtlasEngine::_flushBufferLine()
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
+    // Run bidi + script analysis once over the whole line so downstream segmenters
+    // (font fallback, complexity) can clamp at the resulting boundaries. This guarantees
+    // every range handed to _mapComplex is uniform in direction and script.
+    _api.analysisResults.clear();
+    _api.bidiResults.clear();
+    {
+        const auto totalLen = gsl::narrow<UINT32>(_api.bufferLine.size());
+        TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), totalLen };
+        TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiResults };
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, 0, totalLen, &analysisSink));
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, 0, totalLen, &analysisSink));
+    }
+
     const auto builtinGlyphs = _p.s->font->builtinGlyphs;
     const auto beg = _api.bufferLine.data();
     const auto len = _api.bufferLine.size();
@@ -869,15 +882,45 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
+// Returns the smallest position strictly greater than `pos` that ends either a script
+// analysis run or a bidi run, or end-of-line if none. Used by segmenters to keep each
+// chunk uniform in script and direction.
+u32 AtlasEngine::_nextAnalysisBoundary(u32 pos) const noexcept
+{
+    auto next = gsl::narrow_cast<u32>(_api.bufferLine.size());
+    for (const auto& a : _api.analysisResults)
+    {
+        const auto end = a.textPosition + a.textLength;
+        if (end > pos && end < next)
+        {
+            next = end;
+        }
+    }
+    for (const auto& b : _api.bidiResults)
+    {
+        const auto end = b.textPosition + b.textLength;
+        if (end > pos && end < next)
+        {
+            next = end;
+        }
+    }
+    return next;
+}
+
 void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
     for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
+        // Clamp at the next script/bidi boundary so each chunk is uniform in direction
+        // and script. Font fallback and complexity analysis stay within these bounds.
+        const auto boundary = _nextAnalysisBoundary(idx);
+        const auto segEnd = std::min(gsl::narrow_cast<u32>(offEnd), boundary);
+
         u32 mappedLength = 0;
         wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
+        _mapCharacters(_api.bufferLine.data() + idx, segEnd - idx, &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
         if (!mappedFontFace)
@@ -1031,149 +1074,212 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 
 void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
 {
-    _api.analysisResults.clear();
-
-    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
-    TextAnalysisSink analysisSink{ _api.analysisResults };
-    THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
-
+    // _flushBufferLine ran AnalyzeScript+AnalyzeBidi on the full line, and _mapRegularText
+    // clamps every segment to those boundaries, so [idx, idx+length) lies entirely inside
+    // a single script run AND a single bidi run.
+    static constexpr DWRITE_SCRIPT_ANALYSIS defaultAnalysis{};
+    const DWRITE_SCRIPT_ANALYSIS* scriptAnalysis = &defaultAnalysis;
     for (const auto& a : _api.analysisResults)
     {
-        u32 actualGlyphCount = 0;
+        if (a.textPosition <= idx && idx < a.textPosition + a.textLength)
+        {
+            scriptAnalysis = &a.analysis;
+            break;
+        }
+    }
+
+    BOOL isRTL = FALSE;
+    for (const auto& b : _api.bidiResults)
+    {
+        if (b.textPosition <= idx && idx < b.textPosition + b.textLength)
+        {
+            isRTL = (b.resolvedLevel & 1) ? TRUE : FALSE;
+            break;
+        }
+    }
+
+    u32 actualGlyphCount = 0;
 
 #pragma warning(push)
 #pragma warning(disable : 26494) // Variable '...' is uninitialized. Always initialize an object (type.5).
-        // None of these variables need to be initialized.
-        // features/featureRangeLengths are marked _In_reads_opt_(featureRanges).
-        // featureRanges is only > 0 when we also initialize all these variables.
-        DWRITE_TYPOGRAPHIC_FEATURES feature;
-        const DWRITE_TYPOGRAPHIC_FEATURES* features;
-        u32 featureRangeLengths;
+    // None of these variables need to be initialized.
+    // features/featureRangeLengths are marked _In_reads_opt_(featureRanges).
+    // featureRanges is only > 0 when we also initialize all these variables.
+    DWRITE_TYPOGRAPHIC_FEATURES feature;
+    const DWRITE_TYPOGRAPHIC_FEATURES* features;
+    u32 featureRangeLengths;
 #pragma warning(pop)
-        u32 featureRanges = 0;
+    u32 featureRanges = 0;
 
-        if (!_p.s->font->fontFeatures.empty())
-        {
-            // Direct2D, why is this mutable?         Why?
+    if (!_p.s->font->fontFeatures.empty())
+    {
+        // Direct2D, why is this mutable?         Why?
 #pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-            feature.features = const_cast<DWRITE_FONT_FEATURE*>(_p.s->font->fontFeatures.data());
-            feature.featureCount = gsl::narrow_cast<u32>(_p.s->font->fontFeatures.size());
-            features = &feature;
-            featureRangeLengths = a.textLength;
-            featureRanges = 1;
-        }
+        feature.features = const_cast<DWRITE_FONT_FEATURE*>(_p.s->font->fontFeatures.data());
+        feature.featureCount = gsl::narrow_cast<u32>(_p.s->font->fontFeatures.size());
+        features = &feature;
+        featureRangeLengths = length;
+        featureRanges = 1;
+    }
 
-        if (_api.clusterMap.size() <= a.textLength)
-        {
-            _api.clusterMap = Buffer<u16>{ static_cast<size_t>(a.textLength) + 1 };
-            _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ a.textLength };
-        }
+    if (_api.clusterMap.size() <= length)
+    {
+        _api.clusterMap = Buffer<u16>{ static_cast<size_t>(length) + 1 };
+        _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ length };
+    }
 
-        for (auto retry = 0;;)
-        {
-            const auto hr = _p.textAnalyzer->GetGlyphs(
-                /* textString          */ _api.bufferLine.data() + a.textPosition,
-                /* textLength          */ a.textLength,
-                /* fontFace            */ mappedFontFace,
-                /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
-                /* scriptAnalysis      */ &a.analysis,
-                /* localeName          */ _p.userLocaleName.c_str(),
-                /* numberSubstitution  */ nullptr,
-                /* features            */ &features,
-                /* featureRangeLengths */ &featureRangeLengths,
-                /* featureRanges       */ featureRanges,
-                /* maxGlyphCount       */ gsl::narrow_cast<u32>(_api.glyphIndices.size()),
-                /* clusterMap          */ _api.clusterMap.data(),
-                /* textProps           */ _api.textProps.data(),
-                /* glyphIndices        */ _api.glyphIndices.data(),
-                /* glyphProps          */ _api.glyphProps.data(),
-                /* actualGlyphCount    */ &actualGlyphCount);
-
-            if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) && ++retry < 8)
-            {
-                // Grow factor 1.5x.
-                auto size = _api.glyphIndices.size();
-                size = size + (size >> 1);
-                // Overflow check.
-                Expects(size > _api.glyphIndices.size());
-                _api.glyphIndices = Buffer<u16>{ size };
-                _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
-                continue;
-            }
-
-            THROW_IF_FAILED(hr);
-            break;
-        }
-
-        if (_api.glyphAdvances.size() < actualGlyphCount)
-        {
-            // Grow the buffer by at least 1.5x and at least of `actualGlyphCount` items.
-            // The 1.5x growth ensures we don't reallocate every time we need 1 more slot.
-            auto size = _api.glyphAdvances.size();
-            size = size + (size >> 1);
-            size = std::max<size_t>(size, actualGlyphCount);
-            _api.glyphAdvances = Buffer<f32>{ size };
-            _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ size };
-        }
-
-        THROW_IF_FAILED(_p.textAnalyzer->GetGlyphPlacements(
-            /* textString          */ _api.bufferLine.data() + a.textPosition,
-            /* clusterMap          */ _api.clusterMap.data(),
-            /* textProps           */ _api.textProps.data(),
-            /* textLength          */ a.textLength,
-            /* glyphIndices        */ _api.glyphIndices.data(),
-            /* glyphProps          */ _api.glyphProps.data(),
-            /* glyphCount          */ actualGlyphCount,
+    for (auto retry = 0;;)
+    {
+        const auto hr = _p.textAnalyzer->GetGlyphs(
+            /* textString          */ _api.bufferLine.data() + idx,
+            /* textLength          */ length,
             /* fontFace            */ mappedFontFace,
-            /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
-            /* scriptAnalysis      */ &a.analysis,
+            /* isRightToLeft       */ isRTL,
+            /* scriptAnalysis      */ scriptAnalysis,
             /* localeName          */ _p.userLocaleName.c_str(),
+            /* numberSubstitution  */ nullptr,
             /* features            */ &features,
             /* featureRangeLengths */ &featureRangeLengths,
             /* featureRanges       */ featureRanges,
-            /* glyphAdvances       */ _api.glyphAdvances.data(),
-            /* glyphOffsets        */ _api.glyphOffsets.data()));
+            /* maxGlyphCount       */ gsl::narrow_cast<u32>(_api.glyphIndices.size()),
+            /* clusterMap          */ _api.clusterMap.data(),
+            /* textProps           */ _api.textProps.data(),
+            /* glyphIndices        */ _api.glyphIndices.data(),
+            /* glyphProps          */ _api.glyphProps.data(),
+            /* actualGlyphCount    */ &actualGlyphCount);
 
-        _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
-
-        const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
-        const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
-        auto prevCluster = _api.clusterMap[0];
-        size_t beg = 0;
-
-        for (size_t i = 1; i <= a.textLength; ++i)
+        if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) && ++retry < 8)
         {
-            const auto nextCluster = _api.clusterMap[i];
-            if (prevCluster == nextCluster)
-            {
-                continue;
-            }
-
-            const size_t col1 = _api.bufferLineColumn[a.textPosition + beg];
-            const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
-            const auto fg = colors[col1 << shift];
-
-            const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
-            f32 actualAdvance = 0;
-            for (auto j = prevCluster; j < nextCluster; ++j)
-            {
-                actualAdvance += _api.glyphAdvances[j];
-            }
-            _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
-
-            row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
-
-            prevCluster = nextCluster;
-            beg = i;
+            // Grow factor 1.5x.
+            auto size = _api.glyphIndices.size();
+            size = size + (size >> 1);
+            // Overflow check.
+            Expects(size > _api.glyphIndices.size());
+            _api.glyphIndices = Buffer<u16>{ size };
+            _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ size };
+            continue;
         }
 
-        row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
-        row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
-        row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
+        THROW_IF_FAILED(hr);
+        break;
     }
+
+    if (_api.glyphAdvances.size() < actualGlyphCount)
+    {
+        // Grow the buffer by at least 1.5x and at least of `actualGlyphCount` items.
+        // The 1.5x growth ensures we don't reallocate every time we need 1 more slot.
+        auto size = _api.glyphAdvances.size();
+        size = size + (size >> 1);
+        size = std::max<size_t>(size, actualGlyphCount);
+        _api.glyphAdvances = Buffer<f32>{ size };
+        _api.glyphOffsets = Buffer<DWRITE_GLYPH_OFFSET>{ size };
+    }
+
+    THROW_IF_FAILED(_p.textAnalyzer->GetGlyphPlacements(
+        /* textString          */ _api.bufferLine.data() + idx,
+        /* clusterMap          */ _api.clusterMap.data(),
+        /* textProps           */ _api.textProps.data(),
+        /* textLength          */ length,
+        /* glyphIndices        */ _api.glyphIndices.data(),
+        /* glyphProps          */ _api.glyphProps.data(),
+        /* glyphCount          */ actualGlyphCount,
+        /* fontFace            */ mappedFontFace,
+        /* fontEmSize          */ _p.s->font->fontSize,
+        /* isSideways          */ false,
+        /* isRightToLeft       */ isRTL,
+        /* scriptAnalysis      */ scriptAnalysis,
+        /* localeName          */ _p.userLocaleName.c_str(),
+        /* features            */ &features,
+        /* featureRangeLengths */ &featureRangeLengths,
+        /* featureRanges       */ featureRanges,
+        /* glyphAdvances       */ _api.glyphAdvances.data(),
+        /* glyphOffsets        */ _api.glyphOffsets.data()));
+
+    _api.clusterMap[length] = gsl::narrow_cast<u16>(actualGlyphCount);
+
+    // For RTL runs, DirectWrite returns glyphs in right-to-left visual order
+    // with advances going right-to-left. Reverse to LTR order so backends draw
+    // glyphs correctly without per-direction logic.
+    if (isRTL)
+    {
+        const auto N = actualGlyphCount;
+
+        std::reverse(_api.glyphIndices.data(), _api.glyphIndices.data() + N);
+        if (N > 1)
+        {
+            std::reverse(_api.glyphAdvances.data(), _api.glyphAdvances.data() + N - 1);
+        }
+        std::reverse(_api.glyphOffsets.data(), _api.glyphOffsets.data() + N);
+        for (size_t i = 0; i < N; ++i)
+        {
+            _api.glyphOffsets[i].advanceOffset = -_api.glyphOffsets[i].advanceOffset;
+        }
+
+        // Build row output directly. The normal column loop below assumes ascending
+        // clusterMap values and LTR column ordering, both of which fail for RTL.
+        const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+        const auto rowColors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
+        // Compute total expected advance for the RTL run and adjust last glyph.
+        const auto colStart = _api.bufferLineColumn[idx];
+        const auto colEnd = _api.bufferLineColumn[idx + length];
+        const auto expectedTotal = static_cast<f32>((colEnd - colStart) * _p.s->font->cellSize.x);
+        f32 actualTotal = 0;
+        for (size_t i = 0; i < N; ++i)
+            actualTotal += _api.glyphAdvances[i];
+        if (N > 0)
+            _api.glyphAdvances[N - 1] += expectedTotal - actualTotal;
+
+        // After reversal, LTR glyph i corresponds to text position (length - 1 - i)
+        // in the RTL range, due to 1:1 clusterMap mapping before reversal.
+        for (size_t i = 0; i < N; ++i)
+        {
+            const auto textIdx = idx + length - 1 - i;
+            const auto col = _api.bufferLineColumn[textIdx];
+            row.colors.emplace_back(rowColors[static_cast<size_t>(col) << shift]);
+        }
+
+        row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + N);
+        row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + N);
+        row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + N);
+        return;
+    }
+
+    const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+    const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+    auto prevCluster = _api.clusterMap[0];
+    size_t beg = 0;
+
+    for (size_t i = 1; i <= length; ++i)
+    {
+        const auto nextCluster = _api.clusterMap[i];
+        if (prevCluster == nextCluster)
+        {
+            continue;
+        }
+
+        const size_t col1 = _api.bufferLineColumn[idx + beg];
+        const size_t col2 = _api.bufferLineColumn[idx + i];
+        const auto fg = colors[col1 << shift];
+
+        const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
+        f32 actualAdvance = 0;
+        for (auto j = prevCluster; j < nextCluster; ++j)
+        {
+            actualAdvance += _api.glyphAdvances[j];
+        }
+        _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
+
+        row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
+
+        prevCluster = nextCluster;
+        beg = i;
+    }
+
+    row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
+    row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
+    row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
 }
 
 void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
