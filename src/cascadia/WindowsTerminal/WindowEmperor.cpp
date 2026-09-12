@@ -358,7 +358,7 @@ void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, cons
 //   summoning. When glomming a new tab into an existing window, this
 //   parameter should be true. When summoning, this should be false.
 // Return Value:
-// - the most recently used window, otherwise nullptr if we could not find one.
+// - the most recently used window; otherwise, nullptr if we could not find one.
 AppHost* WindowEmperor::_mostRecentWindow(const bool ignoreQuakeWindow) const noexcept
 {
     int64_t max = INT64_MIN;
