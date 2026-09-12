@@ -18,8 +18,6 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 
-static constexpr int AutohideTaskbarSize = 2;
-
 NonClientIslandWindow::NonClientIslandWindow(const ElementTheme& requestedTheme) noexcept :
     IslandWindow{},
     _backgroundBrushColor{ 0, 0, 0 },
@@ -102,6 +100,7 @@ void NonClientIslandWindow::MakeWindow() noexcept
                                          wil::GetModuleInstanceHandle(),
                                          this));
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
+    _SetNonRudeHWND(!_fullscreen);
 }
 
 LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
@@ -625,8 +624,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // default frame.
     const auto originalTop = params->rgrc[0].top;
 
-    const auto originalSize = params->rgrc[0];
-
     // apply the default frame
     const auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
@@ -634,9 +631,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         return ret;
     }
 
-    auto newSize = params->rgrc[0];
     // Re-apply the original top from before the size of the default frame was applied.
-    newSize.top = originalTop;
+    params->rgrc[0].top = originalTop;
 
     // WM_NCCALCSIZE is called before WM_SIZE
     _UpdateMaximizedState();
@@ -652,76 +648,8 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         // then the window is clipped to the monitor so that the resize handle
         // do not appear because you don't need them (because you can't resize
         // a window when it's maximized unless you restore it).
-        newSize.top += _GetResizeHandleHeight();
+        params->rgrc[0].top += _GetResizeHandleHeight();
     }
-
-    // GH#1438 - Attempt to detect if there's an autohide taskbar, and if there
-    // is, reduce our size a bit on the side with the taskbar, so the user can
-    // still mouse-over the taskbar to reveal it.
-    // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
-    // still find the right monitor even when we're restoring from minimized.
-    auto hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
-    if (hMon && (_isMaximized || _fullscreen))
-    {
-        MONITORINFO monInfo{ 0 };
-        monInfo.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfo(hMon, &monInfo);
-
-        // First, check if we have an auto-hide taskbar at all:
-        APPBARDATA autohide{ 0 };
-        autohide.cbSize = sizeof(autohide);
-        auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
-        if (WI_IsFlagSet(state, ABS_AUTOHIDE))
-        {
-            // This helper can be used to determine if there's an auto-hide
-            // taskbar on the given edge of the monitor we're currently on.
-            auto hasAutohideTaskbar = [&monInfo](const UINT edge) -> bool {
-                APPBARDATA data{ 0 };
-                data.cbSize = sizeof(data);
-                data.uEdge = edge;
-                data.rc = monInfo.rcMonitor;
-                auto hTaskbar = (HWND)SHAppBarMessage(ABM_GETAUTOHIDEBAREX, &data);
-                return hTaskbar != nullptr;
-            };
-
-            const auto onTop = hasAutohideTaskbar(ABE_TOP);
-            const auto onBottom = hasAutohideTaskbar(ABE_BOTTOM);
-            const auto onLeft = hasAutohideTaskbar(ABE_LEFT);
-            const auto onRight = hasAutohideTaskbar(ABE_RIGHT);
-
-            // If there's a taskbar on any side of the monitor, reduce our size
-            // a little bit on that edge.
-            //
-            // Note to future code archaeologists:
-            // This doesn't seem to work for fullscreen on the primary display.
-            // However, testing a bunch of other apps with fullscreen modes
-            // and an auto-hiding taskbar has shown that _none_ of them
-            // reveal the taskbar from fullscreen mode. This includes Edge,
-            // Firefox, Chrome, Sublime Text, PowerPoint - none seemed to
-            // support this.
-            //
-            // This does however work fine for maximized.
-            if (onTop)
-            {
-                // Peculiarly, when we're fullscreen,
-                newSize.top += AutohideTaskbarSize;
-            }
-            if (onBottom)
-            {
-                newSize.bottom -= AutohideTaskbarSize;
-            }
-            if (onLeft)
-            {
-                newSize.left += AutohideTaskbarSize;
-            }
-            if (onRight)
-            {
-                newSize.right -= AutohideTaskbarSize;
-            }
-        }
-    }
-
-    params->rgrc[0] = newSize;
 
     return 0;
 }
@@ -1144,6 +1072,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 {
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
+    _SetNonRudeHWND(!fullscreenEnabled);
     _UpdateTitlebarVisibility();
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
@@ -1188,6 +1117,24 @@ void NonClientIslandWindow::_UpdateTitlebarVisibility()
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !_borderless && (!_fullscreen || _showTabsFullscreen);
+}
+
+void NonClientIslandWindow::_SetNonRudeHWND(const bool nonRude) noexcept
+{
+    // When the window is maximized and the title bar is hidden, Windows may think the
+    // application is meant to be "fullscreen" and prevents the taskbar from appearing
+    // on top of our window. Setting this property prevents this behavior.
+    // https://devblogs.microsoft.com/oldnewthing/20250522-00/?p=111211
+
+    const auto hwnd = GetHandle();
+    if (nonRude)
+    {
+        SetPropW(hwnd, L"NonRudeHWND", reinterpret_cast<HANDLE>(static_cast<INT_PTR>(TRUE)));
+    }
+    else
+    {
+        RemovePropW(hwnd, L"NonRudeHWND");
+    }
 }
 
 void NonClientIslandWindow::SetTitlebarBackground(winrt::Windows::UI::Xaml::Media::Brush brush)
