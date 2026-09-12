@@ -28,6 +28,7 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="AtlasEngineTests.cpp" />
     <ClCompile Include="ControlCoreTests.cpp" />
     <ClCompile Include="ControlInteractivityTests.cpp" />
     <ClCompile Include="pch.cpp">
