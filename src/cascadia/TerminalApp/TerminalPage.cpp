@@ -2552,7 +2552,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
                 realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       tabImpl->GetActiveTerminalControl().ViewHeight() :
+                                       tabImpl->GetActiveTerminalControl().ViewportSize().Height :
                                        _systemRowsToScroll;
             }
             else
@@ -2994,7 +2994,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& control{ _GetActiveControl() })
             {
-                const auto termHeight = control.ViewHeight();
+                const auto termHeight = control.ViewportSize().Height;
                 auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
                 tabImpl->Scroll(scrollDelta);
             }

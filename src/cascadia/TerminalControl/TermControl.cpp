@@ -2462,12 +2462,63 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
+        if (newSize.Width <= 0 || newSize.Height <= 0)
+        {
+            return;
+        }
+
         _core.SizeChanged(newSize.Width, newSize.Height);
+        _ShowResizeOverlay();
 
         if (_automationPeer)
         {
             _automationPeer.UpdateControlBounds();
         }
+    }
+
+    // Shows an overlay with the current terminal dimensions (columns x rows).
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control.
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto size = coreImpl->ViewportSize();
+
+        // Sometimes _SwapChainSizeChanged is called despite no actual size change.
+        // This happens, e.g., when switching tabs. Ignore such "updates".
+        if (size == _lastResizeOverlaySize)
+        {
+            return;
+        }
+
+        const auto isInitialSize = _lastResizeOverlaySize == Core::Size{};
+        _lastResizeOverlaySize = size;
+        if (isInitialSize)
+        {
+            return;
+        }
+
+        ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
+        ResizeOverlay().Visibility(Visibility::Visible);
+
+        if (!_resizeOverlayTimer)
+        {
+            _resizeOverlayTimer.emplace();
+            _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+            _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto self = weakThis.get())
+                {
+                    self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                    self->_resizeOverlayTimer->Stop();
+                }
+            });
+        }
+
+        _resizeOverlayTimer->Start();
     }
 
     // Method Description:
@@ -2711,13 +2762,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int TermControl::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size TermControl::ViewportSize() const
     {
-        return _core.ViewHeight();
+        return _core.ViewportSize();
     }
 
     int TermControl::BufferHeight() const
@@ -3608,7 +3656,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
                 const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
                 const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
-                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewportSize().Height)
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
@@ -3679,6 +3727,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _searchScrollOffset = _calculateSearchScrollOffset();
+
+        // _ShowResizeOverlay is shown when the swap chain panel size changes.
+        // But changing the font size changes the viewport size as well.
+        // So, track that too.
+        _ShowResizeOverlay();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
