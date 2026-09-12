@@ -16,7 +16,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        safe_void_coroutine UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        safe_void_coroutine UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                                           const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         winrt::Windows::Foundation::Size MinimumSize();
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic);
@@ -43,6 +44,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::weak_ref<Microsoft::Terminal::Control::TermControl> _control{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::WindowSettings _windowSettings{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::FilteredTask> _allTasks{ nullptr };
 
         void _runCommandButtonClicked(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs&);

@@ -134,7 +134,7 @@
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="fzf/fzf.h" />
+    <ClInclude Include="../fzf/fzf.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -176,6 +176,7 @@
     <ClInclude Include="TmuxConnection.h" />
     <ClInclude Include="TmuxControl.h" />
     <ClInclude Include="Toast.h" />
+    <ClInclude Include="DesktopNotification.h" />
     <ClInclude Include="TerminalSettingsCache.h" />
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
@@ -206,7 +207,7 @@
     <ClCompile Include="Tab.cpp">
       <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="fzf/fzf.cpp" />
+    <ClCompile Include="../fzf/fzf.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClCompile>
@@ -291,6 +292,7 @@
     <ClCompile Include="TmuxConnection.cpp" />
     <ClCompile Include="TmuxControl.cpp" />
     <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="DesktopNotification.cpp" />
     <ClCompile Include="TerminalSettingsCache.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>

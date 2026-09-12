@@ -21,13 +21,14 @@ namespace Microsoft::Console::TSF
 
         virtual ~Implementation() = default;
 
-        bool Initialize();
+        HRESULT Initialize();
         void Uninitialize() noexcept;
         HWND FindWindowOfActiveTSF() noexcept;
         void AssociateFocus(IDataProvider* provider);
         void Focus(IDataProvider* provider);
         void Unfocus(IDataProvider* provider);
         bool HasActiveComposition() const noexcept;
+        void FlushPendingComposition() noexcept;
 
         // IUnknown methods
         STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj) noexcept override;

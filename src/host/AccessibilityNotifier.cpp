@@ -335,7 +335,7 @@ void AccessibilityNotifier::_timerSet() noexcept
     else if (!_state.timerScheduled)
     {
         _state.timerScheduled = true;
-        SetThreadpoolTimerEx(_timer.get(), _delay, 0, _delayWindow);
+        SetThreadpoolTimer(_timer.get(), _delay, 0, _delayWindow);
     }
 }
 
@@ -347,7 +347,7 @@ void NTAPI AccessibilityNotifier::_timerEmitMSAA(PTP_CALLBACK_INSTANCE, PVOID co
     // Make a copy of _state, because UIA and MSAA are very slow (up to 1ms per call).
     // Holding a lock while _emitEventsCallback would mean that the IO thread can't proceed.
     //
-    // The only concern I have is whether calling SetThreadpoolTimerEx() again on
+    // The only concern I have is whether calling SetThreadpoolTimer() again on
     // _timer while we're still executing will properly schedule another run.
     // The docs say to read the "Remarks" and the remarks just don't clarify it. Great.
     // FWIW we can't just create two timer objects since that may (theoretically)

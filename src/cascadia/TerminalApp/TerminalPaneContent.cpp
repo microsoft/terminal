@@ -43,6 +43,7 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
+        _controlEvents._ShowNotification = _control.ShowNotification(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlShowNotification });
     }
     void TerminalPaneContent::_removeControlEvents()
     {
@@ -72,18 +73,6 @@ namespace winrt::TerminalApp::implementation
         _removeControlEvents();
 
         _control.Close();
-
-        // Clear out our media player callbacks, and stop any playing media. This
-        // will prevent the callback from being triggered after we've closed, and
-        // also make sure that our sound stops when we're closed.
-        if (_bellPlayer)
-        {
-            _bellPlayer.Pause();
-            _bellPlayer.Source(nullptr);
-            _bellPlayer.Close();
-            _bellPlayer = nullptr;
-            _bellPlayerCreated = false;
-        }
     }
 
     winrt::hstring TerminalPaneContent::Icon() const
@@ -103,7 +92,7 @@ namespace winrt::TerminalApp::implementation
 
         args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
-        if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+        if (const auto dir = _control.WorkingDirectory(); ::Microsoft::Console::Utils::IsValidDirectory(dir.c_str()))
         {
             args.StartingDirectory(dir);
         }
@@ -181,6 +170,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_controlFocusFollowMouseRequested(const IInspectable&, const IInspectable&)
     {
         FocusRequested.raise(*this, nullptr);
+    }
+
+    void TerminalPaneContent::_controlShowNotification(const IInspectable& /*sender*/, const ShowNotificationEventArgs& args)
+    {
+        NotificationRequested.raise(*this, winrt::make<implementation::NotificationEventArgs>(args.Title(), args.Body()));
     }
 
     // Method Description:
@@ -276,14 +270,15 @@ namespace winrt::TerminalApp::implementation
                     auto sounds{ _profile.BellSound() };
                     if (sounds && sounds.Size() > 0)
                     {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
+                        // Sound paths are resolved and validated by CascadiaSettings
+                        // before we reach this point.
+                        auto soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                        PlaySoundW(soundPath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
                     }
                     else
                     {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                        const auto soundAlias = reinterpret_cast<LPCWSTR>(SND_ALIAS_SYSTEMHAND);
+                        PlaySoundW(soundAlias, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
                     }
                 }
 
@@ -292,40 +287,15 @@ namespace winrt::TerminalApp::implementation
                     _control.BellLightOn();
                 }
 
-                // raise the event with the bool value corresponding to the taskbar flag
+                // raise the event with the bool values corresponding to the taskbar and notification flags
                 BellRequested.raise(*this,
-                                    *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
+                                    *winrt::make_self<TerminalApp::implementation::BellEventArgs>(
+                                        WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar),
+                                        WI_IsFlagSet(_profile.BellStyle(), BellStyle::Notification)));
             }
         }
     }
 
-    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
-    {
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(_control.Dispatcher());
-        if (auto pane{ weakThis.get() })
-        {
-            if (!_bellPlayerCreated)
-            {
-                // The MediaPlayer might not exist on Windows N SKU.
-                try
-                {
-                    _bellPlayerCreated = true;
-                    _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-                    // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
-                    _bellPlayer.CommandManager().IsEnabled(false);
-                }
-                CATCH_LOG();
-            }
-            if (_bellPlayer)
-            {
-                const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-                const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-                _bellPlayer.Source(item);
-                _bellPlayer.Play();
-            }
-        }
-    }
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
@@ -338,7 +308,8 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings,
+                                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& /*windowSettings*/)
     {
         // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
         const auto profile{ settings.FindProfile(_profile.Guid()) };

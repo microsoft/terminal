@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
-        weak_ref<Windows::UI::Xaml::Automation::Peers::AutomationPeer> _parentProvider;
+        winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple _parentProvider{ nullptr };
 
         til::rect _controlBounds{};
         til::rect _controlPadding{};

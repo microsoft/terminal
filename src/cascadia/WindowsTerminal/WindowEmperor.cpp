@@ -11,6 +11,8 @@
 #include <wil/token_helpers.h>
 #include <winrt/TerminalApp.h>
 #include <sddl.h>
+#include <propkey.h>
+#include <propvarutil.h>
 
 #include "AppHost.h"
 #include "resource.h"
@@ -97,9 +99,8 @@ static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, w
     uint32_t len;
     it = deserializeUint32(it, end, len);
 
-    const auto bytes = static_cast<size_t>(len) * sizeof(wchar_t);
-
-    if (bytes == 0 || static_cast<size_t>(end - it) < bytes)
+    size_t bytes{};
+    if (!SUCCEEDED(SizeTMult(static_cast<size_t>(len), sizeof(wchar_t), &bytes)) || bytes == 0 || static_cast<size_t>(end - it) < bytes)
     {
         throw std::out_of_range("Not enough data for string content");
     }
@@ -267,7 +268,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
-
+    _handoffTimeoutTimer.Stop();
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
 
@@ -295,6 +296,60 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     }
 }
 
+// Public entry point used by in-process callers (e.g. AppHost reacting to a
+// TerminalPage RequestOpenWindow event) to open or summon a named window -
+// restoring its persisted workspace if one exists - without spawning a second
+// wt.exe. Bypasses the commandline parser entirely.
+void WindowEmperor::OpenWindow(const winrt::hstring& name)
+{
+    _assertIsMainThread();
+
+    if (name.empty())
+    {
+        return;
+    }
+
+    // If a window with this name is already live, just summon it.
+    // This mirrors the summon behavior in AppHost::DispatchCommandline (which is
+    // what the old `wt -w <name>` ShellExecute path effectively triggered).
+    if (const auto window = GetWindowByName(name))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summon{};
+        summon.MoveToCurrentDesktop(false);
+        summon.DropdownDuration(0);
+        summon.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summon.ToggleVisibility(false);
+        window->HandleSummon(std::move(summon));
+        return;
+    }
+
+    // Otherwise, create a new window under that name. A default-constructed
+    // CommandlineArgs is supplied as the launch fallback for the case where
+    // no persisted workspace exists; AppHost ignores it when PersistedLayout
+    // is set.
+    _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
+}
+
+// Shared tail used by both the commandline dispatch path and OpenWindow():
+// build a WindowRequestedArgs for a new window and, if the request carries a
+// name, atomically claim any persisted workspace stored under that name so
+// it's restored here and no subsequent caller can pick up the same entry.
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+{
+    winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
+    request.WindowName(windowName);
+
+    if (!windowName.empty())
+    {
+        if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(windowName))
+        {
+            request.PersistedLayout(layout);
+        }
+    }
+
+    CreateNewWindow(std::move(request));
+}
+
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;
@@ -313,18 +368,132 @@ AppHost* WindowEmperor::_mostRecentWindow() const noexcept
     return mostRecent;
 }
 
+// GH#20053: The shell resolves taskbar grouping identity as: per-window AUMID >
+// per-process AUMID > auto-derived from exe path. Before we started setting a
+// process AUMID, both the pinned .lnk and the process used auto-derived
+// identity, so they matched. Now that we set an explicit AUMID, a pinned .lnk
+// that predates the AUMID change has no AUMID and still uses auto-derived
+// identity, causing a mismatch and a duplicate taskbar button.
+//
+// To fix this, we check if a pinned taskbar shortcut (.lnk) points to our exe.
+// If it already carries our AUMID (or no pin exists), we set the process AUMID
+// normally. If a pin exists WITHOUT our AUMID, we skip setting the process
+// AUMID for THIS launch (both sides use auto-derived identity, so they match)
+// and defer stamping the shortcut to process exit. On the next launch, the pin
+// has our AUMID, so we set the process AUMID to match, and both agree.
+//
+// NOTE: On the first launch after pinning, the process AUMID is not set. If
+// toast notifications are needed in the future, use
+// ToastNotificationManager::CreateToastNotifier(aumid) with the AUMID string
+// directly. That API does not depend on SetCurrentProcessExplicitAppUserModelID.
+// A Start Menu shortcut with the AUMID (separate from the taskbar pin) is also
+// required for toast routing; see
+// https://learn.microsoft.com/windows/apps/develop/notifications/app-notifications/send-local-toast-other-apps
+void WindowEmperor::_setupAumid(const std::wstring& aumid)
+{
+    const auto ourExePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
+
+    bool needsDeferredStamping = false;
+    std::wstring pinnedLnkPath;
+
+    const auto taskbarGlob = wil::ExpandEnvironmentStringsW<std::wstring>(
+        LR"(%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\*.lnk)");
+
+    WIN32_FIND_DATAW findData{};
+    const wil::unique_hfind findHandle{ FindFirstFileExW(taskbarGlob.c_str(), FindExInfoBasic, &findData, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+    if (findHandle)
+    {
+        const auto lastSlash = taskbarGlob.rfind(L'\\');
+        const auto taskbarDir = taskbarGlob.substr(0, lastSlash + 1);
+
+        do
+        {
+            const auto lnkPath = taskbarDir + findData.cFileName;
+
+            wil::com_ptr<IShellLinkW> shellLink;
+            if (FAILED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink))))
+            {
+                continue;
+            }
+
+            const auto persistFile = shellLink.try_query<IPersistFile>();
+            if (!persistFile || FAILED(persistFile->Load(lnkPath.c_str(), STGM_READ)))
+            {
+                continue;
+            }
+
+            wchar_t targetPath[MAX_PATH]{};
+            if (FAILED(shellLink->GetPath(targetPath, MAX_PATH, nullptr, SLGP_RAWPATH)))
+            {
+                continue;
+            }
+
+            if (til::compare_ordinal_insensitive(targetPath, ourExePath) != 0)
+            {
+                continue;
+            }
+
+            // Found a pin pointing to us. Assume it needs stamping unless
+            // we confirm it already has our AUMID.
+            pinnedLnkPath = lnkPath;
+            needsDeferredStamping = true;
+
+            if (const auto propertyStore = shellLink.try_query<IPropertyStore>())
+            {
+                wil::unique_prop_variant pv;
+                if (SUCCEEDED(propertyStore->GetValue(PKEY_AppUserModel_ID, &pv)) &&
+                    pv.vt == VT_LPWSTR && pv.pwszVal &&
+                    aumid == pv.pwszVal)
+                {
+                    needsDeferredStamping = false;
+                }
+            }
+
+            break;
+        } while (FindNextFileW(findHandle.get(), &findData));
+    }
+
+    if (needsDeferredStamping)
+    {
+        // The pin exists but doesn't have our AUMID yet. Don't set the process
+        // AUMID or stamp the shortcut now. Writing the shortcut causes the
+        // shell to re-read it immediately, changing the pin's cached identity
+        // mid-launch and creating a mismatch in the opposite direction. Instead,
+        // stamp it at shutdown when the taskbar association no longer matters.
+        _pendingAumidLnkPath = std::move(pinnedLnkPath);
+        _pendingAumid = aumid;
+    }
+    else
+    {
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(aumid.c_str()));
+    }
+}
+
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
+    // When running without package identity, set an explicit AppUserModelID so
+    // that toast notifications (and other shell features like taskbar grouping)
+    // work correctly. We include...
+    // - a hash of the executable path
+    // - a hash of the user SID
+    // This prevents crosstalk between different portable/unpackaged installations.
+    // The same isolation strategy is used for the single-instance mutex below.
+    std::wstring unpackagedAumid;
+
     std::wstring windowClassName;
     windowClassName.reserve(64); // "Windows Terminal Preview Admin 0123456789012345 0123456789012345"
 #if defined(WT_BRANDING_RELEASE)
     windowClassName.append(L"Windows Terminal");
+    unpackagedAumid = L"Microsoft.WindowsTerminal";
 #elif defined(WT_BRANDING_PREVIEW)
     windowClassName.append(L"Windows Terminal Preview");
+    unpackagedAumid = L"Microsoft.WindowsTerminalPreview";
 #elif defined(WT_BRANDING_CANARY)
     windowClassName.append(L"Windows Terminal Canary");
+    unpackagedAumid = L"Microsoft.WindowsTerminalCanary";
 #else
     windowClassName.append(L"Windows Terminal Dev");
+    unpackagedAumid = L"WindowsTerminalDev";
 #endif
     if (Utils::IsRunningElevated())
     {
@@ -336,8 +505,10 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto hash = til::hash(path);
 #ifdef _WIN64
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
+        fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:016x}"), hash);
 #else
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
+        fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:08x}"), hash);
 #endif
     }
 
@@ -351,6 +522,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #else
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
 #endif
+        if (!IsPackaged())
+        {
+#ifdef _WIN64
+            fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:016x}"), hash);
+#else
+            fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:08x}"), hash);
+#endif
+            _setupAumid(unpackagedAumid);
+        }
     }
 
     // Windows Terminal is a single-instance application. Either acquire ownership
@@ -362,6 +542,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         // We do it with TerminateProcess() primarily to avoid WinUI shutdown issues.
         TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(0));
         __assume(false);
+    }
+
+    // !! LOAD BEARING !!
+    // This prevents loader lock contention with some versions of the nvidia
+    // driver, which calls SHGetKnownFolderPath triggering a delay load while
+    // under lock during application startup. See GH#20348.
+    {
+        wil::unique_cotaskmem_string localAppDataFolder;
+        SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
     }
 
     _app = winrt::TerminalApp::App{};
@@ -411,9 +600,12 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         if (args.size() == 2 && args[1] == L"-Embedding")
         {
             // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
-            //
-            // TODO: Here we could start a timer and exit after, say, 5 seconds
-            // if no windows are created. But that's a minor concern.
+            // But if we don't receive any handoff within a reasonable timeout, we should exit.
+            _handoffTimeoutTimer.Interval(5s);
+            _handoffTimeoutTimer.Tick([this](auto&&, auto&&) {
+                _postQuitMessageIfNeeded();
+            });
+            _handoffTimeoutTimer.Start();
         }
         else
         {
@@ -527,6 +719,29 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     if (_notificationIconShown)
     {
         Shell_NotifyIconW(NIM_DELETE, &_notificationIcon);
+    }
+
+    // GH#20053: Deferred shortcut stamping. See _setupAumid() for context.
+    if (!_pendingAumidLnkPath.empty())
+    {
+        wil::com_ptr<IShellLinkW> shellLink;
+        if (SUCCEEDED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink))))
+        {
+            if (const auto persistFile = shellLink.try_query<IPersistFile>();
+                persistFile && SUCCEEDED(persistFile->Load(_pendingAumidLnkPath.c_str(), STGM_READWRITE)))
+            {
+                if (const auto propertyStore = shellLink.try_query<IPropertyStore>())
+                {
+                    wil::unique_prop_variant pv;
+                    if (SUCCEEDED(InitPropVariantFromString(_pendingAumid.c_str(), &pv)) &&
+                        SUCCEEDED(propertyStore->SetValue(PKEY_AppUserModel_ID, pv)) &&
+                        SUCCEEDED(propertyStore->Commit()))
+                    {
+                        persistFile->Save(_pendingAumidLnkPath.c_str(), TRUE);
+                    }
+                }
+            }
+        }
     }
 
     // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
@@ -652,9 +867,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
-        request.WindowName(std::move(windowName));
-        CreateNewWindow(std::move(request));
+        _createWindowMaybeRestoringWorkspace(windowId, windowName, std::move(args));
     }
 }
 
@@ -751,6 +964,25 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
     return true;
 }
 
+void WindowEmperor::FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const
+{
+    _assertIsMainThread();
+
+    for (const auto& w : _windows)
+    {
+        if (w->Logic().FocusTab(tab))
+        {
+            winrt::TerminalApp::SummonWindowBehavior summonArgs;
+            summonArgs.MoveToCurrentDesktop(false);
+            summonArgs.DropdownDuration(0);
+            summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+            summonArgs.ToggleVisibility(false);
+            w->HandleSummon(std::move(summonArgs));
+            return;
+        }
+    }
+}
+
 void WindowEmperor::_summonAllWindows() const
 {
     _assertIsMainThread();
@@ -809,8 +1041,11 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
     // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
     // message handler, which then stores the HWND in this->_window.
+    // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+    // redirection surface for reduced memory usage, because this window
+    // is never shown and never paints anything.
     WINRT_VERIFY(CreateWindowExW(
-        /* dwExStyle    */ 0,
+        /* dwExStyle    */ WS_EX_NOREDIRECTIONBITMAP,
         /* lpClassName  */ className,
         /* lpWindowName */ L"Windows Terminal",
         /* dwStyle      */ 0,
@@ -919,6 +1154,22 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                         // anyway (since we threw and exited this message handler) so this at least gives back our
                         // deterministic window count management.
                         const auto strong = *it;
+
+                        // Before destroying a named window, persist its full
+                        // tab/buffer state as a workspace so it can be restored later.
+                        try
+                        {
+                            const auto windowName = strong->Logic().WindowProperties().WindowName();
+                            if (!windowName.empty())
+                            {
+                                if (const auto layout = strong->Logic().GetWindowLayout())
+                                {
+                                    ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+                                }
+                            }
+                        }
+                        CATCH_LOG();
+
                         _windows.erase(it);
                         try
                         {
@@ -946,6 +1197,19 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 host->Logic().IdentifyWindow();
             }
             return 0;
+        case WM_GET_WINDOW_LIST:
+        {
+            auto* result = reinterpret_cast<std::vector<WindowListEntry>*>(lParam);
+            if (result)
+            {
+                for (const auto& host : _windows)
+                {
+                    const auto props = host->Logic().WindowProperties();
+                    result->emplace_back(WindowListEntry{ props.WindowId(), std::wstring{ props.WindowName() } });
+                }
+            }
+            return 0;
+        }
         case WM_NOTIFY_FROM_NOTIFICATION_AREA:
             switch (LOWORD(lParam))
             {
@@ -1009,7 +1273,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
                 const auto argv = commandlineToArgArray(handoff.args.c_str());
-                _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                // When a toast notification is clicked, Windows launches a new
+                // wt.exe with "--from-toast". That instance hands off here via
+                // WM_COPYDATA. We already handle activation in-process via the
+                // toast's Activated event, so just ignore this handoff.
+                if (argv.size() != 2 || argv[1] != L"--from-toast")
+                {
+                    _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                }
             }
             return 0;
         case WM_HOTKEY:
@@ -1418,8 +1689,9 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // themselves getting the new settings, only ask the app logic for the
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
-    const auto globals = _app.Logic().Settings().GlobalSettings();
-    auto needsIcon = globals.AlwaysShowNotificationIcon() || globals.MinimizeToNotificationArea();
+    const auto settings = _app.Logic().Settings();
+    const auto globals = settings.GlobalSettings();
+    auto needsIcon = globals.AlwaysShowNotificationIcon() || settings.WindowSettingsDefaults().MinimizeToNotificationArea();
     if (!needsIcon)
     {
         for (const auto& host : _windows)

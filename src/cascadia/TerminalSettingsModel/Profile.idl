@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Model
         Audible = 0x1,
         Window = 0x2,
         Taskbar = 0x4,
+        Notification = 0x8,
         All = 0xffffffff
     };
 
@@ -88,11 +89,14 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         INHERITABLE_PROFILE_SETTING(Boolean, RainbowSuggestions);
         INHERITABLE_PROFILE_SETTING(Boolean, ForceVTInput);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowKittyKeyboardMode);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowKeypadMode);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
+        INHERITABLE_PROFILE_SETTING(Boolean, AllowOscNotifications);
         INHERITABLE_PROFILE_SETTING(Boolean, AllowTmuxControl);
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
+        INHERITABLE_PROFILE_SETTING(String, DragDropDelimiter);
     }
 }

@@ -64,7 +64,7 @@ typedef struct _TERMINAL_STARTUP_INFO
 };
 
 // Quite a while later, we realized that passing the in/out handles as [in] instead of [out] has always been flawed.
-// It prevents the terminal from making choices over the pipe buffer size and whether to use overlapped IO or not.
+// It prevents the terminal from making choices over the pipe buffer size and whether or not to use overlapped IO.
 // The other handles remain [in] parameters because they have always been created internally by ConPTY.
 // Additionally, passing TERMINAL_STARTUP_INFO by-value was unusual under COM as structs are usually given by-ref.
 [

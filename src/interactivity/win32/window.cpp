@@ -24,10 +24,7 @@
 
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
-
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
-#endif
 
 #include "../inc/ServiceLocator.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -48,13 +45,7 @@ using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
 
-Window::Window() :
-    _fIsInFullscreen(false),
-    _pSettings(nullptr),
-    _hWnd(nullptr),
-    _pUiaProvider(nullptr),
-    _fWasMaximizedBeforeFullscreen(false),
-    _dpiBeforeFullscreen(0)
+Window::Window()
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcWindowBeforeFullscreen, sizeof(_rcWindowBeforeFullscreen));
@@ -67,9 +58,7 @@ Window::~Window()
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG
     delete pGdiEngine;
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
     delete pAtlasEngine;
-#endif
 #endif
 }
 
@@ -208,14 +197,12 @@ void Window::_UpdateSystemMetrics() const
     const auto useDx = pSettings->GetUseDx();
     try
     {
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         if (useDx)
         {
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
         }
         else
-#endif
         {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -245,7 +232,7 @@ void Window::_UpdateSystemMetrics() const
             //if launched from a shortcut, ensure window is visible on screen
             if (pSettings->IsStartupTitleIsLinkNameSet())
             {
-                // if window would be fully OFFscreen, change position so it is ON screen.
+                // if window would be fully OFF-screen, change position so it is ON-screen.
                 // This doesn't change the actual coordinates
                 // stored in the link, just the starting position
                 // of the window.
@@ -309,14 +296,12 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
             if (pAtlasEngine)
             {
                 const auto hr = pAtlasEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
-#endif
             {
                 const auto hr = pGdiEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
@@ -430,7 +415,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
-        Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
@@ -443,7 +427,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
         // we're iconic
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
-        Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
 
     ScreenInfo.UpdateScrollBars();
@@ -649,28 +632,6 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
             // which ends up in this function.
             siAttached.UpdateScrollBars();
         }
-
-        // MSFT: 12092729
-        // To fix an issue with 3rd party applications that wrap our console, notify that the screen buffer size changed
-        // when the window viewport is updated.
-        // ---
-        // - The specific scenario that this impacts is ConEmu (wrapping our console) to use Bash in WSL.
-        // - The reason this is a problem is because ConEmu has to programmatically manipulate our buffer and window size
-        //   one after another to get our dimensions to change.
-        // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the
-        //   WSL environment. This isn't technically correct to use a Buffer message to know when Window changes, but
-        //   it's not totally their fault because we do not provide a Window changed message at all.
-        // - If our window is adjusted directly, the Buffer and Window dimensions are both updated simultaneously under lock
-        //   and WSL gets one message and updates appropriately.
-        // - If ConEmu updates it via the API, one is updated, then the other with an unlocked time interval.
-        //   The WSL layer will potentially get the Window size that hasn't been updated yet or is out of sync before the
-        //   other API call is completed which results in the application in the WSL environment thinking the window is
-        //   a different size and outputting VT sequences with an invalid assumption.
-        // - If we make it so a Window change also emits a Buffer change message, then WSL will be notified appropriately
-        //   and can pass that information into the WSL environment.
-        // - To Windows apps that weren't expecting this information, it should cause no harm because they should just receive
-        //   an additional Buffer message with the same size again and do nothing special.
-        ScreenBufferSizeChange(siAttached.GetActiveBuffer().GetBufferSize().Dimensions());
 
         _resizingWindow--;
     }

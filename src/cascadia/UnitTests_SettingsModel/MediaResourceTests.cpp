@@ -101,13 +101,15 @@ namespace SettingsModelUnitTests
 
         // REAL RESOLVER
         TEST_METHOD(RealResolverFilePaths);
+        TEST_METHOD(RealResolverIndexedIconPaths);
         TEST_METHOD(RealResolverSpecialKeywords);
         TEST_METHOD(RealResolverUrlCases);
         TEST_METHOD(RealResolverUNCCases);
 
-        static constexpr std::wstring_view pingCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
-        static constexpr std::wstring_view overrideCommandline{ LR"(C:\Windows\System32\cscript.exe)" };
-        static constexpr std::wstring_view cmdCommandline{ LR"(C:\Windows\System32\cmd.exe)" }; // The default commandline for a profile
+        // These are normalized by NormalizeCommandLine, which resolves to the on-disk casing.
+        // They are used in test cases where media paths fall back to profile command lines.
+        static inline std::wstring overrideCommandline;
+        static inline std::wstring cmdCommandline;
         static constexpr std::wstring_view fragmentBasePath1{ LR"(C:\Windows\Media)" };
 
     private:
@@ -218,6 +220,9 @@ namespace SettingsModelUnitTests
         // Some of our tests use paths under system32. Just don't redirect them.
         Wow64DisableWow64FsRedirection(&redirectionFlag);
 #endif
+        // Normalize these AFTER the call above so that we get the correctly redirected paths.
+        overrideCommandline = implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cscript.exe)");
+        cmdCommandline = implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cmd.exe)");
         return true;
     }
 
@@ -1145,6 +1150,114 @@ namespace SettingsModelUnitTests
             VERIFY_IS_FALSE(image.Ok());
             VERIFY_ARE_EQUAL(L"", image.Resolved());
         }
+    }
+
+    void MediaResourceTests::RealResolverIndexedIconPaths()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        g_mediaResolverHook = nullptr; // Use the real resolver
+
+        auto settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "icon": "C:\\Windows\\System32\\shell32.dll,210",
+                "name": "ProfileAbsoluteIndexedIcon"
+            },
+            {
+                "icon": "System32\\shell32.dll,-210",
+                "name": "ProfileRelativeIndexedIcon"
+            },
+            {
+                "icon": "%SystemRoot%\\System32\\shell32.dll,0",
+                "name": "ProfileEnvironmentVariableIndexedIcon"
+            },
+            {
+                "icon": "C:\\Windows\\System32\\shell32.dll,not-an-index",
+                "name": "ProfileInvalidIndexedIcon"
+            },
+            {
+                "backgroundImage": "C:\\Windows\\System32\\shell32.dll,210",
+                "name": "ProfileIndexedNonIconResource"
+            }
+        ]
+    }
+})");
+
+        constexpr std::wstring_view expectedShell32Path{ LR"(C:\Windows\System32\shell32.dll)" };
+
+        {
+            const auto profile{ settings->GetProfileByName(L"ProfileAbsoluteIndexedIcon") };
+            const auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(std::wstring{ expectedShell32Path } + L",210", icon.Resolved());
+        }
+
+        {
+            const auto profile{ settings->GetProfileByName(L"ProfileRelativeIndexedIcon") };
+            const auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(std::wstring{ expectedShell32Path } + L",-210", icon.Resolved());
+        }
+
+        {
+            const auto profile{ settings->GetProfileByName(L"ProfileEnvironmentVariableIndexedIcon") };
+            const auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_IS_TRUE(til::equals_insensitive_ascii(std::wstring{ expectedShell32Path } + L",0", icon.Resolved()), WEX::Common::NoThrowString{ icon.Resolved().c_str() });
+        }
+
+        {
+            const auto profile{ settings->GetProfileByName(L"ProfileInvalidIndexedIcon") };
+            const auto icon{ profile.Icon() };
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
+        }
+
+        {
+            const auto profile{ settings->GetProfileByName(L"ProfileIndexedNonIconResource") };
+            const auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+            VERIFY_ARE_EQUAL(L"", image.Resolved());
+        }
+
+        const auto testRoot = std::filesystem::temp_directory_path() / fmt::format(L"WT_MediaResourceTests_{}", GetCurrentProcessId());
+        const auto folderWithComma = testRoot / L"folder,with-comma";
+        const auto iconInCommaFolder = folderWithComma / L"icon.dll";
+        const auto iconWithCommaFilename = testRoot / L"icon,with-comma.dll";
+        const auto cleanup = wil::scope_exit([&] {
+            std::error_code error;
+            std::filesystem::remove_all(testRoot, error);
+        });
+
+        std::filesystem::remove_all(testRoot);
+        std::filesystem::create_directories(folderWithComma);
+        std::filesystem::copy_file(LR"(C:\Windows\System32\shell32.dll)", iconInCommaFolder);
+        std::filesystem::copy_file(LR"(C:\Windows\System32\shell32.dll)", iconWithCommaFilename);
+
+        const MediaResourceResolver resolver{ [](auto, const auto&, const auto& resource) {
+            const std::filesystem::path path{ std::wstring_view{ resource.Path() } };
+            if (std::filesystem::exists(path))
+            {
+                resource.Resolve(winrt::hstring{ path.lexically_normal().native() });
+            }
+            else
+            {
+                resource.Reject();
+            }
+        } };
+        const auto verifyIcon = [&](const std::wstring& path) {
+            const auto icon{ implementation::MediaResource::FromString(winrt::hstring{ path }) };
+            implementation::ResolveIconMediaResource(OriginTag::User, {}, icon, resolver);
+            VERIFY_IS_TRUE(icon.Ok());
+            VERIFY_ARE_EQUAL(path, icon.Resolved());
+        };
+
+        verifyIcon(iconInCommaFolder.native());
+        verifyIcon(iconInCommaFolder.native() + L",24");
+        verifyIcon(iconWithCommaFilename.native());
+        verifyIcon(iconWithCommaFilename.native() + L",24");
     }
 
     static std::optional<winrt::hstring> _getDesktopWallpaper()

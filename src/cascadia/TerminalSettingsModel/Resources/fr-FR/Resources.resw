@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Réinitialiser le nom de la fenêtre</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Ouvrir un espace de travail « {0} »</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Ouvrir un espace de travail</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Renommer la fenêtre...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>Redémarrer la connexion</value>
+    <value>Redémarrer la session</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Ouvrir le bloc-notes</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Ouvrir le répertoire de travail actif</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Espaces de travail...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Fermer l’onglet</value>
@@ -824,13 +834,13 @@
     <value>Annuler la sélection</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Une ligne</value>
+    <value>Ligne simple</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Avec des séquences de contrôle</value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>Copier la mise en forme</value>
+    <value>Copiez la mise en forme</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
     <value>Index de l’onglet</value>
@@ -869,7 +879,7 @@
     <value>Nom du schéma</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Couleur d’onglet</value>
+    <value>Couleur de l'onglet</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Titre</value>
@@ -914,7 +924,7 @@
     <value>Superviser</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Changer la visibilité</value>
+    <value>Activer/désactiver la visibilité</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
     <value>Durée du menu déroulant</value>
@@ -959,7 +969,7 @@
     <value>Masquer le titre de l’application</value>
   </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>Modèle de couleurs</value>
+    <value>Jeu de couleurs</value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Élever</value>

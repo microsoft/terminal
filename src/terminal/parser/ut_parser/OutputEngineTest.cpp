@@ -3425,7 +3425,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         pDispatch->_copyContent = L"UNCHANGED";
-        // Passing a query character with missing `Pc` param is illegal, won't change the content.
+        // Passing a query character without `Pc` param is illegal, won't change the content.
         mach.ProcessString(L"\x1b]52;?\x07");
         VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
 

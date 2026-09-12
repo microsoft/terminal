@@ -20,7 +20,9 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.GraphicsAPI> GraphicsAPI { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextMeasurement> TextMeasurement { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.AmbiguousWidth> AmbiguousWidth { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.WarnAboutMultiLinePaste> WarnAboutMultiLinePaste { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ConfirmOnClose> ConfirmOnClose { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };

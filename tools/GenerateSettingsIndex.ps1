@@ -1,0 +1,493 @@
+<#
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+.SYNOPSIS
+Scans XAML files for local:SettingsCard and local:SettingsExpander entries and generates GeneratedSettingsIndex.g.h / .g.cpp.
+
+.PARAMETER SourceDir
+Directory to scan recursively for .xaml files.
+
+.PARAMETER OutputDir
+Directory to place generated C++ files.
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$false)][string]$SourceDir = "$PSScriptRoot\..\src\cascadia\TerminalSettingsEditor\",
+    [Parameter(Mandatory=$false)][string]$OutputDir = "$PSScriptRoot\..\src\cascadia\TerminalSettingsEditor\Generated Files\"
+)
+
+# Prohibited UIDs (exact match, case-insensitive by default)
+$ProhibitedUids = @(
+    "ColorScheme_ColorsHeader",
+    "ColorScheme_InboxSchemeDuplicate",
+    "ColorScheme_Rename",
+    "Extensions_ComplexPackageNavigator",
+    "Extensions_ComplexPackageNavigatorFontIcon",
+    "Extensions_DefaultPackageNavigator",
+    "Extensions_FragmentColorSchemeNavigator",
+    "Extensions_FragmentProfileNavigator",
+    "Extensions_Scope",
+    "Profile_AdvancedNavigator",
+    "Profile_AppearanceNavigator",
+    "Profile_DeleteProfile",
+    "Profile_MissingFontFaces",
+    "Profile_ProportionalFontFaces",
+    "Profile_ResetProfile",
+    "Profile_TerminalNavigator",
+    "Profiles_ColorSchemesNavigator",
+    "Profiles_DefaultsNavigator"
+)
+
+# Prohibited XAML files (already limited to Page root elements)
+$ProhibitedXamlFiles = @(
+    "AISettings.xaml",
+    "Profiles_Base_Orphaned.xaml",
+    "EditAction.xaml",
+    "MainPage.xaml"
+)
+
+# Grouped metadata for each page class
+$ClassMap = @{
+    "Microsoft::Terminal::Settings::Editor::Launch" = @{
+        ResourceName    = "Nav_Launch/Content"
+        NavigationParam = "Launch_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+    "Microsoft::Terminal::Settings::Editor::Interaction" = @{
+        ResourceName    = "Nav_Interaction/Content"
+        NavigationParam = "Interaction_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+    "Microsoft::Terminal::Settings::Editor::GlobalAppearance" = @{
+        ResourceName    = "Nav_Appearance/Content"
+        NavigationParam = "GlobalAppearance_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+    "Microsoft::Terminal::Settings::Editor::ColorSchemes" = @{
+        ResourceName    = "Nav_ColorSchemes/Content"
+        NavigationParam = "ColorSchemes_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
+    }
+    "Microsoft::Terminal::Settings::Editor::Compatibility" = @{
+        ResourceName    = "Nav_Compatibility/Content"
+        NavigationParam = "Compatibility_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+    "Microsoft::Terminal::Settings::Editor::Actions" = @{
+        ResourceName    = "Nav_Actions/Content"
+        NavigationParam = "Actions_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+    "Microsoft::Terminal::Settings::Editor::NewTabMenu" = @{
+        ResourceName    = "Nav_NewTabMenu/Content" # [Folders] Replaced with folder name
+        NavigationParam = "NewTabMenu_Nav" # [Folders] Replaced with folder VM
+        SubPage         = "BreadcrumbSubPage::None" # [Folders] Replaced with BreadcrumbSubPage::NewTabMenu_Folder
+    }
+    "Microsoft::Terminal::Settings::Editor::Extensions" = @{
+        ResourceName    = "Nav_Extensions/Content" # [Extension] Replaced with extension name
+        NavigationParam = "Extensions_Nav" # [Extension] Replaced with extension VM
+        SubPage         = "BreadcrumbSubPage::None" # [Extension] Replaced with BreadcrumbSubPage::Extensions_Extension
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles_Base" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles_Appearance" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_Appearance"
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles_Terminal" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_Terminal"
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles_Advanced" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_Advanced"
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles" = @{
+        ResourceName    = "Nav_Profiles/Content"
+        NavigationParam = "Profiles_Nav"
+        SubPage         = "BreadcrumbSubPage::None"
+    }
+}
+
+function IsProfileSubPage($pageClass)
+{
+    return $pageClass -match "Editor::Profiles_Appearance" -or
+           $pageClass -match "Editor::Profiles_Terminal" -or
+           $pageClass -match "Editor::Profiles_Advanced"
+}
+
+if (-not (Test-Path $SourceDir)) { throw "SourceDir not found: $SourceDir" }
+if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir | Out-Null }
+
+$entries = @()
+foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
+{
+    # Skip whole file if prohibited
+    $filename = $xamlFile.Name
+    if ($ProhibitedXamlFiles -contains $filename)
+    {
+        continue
+    }
+
+    # Load XAML and namespace manager
+    [xml]$xml = Get-Content -LiteralPath $xamlFile.FullName
+    $xm = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+    $xm.AddNamespace("local", "using:Microsoft.Terminal.Settings.Editor")
+    $xm.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
+
+    if ($xml.DocumentElement.LocalName -ne "Page" -and $filename -ne "Appearances.xaml")
+    {
+        # Only allow xaml files for Page elements (or Appearances.xaml)
+        continue
+    }
+
+    # Extract Page x:Class
+    # Appearances.xaml: UserControl hosted in Profiles_Appearance.xaml
+    $pageClass = $filename -eq "Appearances.xaml" ?
+                   "Microsoft::Terminal::Settings::Editor::Profiles_Appearance" :
+                   $xml.DocumentElement.SelectSingleNode("@x:Class", $xm).Value
+
+    # Convert XAML namespace dots to C++ scope operators
+    $pageClass = ($pageClass -replace "\.", "::")
+    if ($ClassMap.ContainsKey(($pageClass)) -and -not (IsProfileSubPage $pageClass))
+    {
+        $entries += [pscustomobject]@{
+            ResourceName    = $ClassMap[$pageClass].ResourceName
+            ParentPage      = $pageClass
+            NavigationParam = $ClassMap[$pageClass].NavigationParam
+            SubPage         = $ClassMap[$pageClass].SubPage
+            ElementName     = $null # No specific element to navigate to, for the page itself
+            SecondaryLabel  = $ClassMap[$pageClass].SecondaryLabel # Resource name for the result's sub-text (i.e. parent page name); $null if none
+            File            = $filename
+        }
+    }
+    elseif ($pageClass -notmatch "Editor::EditColorScheme" -and -not (IsProfileSubPage $pageClass))
+    {
+        # Special case: EditColorScheme is only valid if a color scheme is associated,
+        #                 so don't register it in ClassMap and don't skip over it here.
+        Write-Warning "No class map entry for page class $pageClass (file: $filename). Skipping automatic index generation for this page."
+        continue
+    }
+
+    # Manually register special entries
+    if ($filename -eq "ColorSchemes.xaml")
+    {
+        # "add new" button
+        $entries += [pscustomobject]@{
+            ResourceName    = "ColorScheme_AddNewButton/Text"
+            ParentPage      = $pageClass
+            NavigationParam = $ClassMap[$pageClass].NavigationParam
+            SubPage         = $ClassMap[$pageClass].SubPage
+            ElementName     = "AddNewButton"
+            File            = $filename
+        }
+    }
+
+    # Iterate over all local:SettingsCard and local:SettingsExpander nodes
+    foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
+    {
+        # Determine what to index for this container. A SettingContainer is indexable
+        # either via its own x:Uid (its label comes from the Header, resource suffix
+        # "/Header") OR, when it has none, via a content-labeled child control
+        # (CheckBox/ToggleSwitch/etc.) that carries its own x:Uid (its label comes from
+        # its Content, resource suffix "/Content"). The latter is wrapped in a SettingsCard
+        # that usually has no x:Uid of its own, so without this it would never be indexed.
+        $suffix = "Header"
+        $uid = $settingContainer.Uid
+        $name = $settingContainer.GetAttribute("x:Name")
+
+        if ([string]::IsNullOrEmpty($uid))
+        {
+            # No x:Uid on the container itself, look for a child control.
+            $child = $settingContainer.SelectNodes("*") |
+                Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
+                Select-Object -First 1
+            if ($null -ne $child)
+            {
+                $suffix = "Content"
+                $uid = $child.GetAttribute("x:Uid")
+                # Prefer the control's own x:Name; otherwise fall back to the container's.
+                $childName = $child.GetAttribute("x:Name")
+                if (-not [string]::IsNullOrEmpty($childName))
+                {
+                    $name = $childName
+                }
+            }
+            else
+            {
+                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. Skipping entry."
+                continue
+            }
+        }
+
+        if ([string]::IsNullOrEmpty($uid) -or ($ProhibitedUids -contains $uid))
+        {
+            continue
+        }
+
+        if ([string]::IsNullOrEmpty($name))
+        {
+            $name = ""
+        }
+        if ($filename -eq "Appearances.xaml")
+        {
+            # Profile.Appearance settings need a special prefix for the ElementName.
+            # This allows us to bring the element into view at runtime.
+            $name = "App." + $name
+        }
+
+        # Deduce NavigationParam and SubPage
+        # includeInBuildIndex: include the entry in the build-time index (no special param at runtime)
+        # includeInPartialIndex: include the entry in the partial index, where the NavigationParam is the view model at runtime (i.e. profile vs profile defaults)
+        $includeInBuildIndex = $true
+        $includeInPartialIndex = $false
+        $navigationParam = $ClassMap[$pageClass].NavigationParam
+        $subPage = $ClassMap[$pageClass].SubPage ?? "BreadcrumbSubPage::None"
+        if ($pageClass -match "Editor::NewTabMenu")
+        {
+            if ($uid -match "NewTabMenu_CurrentFolder")
+            {
+                $navigationParam = $null # VM param at runtime
+                $subPage = "BreadcrumbSubPage::NewTabMenu_Folder"
+                $includeInBuildIndex = $false
+                $includeInPartialIndex = $true
+            }
+            else
+            {
+                $includeInPartialIndex = $true
+            }
+        }
+        elseif ($pageClass -match "Editor::Profiles_Base" -or (IsProfileSubPage $pageClass))
+        {
+            $includeInBuildIndex = !($name -eq "Name" -or $name -eq "Commandline")
+            $includeInPartialIndex = $true
+        }
+        elseif ($pageClass -match "Editor::EditColorScheme")
+        {
+            $subPage = "BreadcrumbSubPage::ColorSchemes_Edit"
+            $includeInBuildIndex = $false
+            $includeInPartialIndex = $true
+        }
+
+        if ($includeInBuildIndex)
+        {
+            # Profiles > Defaults results should show "Profiles" as secondary label
+            $buildSecondaryLabel = $navigationParam -eq "GlobalProfile_Nav" ? "Nav_Profiles/Content" : $null
+            $entries += [pscustomobject]@{
+                ResourceName      = "$uid/$suffix"
+                ParentPage        = $pageClass
+                NavigationParam   = $navigationParam
+                SubPage           = $subPage
+                ElementName       = $name
+                SecondaryLabel    = $buildSecondaryLabel
+                File              = $filename
+            }
+        }
+
+        if ($includeInPartialIndex)
+        {
+            $entries += [pscustomobject]@{
+                ResourceName      = "$uid/$suffix"
+                ParentPage        = $pageClass
+                NavigationParam   = $null # VM param at runtime
+                SubPage           = $pageClass -match "Editor::NewTabMenu" ? "BreadcrumbSubPage::NewTabMenu_Folder" : $subPage
+                ElementName       = $name
+                File              = $filename
+            }
+        }
+    }
+}
+
+function FormatEntry($e)
+{
+    $formattedResourceName = 'USES_RESOURCE(L"{0}")' -f $e.ResourceName
+    $formattedNavigationParam = 'L"{0}"' -f $e.NavigationParam # null Navigation param resolves to empty string
+    $formattedElementName = 'L"{0}"' -f $e.ElementName
+    $formattedSecondaryLabel = [string]::IsNullOrEmpty($e.SecondaryLabel) ? 'L""' : ('USES_RESOURCE(L"{0}")' -f $e.SecondaryLabel)
+
+    return "            IndexEntry{{ {0}, {1}, {2}, {3}, {4} }}, // {5}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $formattedSecondaryLabel, $e.File)
+}
+
+function FormatEntries($es) {
+    return ($es | ForEach-Object { FormatEntry $_ }) -join "`r`n"
+}
+
+# Sort and remove duplicates
+$entries = $entries | Sort-Object ResourceName, ParentPage, NavigationParam, SubPage, ElementName, SecondaryLabel, File -Unique
+
+$buildTimeEntries = @()
+$profileEntries = @()
+$schemeEntries = @()
+$ntmEntries = @()
+foreach ($e in $entries)
+{
+    if ($null -eq $e.NavigationParam -and $e.ParentPage -match "Profiles_")
+    {
+        $profileEntries += $e
+    }
+    elseif ($e.SubPage -eq "BreadcrumbSubPage::ColorSchemes_Edit")
+    {
+        $schemeEntries += $e
+    }
+    elseif ($e.SubPage -eq "BreadcrumbSubPage::NewTabMenu_Folder")
+    {
+        $ntmEntries += $e
+    }
+    else
+    {
+        $buildTimeEntries += $e
+    }
+}
+
+$headerPath = Join-Path $OutputDir "GeneratedSettingsIndex.g.h"
+$cppPath    = Join-Path $OutputDir "GeneratedSettingsIndex.g.cpp"
+
+$header = @"
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+--*/
+// This file is automatically generated by tools\GenerateSettingsIndex.ps1. Changes to this file may be overwritten.
+#pragma once
+#include <winrt/Windows.UI.Xaml.Interop.h>
+
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
+{
+    struct IndexEntry
+    {
+        // Resource name of the SettingContainer's Header (i.e. "Globals_DefaultProfile/Header")
+        // NOTE: wrapped in USES_RESOURCE() to take advantage of compile-time resource name validation in ResourceLoader
+        wil::zwstring_view ResourceName;
+        
+        // Navigation argument
+        // - the tag used to identify the page to navigate to (i.e. "Launch_Nav")
+        // - empty if the NavigationArg is meant to be a view model object at runtime (i.e. profile, ntm folder, etc.)
+        wil::zwstring_view NavigationArgTag;
+
+        // SubPage to navigate to, for pages with multiple subpages (i.e. Profiles, New Tab Menu)
+        BreadcrumbSubPage SubPage;
+        
+        // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
+        wil::zwstring_view ElementName;
+
+        // Resource name of the search result's secondary label (i.e. parent page name like "Nav_Profiles/Content").
+        // Empty if the entry has no secondary label.
+        // NOTE: wrapped in USES_RESOURCE() like ResourceName when non-empty.
+        wil::zwstring_view SecondaryLabelResourceName;
+    };
+
+    const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();
+    const std::array<IndexEntry, $($profileEntries.Count)>& LoadProfileIndex();
+    const std::array<IndexEntry, $($ntmEntries.Count)>& LoadNTMFolderIndex();
+    const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex();
+
+    const IndexEntry& PartialProfileIndexEntry();
+    const IndexEntry& PartialNTMFolderIndexEntry();
+    const IndexEntry& PartialColorSchemeIndexEntry();
+    const IndexEntry& PartialExtensionIndexEntry();
+    const IndexEntry& PartialActionIndexEntry();
+}
+"@
+
+$cpp = @"
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+// This file is automatically generated by tools\GenerateSettingsIndex.ps1. Changes to this file may be overwritten.
+
+#include "pch.h"
+#include <winrt/Microsoft.Terminal.Settings.Editor.h>
+#include "GeneratedSettingsIndex.g.h"
+#include <LibraryResources.h>
+
+// In Debug builds, USES_RESOURCE() expands to a lambda (for resource validation),
+// which prevents constexpr evaluation. In Release it's a no-op identity macro.
+#ifdef _DEBUG
+#define STATIC_INDEX_QUALIFIER static const
+#else
+#define STATIC_INDEX_QUALIFIER static constexpr
+#endif
+
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
+{
+    const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex()
+    {
+        STATIC_INDEX_QUALIFIER std::array entries =
+        {
+$(FormatEntries $buildTimeEntries)
+        };
+        return entries;
+    }
+
+    const std::array<IndexEntry, $($profileEntries.Count)>& LoadProfileIndex()
+    {
+        STATIC_INDEX_QUALIFIER std::array entries =
+        {
+$(FormatEntries $profileEntries)
+        };
+        return entries;
+    }
+
+    const std::array<IndexEntry, $($ntmEntries.Count)>& LoadNTMFolderIndex()
+    {
+        STATIC_INDEX_QUALIFIER std::array entries =
+        {
+$(FormatEntries $ntmEntries)
+        };
+        return entries;
+    }
+
+    const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex()
+    {
+        STATIC_INDEX_QUALIFIER std::array entries =
+        {
+$(FormatEntries $schemeEntries)
+        };
+        return entries;
+    }
+
+    const IndexEntry& PartialProfileIndexEntry()
+    {
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::None };
+        return entry;
+    }
+
+    const IndexEntry& PartialNTMFolderIndexEntry()
+    {
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::NewTabMenu_Folder };
+        return entry;
+    }
+
+    const IndexEntry& PartialColorSchemeIndexEntry()
+    {
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::ColorSchemes_Edit };
+        return entry;
+    }
+
+    const IndexEntry& PartialExtensionIndexEntry()
+    {
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::Extensions_Extension };
+        return entry;
+    }
+
+    const IndexEntry& PartialActionIndexEntry()
+    {
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::Actions_Edit };
+        return entry;
+    }
+}
+"@
+
+Set-Content -LiteralPath $headerPath -Value $header -NoNewline
+Set-Content -LiteralPath $cppPath -Value $cpp -NoNewline
+
+Write-Host "Generated:"
+Write-Host "  $headerPath"
+Write-Host "  $cppPath"

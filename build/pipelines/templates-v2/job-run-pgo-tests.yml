@@ -45,6 +45,10 @@ jobs:
     displayName: Extract the unpackaged build for PGO
 
   - template: steps-ensure-nuget-version.yml
+    parameters:
+      ${{ if eq(parameters.buildPlatform, 'arm64') }}:
+        # The ARM64 agents do not seem to have NuGet installed
+        forceNugetInstallation: true
 
   - powershell: |-
       $Package = 'Microsoft.Internal.Windows.Terminal.TestContent'

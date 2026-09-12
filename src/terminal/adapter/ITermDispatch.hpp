@@ -29,12 +29,14 @@ public:
     {
         ChecksumReport,
         ClipboardWrite,
+        DesktopNotification,
     };
 
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
 
+    virtual void UnknownSequence() noexcept = 0;
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const std::wstring_view string) = 0;
 
@@ -67,6 +69,10 @@ public:
     virtual void DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual void SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual void SetAnsiMode(const bool ansiMode) = 0; // DECANM
+    virtual void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept = 0; // KKP
+    virtual void QueryKittyKeyboardProtocol() = 0; // KKP
+    virtual void PushKittyKeyboardProtocol(const VTParameter flags) = 0; // KKP
+    virtual void PopKittyKeyboardProtocol(const VTParameter count) = 0; // KKP
     virtual void SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual void SetLeftRightScrollingMargins(const VTInt leftMargin, const VTInt rightMargin) = 0; // DECSLRM
     virtual void EnquireAnswerback() = 0; // ENQ
@@ -77,6 +83,7 @@ public:
     virtual void BackIndex() = 0; // DECBI
     virtual void ForwardIndex() = 0; // DECFI
     virtual void SetWindowTitle(std::wstring_view title) = 0; // DECSWT, OscWindowTitle
+    virtual void SetCurrentWorkingDirectory(const std::wstring_view uri) = 0; // OSC 7
     virtual void HorizontalTabSet() = 0; // HTS
     virtual void ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual void BackwardsTab(const VTInt numTabs) = 0; // CBT
@@ -135,7 +142,7 @@ public:
     virtual void AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual void SoftReset() = 0; // DECSTR
-    virtual void HardReset() = 0; // RIS
+    virtual void HardReset(bool erase) = 0; // RIS
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
@@ -151,14 +158,12 @@ public:
     virtual void EndHyperlink() = 0;
 
     virtual void DoConEmuAction(const std::wstring_view string) = 0;
-
     virtual void DoITerm2Action(const std::wstring_view string) = 0;
-
     virtual void DoFinalTermAction(const std::wstring_view string) = 0;
-
     virtual void DoVsCodeAction(const std::wstring_view string) = 0;
-
     virtual void DoWTAction(const std::wstring_view string) = 0;
+
+    virtual void DoUrxvtAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DefineSixelImage(const VTInt macroParameter,
                                            const DispatchTypes::SixelBackground backgroundSelect,

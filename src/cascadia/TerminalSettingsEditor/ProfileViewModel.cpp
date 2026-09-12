@@ -4,14 +4,13 @@
 #include "pch.h"
 #include "ProfileViewModel.h"
 #include "ProfileViewModel.g.cpp"
-#include "EnumEntry.h"
 #include "Appearances.h"
+#include "EnumEntry.h"
+#include "IconPicker.h"
 
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
-#include "SegoeFluentIconList.h"
-#include "../../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -28,15 +27,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> ProfileViewModel::_BuiltInIcons{ nullptr };
 
-    static constexpr std::wstring_view HideIconValue{ L"none" };
-
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
+        _windowSettings{ windowSettings },
         _unfocusedAppearanceViewModel{ nullptr },
         _dispatcher{ dispatcher }
     {
@@ -47,17 +44,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _InitializeCurrentBellSounds();
 
-        // set up IconTypes
-        std::vector<IInspectable> iconTypes;
-        iconTypes.reserve(4);
-        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeNone"), box_value(IconType::None)));
-        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
-        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
-        iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
-        _IconTypes = winrt::single_threaded_vector<IInspectable>(std::move(iconTypes));
-        _DeduceCurrentIconType();
-        _DeduceCurrentBuiltInIcon();
-
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
         //  unique view model members.
@@ -66,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsVisible");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -86,38 +72,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"IsBellStyleFlagSet", L"BellStylePreview");
             }
+            else if (viewModelProperty == L"BellStylePreview")
+            {
+                _NotifyChanges(L"BellStyleAccessibleName");
+            }
             else if (viewModelProperty == L"ScrollState")
             {
                 _NotifyChanges(L"CurrentScrollState");
             }
             else if (viewModelProperty == L"Icon")
             {
-                // _DeduceCurrentIconType() ends with a "CurrentIconType" notification
-                //  so we don't need to call _UpdateIconPreview() here
-                _DeduceCurrentIconType();
                 // The icon changed; let's re-evaluate it with its new context.
                 _appSettings.ResolveMediaResources();
-            }
-            else if (viewModelProperty == L"CurrentIconType")
-            {
-                // "Using*" handles the visibility of the IconType-related UI.
-                // The others propagate the rendered icon into a preview (i.e. nav view, container item)
-                _NotifyChanges(L"UsingNoIcon",
-                               L"UsingBuiltInIcon",
-                               L"UsingEmojiIcon",
-                               L"UsingImageIcon",
-                               L"LocalizedIcon",
+
+                // Propagate the rendered icon into a preview (i.e. nav view, container item)
+                _NotifyChanges(L"LocalizedIcon",
                                L"IconPreview",
                                L"IconPath",
-                               L"EvaluatedIcon");
-            }
-            else if (viewModelProperty == L"CurrentBuiltInIcon")
-            {
-                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
-            }
-            else if (viewModelProperty == L"CurrentEmojiIcon")
-            {
-                IconPath(CurrentEmojiIcon());
+                               L"EvaluatedIcon",
+                               L"UsingNoIcon");
             }
             else if (viewModelProperty == L"CurrentBellSounds")
             {
@@ -130,6 +103,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _MarkDuplicateBellSoundDirectories();
                 _NotifyChanges(L"BellSoundPreview", L"HasBellSound");
             }
+            else if (viewModelProperty == L"BellSoundPreview")
+            {
+                _NotifyChanges(L"BellSoundAccessibleName");
+            }
             else if (viewModelProperty == L"BellSound")
             {
                 _InitializeCurrentBellSounds();
@@ -141,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"Padding")
             {
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
-                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
+                _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding", L"PaddingAccessibleName");
             }
             else if (viewModelProperty == L"TabTitle")
             {
@@ -151,6 +128,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"AnswerbackMessagePreview");
             }
+            else if (viewModelProperty == L"AnswerbackMessagePreview")
+            {
+                _NotifyChanges(L"AnswerbackMessageAccessibleName");
+            }
             else if (viewModelProperty == L"TabColor")
             {
                 _NotifyChanges(L"TabColorPreview");
@@ -158,6 +139,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"TabThemeColorPreview")
             {
                 _NotifyChanges(L"TabColorPreview");
+            }
+            else if (viewModelProperty == L"Hidden")
+            {
+                _NotifyChanges(L"AccessibleStateDescription", L"ShowHiddenBadge");
             }
         });
 
@@ -188,61 +173,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
         _defaultAppearanceViewModel.IsDefault(true);
-    }
-
-    void ProfileViewModel::_UpdateBuiltInIcons()
-    {
-        std::vector<Editor::EnumEntry> builtInIcons;
-        for (auto& [val, name] : s_SegoeFluentIcons)
-        {
-            builtInIcons.emplace_back(make<EnumEntry>(hstring{ name }, box_value(val)));
-        }
-        _BuiltInIcons = single_threaded_observable_vector<Editor::EnumEntry>(std::move(builtInIcons));
-    }
-
-    void ProfileViewModel::_DeduceCurrentIconType()
-    {
-        const auto profileIcon = IconPath();
-        if (profileIcon == HideIconValue)
-        {
-            _currentIconType = _IconTypes.GetAt(0);
-        }
-        else if (profileIcon.size() == 1 && (L'\uE700' <= til::at(profileIcon, 0) && til::at(profileIcon, 0) <= L'\uF8B3'))
-        {
-            _currentIconType = _IconTypes.GetAt(1);
-            _DeduceCurrentBuiltInIcon();
-        }
-        else if (::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(profileIcon))
-        {
-            // We already did a range check for MDL2 Assets in the previous one,
-            // so if we're out of that range but still short, assume we're an emoji
-            _currentIconType = _IconTypes.GetAt(2);
-        }
-        else
-        {
-            _currentIconType = _IconTypes.GetAt(3);
-        }
-        _NotifyChanges(L"CurrentIconType");
-    }
-
-    void ProfileViewModel::_DeduceCurrentBuiltInIcon()
-    {
-        if (!_BuiltInIcons)
-        {
-            _UpdateBuiltInIcons();
-        }
-        const auto profileIcon = IconPath();
-        for (uint32_t i = 0; i < _BuiltInIcons.Size(); i++)
-        {
-            const auto& builtIn = _BuiltInIcons.GetAt(i);
-            if (profileIcon == unbox_value<hstring>(builtIn.EnumValue()))
-            {
-                _CurrentBuiltInIcon = builtIn;
-                return;
-            }
-        }
-        _CurrentBuiltInIcon = _BuiltInIcons.GetAt(0);
-        _NotifyChanges(L"CurrentBuiltInIcon");
     }
 
     void ProfileViewModel::LeftPadding(double value) noexcept
@@ -300,12 +230,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _parsedPadding.Bottom;
     }
+
+    hstring ProfileViewModel::PaddingAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_Padding/Header"), Padding());
+    }
+
     Control::IControlSettings ProfileViewModel::TermSettings() const
     {
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
-        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _windowSettings, _profile);
     }
 
     // Method Description:
@@ -435,6 +371,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.Orphaned();
     }
 
+    hstring ProfileViewModel::AccessibleStateDescription() const
+    {
+        const auto hidden = Hidden();
+        const auto orphaned = Orphaned();
+        if (hidden && orphaned)
+        {
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"),
+                                       RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"),
+                                       RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        }
+        if (hidden)
+        {
+            return RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        if (orphaned)
+        {
+            return RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        return {};
+    }
+
+    // Whether the "hidden" badge should be shown for this profile. The orphaned
+    // badge takes precedence, so the hidden badge is suppressed when the profile
+    // is also orphaned. This keeps a single badge visible at a time on the
+    // Profiles landing page.
+    bool ProfileViewModel::ShowHiddenBadge() const
+    {
+        return Hidden() && !Orphaned();
+    }
+
     hstring ProfileViewModel::TabTitlePreview() const
     {
         if (const auto tabTitle{ TabTitle() }; !tabTitle.empty())
@@ -451,6 +417,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return answerbackMessage;
         }
         return RS_(L"Profile_AnswerbackMessageNone");
+    }
+
+    hstring ProfileViewModel::AnswerbackMessageAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_AnswerbackMessage/Header"), AnswerbackMessagePreview());
     }
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
@@ -472,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
     {
-        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme();
+        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme(_windowSettings);
         if (const auto tabTheme = currentTheme.Tab())
         {
             // theme.tab.background: theme color must be evaluated
@@ -636,9 +607,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring ProfileViewModel::LocalizedIcon() const
     {
-        if (_currentIconType && unbox_value<IconType>(_currentIconType.as<Editor::EnumEntry>().EnumValue()) == IconType::None)
+        if (UsingNoIcon())
         {
-            return RS_(L"Profile_IconTypeNone");
+            return RS_(L"IconPicker_IconTypeNone");
         }
         return IconPath(); // For display as a string
     }
@@ -652,89 +623,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return icon;
     }
 
-    void ProfileViewModel::CurrentIconType(const Windows::Foundation::IInspectable& value)
+    bool ProfileViewModel::UsingNoIcon() const noexcept
     {
-        if (_currentIconType != value)
-        {
-            // Switching from...
-            if (_currentIconType && unbox_value<IconType>(_currentIconType.as<Editor::EnumEntry>().EnumValue()) == IconType::Image)
-            {
-                // Stash the current value of Icon. If the user
-                // switches out of then back to IconType::Image, we want
-                // the path that we display in the text box to remain unchanged.
-                _lastIconPath = IconPath();
-            }
-
-            // Set the member here instead of after setting Icon() below!
-            // We have an Icon property changed handler defined for when we discard changes.
-            // Inadvertently, that means that we call this setter again.
-            // Setting the member here means that we early exit at the beginning of the function
-            //  because _currentIconType == value.
-            _currentIconType = value;
-
-            // Switched to...
-            switch (unbox_value<IconType>(value.as<Editor::EnumEntry>().EnumValue()))
-            {
-            case IconType::None:
-            {
-                IconPath(winrt::hstring{ HideIconValue });
-                break;
-            }
-            case IconType::Image:
-            {
-                if (!_lastIconPath.empty())
-                {
-                    // Conversely, if we switch to Image,
-                    // retrieve that saved value and apply it
-                    IconPath(_lastIconPath);
-                }
-                break;
-            }
-            case IconType::FontIcon:
-            {
-                if (_CurrentBuiltInIcon)
-                {
-                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
-                }
-                break;
-            }
-            case IconType::Emoji:
-            {
-                // Don't set Icon here!
-                // Clear out the text box so we direct the user to use the emoji picker.
-                CurrentEmojiIcon({});
-            }
-            }
-            // We're not using the VM's Icon() setter above,
-            // so notify HasIcon changed manually
-            _NotifyChanges(L"CurrentIconType", L"HasIcon");
-        }
-    }
-
-    bool ProfileViewModel::UsingNoIcon() const
-    {
-        return _currentIconType == _IconTypes.GetAt(0);
-    }
-
-    bool ProfileViewModel::UsingBuiltInIcon() const
-    {
-        return _currentIconType == _IconTypes.GetAt(1);
-    }
-
-    bool ProfileViewModel::UsingEmojiIcon() const
-    {
-        return _currentIconType == _IconTypes.GetAt(2);
-    }
-
-    bool ProfileViewModel::UsingImageIcon() const
-    {
-        return _currentIconType == _IconTypes.GetAt(3);
+        const auto iconPath{ IconPath() };
+        return iconPath.empty() || iconPath == IconPicker::HideIconValue;
     }
 
     hstring ProfileViewModel::BellStylePreview() const
     {
         const auto bellStyle = BellStyle();
-        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar))
+        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar | BellStyle::Notification))
         {
             return RS_(L"Profile_BellStyleAll/Content");
         }
@@ -744,7 +642,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         std::vector<hstring> resultList;
-        resultList.reserve(3);
+        resultList.reserve(4);
         if (WI_IsFlagSet(bellStyle, BellStyle::Audible))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleAudible/Content"));
@@ -756,6 +654,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (WI_IsFlagSet(bellStyle, BellStyle::Taskbar))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleTaskbar/Content"));
+        }
+        if (WI_IsFlagSet(bellStyle, BellStyle::Notification))
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleNotification/Content"));
         }
 
         // add in the commas
@@ -772,6 +674,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return result;
+    }
+
+    hstring ProfileViewModel::BellStyleAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellStyle/Header"), BellStylePreview());
     }
 
     bool ProfileViewModel::IsBellStyleFlagSet(const uint32_t flag)
@@ -797,6 +704,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
+        BellStyle(currentStyle);
+    }
+
+    void ProfileViewModel::SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Notification, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 
@@ -908,6 +822,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         return RS_(L"Profile_BellSoundNotFound");
+    }
+
+    hstring ProfileViewModel::BellSoundAccessibleName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_BellSound/Header"), BellSoundPreview());
     }
 
     void ProfileViewModel::RequestAddBellSound(hstring path)

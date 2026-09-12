@@ -4,7 +4,6 @@
 #pragma once
 
 #include "DeleteProfileEventArgs.g.h"
-#include "NavigateToProfileArgs.g.h"
 #include "BellSoundViewModel.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
@@ -12,21 +11,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToProfileArgs : NavigateToProfileArgsT<NavigateToProfileArgs>
-    {
-    public:
-        NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
-            _Profile(profile),
-            _WindowRoot(windowRoot) {}
-
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
-        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
-
-    private:
-        Editor::IHostedInWindow _WindowRoot;
-        Editor::ProfileViewModel _Profile{ nullptr };
-    };
-
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
@@ -49,9 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
-        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
-        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
@@ -59,12 +42,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // bell style bits
         hstring BellStylePreview() const;
+        hstring BellStyleAccessibleName() const;
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
+        hstring BellSoundAccessibleName();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
 
@@ -81,28 +67,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         double RightPadding() const noexcept;
         void BottomPadding(double value) noexcept;
         double BottomPadding() const noexcept;
+        hstring PaddingAccessibleName() const;
 
         winrt::hstring EvaluatedIcon() const
         {
             return _profile.Icon().Resolved();
         }
-        Windows::Foundation::IInspectable CurrentIconType() const noexcept
-        {
-            return _currentIconType;
-        }
         Windows::UI::Xaml::Controls::IconElement IconPreview() const;
         winrt::hstring LocalizedIcon() const;
-        void CurrentIconType(const Windows::Foundation::IInspectable& value);
-        bool UsingNoIcon() const;
-        bool UsingBuiltInIcon() const;
-        bool UsingEmojiIcon() const;
-        bool UsingImageIcon() const;
         winrt::hstring IconPath() const { return _profile.Icon().Path(); }
         void IconPath(const winrt::hstring& path)
         {
             Icon(Model::MediaResourceHelper::FromString(path));
             _NotifyChanges(L"Icon", L"IconPath");
         }
+        bool UsingNoIcon() const noexcept;
 
         constexpr bool TmuxControlEnabled() noexcept
         {
@@ -130,8 +109,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
         bool Orphaned() const;
+        hstring AccessibleStateDescription() const;
+        bool ShowHiddenBadge() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
+        hstring AnswerbackMessageAccessibleName() const;
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;
 
@@ -139,8 +121,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::BellSoundViewModel>, CurrentBellSounds);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::EnumEntry, CurrentBuiltInIcon, nullptr);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentEmojiIcon);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -171,16 +151,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
         OBSERVABLE_PROJECTED_SETTING(_profile, ForceVTInput);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowKittyKeyboardMode);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowOscNotifications);
         OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowTmuxControl);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -191,8 +173,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
-        winrt::hstring _lastIconPath;
-        Windows::Foundation::IInspectable _currentIconType{};
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 
@@ -203,13 +183,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MarkDuplicateBellSoundDirectories();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _BuiltInIcons;
 
         Model::CascadiaSettings _appSettings;
+        Model::WindowSettings _windowSettings{ nullptr };
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
-        void _UpdateBuiltInIcons();
-        void _DeduceCurrentIconType();
-        void _DeduceCurrentBuiltInIcon();
     };
 
     struct DeleteProfileEventArgs :

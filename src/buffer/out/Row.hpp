@@ -172,6 +172,7 @@ public:
     std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
     til::CoordType GetLeadingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
     til::CoordType GetTrailingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
+    uint16_t GetCharOffset(til::CoordType col) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }

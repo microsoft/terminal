@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>ウィンドウの名前をリセットする</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>ワークスペース "{0}" を開く</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>ワークスペースを開く</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>ウィンドウの名前を変更...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>接続の再起動</value>
+    <value>セッションの再開</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>スクラッチパッドを開く</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>ワークスペース...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>タブを閉じる</value>
@@ -821,28 +831,28 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>選択を解除する</value>
+    <value>選択を無視</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>1 行表示</value>
+    <value>一重線</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
-    <value>制御シーケンスを使用</value>
+    <value>制御シーケンスを使用する</value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>書式設定をコピー</value>
+    <value>書式設定をコピーする</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Tab Index</value>
+    <value>タブ インデックス</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>ウィンドウ</value>
   </data>
   <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>サイズ変更方向</value>
+    <value>サイズ変更する方向</value>
   </data>
   <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>フォーカス方向</value>
+    <value>フォーカスする方向</value>
   </data>
   <data name="DirectionActionArgumentLocalized" xml:space="preserve">
     <value>方向</value>
@@ -857,19 +867,19 @@
     <value>ターゲット</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>フォーカス モード</value>
+    <value>フォーカス モードである</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>最大化しました</value>
+    <value>最大化している</value>
   </data>
   <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>全画面表示</value>
+    <value>全画面表示している</value>
   </data>
   <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
-    <value>スキーム名</value>
+    <value>スキームの名前</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>シート見出しの色</value>
+    <value>タブの色</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>タイトル</value>
@@ -968,7 +978,7 @@
     <value>環境変数を再度読み込む</value>
   </data>
   <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>分割方向</value>
+    <value>分割する方向</value>
   </data>
   <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
     <value>分割モード</value>

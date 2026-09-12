@@ -254,7 +254,6 @@ void Terminal::_SetSelectionEnd(SelectionInfo* selection, const til::point viewp
         std::tie(selection->start, selection->end) = expandedAnchors;
     }
     _selectionMode = SelectionInteractionMode::Mouse;
-    _selectionIsTargetingUrl = false;
 }
 
 // Method Description:
@@ -314,7 +313,7 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
         break;
     case SelectionExpansion::Word:
     {
-        start = buffer.GetWordStart2(start, _wordDelimiters, false);
+        start = buffer.GetWordStart(start, _wordDelimiters, false);
 
         // GH#5099: We round to the nearest cell boundary,
         //   so we would normally prematurely expand to the next word
@@ -326,7 +325,7 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
         {
             bufferSize.DecrementInExclusiveBounds(end);
         }
-        end = buffer.GetWordEnd2(end, _wordDelimiters, false);
+        end = buffer.GetWordEnd(end, _wordDelimiters, false);
         break;
     }
     case SelectionExpansion::Char:
@@ -399,7 +398,6 @@ void Terminal::ToggleMarkMode()
         }
         _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;
-        _selectionIsTargetingUrl = false;
     }
 }
 
@@ -437,9 +435,9 @@ void Terminal::ExpandSelectionToWord()
         const auto& buffer = _activeBuffer();
         auto selection{ _selection.write() };
         wil::hide_name _selection;
-        selection->start = buffer.GetWordStart2(selection->start, _wordDelimiters, false);
+        selection->start = buffer.GetWordStart(selection->start, _wordDelimiters, false);
         selection->pivot = selection->start;
-        selection->end = buffer.GetWordEnd2(selection->end, _wordDelimiters, false);
+        selection->end = buffer.GetWordEnd(selection->end, _wordDelimiters, false);
 
         // if we're targeting both endpoints, instead just target "end"
         if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
@@ -460,7 +458,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     if (_selectionMode != SelectionInteractionMode::Mark)
     {
         // This feature only works in mark mode
-        _selectionIsTargetingUrl = false;
         return;
     }
 
@@ -469,19 +466,10 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     const auto bufferSize = buffer.GetSize();
     const auto viewportHeight = _GetMutableViewport().Height();
 
-    // The patterns are stored relative to the "search area". Initially, this search area will be the viewport,
-    // but as we progressively search through more of the buffer, this will change.
-    // Keep track of the search area here, and use the lambda below to convert points to the search area coordinate space.
-    auto searchArea = _GetVisibleViewport();
-    auto convertToSearchArea = [&searchArea](const til::point pt) noexcept {
-        auto copy = pt;
-        searchArea.ConvertToOrigin(&copy);
-        return copy;
-    };
-
     // extracts the next/previous hyperlink from the list of hyperlink ranges provided
     auto extractResultFromList = [&](std::vector<interval_tree::Interval<til::point, size_t>>& list) noexcept {
-        const auto selectionStartInSearchArea = convertToSearchArea(_selection->start);
+        const auto selectionStart = _selection->start;
+        const auto selectionEnd = _selection->end;
 
         std::optional<std::pair<til::point, til::point>> resultFromList;
         if (!list.empty())
@@ -491,12 +479,11 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                 // pattern tree includes the currently selected range when going forward,
                 // so we need to check if we're pointing to that one before returning it.
                 auto range = list.front();
-                if (_selectionIsTargetingUrl && range.start == selectionStartInSearchArea)
+                if (range.start == selectionStart && range.stop == selectionEnd)
                 {
                     if (list.size() > 1)
                     {
-                        // if we're pointing to the currently selected URL,
-                        // pick the next one.
+                        // Selection matches the current URL, pick the next one
                         range = til::at(list, 1);
                         resultFromList = { range.start, range.stop };
                     }
@@ -521,14 +508,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                 resultFromList = { range.start, range.stop };
             }
         }
-
-        // pattern tree stores everything as viewport coords,
-        // so we need to convert them on the way out
-        if (resultFromList)
-        {
-            searchArea.ConvertFromOrigin(&resultFromList->first);
-            searchArea.ConvertFromOrigin(&resultFromList->second);
-        }
         return resultFromList;
     };
 
@@ -546,8 +525,8 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
         searchEnd = _selection->start;
     }
 
-    // 1.A) Try searching the current viewport (no scrolling required)
-    auto resultList = _patternIntervalTree.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
+    // 1.A) Try searching the cached pattern tree (no scanning required)
+    auto resultList = _patternIntervalTree.findContained(searchStart, searchEnd);
     std::optional<std::pair<til::point, til::point>> result = extractResultFromList(resultList);
     if (!result)
     {
@@ -562,14 +541,12 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
             searchEnd = { bufferSize.RightInclusive(), searchStart.y - 1 };
             searchStart = { bufferSize.Left(), std::max(searchStart.y - viewportHeight, bufferSize.Top()) };
         }
-        searchArea = Viewport::FromDimensions(searchStart, { searchEnd.x + 1, searchEnd.y + 1 });
-
         const til::point bufferStart{ bufferSize.Origin() };
         const til::point bufferEnd{ bufferSize.RightInclusive(), ViewEndIndex() };
         while (!result && bufferSize.IsInBounds(searchStart) && bufferSize.IsInBounds(searchEnd) && searchStart <= searchEnd && bufferStart <= searchStart && searchEnd <= bufferEnd)
         {
             auto patterns = _getPatterns(searchStart.y, searchEnd.y);
-            resultList = patterns.findContained(convertToSearchArea(searchStart), convertToSearchArea(searchEnd));
+            resultList = patterns.findContained(searchStart, searchEnd);
             result = extractResultFromList(resultList);
             if (!result)
             {
@@ -583,7 +560,6 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
                     searchEnd.y -= 1;
                     searchStart.y = std::max(searchEnd.y - viewportHeight, bufferSize.Top());
                 }
-                searchArea = Viewport::FromDimensions(searchStart, { searchEnd.x + 1, searchEnd.y + 1 });
             }
         }
     }
@@ -656,11 +632,10 @@ void Terminal::SelectHyperlink(const SearchDirection dir)
     selection->start = result->first;
     selection->pivot = result->first;
     selection->end = result->second;
-    _selectionIsTargetingUrl = true;
     _selectionEndpoint = SelectionEndpoint::End;
 
     // 4. Scroll to the selected area (if necessary)
-    _ScrollToPoint(selection->end);
+    _ScrollToPoint(dir == SearchDirection::Forward ? selection->end : selection->start);
 }
 
 Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept
@@ -768,7 +743,6 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection state
-    _selectionIsTargetingUrl = false;
     _selectionMode = std::max(_selectionMode, SelectionInteractionMode::Keyboard);
 
     auto selection{ _selection.write() };
@@ -811,7 +785,6 @@ void Terminal::SelectAll()
     };
 
     _selectionMode = SelectionInteractionMode::Keyboard;
-    _selectionIsTargetingUrl = false;
     _ScrollToPoint(_selection->start);
 }
 
@@ -853,13 +826,13 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Left:
     {
         auto nextPos = pos;
-        nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters, true);
+        nextPos = buffer.GetWordStart(nextPos, _wordDelimiters, true);
         if (nextPos == pos)
         {
             // didn't move because we're already at the beginning of a word,
             // so move to the beginning of the previous word
             buffer.GetSize().DecrementInExclusiveBounds(nextPos);
-            nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters, true);
+            nextPos = buffer.GetWordStart(nextPos, _wordDelimiters, true);
         }
         pos = nextPos;
         break;
@@ -868,24 +841,24 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     {
         const auto mutableViewportEndExclusive = _GetMutableViewport().BottomInclusiveRightExclusive();
         auto nextPos = pos;
-        nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
+        nextPos = buffer.GetWordEnd(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
         if (nextPos == pos)
         {
             // didn't move because we're already at the end of a word,
             // so move to the end of the next word
             buffer.GetSize().IncrementInExclusiveBounds(nextPos);
-            nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
+            nextPos = buffer.GetWordEnd(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
         }
         pos = nextPos;
         break;
     }
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
-        pos = buffer.GetWordStart2(pos, _wordDelimiters, true);
+        pos = buffer.GetWordStart(pos, _wordDelimiters, true);
         break;
     case SelectionDirection::Down:
         _MoveByChar(direction, pos);
-        pos = buffer.GetWordEnd2(pos, _wordDelimiters, true);
+        pos = buffer.GetWordEnd(pos, _wordDelimiters, true);
         break;
     }
 }
@@ -943,7 +916,6 @@ void Terminal::ClearSelection()
     _assertLocked();
     _selection.write()->active = false;
     _selectionMode = SelectionInteractionMode::None;
-    _selectionIsTargetingUrl = false;
     _selectionEndpoint = static_cast<SelectionEndpoint>(0);
     _anchorInactiveSelectionEndpoint = false;
 }
@@ -1045,5 +1017,9 @@ void Terminal::_ScrollToPoint(const til::point pos)
         }
         _NotifyScrollEvent();
         _activeBuffer().TriggerScroll();
+
+        // Rebuild the pattern tree for the new viewport position
+        // so that callers always find a fresh cache after scrolling
+        _updateUrlDetection();
     }
 }

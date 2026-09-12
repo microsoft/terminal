@@ -440,7 +440,7 @@ void Viewport::ConvertToOrigin(_Inout_ til::inclusive_rect* const psr) const noe
 // - Translates the input coordinate out of our coordinate space, whose origin is
 //      at (this.left, this.right)
 // Arguments:
-// - pcoord: a pointer to a coordinate the translate into our coordinate space.
+// - pcoord: a pointer to a coordinate to translate into our coordinate space.
 // Return Value:
 // - <none>
 void Viewport::ConvertToOrigin(_Inout_ til::point* const pcoord) const noexcept
@@ -470,7 +470,7 @@ void Viewport::ConvertFromOrigin(_Inout_ til::inclusive_rect* const psr) const n
 // - Translates the input coordinate to our coordinate space, whose origin is
 //      at (this.left, this.right)
 // Arguments:
-// - pcoord: a pointer to a coordinate the translate into our coordinate space.
+// - pcoord: a pointer to a coordinate to translate into our coordinate space.
 // Return Value:
 // - <none>
 void Viewport::ConvertFromOrigin(_Inout_ til::point* const pcoord) const noexcept

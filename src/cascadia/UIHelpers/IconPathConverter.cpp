@@ -254,7 +254,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         const auto pathView = std::wstring_view{ iconPath };
         // Does iconPath have a comma in it? If so, split the string on the
         // comma and look for the index and extension.
-        const auto commaIndex = pathView.find(L',');
+        const auto commaIndex = pathView.rfind(L',');
 
         // split the path on the comma
         iconPathWithoutIndex = pathView.substr(0, commaIndex);

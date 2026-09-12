@@ -1335,4 +1335,24 @@ class CodepointWidthDetectorTests
             VERIFY_ARE_EQUAL(test.widthsPrev, actualWidths);
         }
     }
+
+    TEST_METHOD(AmbiguousWidthPolicy)
+    {
+        const auto measureWidth = [](CodepointWidthDetector& cwd, const std::wstring_view text) {
+            GraphemeState state;
+            cwd.GraphemeNext(state, text);
+            return state.width;
+        };
+
+        CodepointWidthDetector cwd;
+
+        for (const auto mode : { TextMeasurementMode::Graphemes, TextMeasurementMode::Wcswidth })
+        {
+            cwd.Reset(mode);
+            cwd.SetAmbiguousWidth(1);
+            VERIFY_ARE_EQUAL(1, measureWidth(cwd, L"→"));
+            cwd.SetAmbiguousWidth(2);
+            VERIFY_ARE_EQUAL(2, measureWidth(cwd, L"→"));
+        }
+    }
 };

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <winrt/Microsoft.Terminal.Settings.Editor.h>
+
 // This macro must be used alongside GETSET_BINDABLE_ENUM_SETTING.
 // Use this in your class's constructor after Initialize_Component().
 // It sorts and initializes the observable list of enum entries with the enum name
@@ -78,6 +80,10 @@ namespace winrt::Microsoft::Terminal::Settings
 {
     winrt::hstring GetSelectedItemTag(const winrt::Windows::Foundation::IInspectable& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
+    safe_void_coroutine ExpandAncestorsAndBringIntoView(winrt::Windows::UI::Xaml::FrameworkElement root, winrt::Windows::UI::Xaml::Controls::Control control);
+    Editor::KeyChordListener FindKeyChordListener(const winrt::Windows::UI::Xaml::DependencyObject& root);
+    winrt::Windows::UI::Xaml::Controls::Control FindFirstFocusable(const winrt::Windows::UI::Xaml::DependencyObject& root);
+    winrt::Windows::UI::Xaml::Controls::Control ResolveFocusTarget(const winrt::Windows::UI::Xaml::Controls::Control& element);
 }
 
 // BODGY!
@@ -116,4 +122,35 @@ struct HasScrollViewer
             DismissAllPopups(uielem.XamlRoot());
         }
     }
+
+    // Finds the element with the given name and brings it into view
+    void BringIntoViewWhenLoaded(const winrt::hstring elementName)
+    {
+        if (elementName.empty())
+        {
+            return;
+        }
+
+        auto* pThis = static_cast<T*>(this);
+        _loadedRevoker = pThis->Loaded(winrt::auto_revoke, [weakThis{ pThis->get_weak() }, elementName](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                if (const auto& controlToFocus{ page->FindName(elementName).try_as<winrt::Windows::UI::Xaml::Controls::Control>() })
+                {
+                    // If the named element is a SettingsExpander/SettingsCard with an
+                    // interactive control in its Content, focus that inner control instead.
+                    const auto& target{ winrt::Microsoft::Terminal::Settings::ResolveFocusTarget(controlToFocus) };
+
+                    // We need to wait for the page to be loaded
+                    // or else the call to StartBringIntoView()
+                    // will end up doing nothing.
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(page.template as<winrt::Windows::UI::Xaml::FrameworkElement>(), target);
+                }
+                page->_loadedRevoker.revoke();
+            }
+        });
+    }
+
+protected:
+    winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 };

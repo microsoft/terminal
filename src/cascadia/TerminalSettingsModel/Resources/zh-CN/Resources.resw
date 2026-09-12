@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>重置窗口名称</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>打开工作区“{0}”</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>打开工作区</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>重命名窗口...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>重新启动连接</value>
+    <value>重启会话</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>打开便笺本</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>打开当前工作目录</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>工作区...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>关闭标签页</value>
@@ -821,7 +831,7 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>关闭选择</value>
+    <value>消除选择</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
     <value>单行</value>
@@ -857,7 +867,7 @@
     <value>目标</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>专注模式</value>
+    <value>焦点模式</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
     <value>已最大化</value>

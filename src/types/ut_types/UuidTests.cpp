@@ -34,7 +34,7 @@ class UuidTests
     {
         const GUID uuidExpected{ 0xe04fb1f7, 0x739d, 0x5d63, { 0xbb, 0x18, 0xe0, 0xea, 0x00, 0xb1, 0x9e, 0xe8 } };
 
-        // This'll come out in little endian; the reference GUID was generated as such.
+        // This'll come out in little-endian; the reference GUID was generated as such.
         std::wstring name{ L"testing" };
         auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, std::as_bytes(std::span{ name }));
 

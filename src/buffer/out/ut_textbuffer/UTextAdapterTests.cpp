@@ -34,6 +34,16 @@ class UTextAdapterTests
 {
     TEST_CLASS(UTextAdapterTests);
 
+    TEST_CLASS_SETUP(ClassSetup)
+    {
+        wil::unique_hmodule icu{ LoadLibraryExW(L"icu.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+        if (!icu)
+        {
+            WEX::Logging::Log::Result(WEX::Logging::TestResults::Skipped, L"ICU is not present");
+        }
+        return true;
+    }
+
     TEST_METHOD(Unicode)
     {
         DummyRenderer renderer;

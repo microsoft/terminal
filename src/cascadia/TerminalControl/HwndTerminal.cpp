@@ -250,8 +250,10 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) noexcept :
 
     if (RegisterTermClass(hInstance))
     {
+        // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI redirection surface
+        // for reduced memory usage, because the window is fully rendered in DX.
         CreateWindowExW(
-            0,
+            WS_EX_NOREDIRECTIONBITMAP,
             term_window_class,
             nullptr,
             WS_CHILD |
@@ -434,10 +436,10 @@ HRESULT HwndTerminal::Refresh(const til::size windowSize, _Out_ til::size* dimen
     const auto viewInPixels = Viewport::FromDimensions({}, windowSize);
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-    // Guard against resizing the window to 0 columns/rows, which the text buffer classes don't really support.
+    // Guard against resizing below the visible minimum (GH#19996).
     auto size = vp.Dimensions();
-    size.width = std::max(size.width, 1);
-    size.height = std::max(size.height, 1);
+    size.width = std::max(size.width, MINIMUM_VISIBLE_CELLS);
+    size.height = std::max(size.height, MINIMUM_VISIBLE_CELLS);
 
     // If this function succeeds with S_FALSE, then the terminal didn't
     //      actually change size. No need to notify the connection of this
@@ -575,8 +577,8 @@ try
     const auto lock = publicTerminal->_terminal->LockForReading();
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 
-    dimensions->width = viewInCharacters.Width();
-    dimensions->height = viewInCharacters.Height();
+    dimensions->width = std::max(viewInCharacters.Width(), MINIMUM_VISIBLE_CELLS);
+    dimensions->height = std::max(viewInCharacters.Height(), MINIMUM_VISIBLE_CELLS);
 
     return S_OK;
 }
@@ -958,7 +960,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            GSL_SUPPRESS(bounds .3)
+            GSL_SUPPRESS(bounds.3)
             renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 

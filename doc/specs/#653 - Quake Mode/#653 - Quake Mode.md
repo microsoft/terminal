@@ -69,7 +69,7 @@ To implement this feature, we'll add the following settings:
 
 ### `globalSummon` Action
 
-The `globalSummon` action will be a keybinding the user can use to summon a
+The `globalSummon` action will be a keybinding that the user can use to summon a
 Terminal window from anywhere in the OS. Various arguments to the action will
 specify which window is summoned, to where, and how the window should behave on
 summon.
@@ -182,7 +182,7 @@ for pure markdown, sorry. -->
 <tr>
 <td><code>"any"</code><br> Summon the MRU window</td>
 
-<td>Go to the desktop the window is on  (leave position alone)</td>
+<td>Go to the desktop with the window (leave position alone)</td>
 <td>Move the window to this desktop (leave position alone)</td>
 <td>
 
@@ -196,7 +196,7 @@ Else:
 <!-- ----------------------------------------------------------------------- -->
 <tr>
 <td><code>"toCurrent"</code><br> Summon the MRU window TO the monitor with the foreground window</td>
-<td>Go to the desktop the window is on, move to the monitor with the foreground window</td>
+<td>Go to the desktop with the window, move to the monitor with the foreground window</td>
 <td>Move the window to this desktop, move to the monitor with the foreground window</td>
 <td>
 
@@ -213,7 +213,7 @@ Else:
   <code>"toMouse"</code>
   <sup><a href="#footnote-2">[2]</a></sup> <br>
   Summon the MRU window TO the monitor with the mouse</td>
-<td>Go to the desktop the window is on, move to the monitor with the mouse</td>
+<td>Go to the desktop with the window, move to the monitor with the mouse</td>
 <td>Move the window to this desktop, move to the monitor with the mouse</td>
 <td>
 
@@ -230,7 +230,7 @@ Else:
 <td>
 
 If there is a window on this monitor on any desktop,
-* Go to the desktop the window is on (leave position alone)
+* Go to the desktop with the window (leave position alone)
 
 else
 * Create a new window on this monitor  & desktop
@@ -262,7 +262,7 @@ Else (one on this desktop & monitor)
 <td>
 
 If there is a window on monitor N on any desktop,
-* Go to the desktop the window is on (leave position alone)
+* Go to the desktop with the window (leave position alone)
 
 else
 * Create a new window on this monitor  & desktop

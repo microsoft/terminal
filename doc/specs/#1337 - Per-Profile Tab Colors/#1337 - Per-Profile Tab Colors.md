@@ -100,7 +100,7 @@ No expected change
 <tr>
 <td><strong>Compatibility</strong></td>
 <td>
-This entire spec outlines how this feature is designed with a emphasis on future
+This entire spec outlines how this feature is designed with an emphasis on future
 compatibility. As such, there are no expected regressions in the future when we
 do add support for themes.
 </td>

@@ -60,6 +60,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
+    void UnknownSequence() noexcept override
+    {
+    }
+
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");
@@ -74,6 +78,11 @@ public:
         {
             _response = response;
         }
+    }
+
+    bool IsConPTY() const noexcept override
+    {
+        return false;
     }
 
     StateMachine& GetStateMachine() override
@@ -222,6 +231,11 @@ public:
     void SearchMissingCommand(const std::wstring_view /*command*/) override
     {
         Log::Comment(L"SearchMissingCommand MOCK called...");
+    }
+
+    void ShowNotification(const std::wstring_view /*title*/, const std::wstring_view /*body*/) override
+    {
+        Log::Comment(L"ShowNotification MOCK called...");
     }
 
     std::function<bool(wchar_t)> EnterTmuxControl() override
@@ -1645,7 +1659,7 @@ public:
 
         Log::Comment(L"Test 2: Verify space decrease");
         _testGetSet->PrepData();
-        // Define four 8-byte macros, i.e. 32 byes (2 macro blocks).
+        // Define four 8-byte macros, i.e. 32 bytes (2 macro blocks).
         _stateMachine->ProcessString(L"\033P1;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
@@ -1657,7 +1671,7 @@ public:
 
         Log::Comment(L"Test 3: Verify space reset");
         _testGetSet->PrepData();
-        _pDispatch->HardReset();
+        _pDispatch->HardReset(true);
         _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {});
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
@@ -1689,7 +1703,7 @@ public:
 
         Log::Comment(L"Test 3: Verify checksum resets to 0");
         _testGetSet->PrepData();
-        _pDispatch->HardReset();
+        _pDispatch->HardReset(true);
         _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MemoryChecksum, 56);
 
         _testGetSet->ValidateInputEvent(L"\033P56!~0000\033\\");
@@ -2167,6 +2181,12 @@ public:
 
     TEST_METHOD(RequestChecksumReportTests)
     {
+        if (!Feature_VtChecksumReport::IsEnabled())
+        {
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
         const auto requestChecksumReport = [this](const auto length) {
             wchar_t checksumQuery[30];
             swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
@@ -3142,7 +3162,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
@@ -3217,7 +3237,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index sub parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         _testGetSet->MakeSubParamsAndRanges({ { 5 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);

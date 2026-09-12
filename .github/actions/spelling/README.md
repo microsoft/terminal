@@ -10,6 +10,7 @@ File | Purpose | Format | Info
 [line_forbidden.patterns](line_forbidden.patterns) | Patterns to flag in checked lines | perl regular expression (order matters, first match wins) | [patterns](https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples%3A-patterns)
 [expect/*.txt](expect.txt) | Expected words that aren't in the dictionary | one word per line (sorted, alphabetically) | [expect](https://github.com/check-spelling/check-spelling/wiki/Configuration#expect)
 [advice.md](advice.md) | Supplement for GitHub comment when unrecognized words are found | GitHub Markdown | [advice](https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples%3A-advice)
+[config.json](config.json) | Action Configuration | JSON key (action configuration variable) value (action configuration value) | [config](https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples%3A-config)
 
 Note: you can replace any of these files with a directory by the same name (minus the suffix)
 and then include multiple files inside that directory (with that suffix) to merge multiple files together.

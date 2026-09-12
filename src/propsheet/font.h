@@ -72,7 +72,7 @@ typedef struct tagFACENODE
 
 #pragma warning(pop)
 
-#define TM_IS_TT_FONT(x) (((x)&TMPF_TRUETYPE) == TMPF_TRUETYPE)
+#define TM_IS_TT_FONT(x) (((x) & TMPF_TRUETYPE) == TMPF_TRUETYPE)
 #define IS_BOLD(w) ((w) >= FW_SEMIBOLD)
 #define SIZE_EQUAL(s1, s2) (((s1).X == (s2).X) && ((s1).Y == (s2).Y))
 #define POINTS_PER_INCH 72

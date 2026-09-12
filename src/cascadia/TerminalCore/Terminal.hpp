@@ -85,6 +85,7 @@ public:
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
                 Microsoft::Console::Render::Renderer& renderer);
+    void HardResetWithoutErase();
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
                             Microsoft::Console::Render::Renderer& renderer);
@@ -132,7 +133,9 @@ public:
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
+    void UnknownSequence() noexcept override;
     void ReturnResponse(const std::wstring_view response) override;
+    bool IsConPTY() const noexcept override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;
@@ -160,6 +163,8 @@ public:
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
     void SearchMissingCommand(const std::wstring_view command) override;
     std::function<bool(wchar_t)> EnterTmuxControl() override;
+
+    void ShowNotification(const std::wstring_view title, const std::wstring_view body) override;
 
 #pragma endregion
 
@@ -203,7 +208,7 @@ public:
     bool IsGridLineDrawingAllowed() noexcept override;
     std::wstring GetHyperlinkUri(uint16_t id) const override;
     std::wstring GetHyperlinkCustomId(uint16_t id) const override;
-    std::vector<size_t> GetPatternId(const til::point location) const override;
+    std::vector<size_t> GetPatternId(const til::point viewportPos) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
@@ -229,6 +234,7 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
+    void SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept;
     void SetEnterTmuxControlCallback(std::function<std::function<bool(wchar_t)>()> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
@@ -338,6 +344,7 @@ private:
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
+    std::function<void(std::wstring_view, std::wstring_view)> _pfnShowNotification;
     std::function<std::function<bool(wchar_t)>()> _pfnEnterTmuxControl;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
@@ -348,7 +355,7 @@ private:
     ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 
     std::optional<std::wstring> _title;
-    std::wstring _startingTitle;
+    std::optional<std::wstring> _startingTitle;
     std::optional<til::color> _startingTabColor;
 
     std::vector<til::point_span> _searchHighlights;
@@ -399,7 +406,6 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
-    bool _selectionIsTargetingUrl = false;
     SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
     bool _anchorInactiveSelectionEndpoint = false;
 #pragma endregion

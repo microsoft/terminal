@@ -224,7 +224,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
         {
             _switchToTab(filteredCommand);
         }
@@ -741,10 +741,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Helper method for retrieving the action from a command the user
-    //   selected, and dispatching that command. Also fires a tracelogging event
-    //   indicating that the user successfully found the action they were
-    //   looking for.
+    // - Helper method to run a command, switch to a tab, or retrieve the
+    //   action from a user selected command and dispatch that command.
+    //   Also fires a tracelogging event indicating that the user successfully
+    //   found the action they were looking for.
     // Arguments:
     // - command: the Command to dispatch. This might be null.
     // Return Value:
@@ -791,7 +791,7 @@ namespace winrt::TerminalApp::implementation
                     _close();
 
                     // But make an exception for the Toggle Command Palette action: we don't want the dispatch
-                    // make the command palette - that was just closed - visible again.
+                    // to make the command palette - that was just closed - visible again.
                     // All other actions can just be dispatched.
                     if (command.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
                     {
@@ -928,6 +928,17 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        // GH#18737: Only respond to this change if we are visible:
+        // _close calls _searchBox().Text(L"") to reset the search text, which lands us
+        // in here after the command palette is dismissed. Since we have a code path here that
+        // could potentially lead to an action being previewed (specifically if there is a
+        // preview-able action as the first entry in the command list), that preview will
+        // appear after the palette is dismissed without this check.
+        if (Visibility() != Visibility::Visible)
+        {
+            return;
+        }
+
         // When we are executing the _SelectNextTab in the TabManagement.cpp, this method
         // is getting triggered because we set up the default value for that CommandPalette
         // with an empty string. Therefore, to avoid the reset of the index when executing

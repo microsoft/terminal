@@ -22,7 +22,6 @@ Author(s):
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
-#include "SettingContainer.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -123,7 +122,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring CurrentBackgroundImagePath() const;
         bool UseDesktopBGImage() const;
         void UseDesktopBGImage(const bool useDesktop);
-        bool BackgroundImageSettingsVisible() const;
+        bool BackgroundImageSettingsEnabled() const;
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
         hstring BackgroundImageAlignmentCurrentValue() const;
@@ -188,9 +187,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Appearances : AppearancesT<Appearances>
     {
         Appearances();
+        void BringIntoViewWhenLoaded(hstring elementToFocus);
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _WeakWindowRoot = value; }
 
         Windows::Foundation::Collections::IObservableVector<Editor::Font> FilteredFontList();
         bool ShowAllFonts() const noexcept;
@@ -210,6 +213,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
 
         til::property_changed_event PropertyChanged;
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
@@ -218,12 +222,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
@@ -232,6 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontAxesNames;
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontFeaturesNames;
         std::wstring _fontNameFilter;
+        bool _fontFaceBoxHasUserInput = false;
         bool _ShowAllFonts = false;
 
         static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);

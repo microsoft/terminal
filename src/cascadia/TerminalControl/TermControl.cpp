@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "TermControl.h"
 
+#include <DefaultSettings.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
@@ -207,19 +208,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return {};
         }
 
+        // TSF wants screen coordinates, and localOrigin below is relative to the root of our visual tree,
+        // which sits at the origin of the owning window's client area. GH#20318: GetWindowRect() is not
+        // that origin. While the window is maximized the client area starts below the resize borders, so
+        // the rect ended up a resize handle height too high, which is enough for the IME candidate window
+        // to cover the text being composed.
         const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-        RECT clientRect;
-        GetWindowRect(hwnd, &clientRect);
+        POINT windowOrigin{};
+        ClientToScreen(hwnd, &windowOrigin);
 
-        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        const auto scaleFactor = _termControl->SwapChainPanel().CompositionScaleX();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
-        const auto left = clientRect.left + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
-        const auto top = clientRect.top + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto left = windowOrigin.x + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = windowOrigin.y + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
         const auto right = left + fontSize.Width;
         const auto bottom = top + fontSize.Height;
 
@@ -328,6 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.CompletionsChanged = _core.CompletionsChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleCompletionsChanged });
         _revokers.RestartTerminalRequested = _core.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleRestartTerminalRequested });
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
+        _revokers.ShowNotification = _core.ShowNotification(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleShowNotification });
         _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
         _revokers.WriteToClipboard = _core.WriteToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWriteToClipboard });
         _revokers.EnterTmuxControl = _core.EnterTmuxControl(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleEnterTmuxControl });
@@ -533,6 +540,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.Connection(newConnection);
     }
 
+    void TermControl::HardResetWithoutErase()
+    {
+        _core.HardResetWithoutErase();
+    }
+
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
     {
         if (!_initializedTerminal)
@@ -582,7 +594,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto data = buffer.data();
             const auto stride = scrollBarWidthInPx * sizeof(til::color);
 
-            // The bitmap has the size of the entire scrollbar, but we want the marks to only show in the range the "thumb"
+            // The bitmap has the size of the entire scrollbar, but we want the marks to only show in the range that the "thumb"
             // (the scroll indicator) can move. That's why we need to add an offset to the start of the drawable bitmap area
             // (to offset the decrease button) and subtract twice that (to offset the increase button as well).
             //
@@ -715,8 +727,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            const auto request = SearchRequest{ _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset };
-            _handleSearchResults(_core.Search(request));
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = _searchBox->Text(),
+                .GoForward = goForward,
+                .CaseSensitive = _searchBox->CaseSensitive(),
+                .RegularExpression = _searchBox->RegularExpression(),
+                .ExecuteSearch = true,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -750,8 +769,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset };
-            _handleSearchResults(_core.Search(request));
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = text,
+                .GoForward = goForward,
+                .CaseSensitive = caseSensitive,
+                .RegularExpression = regularExpression,
+                .ExecuteSearch = true,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -770,11 +796,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            // We only want to update the search results based on the new text. Set
-            // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
-            const auto result = _core.Search(request);
-            _handleSearchResults(result);
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = text,
+                .GoForward = goForward,
+                .CaseSensitive = caseSensitive,
+                .RegularExpression = regularExpression,
+                .ExecuteSearch = false,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -1762,6 +1792,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _altNumpadState = {};
         }
 
+        // If a composition just ended, its text is still queued up inside TSF. Hand it to
+        // the connection now, so that a key the IME passed on to us can't reach the
+        // connection before the text it finalized - neither by being forwarded to the PTY,
+        // nor by triggering an action bound to it. GH#20244
+        GetTSFHandle().FlushPendingComposition();
+
         // GH#2235: Terminal::Settings hasn't been modified to differentiate
         // between AltGr and Ctrl+Alt yet.
         // -> Don't check for key bindings if this is an AltGr key combination.
@@ -1774,6 +1810,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!modifiers.IsAltGrPressed() &&
             keyDown &&
             _TryHandleKeyBinding(vkey, scanCode, modifiers))
+        {
+            return true;
+        }
+
+        // While TSF has an active composition, key events must not be forwarded
+        // to the PTY directly. The IME re-injects navigation/confirmation keys
+        // after composition ends, at which point HasActiveComposition() == false
+        // and they are forwarded normally. This mirrors conhost v1 behavior in
+        // src/interactivity/win32/windowio.cpp.
+        if (GetTSFHandle().HasActiveComposition())
         {
             return true;
         }
@@ -1908,8 +1954,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: event data
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
-        Focus(FocusState::Pointer);
-
         if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:
@@ -1943,7 +1987,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto point = args.GetCurrentPoint(*this);
         const auto type = ptr.PointerDeviceType();
 
-        if (!_focused)
+        // GH#19908: _focused can be true even when the search box has
+        // keyboard focus, because GotFocus bubbles from the search box
+        // child and _GotFocusHandler sets _focused=true. If the user
+        // click-drags in the terminal while the search box is focused,
+        // we need to explicitly call Focus() to move keyboard focus back
+        // to the terminal so that Ctrl+C copies the selection.
+        if (!_focused || (_searchBox && _searchBox->ContainsFocus()))
         {
             Focus(FocusState::Pointer);
         }
@@ -1957,12 +2007,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // NB: I don't think this is correct because the touch should be in the center of the rect.
             //     I suspect the point.Position() would be correct.
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchPressed({ contactRect.X, contactRect.Y });
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+            _interactivity.TouchPressed(newTouchPoint.to_core_point());
         }
         else
         {
             const auto cursorPosition = point.Position();
-            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerPressed(point.PointerId(),
+                                          TermControl::GetPressedMouseButtons(point),
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
@@ -2001,12 +2053,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            auto suppressFurtherHandling = _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
+            auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
+                                                                       TermControl::GetPressedMouseButtons(point),
                                                                        TermControl::GetPointerUpdateKind(point),
                                                                        ControlKeyStates(args.KeyModifiers()),
-                                                                       _focused,
-                                                                       pixelPosition,
-                                                                       _pointerPressedInBounds);
+                                                                       pixelPosition);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
@@ -2045,7 +2096,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchMoved({ contactRect.X, contactRect.Y }, _focused);
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+
+            _interactivity.TouchMoved(newTouchPoint.to_core_point());
         }
 
         args.Handled(true);
@@ -2078,7 +2131,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerReleased(point.PointerId(),
+                                           TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            ControlKeyStates(args.KeyModifiers()),
                                            pixelPosition);
@@ -2415,12 +2469,63 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
+        if (newSize.Width <= 0 || newSize.Height <= 0)
+        {
+            return;
+        }
+
         _core.SizeChanged(newSize.Width, newSize.Height);
+        _ShowResizeOverlay();
 
         if (_automationPeer)
         {
             _automationPeer.UpdateControlBounds();
         }
+    }
+
+    // Shows an overlay with the current terminal dimensions (columns x rows).
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control.
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto size = coreImpl->ViewportSize();
+
+        // Sometimes _SwapChainSizeChanged is called despite no actual size change.
+        // This happens, e.g., when switching tabs. Ignore such "updates".
+        if (size == _lastResizeOverlaySize)
+        {
+            return;
+        }
+
+        const auto isInitialSize = _lastResizeOverlaySize == Core::Size{};
+        _lastResizeOverlaySize = size;
+        if (isInitialSize)
+        {
+            return;
+        }
+
+        ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
+        ResizeOverlay().Visibility(Visibility::Visible);
+
+        if (!_resizeOverlayTimer)
+        {
+            _resizeOverlayTimer.emplace();
+            _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+            _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto self = weakThis.get())
+                {
+                    self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                    self->_resizeOverlayTimer->Stop();
+                }
+            });
+        }
+
+        _resizeOverlayTimer->Start();
     }
 
     // Method Description:
@@ -2489,9 +2594,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateScrollBar->Run(update);
 
-        // if a selection marker is already visible,
-        // update the position of those markers
-        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        // If we have a selection with markers (exposed via selection mode),
+        //   update the position of the markers
+        if (_core.HasSelection() && _core.SelectionMode() >= SelectionInteractionMode::Keyboard)
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
@@ -2664,13 +2769,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int TermControl::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size TermControl::ViewportSize() const
     {
-        return _core.ViewHeight();
+        return _core.ViewportSize();
     }
 
     int TermControl::ViewWidth() const
@@ -2704,16 +2806,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                         int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
+        // Floor at MINIMUM_VISIBLE_CELLS so wt --size 1,1 / initialCols:1 cannot
+        // open a 1-cell viewport (GH#19996).
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
         const auto cols = static_cast<float>(std::max(commandlineCols > 0 ?
                                                           commandlineCols :
                                                           settings.InitialCols(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
         const auto rows = static_cast<float>(std::max(commandlineRows > 0 ?
                                                           commandlineRows :
                                                           settings.InitialRows(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2805,8 +2909,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - a size containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const winrt::Windows::Foundation::Size& sizeInChars)
     {
-        const auto cols = ::base::saturated_cast<int32_t>(sizeInChars.Width);
-        const auto rows = ::base::saturated_cast<int32_t>(sizeInChars.Height);
+        const auto cols = std::max(::base::saturated_cast<int32_t>(sizeInChars.Width), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(::base::saturated_cast<int32_t>(sizeInChars.Height), MINIMUM_VISIBLE_CELLS);
         const auto fontSize = _core.FontSize();
         const auto scrollState = _core.Settings().ScrollState();
         const auto padding = _core.Settings().Padding();
@@ -2847,20 +2951,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the absolute minimum size that this control can be resized to and
-    //   still have 1x1 character visible. This includes the space needed for
+    //   still have 2x2 characters visible. This includes the space needed for
     //   the scrollbar and the padding.
+    //   2x2 is the VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell
+    //   viewport can hang TextBuffer::Reflow on a wide glyph (GH#19996).
     // Arguments:
     // - <none>
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
-    //   have a visible character.
+    //   have a usable character grid.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSizeInDips();
-            auto width = fontSize.Width;
-            auto height = fontSize.Height;
+            auto width = fontSize.Width * MINIMUM_VISIBLE_CELLS;
+            auto height = fontSize.Height * MINIMUM_VISIBLE_CELLS;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
@@ -2876,10 +2982,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            // Do we ever get here (= uninitialized terminal)? If so: How?
-            // Yes, we can get here, when do Pane._Split, it need to call _SetupEntranceAnimation
-            // which need the control's size, while this size can only be available when the control
-            // is initialized.
             return { 10, 10 };
         }
     }
@@ -3049,7 +3151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   the full path of the file to our terminal connection. Like conhost, if
     //   the path contains a space, we'll wrap the path in quotes.
     // - Unlike conhost, if multiple files are dropped onto the terminal, we'll
-    //   write all the paths to the terminal, separated by spaces.
+    //   write all the paths to the terminal, separated by the configured delimiter.
     // Arguments:
     // - e: The DragEventArgs from the Drop event
     // Return Value:
@@ -3060,6 +3162,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_IsClosing())
         {
             co_return;
+        }
+
+        if (const auto hwnd = reinterpret_cast<HWND>(OwningHwnd()))
+        {
+            SetForegroundWindow(hwnd);
         }
 
         const auto weak = get_weak();
@@ -3165,12 +3272,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
 
                 std::wstring allPathsString;
+                const auto delimiter{ _core.Settings().DragDropDelimiter() };
                 for (auto& fullPath : fullPaths)
                 {
-                    // Join the paths with spaces
+                    // Join the paths with the delimiter
                     if (!allPathsString.empty())
                     {
-                        allPathsString += L" ";
+                        allPathsString += delimiter;
                     }
 
                     const auto translationStyle{ _core.Settings().PathTranslationStyle() };
@@ -3564,7 +3672,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
                 const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
                 const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
-                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewportSize().Height)
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
@@ -3635,6 +3743,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _searchScrollOffset = _calculateSearchScrollOffset();
+
+        // _ShowResizeOverlay is shown when the swap chain panel size changes.
+        // But changing the font size changes the viewport size as well.
+        // So, track that too.
+        _ShowResizeOverlay();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
@@ -3702,10 +3815,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.CommandHistory();
     }
-    winrt::hstring TermControl::CurrentWorkingDirectory() const
-    {
-        return _core.CurrentWorkingDirectory();
-    }
 
     void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
     {
@@ -3755,8 +3864,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
-        _handleSearchResults(_core.Search(request));
+        _handleSearchResults(_core.Search(SearchRequest{
+            .Text = text,
+            .GoForward = goForward,
+            .CaseSensitive = caseSensitive,
+            .RegularExpression = regularExpression,
+            .ExecuteSearch = false,
+            .ScrollIntoView = false,
+            .ScrollOffset = _searchScrollOffset,
+        }));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)

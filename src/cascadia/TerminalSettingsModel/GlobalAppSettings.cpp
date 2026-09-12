@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "GlobalAppSettings.h"
+#include <DefaultSettings.h>
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
@@ -25,7 +26,6 @@ static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreferen
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
-static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
@@ -102,6 +102,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_DisabledProfileSources->Append(src);
         }
     }
+    if (_SafeUriSchemes)
+    {
+        globals->_SafeUriSchemes = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_SafeUriSchemes)
+        {
+            globals->_SafeUriSchemes->Append(src);
+        }
+    }
 
     for (const auto& parent : _parents)
     {
@@ -157,10 +165,18 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode) || _fixupsAppliedDuringLoad;
 
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmOnClose = legacyConfirmClose.value() ? ConfirmOnClose::Automatic : ConfirmOnClose::Never;
+            _fixupsAppliedDuringLoad = true;
+        }
+    }
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
@@ -174,11 +190,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // otherwise we could end up setting defaults that get persisted
     if (this->HasInitialCols())
     {
-        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
+        this->InitialCols(std::clamp(this->InitialCols(), MINIMUM_VISIBLE_CELLS, 999));
     }
     if (this->HasInitialRows())
     {
-        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
+        this->InitialRows(std::clamp(this->InitialRows(), MINIMUM_VISIBLE_CELLS, 999));
     }
     LayerActionsFrom(json, origin, true);
 
@@ -312,6 +328,10 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _TextMeasurement.reset();
     }
+    if (_AmbiguousWidth == Control::AmbiguousWidth::Narrow)
+    {
+        _AmbiguousWidth.reset();
+    }
     if (_DefaultInputScope == Control::DefaultInputScope::Default)
     {
         _DefaultInputScope.reset();
@@ -346,19 +366,25 @@ bool GlobalAppSettings::FixupsAppliedDuringLoad()
     return _fixupsAppliedDuringLoad || _actionMap->FixupsAppliedDuringLoad();
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme(const Model::WindowSettings& window) noexcept
 {
     auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 
+    const auto themePair = window ? window.Theme() : nullptr;
+    if (!themePair)
+    {
+        return nullptr;
+    }
+
     switch (requestedTheme)
     {
     case winrt::Windows::UI::Xaml::ElementTheme::Light:
-        return _themes.TryLookup(Theme().LightName());
+        return _themes.TryLookup(themePair.LightName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-        return _themes.TryLookup(Theme().DarkName());
+        return _themes.TryLookup(themePair.DarkName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Default:
     default:

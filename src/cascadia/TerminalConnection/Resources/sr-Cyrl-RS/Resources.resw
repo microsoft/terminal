@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>Сада можете да затворите овај терминал са Ctrl+D, или да притиснете Ентер да га поново покренете.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[грешка {0} приликом покретања `{1}']</value>
@@ -220,7 +220,7 @@
     <value>Не може да се приступи почетном директоријуму „{0}”</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
   </data>
-    <data name="ElevationRequired" xml:space="preserve">
+  <data name="ElevationRequired" xml:space="preserve">
     <value>Тражена операција захтева веће привилегије.</value>
   </data>
   <data name="FileNotFound" xml:space="preserve">

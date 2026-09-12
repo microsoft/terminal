@@ -69,6 +69,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"LaunchSizeCurrentValue");
             }
+            else if (viewModelProperty == L"LaunchSizeCurrentValue")
+            {
+                _NotifyChanges(L"LaunchSizeAccessibleName");
+            }
+            else if (viewModelProperty == L"LaunchParametersCurrentValue")
+            {
+                _NotifyChanges(L"LaunchParametersAccessibleName");
+            }
         });
     }
 
@@ -206,6 +214,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return til::hstring_format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows());
     }
 
+    winrt::hstring LaunchViewModel::LaunchSizeAccessibleName() const
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchSize/Header"), LaunchSizeCurrentValue());
+    }
+
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
     {
         const auto launchModeString = CurrentLaunchMode().as<EnumEntry>()->EnumName();
@@ -229,9 +242,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return result;
     }
 
+    winrt::hstring LaunchViewModel::LaunchParametersAccessibleName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Globals_LaunchParameters/Header"), LaunchParametersCurrentValue());
+    }
+
     double LaunchViewModel::InitialPosX()
     {
-        const auto x = _Settings.GlobalSettings().InitialPosition().X;
+        const auto x = _Settings.WindowSettingsDefaults().InitialPosition().X;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
         const auto xCoord = x.try_as<int32_t>();
@@ -240,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     double LaunchViewModel::InitialPosY()
     {
-        const auto y = _Settings.GlobalSettings().InitialPosition().Y;
+        const auto y = _Settings.WindowSettingsDefaults().InitialPosition().Y;
         // If there's no value here, return NAN - XAML will ignore it and
         // put the placeholder text in the box instead
         const auto yCoord = y.try_as<int32_t>();
@@ -255,8 +273,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             xCoordRef = gsl::narrow_cast<int32_t>(xCoord);
         }
-        const LaunchPosition newPos{ xCoordRef, _Settings.GlobalSettings().InitialPosition().Y };
-        _Settings.GlobalSettings().InitialPosition(newPos);
+        const LaunchPosition newPos{ xCoordRef, _Settings.WindowSettingsDefaults().InitialPosition().Y };
+        _Settings.WindowSettingsDefaults().InitialPosition(newPos);
         _NotifyChanges(L"LaunchParametersCurrentValue");
     }
 
@@ -268,8 +286,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             yCoordRef = gsl::narrow_cast<int32_t>(yCoord);
         }
-        const LaunchPosition newPos{ _Settings.GlobalSettings().InitialPosition().X, yCoordRef };
-        _Settings.GlobalSettings().InitialPosition(newPos);
+        const LaunchPosition newPos{ _Settings.WindowSettingsDefaults().InitialPosition().X, yCoordRef };
+        _Settings.WindowSettingsDefaults().InitialPosition(newPos);
         _NotifyChanges(L"LaunchParametersCurrentValue");
     }
 
@@ -291,7 +309,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentLaunchMode()
     {
-        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_LaunchModeMap.Lookup(_Settings.GlobalSettings().LaunchMode()));
+        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_LaunchModeMap.Lookup(_Settings.WindowSettingsDefaults().LaunchMode()));
     }
 
     void LaunchViewModel::CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry)
@@ -299,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
         {
             const auto setting = winrt::unbox_value<LaunchMode>(ee.EnumValue());
-            _Settings.GlobalSettings().LaunchMode(setting);
+            _Settings.WindowSettingsDefaults().LaunchMode(setting);
             _NotifyChanges(L"LaunchParametersCurrentValue");
         }
     }
@@ -311,14 +329,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentDefaultProfile()
     {
-        const auto defaultProfileGuid{ _Settings.GlobalSettings().DefaultProfile() };
+        const auto defaultProfileGuid{ _Settings.WindowSettingsDefaults().DefaultProfile() };
         return winrt::box_value(_Settings.FindProfile(defaultProfileGuid));
     }
 
     void LaunchViewModel::CurrentDefaultProfile(const IInspectable& value)
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        _Settings.GlobalSettings().DefaultProfile(profile.Guid());
+        _Settings.WindowSettingsDefaults().DefaultProfile(profile.Guid());
     }
 
     winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> LaunchViewModel::DefaultProfiles() const
@@ -406,7 +424,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break; // fall through to the common case (no task, not configured, etc.)
             }
         }
-        return RS_(L"Globals_StartOnUserLogin/HelpText");
+        return RS_(L"Globals_StartOnUserLogin/Description");
     }
 
     bool LaunchViewModel::StartOnUserLogin()

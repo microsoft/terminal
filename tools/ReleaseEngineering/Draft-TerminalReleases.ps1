@@ -31,6 +31,7 @@ Enum AssetType {
 	ApplicationBundle
 	PreinstallKit
 	GroupPolicy
+	NugetPackage
 	Zip
 }
 
@@ -87,6 +88,9 @@ Class Asset {
 		} ElseIf (".zip" -eq $local:ext -and $local:filename -like 'GroupPolicy*') {
 			$this.Type = [AssetType]::GroupPolicy
 			$this.Architecture = "all"
+		} ElseIf (".nupkg" -eq $local:ext) {
+			$this.Type = [AssetType]::NugetPackage
+			$this.Architecture = "all"
 		} ElseIf (".zip" -eq $local:ext) {
 			$this.Type = [AssetType]::Zip
 		} ElseIf (".msixbundle" -eq $local:ext) {
@@ -108,6 +112,13 @@ Class Asset {
 			Write-Verbose "Parsing AppxManifest.xml"
 			$local:Manifest = [xml](Get-Content (Join-Path $local:directory AppxManifest.xml))
 			$this.ParseManifest($local:Manifest)
+		} ElseIf ($this.Type -Eq [AssetType]::NugetPackage) {
+			Write-Verbose "Cracking nuget package $($local:filename)"
+			& $script:tar -x -f $local:bundlePath -C $local:directory *.nuspec
+			$local:nuspec = Get-ChildItem $local:directory *.nuspec -Recurse | Select-Object -First 1
+			Write-Verbose "Parsing $($local:nuspec.Name)"
+			$local:Manifest = [xml](Get-Content $local:nuspec)
+			$this.ParseNuspec($local:Manifest)
 		} Else {
 			If ($this.Type -Ne [AssetType]::GroupPolicy) {
 				& $script:tar -x -f $this.Path -C $local:directory --strip-components=1 '*/wt.exe'
@@ -135,6 +146,12 @@ Class Asset {
 		$this.Version = $Manifest.Package.Identity.Version
 	}
 
+	[void]ParseNuspec([xml]$Nuspec) {
+		$this.Name = $Nuspec.package.metadata.id
+		$this.Version = ($Nuspec.package.metadata.version -split '-')[0]
+		$this.ExpandedVersion = $Nuspec.package.metadata.version
+	}
+
 	[void]ParseFilename([string]$filename) {
 		$parts = [IO.Path]::GetFileNameWithoutExtension($filename).Split("_")
 		$this.Name = $parts[0]
@@ -159,6 +176,9 @@ Class Asset {
 			}
 			GroupPolicy {
 				"{0}_{1}.zip" -f ($this.Name, $this.Version)
+			}
+			NugetPackage {
+				"{0}.{1}.nupkg" -f ($this.Name, $this.ExpandedVersion)
 			}
 			Default {
 				Throw "Unknown type $($_.Type)"
@@ -253,15 +273,11 @@ Function New-ReleaseBody([Release]$Release) {
 	If (-Not [String]::IsNullOrEmpty($zipAssetVersion)) {
 		$body += "_Binary files inside the unpackaged distribution archive bear the version number ``$zipAssetVersion``._`n`n"
 	}
-	$body += "### Asset Hashes`n`n";
-	ForEach($a in $Release.Assets) {
-		$body += "- {0}`n   - SHA256 ``{1}```n" -f ($a.IdealFilename(), (Get-FileHash $a.Path -Algorithm SHA256 | Select-Object -Expand Hash))
-	}
 	Return $body
 }
 
 # Collect Assets from $Directory, figure out what those assets are
-$Assets = Get-ChildItem $Directory -Recurse -Include *.msixbundle, *.zip | ForEach-Object {
+$Assets = Get-ChildItem $Directory -Recurse -Include *.msixbundle, *.zip, *.nupkg -Exclude *.Wpf.*,*.symbols.nupkg | ForEach-Object {
 	[Asset]::CreateFromFile($_.FullName)
 }
 

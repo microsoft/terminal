@@ -92,6 +92,10 @@ INewContentArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
+    if (!_content)
+    {
+        return nullptr;
+    }
     return _content.GetNewTerminalArgs(kind);
 }
 
@@ -136,7 +140,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
         const auto terminalArgs{ newPane->GetTerminalArgsForPane(kind) };
-        // When creating a pane the split size is the size of the new pane
+        // When creating a pane, the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
         const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? 0.5f : 1.0f - _desiredSplitPosition);
@@ -1291,11 +1295,12 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings)
+void Pane::UpdateSettings(const CascadiaSettings& settings,
+                          const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
 {
     if (_content)
     {
-        _content.UpdateSettings(settings);
+        _content.UpdateSettings(settings, windowSettings);
     }
 }
 
@@ -2264,7 +2269,7 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& 
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - splitSize: what fraction of the pane the new pane should get
+// - splitSize: the fraction of the pane that the new pane should get
 // - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes, with the original pane as the first pane.
@@ -2843,13 +2848,12 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
-//   have 1x1 character visible, in each of its children. If we're a leaf, we'll
-//   include the space needed for borders _within_ us.
+//   satisfy each child's MinimumSize. If we're a leaf, we'll include the
+//   space needed for borders _within_ us.
 // Arguments:
 // - <none>
 // Return Value:
-// - The minimum size that this pane can be resized to and still have a visible
-//   character.
+// - The minimum size that this pane can be resized to and still fit its content.
 Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())

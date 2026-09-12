@@ -58,6 +58,17 @@ void Renderer::EnablePainting()
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
 
+    // _viewport feeds the cursor coordinate (_updateCursorInfo), while the engine's
+    // backing buffer (e.g. AtlasEngine's _p.rows) is sized from viewportCellCount,
+    // which only UpdateViewport() writes. If the viewport grew while painting was
+    // disabled, assigning _viewport here without forcing a resync would let the next
+    // _CheckViewportAndScroll() early-return (srOldViewport == srNewViewport) and skip
+    // UpdateViewport(), leaving the engine viewport - and thus the row buffer - behind
+    // _viewport. The cursor could then be reported as in-viewport at a row past the end
+    // of the buffer (GH#20269). Force the resync so the backing buffer is resized to
+    // match before the next cursor move is painted.
+    _forceUpdateViewport = true;
+
     _enable.SetEvent();
 
     if (const auto guard = _threadMutex.lock_exclusive(); !_thread)
@@ -119,12 +130,15 @@ DWORD WINAPI Renderer::s_renderThread(void* param) noexcept
 
 DWORD Renderer::_renderThread() noexcept
 {
-    while (true)
+    while (_threadKeepRunning.load(std::memory_order_relaxed))
     {
         _enable.wait();
         _waitUntilCanRender();
         _waitUntilTimerOrRedraw();
 
+        // We just completed what could have been a long wait;
+        // eagerly check again to prevent rendering if we don't
+        // need to.
         if (!_threadKeepRunning.load(std::memory_order_relaxed))
         {
             break;
@@ -476,7 +490,19 @@ try
     // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
-CATCH_RETURN()
+catch (...)
+{
+    // I found it useful during renderer development when exceptions aren't always silently caught and retried.
+    // Sometimes, the error goes away on the retry, but not for good reason. Catching such errors may be useful.
+#ifndef NDEBUG
+    if (IsDebuggerPresent())
+    {
+        __debugbreak();
+    }
+#endif
+
+    RETURN_CAUGHT_EXCEPTION();
+}
 
 // NOTE: You must be holding the console lock when calling this function.
 void Renderer::SynchronizedOutputChanged() noexcept
@@ -501,7 +527,7 @@ void Renderer::SynchronizedOutputChanged() noexcept
         // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
         //
         // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
-        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // since there's no guarantee that this is the same lock as the one that the VT parser uses.
         // But the alternative is Denial-Of-Service of the render thread.
         //
         // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
@@ -789,22 +815,8 @@ bool Renderer::_CheckViewportAndScroll()
 void Renderer::_scheduleRenditionBlink()
 {
     const auto& buffer = _pData->GetTextBuffer();
-    bool blinkUsed = false;
+    const auto blinkUsed = buffer.ContainsBlinkAttributeInRegion(_viewport);
 
-    for (auto row = _viewport.Top(); row < _viewport.BottomExclusive(); ++row)
-    {
-        const auto& r = buffer.GetRowByOffset(row);
-        for (const auto& attr : r.Attributes())
-        {
-            if (attr.IsBlinking())
-            {
-                blinkUsed = true;
-                goto why_does_cpp_not_have_labeled_loops;
-            }
-        }
-    }
-
-why_does_cpp_not_have_labeled_loops:
     if (blinkUsed != IsTimerRunning(_renditionBlinker))
     {
         if (blinkUsed)
@@ -1027,6 +1039,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // relative to the entire buffer.
     const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
     const auto& activeComposition = _pData->GetActiveComposition();
+    auto& buffer = _pData->GetTextBuffer();
+    auto& scratchRow = buffer.GetScratchpadRow();
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
@@ -1056,8 +1070,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         // we need to walk through line-by-line and repaint onto the screen.
         const auto redraw = Viewport::Intersect(dirty, _viewport);
 
-        // Retrieve the text buffer so we can read information out of it.
-        auto& buffer = _pData->GetTextBuffer();
         // Now walk through each row of text that we need to redraw.
         for (auto row = redraw.Top(); row < redraw.BottomExclusive(); row++)
         {
@@ -1069,48 +1081,16 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Draw the active composition.
             // We have to use some tricks here with const_cast, because the code after it relies on TextBufferCellIterator,
             // which isn't compatible with the scratchpad row. This forces us to back up and modify the actual row `r`.
-            ROW* rowBackup = nullptr;
-            if (row == compositionRow)
-            {
-                auto& scratch = buffer.GetScratchpadRow();
-                scratch.CopyFrom(r);
-                rowBackup = &scratch;
-
-                std::wstring_view text{ activeComposition.text };
-                RowWriteState state{
-                    .columnLimit = r.GetReadableColumnCount(),
-                    .columnEnd = _compositionCache->absoluteOrigin.x,
-                };
-
-                size_t off = 0;
-                for (const auto& range : activeComposition.attributes)
-                {
-                    const auto len = range.len;
-                    auto attr = range.attr;
-
-                    // Use the color at the cursor if TSF didn't specify any explicit color.
-                    if (attr.GetBackground().IsDefault())
-                    {
-                        attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
-                    }
-                    if (attr.GetForeground().IsDefault())
-                    {
-                        attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
-                    }
-
-                    state.text = text.substr(off, len);
-                    state.columnBegin = state.columnEnd;
-                    const_cast<ROW&>(r).ReplaceText(state);
-                    const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
-                    off += len;
-                }
-            }
             const auto restore = wil::scope_exit([&] {
-                if (rowBackup)
+                if (row == compositionRow)
                 {
-                    const_cast<ROW&>(r).CopyFrom(*rowBackup);
+                    const_cast<ROW&>(r).CopyFrom(scratchRow);
                 }
             });
+            if (row == compositionRow)
+            {
+                _PaintBufferOutputComposition(r, scratchRow, activeComposition);
+            }
 
             // Convert the screen coordinates of the line to an equivalent
             // range of buffer cells, taking line rendition into account.
@@ -1127,18 +1107,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
 
-            // Calculate if two things are true:
-            // 1. this row wrapped
-            // 2. We're painting the last col of the row.
-            // In that case, set lineWrapped=true for the _PaintBufferOutputHelper call.
-            const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().y).WasWrapForced()) &&
-                                     (bufferLine.RightExclusive() == buffer.GetSize().Width());
-
             // Prepare the appropriate line transform for the current row and viewport offset.
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, _viewport.Left()));
 
             // Ask the helper to paint through this specific line.
-            _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
+            _PaintBufferOutputHelper(pEngine, it, screenPosition);
 
             // Paint any image content on top of the text.
             const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
@@ -1146,6 +1119,104 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, _viewport.Left()));
             }
+        }
+    }
+}
+
+void Renderer::_PaintBufferOutputComposition(const ROW& r, ROW& scratch, const Composition& activeComposition) const
+{
+    scratch.CopyFrom(r);
+
+    // *Overwrite* the original text with the active composition...
+    til::CoordType compositionEnd = 0;
+    {
+        std::wstring_view text{ activeComposition.text };
+        RowWriteState state{
+            .columnLimit = r.GetReadableColumnCount(),
+            .columnEnd = _compositionCache->absoluteOrigin.x,
+        };
+
+        size_t off = 0;
+        for (const auto& range : activeComposition.attributes)
+        {
+            const auto len = range.len;
+            auto attr = range.attr;
+
+            // Use the color at the cursor if TSF didn't specify any explicit color.
+            if (attr.GetBackground().IsDefault())
+            {
+                attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
+            }
+            if (attr.GetForeground().IsDefault())
+            {
+                attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
+            }
+
+            state.text = til::safe_slice_len(text, off, len);
+            state.columnBegin = state.columnEnd;
+            const_cast<ROW&>(r).ReplaceText(state);
+            const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
+            off += len;
+        }
+
+        compositionEnd = state.columnEnd;
+    }
+
+    // The text we've overwritten may have been crucial to the user,
+    // so copy it back by absorbing available whitespace to the right
+    // and re-inserting the non-whitespace characters instead.
+    const auto compositionWidth = compositionEnd - _compositionCache->absoluteOrigin.x;
+    const auto colLimit = r.GetReadableColumnCount();
+    if (compositionWidth > 0 && compositionEnd < colLimit)
+    {
+        const auto text = scratch.GetText();
+        auto srcCol = _compositionCache->absoluteOrigin.x;
+        auto dstCol = compositionEnd;
+        auto remaining = compositionWidth;
+        size_t i = scratch.GetCharOffset(srcCol);
+
+        while (i < text.size() && dstCol < colLimit)
+        {
+            // Treat whitespace we encounter as a credit towards our composition width.
+            // This loop essentially absorbs the whitespace.
+            while (i < text.size() && til::at(text, i) == L' ' && remaining > 0)
+            {
+                remaining--;
+                srcCol++;
+                i++;
+            }
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            // Find the end of the non-whitespace span: Our span of text to insert.
+            auto spanEnd = i;
+            while (spanEnd < text.size() && til::at(text, spanEnd) != L' ')
+            {
+                spanEnd++;
+            }
+
+            // Copy the non-whitespace segment from the original text (scratch) back in.
+            RowCopyTextFromState state{
+                .source = scratch,
+                .columnBegin = dstCol,
+                .columnLimit = colLimit,
+                .sourceColumnBegin = srcCol,
+                .sourceColumnLimit = scratch.GetLeadingColumnAtCharOffset(spanEnd),
+            };
+            const_cast<ROW&>(r).CopyTextFrom(state);
+
+            const auto srcBeg = gsl::narrow_cast<uint16_t>(srcCol);
+            const auto srcEnd = gsl::narrow_cast<uint16_t>(state.sourceColumnEnd);
+            const auto attr = scratch.Attributes().slice(srcBeg, srcEnd);
+            const auto dstBeg = gsl::narrow_cast<uint16_t>(dstCol);
+            const auto dstEnd = gsl::narrow_cast<uint16_t>(dstCol + attr.size());
+            const_cast<ROW&>(r).Attributes().replace(dstBeg, dstEnd, attr);
+
+            dstCol = state.columnEnd;
+            srcCol = state.sourceColumnEnd;
+            i = spanEnd;
         }
     }
 }
@@ -1158,8 +1229,7 @@ static bool _IsAllSpaces(const std::wstring_view v)
 
 void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         TextBufferCellIterator it,
-                                        const til::point target,
-                                        const bool lineWrapped)
+                                        const til::point target)
 {
     auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
@@ -1269,7 +1339,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, lineWrapped));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             // We're only allowed to draw the grid lines under certain circumstances.
@@ -1538,7 +1608,7 @@ void Renderer::_updateCursorInfo()
     _currentCursorOptions.lineRendition = lineRendition;
     _currentCursorOptions.ulCursorHeightPercent = cursorHeight;
     _currentCursorOptions.cursorPixelWidth = _pData->GetCursorPixelWidth();
-    _currentCursorOptions.fIsDoubleWidth = buffer.GetRowByOffset(cursorPosition.y).DbcsAttrAt(cursorPosition.x) != DbcsAttribute::Single;
+    _currentCursorOptions.fIsDoubleWidth = buffer.IsGlyphDoubleWidthAt(cursorPosition);
     _currentCursorOptions.cursorType = cursor.GetType();
     _currentCursorOptions.fUseColor = useColor;
     _currentCursorOptions.cursorColor = cursorColor;

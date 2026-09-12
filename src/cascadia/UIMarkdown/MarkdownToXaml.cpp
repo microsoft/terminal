@@ -219,7 +219,7 @@ void MarkdownToXaml::_RenderNode(cmark_node* node, cmark_event_type ev_type)
     }
 
     case CMARK_NODE_ITEM:
-        // A list item, either for a ordered list or an unordered one.
+        // A list item, either for an ordered list or an unordered one.
         if (entering)
         {
             _EndParagraph();

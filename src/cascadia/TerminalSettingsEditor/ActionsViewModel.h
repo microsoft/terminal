@@ -37,7 +37,6 @@ Abstract:
 #pragma once
 
 #include "ActionsViewModel.g.h"
-#include "NavigateToCommandArgs.g.h"
 #include "CommandViewModel.g.h"
 #include "ArgWrapper.g.h"
 #include "ActionArgsViewModel.g.h"
@@ -48,21 +47,6 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToCommandArgs : NavigateToCommandArgsT<NavigateToCommandArgs>
-    {
-    public:
-        NavigateToCommandArgs(CommandViewModel command, Editor::IHostedInWindow windowRoot) :
-            _Command(command),
-            _WindowRoot(windowRoot) {}
-
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
-        Editor::CommandViewModel Command() const noexcept { return _Command; }
-
-    private:
-        Editor::IHostedInWindow _WindowRoot;
-        Editor::CommandViewModel _Command{ nullptr };
-    };
-
     struct ModifyKeyChordEventArgs : ModifyKeyChordEventArgsT<ModifyKeyChordEventArgs>
     {
     public:
@@ -85,14 +69,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Initialize();
 
         winrt::hstring DisplayName();
-        winrt::hstring Name();
+        winrt::hstring Name() const noexcept;
         void Name(const winrt::hstring& newName);
         winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
-        winrt::hstring FirstKeyChordText();
+        winrt::hstring FirstKeyChordText() const;
+        Control::KeyChord FirstKeyChord() const noexcept;
+        bool HasNoKeyChords() const noexcept;
+        Windows::UI::Xaml::VerticalAlignment NameVerticalAlignment() const noexcept;
 
-        winrt::hstring ID();
-        bool IsUserAction();
+        winrt::hstring ID() const noexcept;
+        bool IsUserAction() const noexcept;
 
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
@@ -102,10 +89,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
+        void CancelPendingKeyChordEdit();
+        void RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude);
+
         // UIA text
-        winrt::hstring ActionNameTextBoxAutomationPropName();
-        winrt::hstring ShortcutActionComboBoxAutomationPropName();
-        winrt::hstring AdditionalArgumentsControlAutomationPropName();
+        winrt::hstring ActionNameTextBoxAutomationPropName() const;
+        winrt::hstring ShortcutActionComboBoxAutomationPropName() const;
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
@@ -129,6 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         void _ReplaceCommandWithUserCopy(bool reinitialize);
         void _CreateAndInitializeActionArgsVMHelper();
+        void _ReindexKeyChordList();
     };
 
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
@@ -141,6 +131,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Type() const noexcept { return _descriptor.Type; };
         Model::ArgTypeHint TypeHint() const noexcept { return _descriptor.TypeHint; };
         bool Required() const noexcept { return _descriptor.Required; };
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) { _WeakWindowRoot = value; }
 
         // We cannot use the macro here because we need to implement additional logic for the setter
         Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
@@ -167,6 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UInt32BindBack(const double newValue);
         void UInt32OptionalBindBack(const double newValue);
         void FloatBindBack(const double newValue);
+        void BoolBindBack(bool newValue);
         void BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
@@ -186,10 +179,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, DefaultColorScheme, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, ColorSchemeNamesList, nullptr);
-        WINRT_PROPERTY(Editor::IHostedInWindow, WindowRoot, nullptr);
 
     private:
         Model::ArgDescriptor _descriptor;
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> _FlagList;
@@ -242,15 +235,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CancelChanges();
         void DeleteKeyChord();
 
+        winrt::hstring DisplayLabel() const;
+
         // UIA Text
         hstring CancelButtonName() const noexcept;
         hstring AcceptButtonName() const noexcept;
         hstring DeleteButtonName() const noexcept;
+        hstring EditButtonName() const;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(int32_t, Index, 0);
 
     public:
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
@@ -270,6 +267,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool DisplayBadge() const noexcept;
 
         void AddNewCommand();
+        void ReSortCommandList();
 
         void CurrentCommand(const Editor::CommandViewModel& newCommand);
         Editor::CommandViewModel CurrentCommand();
@@ -280,8 +278,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddCopiedCommand(const Model::Command& newCommand);
         void RegenerateCommandID(const Model::Command& command);
 
+        Editor::KeyChordViewModel FindKeyChordEditInProgress(const Editor::KeyChordViewModel& exclude) const;
+        void CancelPendingKeyChordEdit();
+
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();
+
+        til::typed_event<Editor::CommandViewModel, Editor::KeyChordViewModel> FocusKeyChordContainerRequested;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::CommandViewModel>, CommandList);
         WINRT_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage, _propertyChangedHandlers, ActionsSubPage::Base);
@@ -291,9 +294,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _Settings;
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
+        bool _CommandListDirty{ false };
 
         void _MakeCommandVMsHelper();
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
+        void _RemoveStaleKeyChordVMs(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude);
 
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);

@@ -702,8 +702,7 @@ void SCREEN_INFORMATION::SetViewportSize(const til::size* const pcoordSize)
     else
     {
         // Otherwise, just store the new position and go on.
-        _viewport = Viewport::FromInclusive(NewWindow);
-        Tracing::s_TraceWindowViewport(_viewport);
+        _CommitViewport(Viewport::FromInclusive(NewWindow));
     }
 
     // Update our internal virtual bottom tracker if requested. This helps keep
@@ -1115,8 +1114,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
         _virtualBottom = srNewViewport.bottom;
     }
 
-    _viewport = newViewport;
-    Tracing::s_TraceWindowViewport(_viewport);
+    _CommitViewport(newViewport);
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.HasPendingCookedRead())
@@ -1155,27 +1153,26 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
     const auto fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
-    const auto oldViewport = Viewport(_viewport);
-
     _InternalSetViewportSize(pcoordSize, fResizeFromTop, fResizeFromLeft);
+}
 
-    // MSFT 13194969, related to 12092729.
-    // If we're in virtual terminal mode, and the viewport dimensions change,
-    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
-    //      probably want the viewport resizes, not just the screen buffer
-    //      resizes. This does change the behavior of the API for v2 callers,
-    //      but only callers who've requested VT mode. In 12092729, we enabled
-    //      sending notifications from window resizes in cases where the buffer
-    //      didn't resize, so this applies the same expansion to resizes using
-    //      the window, not the API.
-    if (IsInVirtualTerminalInputMode())
+void SCREEN_INFORMATION::_CommitViewport(const Viewport& viewport)
+{
+    // VT TUI applications typically use SIGWINCH on UNIX and Windows has no equivalent
+    // for that. So, we just raise WINDOW_BUFFER_SIZE_EVENT as the closest alternative.
+    // With ASB or in ConPTY, viewport will match buffer size, and in that case we rely
+    // on InputBuffer to deduplicate events for us.
+    //
+    // Technically, this is a hack, and it resulted in regressions. Example: GH#281.
+    // But this was changed so long ago, that it's difficult to improve now.
+    // A more ideal solution may have been the introduction of a "VIEWPORT_EVENT".
+    if (IsActiveScreenBuffer() && IsInVirtualTerminalInputMode() && viewport.Dimensions() != _viewport.Dimensions())
     {
-        if ((_viewport.Width() != oldViewport.Width()) ||
-            (_viewport.Height() != oldViewport.Height()))
-        {
-            ScreenBufferSizeChange(GetBufferSize().Dimensions());
-        }
+        ScreenBufferSizeChange(GetBufferSize().Dimensions());
     }
+
+    _viewport = viewport;
+    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:
@@ -1416,7 +1413,7 @@ NT_CATCH_RETURN()
 // This fixes some of the most glaring out of sync issues. See GH#18725.
 bool SCREEN_INFORMATION::ConptyCursorPositionMayBeWrong() const noexcept
 {
-    return _conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed);
+    return (_conptyCursorPositionGeneration.load(std::memory_order_relaxed) & 1) != 0;
 }
 
 // This should be called whenever we do something that may desynchronize
@@ -1429,7 +1426,11 @@ void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
 
     if (gci.IsInVtIoMode())
     {
-        _conptyCursorPositionMayBeWrong.store(true, std::memory_order_relaxed);
+        // OR in the dirty flag and also increment the generation count.
+        auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        while (!_conptyCursorPositionGeneration.compare_exchange_weak(gen, (gen | 1) + 2, std::memory_order_relaxed))
+        {
+        }
     }
 }
 
@@ -1437,8 +1438,12 @@ void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
 // See ConptyCursorPositionMayBeWrong().
 void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
 {
-    _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
-    til::atomic_notify_all(_conptyCursorPositionMayBeWrong);
+    // Clear the dirty flag if it's set. This implicitly results in a generation increment.
+    auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((gen & 1) != 0 && _conptyCursorPositionGeneration.compare_exchange_strong(gen, gen + 1, std::memory_order_relaxed))
+    {
+        til::atomic_notify_all(_conptyCursorPositionGeneration);
+    }
 }
 
 // Call this to synchronously wait until the ConPTY cursor position
@@ -1447,7 +1452,8 @@ void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
 // See ConptyCursorPositionMayBeWrong().
 void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
 {
-    if (!_conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed))
+    auto initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((initialGen & 1) == 0)
     {
         return;
     }
@@ -1457,11 +1463,19 @@ void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
     {
         gci.LockConsole();
         const auto exit = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        // Double-check, now that we got the lock (= delay = possibly already handled).
+        initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        if ((initialGen & 1) == 0)
+        {
+            return;
+        }
+
         auto writer = gci.GetVtWriterForBuffer(this);
 
         if (!writer || !writer.WriteDSRCPR())
         {
-            _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+            ResetConptyCursorPositionMayBeWrong();
             return;
         }
 
@@ -1474,16 +1488,25 @@ void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
 
     for (;;)
     {
-        if (!_conptyCursorPositionMayBeWrong.load(std::memory_order::relaxed))
+        // dirty flag is clear --> exit.
+        const auto currentGen = _conptyCursorPositionGeneration.load(std::memory_order::relaxed);
+        if ((currentGen & 1) == 0)
         {
             break;
         }
 
         // atomic_wait() returns false when the timeout expires.
-        // Technically we should decrement the timeout with each iteration,
-        // but I suspect infinite spurious wake-ups are a theoretical problem.
-        if (!til::atomic_wait(_conptyCursorPositionMayBeWrong, true, 500))
+        // To keep the total wait time at ~500ms, we should technically decrement the timeout with
+        // each iteration, but I suspect infinite spurious wake-ups are a theoretical problem.
+        if (!til::atomic_wait(_conptyCursorPositionGeneration, currentGen, 500))
         {
+            // Essentially ResetConptyCursorPositionMayBeWrong(), but here we explicitly use our initial generation
+            // value to avoid TOCTOU issues (clearing the dirty flag when another thread concurrently set it again).
+            // NOTE: initialGen refers to the current value afterwards and cannot be reused.
+            if (_conptyCursorPositionGeneration.compare_exchange_strong(initialGen, initialGen + 1, std::memory_order_relaxed))
+            {
+                til::atomic_notify_all(_conptyCursorPositionGeneration);
+            }
             break;
         }
     }
@@ -1764,7 +1787,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
 //     machine with the main buffer it belongs to.
 // TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // - ppsiNewScreenBuffer - a pointer to receive the newly created buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
@@ -1871,7 +1894,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded. This allows applications to retain one HANDLE, and switch which buffer it points to seamlessly.
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer(const TextAttribute& initAttributes)
@@ -1900,11 +1923,6 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
-        // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
-        // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
-        // MainSB.bufferWidth (which can happen with wrap text disabled))
-        ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
-
         // Tell the VT MouseInput handler that we're in the Alt buffer now
         gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
@@ -1927,9 +1945,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
-
-        // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-        ScreenBufferSizeChange(psiMain->GetBufferSize().Dimensions());
 
         auto psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
@@ -2125,14 +2140,12 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
     const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
 
-    _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
+    _CommitViewport(Viewport::FromExclusive({ x, y, x + cx, y + cy }));
 
     if (updateBottom)
     {
         UpdateBottom();
     }
-
-    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:

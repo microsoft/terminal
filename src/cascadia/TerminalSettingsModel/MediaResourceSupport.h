@@ -10,14 +10,14 @@ Licensed under the MIT license.
 
 struct
     __declspec(uuid("6068ee1b-1ea0-4804-993a-42ef0c58d867"))
-        IMediaResourceContainer : public IUnknown
+    IMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResources(const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
 struct
     __declspec(uuid("9f11361c-7c8f-45c9-8948-36b66d67eca8"))
-        IPathlessMediaResourceContainer : public IUnknown
+    IPathlessMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
@@ -119,6 +119,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 resource.Resolve(path);
                 return;
+            }
+
+            const std::wstring_view pathView{ path };
+            const auto commaIndex = pathView.rfind(L',');
+            if (!resource.Ok() && commaIndex != std::wstring_view::npos)
+            {
+                const auto pathWithoutIndex = pathView.substr(0, commaIndex);
+                const auto index = til::parse_signed<int>(pathView.substr(commaIndex + 1));
+                if (index &&
+                    (til::ends_with(pathWithoutIndex, L".exe") ||
+                     til::ends_with(pathWithoutIndex, L".dll") ||
+                     til::ends_with(pathWithoutIndex, L".lnk")))
+                {
+                    const auto binaryResource{ MediaResource::FromString(winrt::hstring{ pathWithoutIndex }) };
+                    resolver(origin, basePath, binaryResource);
+                    if (binaryResource.Ok())
+                    {
+                        std::wstring resolvedPath{ binaryResource.Resolved() };
+                        resolvedPath.append(pathView.substr(commaIndex));
+                        resource.Resolve(winrt::hstring{ resolvedPath });
+                    }
+                    else
+                    {
+                        resource.Reject();
+                    }
+                    return;
+                }
             }
 
             ResolveMediaResource(origin, basePath, resource, resolver);

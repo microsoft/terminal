@@ -9,10 +9,10 @@ Abstract:
 - Defines classes which hold the status of the current partials handling.
 - Defines functions for converting between UTF-8 and UTF-16 strings.
 
-Tests have been made in order to investigate whether or not own algorithms
+Tests have been made in order to investigate whether or not our algorithms
 could overcome disadvantages of syscalls. Test results can be read up
 in PR #4093 and the test algorithms are available in src\tools\U8U16Test.
-Based on the results the decision was made to keep using the platform
+Based on the results, the decision was made to keep using the platform
 functions MultiByteToWideChar and WideCharToMultiByte.
 
 Author(s):

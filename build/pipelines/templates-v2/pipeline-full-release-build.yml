@@ -58,7 +58,7 @@ parameters:
     type: object
     default:
       name: SHINE-INT-S # By default, send jobs to the small agent pool.
-      demands: ImageOverride -equals SHINE-VS17-Latest
+      demands: ImageOverride -equals SHINE-VS18-Latest
 
 variables:
   - template: variables-nuget-package-version.yml
@@ -81,7 +81,7 @@ stages:
         parameters:
           pool:
             name: SHINE-INT-L # Run the compilation on the large agent pool, rather than the default small one.
-            demands: ImageOverride -equals SHINE-VS17-Latest
+            demands: ImageOverride -equals SHINE-VS18-Latest
           branding: ${{ parameters.branding }}
           buildTerminal: ${{ parameters.buildTerminal }}
           buildConPTY: ${{ parameters.buildConPTY }}
@@ -153,7 +153,10 @@ stages:
   - stage: Publish
     displayName: Publish
     pool: ${{ parameters.pool }}
-    dependsOn: [Build, Package]
+    dependsOn:
+      - Build
+      - ${{ if or(parameters.buildTerminal, parameters.buildConPTY, parameters.buildWPF) }}:
+          - Package
     jobs:
       # We only support the vpack for Release builds that include Terminal
       - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:

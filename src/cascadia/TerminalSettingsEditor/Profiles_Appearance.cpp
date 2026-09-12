@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profiles_Appearance.h"
+#include "Appearances.h"
 
 #include "ProfileViewModel.h"
 #include "PreviewConnection.h"
@@ -11,6 +12,8 @@
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
+
+static constexpr std::wstring_view AppearanceSettingPrefix{ L"App." };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -22,9 +25,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        _weakWindowRoot = args.WindowRoot();
+
+        // Settings are stored in Profiles_Appearance and Appearances.
+        // We use the "App." prefix to indicate if it's in Appearances,
+        // and remove it on the way to Appearances object.
+        const auto elementToFocus = args.ElementToFocus();
+        if (elementToFocus.starts_with(AppearanceSettingPrefix))
+        {
+            std::wstring correctedName{ elementToFocus.c_str() };
+            get_self<implementation::Appearances>(DefaultAppearanceView())->BringIntoViewWhenLoaded(hstring{ correctedName.substr(AppearanceSettingPrefix.size()) });
+        }
+        else
+        {
+            BringIntoViewWhenLoaded(elementToFocus);
+        }
 
         if (!_previewControl)
         {
@@ -53,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
             TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
             TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-            TraceLoggingValue(_Profile.DefaultAppearance().BackgroundImageSettingsVisible(), "HasBackgroundImage", "If the profile has a background image defined"),
+            TraceLoggingValue(_Profile.DefaultAppearance().BackgroundImageSettingsEnabled(), "HasBackgroundImage", "If the profile has a background image defined"),
             TraceLoggingValue(_Profile.HasUnfocusedAppearance(), "HasUnfocusedAppearance", "If the profile has an unfocused appearance defined"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));

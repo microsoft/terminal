@@ -26,7 +26,7 @@ HostSignalInputThread::HostSignalInputThread(wil::unique_hfile&& hPipe) :
 
 HostSignalInputThread::~HostSignalInputThread()
 {
-    // Manually terminate our thread during unittesting. Otherwise, the test
+    // Manually terminate our thread during unit testing. Otherwise, the test
     //      will finish, but TAEF will not manually kill the test.
 #ifdef UNIT_TESTING
     TerminateThread(_hThread.get(), 0);
@@ -189,7 +189,10 @@ bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
                                 &_dwThreadId));
 
     RETURN_LAST_ERROR_IF_NULL(_hThread.get());
-    LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(_hThread.get(), L"Host Signal Handler Thread"));
+    }
 
     return S_OK;
 }

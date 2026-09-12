@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "dwrite.hlsl"
+#include "dwrite_helpers.hlsl"
 #include "shader_common.hlsl"
 
 cbuffer ConstBuffer : register(b0)

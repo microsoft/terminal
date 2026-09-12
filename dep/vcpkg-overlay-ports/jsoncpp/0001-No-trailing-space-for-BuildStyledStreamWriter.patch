@@ -1,0 +1,57 @@
+From fae5556fd4d4850f948aeabee25ddf0280494725 Mon Sep 17 00:00:00 2001
+From: lizz <lizz@sensetime.com>
+Date: Fri, 10 Apr 2020 23:02:21 +0800
+Subject: [PATCH] No trailing space for BuiltStyledStreamWriter
+
+Signed-off-by: lizz <lizz@sensetime.com>
+---
+ src/lib_json/json_writer.cpp | 10 +++++++++-
+ src/test_lib_json/main.cpp   |  4 ++--
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/src/lib_json/json_writer.cpp b/src/lib_json/json_writer.cpp
+index ee45c43..e22eb17 100644
+--- a/src/lib_json/json_writer.cpp
++++ b/src/lib_json/json_writer.cpp
+@@ -990,7 +990,15 @@ void BuiltStyledStreamWriter::writeValue(Value const& value) {
+         writeCommentBeforeValue(childValue);
+         writeWithIndent(
+             valueToQuotedStringN(name.data(), name.length(), emitUTF8_));
+-        *sout_ << colonSymbol_;
++        size_t n = colonSymbol_.size();
++        if ((childValue.type() == objectValue && !childValue.empty()) ||
++            (childValue.type() == arrayValue && !childValue.empty() &&
++             ((cs_ == CommentStyle::All) || isMultilineArray(childValue)))) {
++          // Line-ending colon, so trim any trailing space from it
++          for (; n && colonSymbol_[n - 1] == ' '; --n)
++            ;
++        }
++        sout_->write(colonSymbol_.data(), n);
+         writeValue(childValue);
+         if (++it == members.end()) {
+           writeCommentAfterValueOnSameLine(childValue);
+diff --git a/src/test_lib_json/main.cpp b/src/test_lib_json/main.cpp
+index 55ab224..28cb043 100644
+--- a/src/test_lib_json/main.cpp
++++ b/src/test_lib_json/main.cpp
+@@ -2533,7 +2533,7 @@ JSONTEST_FIXTURE_LOCAL(StreamWriterTest, writeNumericValue) {
+ JSONTEST_FIXTURE_LOCAL(StreamWriterTest, writeArrays) {
+   Json::StreamWriterBuilder writer;
+   const Json::String expected("{\n"
+-                              "\t\"property1\" : \n"
++                              "\t\"property1\" :\n"
+                               "\t[\n"
+                               "\t\t\"value1\",\n"
+                               "\t\t\"value2\"\n"
+@@ -2553,7 +2553,7 @@ JSONTEST_FIXTURE_LOCAL(StreamWriterTest, writeArrays) {
+ JSONTEST_FIXTURE_LOCAL(StreamWriterTest, writeNestedObjects) {
+   Json::StreamWriterBuilder writer;
+   const Json::String expected("{\n"
+-                              "\t\"object1\" : \n"
++                              "\t\"object1\" :\n"
+                               "\t{\n"
+                               "\t\t\"bool\" : true,\n"
+                               "\t\t\"nested\" : 123\n"
+-- 
+2.52.0.vfs.0.5
+

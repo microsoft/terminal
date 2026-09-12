@@ -32,7 +32,7 @@ public:
     //   caller should ensure that `iter` starts where they would like to validate.
     // Arguments:
     // - expectedChar: The character (or characters) we're expecting
-    // - iter: a iterator pointing to the cell we'd like to start validating at.
+    // - iter: an iterator pointing to the cell we'd like to start validating at.
     // - start: the first index in the range we'd like to validate
     // - end: the last index in the range we'd like to validate
     // Return Value:
@@ -62,7 +62,7 @@ public:
     //   expectedString.
     // Arguments:
     // - expectedString: The characters we're expecting
-    // - iter: a iterator pointing to the cell we'd like to start validating at.
+    // - iter: an iterator pointing to the cell we'd like to start validating at.
     // Return Value:
     // - <none>
     static void VerifyExpectedString(std::wstring_view expectedString,

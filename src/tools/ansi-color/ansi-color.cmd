@@ -33,7 +33,7 @@ GOTO :END_DATA_SEGMENT
 
 :: Complete matrix of SGR parameters available
 :: This definition also demonstrates the various configuration changes
-:: which are used to control the way the table is generated
+:: which are used to control the way that the table is generated
 __DATA__
 :: Select Graphic Rendition (SGR) parameters
 :: #NUL# is treated as a special case to provide cells in that column
@@ -1496,10 +1496,11 @@ IF NOT EXIST !DATA_FILE! (
 ::
 :USAGE
 SET "SCRIPT_NAME=%~nx0"
+SET BLANK_TO_EOL=                                                                                 z
 
 :: The following ECHO intentionally has 80 spaces to clear the 
 :: line any remaining on screen text on call.
-ECHO.                                                                                
+ECHO.%BLANK_TO_EOL:z=%
 IF [%1] NEQ [] (
   ECHO !%1!
   ECHO.

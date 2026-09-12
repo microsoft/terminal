@@ -58,7 +58,7 @@ namespace
 
     if (hNtDll != nullptr)
     {
-        typedef NTSTATUS (*PfnNtOpenProcess)(HANDLE ProcessHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, CLIENT_ID * ClientId);
+        typedef NTSTATUS (*PfnNtOpenProcess)(HANDLE ProcessHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, CLIENT_ID* ClientId);
 
         static auto pfn = (PfnNtOpenProcess)GetProcAddress(hNtDll, "NtOpenProcess");
 

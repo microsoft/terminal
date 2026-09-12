@@ -68,7 +68,7 @@ allows the terminal to expose quick actions for:
 
 ### User Stories
 
-This is a bit of a unusual section, as this feature was already partially
+This is a bit of an unusual section, as this feature was already partially
 implemented when this spec was written.
 
 Story |  Size | Description

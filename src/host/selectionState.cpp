@@ -110,7 +110,7 @@ bool Selection::IsKeyboardMarkSelection() const
 // Routine Description:
 // - Determines whether a mouse event was responsible for initiating this selection.
 // - This primarily refers to mouse drag in QuickEdit mode.
-// - However, it refers to any non-mark-mode selection, whether the mouse actually started it or not.
+// - However, it refers to any non-mark-mode selection, whether or not the mouse actually started it.
 // Arguments:
 // - <none>
 // Return Value:

@@ -879,7 +879,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Arguments:
     // - the device code that would have been received when authentication was initiated
     // - the polling interval duration
-    // - the duration the code is still valid for
+    // - the duration for which the code is still valid
     // Return value:
     // - if authentication is done successfully, then return the response from the server
     // - else, throw an exception
@@ -975,7 +975,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the user's cloud shell settings
     WDJ::JsonObject AzureConnection::_GetCloudShellUserSettings()
     {
-        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2023-02-01-preview"), _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/userSettings/cloudconsole?api-version=2025-09-01-preview"), _resourceUri) };
         return _SendRequestReturningJson(uri, nullptr);
     }
 
@@ -985,7 +985,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the uri for the cloud shell
     winrt::hstring AzureConnection::_GetCloudShell()
     {
-        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/consoles/default?api-version=2023-02-01-preview"), _resourceUri) };
+        auto uri{ fmt::format(FMT_COMPILE(L"{}providers/Microsoft.Portal/consoles/default?api-version=2025-09-01-preview"), _resourceUri) };
 
         WWH::HttpStringContent content{
             LR"-({"properties": {"osType": "linux"}})-",
@@ -1018,7 +1018,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _terminalID = terminalResponse.GetNamedString(L"id");
 
         // we have to do some post-handling to get the proper socket endpoint
-        // the logic here is based on the way the cloud shell team itself does it
+        // the logic here is based on the way that the cloud shell team itself does it
         winrt::hstring finalSocketUri;
         const std::wstring_view wCloudShellUri{ _cloudShellUri };
 

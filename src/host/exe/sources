@@ -1,5 +1,3 @@
-!include $(BASEDIR)\onecore\windows\core\console\console_clang_feature.inc
-
 !include ..\sources.inc
 # -------------------------------------
 # Windows Console 
@@ -21,10 +19,6 @@ TARGETTYPE              = PROGRAM
 UMTYPE                  = windows
 UMENTRY                 = wwinmain
 TARGET_DESTINATION      = retail
-
-!if "$(CLANG_LTO)" == "1"
-!include lto_symbols.inc
-!endif
 
 # -------------------------------------
 # Build System Settings

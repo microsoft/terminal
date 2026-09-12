@@ -103,7 +103,7 @@ This option was not chosen because it added too much overhead for changing a set
 
 ### 2: Lock Button
 
-Every setting will have a lock button next to it. If the lock is locked, that means the setting is being inherited from Global, and the control is disabled. If the user wants to edit the setting, they can click the lock, which will changed it to the unlocked lock icon, and the control will become enabled.
+Every setting will have a lock button next to it. If the lock is locked, that means the setting is being inherited from Global, and the control is disabled. If the user wants to edit the setting, they can click the lock, which will change it to the unlocked lock icon, and the control will become enabled.
 
 ![Locks inheritance](./inheritance-locks.png)
 

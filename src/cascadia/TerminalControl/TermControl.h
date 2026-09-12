@@ -98,6 +98,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int ScrollOffset() const;
         int ViewHeight() const;
         int ViewWidth() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -118,8 +119,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
         void SelectCommand(const bool goUp);
         void SelectOutput(const bool goUp);
-
-        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -194,6 +193,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
+        void HardResetWithoutErase();
 
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
@@ -234,6 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowNotification,         IInspectable, Control::ShowNotificationEventArgs);
 
         // clang-format on
 
@@ -319,6 +320,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
+
+        std::optional<SafeDispatcherTimer> _resizeOverlayTimer;
+        Core::Size _lastResizeOverlaySize{};
+        void _ShowResizeOverlay();
 
         bool _isBackgroundLight{ false };
         bool _detached{ false };
@@ -473,6 +478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
+            Control::ControlCore::ShowNotification_revoker ShowNotification;
             Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
             Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
             Control::ControlCore::EnterTmuxControl_revoker EnterTmuxControl;

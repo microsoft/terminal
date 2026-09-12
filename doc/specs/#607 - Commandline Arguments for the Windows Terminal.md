@@ -169,7 +169,7 @@ wt my-commandline.exe with some args
 #  tab, and in another tab, run "another.exe running in a second tab"
 wt my-commandline.exe with some args and a \; literal semicolon ; new-tab another.exe running in a second tab
 
-# Start cmd.exe, then split it vertically (with the first taking 70% of it's
+# Start cmd.exe, then split it vertically (with the first taking 70% of its
 #  space, and the new pane taking 30%), and run wsl.exe in that pane (user story 13)
 wt cmd.exe ; split-pane --target 0 -V -% 30 wsl.exe
 wt cmd.exe ; split-pane -% 30 wsl.exe
@@ -551,7 +551,7 @@ this works as expected.
 
 Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
-the user would need to also escape those semicolons for powershell first. That
+the user would also need to escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab
 `; split-pane``` in powershell, and ```wt new-tab ; split-pane commandline \; with
 \; semicolons``` would need to become ```wt new-tab `; split-pane commandline \`;

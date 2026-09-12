@@ -406,7 +406,7 @@ GdiEngine::~GdiEngine()
     // 1. The lines are half the width of an underline
     // 2. Ideally the bottom line is aligned with the bottom of the underline
     // 3. The top underline is vertically in the middle between baseline and ideal bottom underline
-    // 4. If the top line gets too close to the baseline the underlines are shifted downwards
+    // 4. If the top line gets too close to the baseline, the underlines are shifted downwards
     // 5. The minimum gap between the two lines appears to be similar to Tex (1.2pt)
     // (Additional notes below.)
 

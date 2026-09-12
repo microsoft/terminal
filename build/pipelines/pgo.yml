@@ -44,12 +44,14 @@ stages:
               name: SHINE-INT-L
             ${{ else }}:
               name: SHINE-OSS-L
+            demands: ImageOverride -equals SHINE-VS18-Latest
           branding: ${{ parameters.branding }}
           buildPlatforms: ${{ parameters.buildPlatforms }}
           buildConfigurations: [Release]
           buildEverything: true
           pgoBuildMode: Instrument
           artifactStem: -instrumentation
+          keepAllExpensiveBuildOutputs: false # the ARM64 build agent runs out of memory downloading the artifacts...
 
   - stage: RunPGO
     displayName: Run PGO

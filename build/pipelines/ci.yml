@@ -59,6 +59,7 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS18-Latest
             buildPlatforms: [x64]
             buildConfigurations: [AuditMode]
             buildEverything: true
@@ -82,6 +83,7 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS18-Latest
             buildPlatforms:
               - ${{ platform }}
             buildConfigurations: [Release]

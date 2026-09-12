@@ -38,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
+        void UnknownSequence() noexcept override;
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
 
@@ -97,6 +98,10 @@ namespace Microsoft::Console::VirtualTerminal
         void RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         void SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         void SetAnsiMode(const bool ansiMode) override; // DECANM
+        void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept override; // KKP
+        void QueryKittyKeyboardProtocol() override; // KKP
+        void PushKittyKeyboardProtocol(const VTParameter flags) override; // KKP
+        void PopKittyKeyboardProtocol(const VTParameter count) override; // KKP
         void SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         void SetLeftRightScrollingMargins(const VTInt leftMargin,
@@ -109,6 +114,7 @@ namespace Microsoft::Console::VirtualTerminal
         void BackIndex() override; // DECBI
         void ForwardIndex() override; // DECFI
         void SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
+        void SetCurrentWorkingDirectory(std::wstring_view uri) override; // OSC 7
         void HorizontalTabSet() override; // HTS
         void ForwardTab(const VTInt numTabs) override; // CHT, HT
         void BackwardsTab(const VTInt numTabs) override; // CBT
@@ -124,7 +130,7 @@ namespace Microsoft::Console::VirtualTerminal
         void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
-        void HardReset() override; // RIS
+        void HardReset(bool erase) override; // RIS
         void ScreenAlignmentPattern() override; // DECALN
         void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
 
@@ -156,6 +162,8 @@ namespace Microsoft::Console::VirtualTerminal
         void DoVsCodeAction(const std::wstring_view string) override;
 
         void DoWTAction(const std::wstring_view string) override;
+
+        void DoUrxvtAction(const std::wstring_view string) override;
 
         StringHandler DefineSixelImage(const VTInt macroParameter,
                                        const DispatchTypes::SixelBackground backgroundSelect,

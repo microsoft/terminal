@@ -53,6 +53,16 @@ namespace winrt::TerminalApp::implementation
         return static_cast<float>(minMaxCloseWidth) / 3.0f;
     }
 
+    bool TitlebarControl::Focused()
+    {
+        return MinMaxCloseControl().Focused();
+    }
+
+    void TitlebarControl::Focused(bool focused)
+    {
+        MinMaxCloseControl().Focused(focused);
+    }
+
     IInspectable TitlebarControl::Content()
     {
         return ContentRoot().Content();

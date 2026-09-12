@@ -18,10 +18,7 @@
 #include <winternl.h>
 #endif
 
-#pragma warning(push)
-#pragma warning(disable:4430) // Must disable 4430 "default int" warning for C++ because ntstatus.h is inflexible SDK definition.
 #include <ntstatus.h>
-#pragma warning(pop)
 
 #include <initguid.h>
 
