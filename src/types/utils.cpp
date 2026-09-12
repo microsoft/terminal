@@ -1237,10 +1237,41 @@ plainSearch:
     return it;
 }
 
+// Returns true if `path` looks like a real Win32 filesystem path, i.e. it is
+// either a "<drive letter>:\" rooted path or a UNC ("\\server\share") path.
+//
+// This deliberately rejects strings that merely *contain* a colon, such as
+// the PSDrive provider paths PowerShell reports for $PWD (e.g. "src:\" for
+// `New-PSDrive -Name src -Root C:\src`). Those aren't real filesystem paths -
+// only the *single drive letter* form ("C:\...") is. If we don't filter
+// these out here, callers that gate "should I inherit the shell-reported
+// CWD?" on this function (e.g. when splitting/duplicating a pane) end up
+// handing the bogus provider path straight to CreateProcess's
+// lpCurrentDirectory, which then gets resolved relative to *our own*
+// process's CWD instead of failing cleanly - producing a launch failure
+// with a garbled path. See GH#20373.
+static bool _isWin32FilesystemPath(const wchar_t* path) noexcept
+{
+    // UNC path: \\server\share...
+    if (path[0] == L'\\' && path[1] == L'\\')
+    {
+        return true;
+    }
+
+    // Drive-letter path: exactly one ASCII letter, then ':', then '\' or '/'.
+    const auto isAsciiLetter = (path[0] >= L'A' && path[0] <= L'Z') || (path[0] >= L'a' && path[0] <= L'z');
+    return isAsciiLetter && path[1] == L':' && (path[2] == L'\\' || path[2] == L'/');
+}
+
 // Returns true if it's a valid path to a directory.
 bool Utils::IsValidDirectory(const wchar_t* path) noexcept
 {
     if (path == nullptr || *path == L'\0')
+    {
+        return false;
+    }
+
+    if (!_isWin32FilesystemPath(path))
     {
         return false;
     }
