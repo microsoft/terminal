@@ -308,6 +308,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SafeDispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
+        bool _isPanning{ false };
+        std::optional<Windows::Foundation::Point> _panningAnchorPos;
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };

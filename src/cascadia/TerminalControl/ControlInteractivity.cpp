@@ -364,6 +364,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
         }
+        else if (WI_IsFlagSet(buttonState, MouseButtonState::IsMiddleButtonDown))
+        {
+            const auto action = _core->Settings().MiddleClickAction();
+            if (action == Control::MiddleClickAction::Paste)
+            {
+                RequestPasteTextFromClipboard();
+            }
+        }
     }
 
     void ControlInteractivity::TouchPressed(const Core::Point contactPoint)

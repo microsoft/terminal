@@ -29,6 +29,13 @@ namespace Microsoft.Terminal.Control
         MinGW,
     };
 
+    enum MiddleClickAction
+    {
+        Pan = 0,
+        Paste,
+        None,
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
@@ -77,6 +84,7 @@ namespace Microsoft.Terminal.Control
 
         PathTranslationStyle PathTranslationStyle { get; };
         String DragDropDelimiter { get; };
+        Microsoft.Terminal.Control.MiddleClickAction MiddleClickAction { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

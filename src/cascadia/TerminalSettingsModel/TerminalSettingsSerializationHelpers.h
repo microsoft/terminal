@@ -874,6 +874,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::PathTranslationStyle)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::MiddleClickAction)
+{
+    static constexpr std::array<pair_type, 3> mappings = {
+        pair_type{ "pan", ValueType::Pan },
+        pair_type{ "paste", ValueType::Paste },
+        pair_type{ "none", ValueType::None },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste)
 {
     JSON_MAPPINGS(3) = {
