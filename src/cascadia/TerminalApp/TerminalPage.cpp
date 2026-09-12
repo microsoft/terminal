@@ -5888,6 +5888,23 @@ namespace winrt::TerminalApp::implementation
                 _workspaceFlyout.Items().Append(item);
             }
         }
+
+        _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+
+        MenuFlyoutItem newWindowItem{};
+        newWindowItem.Text(RS_(L"NewWindowMenuItem"));
+
+        auto newWindowIcon = UI::IconPathConverter::IconWUX(L"\uE78B");
+        Automation::AutomationProperties::SetAccessibilityView(newWindowIcon, Automation::Peers::AccessibilityView::Raw);
+        newWindowItem.Icon(newWindowIcon);
+
+        newWindowItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_actionDispatch->DoAction(ActionAndArgs{ ShortcutAction::NewWindow, nullptr });
+            }
+        });
+        _workspaceFlyout.Items().Append(newWindowItem);
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
