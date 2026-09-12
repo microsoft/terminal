@@ -894,6 +894,18 @@
       <Build Solution="Fuzzing|ARM64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
+    <Project Path="src/tools/resizewindowtest/resizewindowtest.vcxproj" Id="a8020ad3-2ef5-48f1-be5e-91189fec5351">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
     <Project Path="src/tools/closetest/CloseTest.vcxproj" Id="c7a6a5d9-60be-4aeb-a5f6-afe352f86cbb">
       <BuildType Solution="AuditMode|ARM64" Project="Release" />
       <BuildType Solution="AuditMode|x64" Project="Release" />
