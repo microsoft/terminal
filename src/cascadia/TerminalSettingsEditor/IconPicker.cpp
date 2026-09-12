@@ -74,14 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto propertyName{ args.PropertyName() };
             // "CurrentIconPath" changes are handled by _OnCurrentIconPathChanged()
-            if (propertyName == L"CurrentIconType")
-            {
-                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingNoIcon" });
-                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingBuiltInIcon" });
-                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingEmojiIcon" });
-                PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingImageIcon" });
-            }
-            else if (propertyName == L"CurrentBuiltInIcon")
+            if (propertyName == L"CurrentBuiltInIcon")
             {
                 CurrentIconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
             }
@@ -203,7 +196,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Stash the current value of Icon. If the user
                 // switches out of then back to IconType::Image, we want
                 // the path that we display in the text box to remain unchanged.
-                _lastIconPath = CurrentIconPath();
+                const auto currentIconPath = CurrentIconPath();
+                _lastIconPath = _IsImageIconValue(currentIconPath) ? currentIconPath : hstring{};
             }
 
             // Set the member here instead of after setting Icon() below!
@@ -223,7 +217,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             case IconType::Image:
             {
-                if (!_lastIconPath.empty())
+                if (_IsImageIconValue(_lastIconPath))
                 {
                     // Conversely, if we switch to Image,
                     // retrieve that saved value and apply it
@@ -248,7 +242,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             // We're not using the VM's Icon() setter above,
             // so notify HasIcon changed manually
-            PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentIconType" });
+            _NotifyCurrentIconTypeChanged();
             PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasIcon" });
         }
     }
@@ -276,11 +270,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void IconPicker::_DeduceCurrentIconType()
     {
         const auto icon = CurrentIconPath();
-        if (icon.empty() || icon == HideIconValue)
+        if (_IsNoIconValue(icon))
         {
             _currentIconType = IconTypes().GetAt(0);
         }
-        else if (icon.size() == 1 && (L'\uE700' <= til::at(icon, 0) && til::at(icon, 0) <= L'\uF8B3'))
+        else if (_IsBuiltInIconValue(icon))
         {
             _currentIconType = IconTypes().GetAt(1);
             _DeduceCurrentBuiltInIcon();
@@ -295,7 +289,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _currentIconType = IconTypes().GetAt(3);
         }
+        _NotifyCurrentIconTypeChanged();
+    }
+
+    bool IconPicker::_IsBuiltInIconValue(const hstring& icon) noexcept
+    {
+        return icon.size() == 1 && (L'\uE700' <= til::at(icon, 0) && til::at(icon, 0) <= L'\uF8B3');
+    }
+
+    bool IconPicker::_IsImageIconValue(const hstring& icon)
+    {
+        return !_IsNoIconValue(icon) &&
+               !_IsBuiltInIconValue(icon) &&
+               !::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(icon);
+    }
+
+    bool IconPicker::_IsNoIconValue(const hstring& icon) noexcept
+    {
+        return icon.empty() || icon == HideIconValue;
+    }
+
+    void IconPicker::_NotifyCurrentIconTypeChanged()
+    {
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CurrentIconType" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingNoIcon" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingBuiltInIcon" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingEmojiIcon" });
+        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"UsingImageIcon" });
     }
 
     void IconPicker::_DeduceCurrentBuiltInIcon()
