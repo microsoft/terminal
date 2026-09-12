@@ -372,34 +372,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 strongThis->_GoToCommonState(NormalState, true);
             }
         });
-        _previewKeyDownRevoker = PreviewKeyDown(winrt::auto_revoke, [weakThis = get_weak()](auto&&, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e) {
-            const auto strongThis = weakThis.get();
-            if (!strongThis)
+    }
+
+    void SettingsCard::OnKeyDown(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!_interactionEnabled)
+        {
+            return;
+        }
+
+        const auto key = e.Key();
+        if (key == Windows::System::VirtualKey::Enter || key == Windows::System::VirtualKey::Space || key == Windows::System::VirtualKey::GamepadA)
+        {
+            const auto focused{ _GetFocusedElement() };
+            if (focused && focused.try_as<Editor::SettingsCard>() == get_strong().as<Editor::SettingsCard>())
             {
-                return;
+                _GoToCommonState(PressedState, true);
             }
-            const auto key = e.Key();
-            if (key == Windows::System::VirtualKey::Enter || key == Windows::System::VirtualKey::Space || key == Windows::System::VirtualKey::GamepadA)
-            {
-                const auto focused{ strongThis->_GetFocusedElement() };
-                if (focused && focused.try_as<Editor::SettingsCard>() == strongThis.as<Editor::SettingsCard>())
-                {
-                    strongThis->_GoToCommonState(PressedState, true);
-                }
-            }
-        });
-        _previewKeyUpRevoker = PreviewKeyUp(winrt::auto_revoke, [weakThis = get_weak()](auto&&, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e) {
-            const auto strongThis = weakThis.get();
-            if (!strongThis)
-            {
-                return;
-            }
-            const auto key = e.Key();
-            if (key == Windows::System::VirtualKey::Enter || key == Windows::System::VirtualKey::Space || key == Windows::System::VirtualKey::GamepadA)
-            {
-                strongThis->_GoToCommonState(NormalState, true);
-            }
-        });
+            base_type::OnKeyDown(e);
+        }
+    }
+
+    void SettingsCard::OnKeyUp(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
+    {
+        if (!_interactionEnabled)
+        {
+            return;
+        }
+
+        const auto key = e.Key();
+        if (key == Windows::System::VirtualKey::Enter || key == Windows::System::VirtualKey::Space || key == Windows::System::VirtualKey::GamepadA)
+        {
+            _GoToCommonState(NormalState, true);
+            base_type::OnKeyUp(e);
+        }
     }
 
     void SettingsCard::_DisableButtonInteraction()
@@ -410,8 +416,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _pointerExitedRevoker.revoke();
         _pointerCaptureLostRevoker.revoke();
         _pointerCanceledRevoker.revoke();
-        _previewKeyDownRevoker.revoke();
-        _previewKeyUpRevoker.revoke();
     }
 
     void SettingsCard::_GoToCommonState(const std::wstring_view& state, bool useTransitions)
