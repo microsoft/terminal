@@ -1274,7 +1274,7 @@ namespace SettingsModelUnitTests
         const auto settings = createSettings(inputSettings);
 
         VERIFY_ARE_EQUAL(999, settings->GlobalSettings().InitialCols());
-        VERIFY_ARE_EQUAL(1, settings->GlobalSettings().InitialRows());
+        VERIFY_ARE_EQUAL(MINIMUM_VISIBLE_CELLS, settings->GlobalSettings().InitialRows());
     }
 
     void DeserializationTests::TestTrailingCommas()

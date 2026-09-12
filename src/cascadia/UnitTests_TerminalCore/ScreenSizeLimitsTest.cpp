@@ -36,21 +36,21 @@ using namespace TerminalCoreUnitTests;
 void ScreenSizeLimitsTest::ScreenWidthAndHeightAreClampedToBounds()
 {
     // Negative values for initial visible row count or column count
-    // are clamped to 1. Too-large positive values are clamped to SHRT_MAX.
+    // are clamped to MINIMUM_VISIBLE_CELLS. Too-large positive values are clamped to SHRT_MAX.
     auto negativeColumnsSettings = winrt::make<MockTermSettings>(10000, 9999999, -1234);
     Terminal negativeColumnsTerminal{ Terminal::TestDummyMarker{} };
     DummyRenderer renderer{ &negativeColumnsTerminal };
     negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, renderer);
     auto actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
     VERIFY_ARE_EQUAL(actualDimensions.height, SHRT_MAX, L"Row count clamped to SHRT_MAX == " WCS(SHRT_MAX));
-    VERIFY_ARE_EQUAL(actualDimensions.width, 1, L"Column count clamped to 1");
+    VERIFY_ARE_EQUAL(actualDimensions.width, MINIMUM_VISIBLE_CELLS, L"Column count clamped to MINIMUM_VISIBLE_CELLS");
 
-    // Zero values are clamped to 1 as well.
+    // Zero values are clamped to MINIMUM_VISIBLE_CELLS as well.
     auto zeroRowsSettings = winrt::make<MockTermSettings>(10000, 0, 9999999);
     Terminal zeroRowsTerminal{ Terminal::TestDummyMarker{} };
     zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, renderer);
     actualDimensions = zeroRowsTerminal.GetViewport().Dimensions();
-    VERIFY_ARE_EQUAL(actualDimensions.height, 1, L"Row count clamped to 1");
+    VERIFY_ARE_EQUAL(actualDimensions.height, MINIMUM_VISIBLE_CELLS, L"Row count clamped to MINIMUM_VISIBLE_CELLS");
     VERIFY_ARE_EQUAL(actualDimensions.width, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
 }
 
