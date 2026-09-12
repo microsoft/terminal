@@ -2048,9 +2048,21 @@
           "type": "string"
         },
         "useMica": {
-          "description": "True if the Terminal should use a Mica backdrop for the window. This will apply underneath all controls (including the terminal panes and the titlebar)",
-          "type": "boolean",
-          "default": false
+          "default": "none",
+          "description": "Sets the backdrop material for the window, applied underneath all controls (including the terminal panes and the titlebar). Possible values:\n -\"mica\" (the Mica material)\n -\"micaAlt\" (the Mica Alt material)\n -\"none\" (no backdrop).\ntrue and false are accepted as synonyms for \"mica\" and \"none\" respectively.",
+          "oneOf": [
+            {
+              "enum": [
+                "none",
+                "mica",
+                "micaAlt"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
         },
         "experimental.rainbowFrame": {
           "description": "When enabled, the frame of the window will cycle through all the colors. Enabling this will override the `frame` and `unfocusedFrame` settings.",
