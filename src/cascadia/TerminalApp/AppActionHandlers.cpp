@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "HtmConnections.h"
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
@@ -64,6 +65,18 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
+        if (Feature_HtmIntegration::IsEnabled())
+        {
+            if (auto* session{ _HtmSessionForConnection(_HtmFocusedConnection()) })
+            {
+                if (const auto follower{ session->CreateFollowerForUserTab() })
+                {
+                    _HtmOpenFollowerAsTab(follower);
+                    args.Handled(true);
+                    return;
+                }
+            }
+        }
         _DuplicateFocusedTab();
         args.Handled(true);
     }
@@ -96,6 +109,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
+        if (Feature_HtmIntegration::IsEnabled())
+        {
+            if (const auto conn{ _HtmFocusedConnection() })
+            {
+                if (auto* session{ _HtmSessionForConnection(conn) })
+                {
+                    session->HandleUserClose(conn);
+                }
+            }
+        }
         _CloseFocusedPane();
         args.Handled(true);
     }
@@ -274,15 +297,70 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
+
+            const auto& activeTab{ _senderOrFocusedTab(sender) };
+
+            // Intercept before the invalid-profile bail-out so a command-line
+            // duplicate split on an HTM follower still talks to htmd.
+            // Prefer any HTM connection in this window: CLI ``-w last`` often
+            // arrives before the TermControl is the XAML focus target.
+            if (Feature_HtmIntegration::IsEnabled())
+            {
+                const auto htmConn{ _HtmAnyConnectionInWindow() };
+                auto* session = _HtmSessionForConnection(htmConn);
+                if (!session && _htmSession && _htmSession->IsActive())
+                {
+                    session = _htmSession.get();
+                }
+                if (session)
+                {
+                    auto sourceId = _HtmPaneIdFromConnection(htmConn);
+                    if (sourceId.empty() || !session->HasFollower(sourceId))
+                    {
+                        sourceId = session->LeaderPaneId();
+                    }
+                    if (!session->HasFollower(sourceId))
+                    {
+                        sourceId = session->FirstLiveFollowerPaneId();
+                    }
+                    if (sourceId.empty())
+                    {
+                        // htmd still owns panes after a local map miss (e.g. UI
+                        // collapsed and UnregisterFollower raced); target root.
+                        sourceId = "%0";
+                    }
+                    const auto direction = realArgs.SplitDirection();
+                    const bool vertical = direction != SplitDirection::Up && direction != SplitDirection::Down;
+                    if (const auto follower{ session->CreateFollowerForUserSplit(sourceId, vertical) })
+                    {
+                        // Prefer splitting the focused follower tab; otherwise
+                        // locate the source pane across windows.
+                        if (htmConn && htmConn.try_as<HtmFollowerConnection>() && session->HasFollower(sourceId) &&
+                            _HtmPaneIdFromConnection(htmConn) == sourceId)
+                        {
+                            _SplitPane(activeTab,
+                                       direction,
+                                       realArgs.SplitSize(),
+                                       _MakePane(realArgs.ContentArgs(), duplicateFromTab, follower));
+                        }
+                        else
+                        {
+                            _HtmSplitExisting(sourceId, follower, vertical);
+                        }
+                        args.Handled(true);
+                        return;
+                    }
+                    args.Handled(true);
+                    return;
+                }
+            }
+
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
                 args.Handled(false);
                 return;
             }
-
-            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
-
-            const auto& activeTab{ _senderOrFocusedTab(sender) };
 
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),
@@ -459,12 +537,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
                                      const ActionEventArgs& args)
     {
+        const auto realArgs = args ? args.ActionArgs().try_as<NewTabArgs>() : nullptr;
+
         if (args == nullptr)
         {
             LOG_IF_FAILED(_OpenNewTab(nullptr));
-            args.Handled(true);
+            return;
         }
-        else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
+        else if (realArgs)
         {
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
@@ -908,6 +988,28 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
+        if (Feature_HtmIntegration::IsEnabled())
+        {
+            if (auto* session{ _HtmSessionForConnection(_HtmFocusedConnection()) })
+            {
+                if (const auto follower{ session->CreateFollowerForUserTab() })
+                {
+                    _HtmOpenFollowerAsWindow(follower);
+                    actionArgs.Handled(true);
+                    return;
+                }
+            }
+            else if (_htmSession && _htmSession->IsActive())
+            {
+                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                {
+                    _HtmOpenFollowerAsWindow(follower);
+                    actionArgs.Handled(true);
+                    return;
+                }
+            }
+        }
+
         INewContentArgs newContentArgs{ nullptr };
         // If the caller provided NewTerminalArgs, then try to use those
         if (actionArgs)

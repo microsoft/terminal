@@ -562,7 +562,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // Ensure a linear and predictable write order, even across multiple threads.
         // A ticket lock is the perfect fit for this as it acts as first-come-first-serve.
         std::lock_guard guard{ _writeLock };
-
         if (_writePending)
         {
             _writePending = false;

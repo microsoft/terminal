@@ -188,6 +188,16 @@
     </feature>
 
     <feature>
+        <name>Feature_HtmIntegration</name>
+        <description>Detect HTM init sequences and map Windows Terminal tabs/panes onto htmd</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_WarnOnInvalidSettingsMediaResources</name>
 	<description>Controls whether Terminal should display a warning dialog when icon, backgroundImage, shader, etc. could not be found.</description>
         <stage>AlwaysEnabled</stage>
