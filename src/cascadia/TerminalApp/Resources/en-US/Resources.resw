@@ -739,6 +739,10 @@
     <value>unnamed window</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>New window</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>Name this window...</value>
     <comment>Menu item text shown when the current window has no name assigned</comment>

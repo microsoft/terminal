@@ -170,6 +170,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        explicit constexpr size(const winrt::Microsoft::Terminal::Core::Size other) :
+            width{ other.Width }, height{ other.Height }
+        {
+        }
+
+        winrt::Microsoft::Terminal::Core::Size to_core_size() const noexcept
+        {
+            return { width, height };
+        }
+#endif
+
         std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"[W:%d, H:%d]", width, height);

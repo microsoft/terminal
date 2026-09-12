@@ -2552,7 +2552,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
                 realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       tabImpl->GetActiveTerminalControl().ViewHeight() :
+                                       tabImpl->GetActiveTerminalControl().ViewportSize().Height :
                                        _systemRowsToScroll;
             }
             else
@@ -2994,7 +2994,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& control{ _GetActiveControl() })
             {
-                const auto termHeight = control.ViewHeight();
+                const auto termHeight = control.ViewportSize().Height;
                 auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
                 tabImpl->Scroll(scrollDelta);
             }
@@ -5888,6 +5888,23 @@ namespace winrt::TerminalApp::implementation
                 _workspaceFlyout.Items().Append(item);
             }
         }
+
+        _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+
+        MenuFlyoutItem newWindowItem{};
+        newWindowItem.Text(RS_(L"NewWindowMenuItem"));
+
+        auto newWindowIcon = UI::IconPathConverter::IconWUX(L"\uE78B");
+        Automation::AutomationProperties::SetAccessibilityView(newWindowIcon, Automation::Peers::AccessibilityView::Raw);
+        newWindowItem.Icon(newWindowIcon);
+
+        newWindowItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_actionDispatch->DoAction(ActionAndArgs{ ShortcutAction::NewWindow, nullptr });
+            }
+        });
+        _workspaceFlyout.Items().Append(newWindowItem);
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this

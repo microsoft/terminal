@@ -236,7 +236,7 @@ namespace ControlUnitTests
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Scroll up a line");
@@ -401,7 +401,7 @@ namespace ControlUnitTests
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         // For this test, don't use any modifiers
@@ -485,7 +485,7 @@ namespace ControlUnitTests
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Scroll up a line");
@@ -717,7 +717,7 @@ namespace ControlUnitTests
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->ViewportSize().Height);
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         expectedBufferHeight = 41;
@@ -776,7 +776,7 @@ namespace ControlUnitTests
         const auto scrollbackLength = settings->HistorySize();
         // Output lines equal to history size + viewport height to make sure we're
         // at the point where outputting more lines causes circular incrementing
-        for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        for (int32_t i = 0, h = settings->HistorySize() + core->ViewportSize().Height; i < h; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
@@ -913,7 +913,7 @@ namespace ControlUnitTests
         }
 
         // Output enough text for the selection to get pushed off the buffer
-        for (auto i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        for (int32_t i = 0, h = settings->HistorySize() + core->ViewportSize().Height; i < h; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
@@ -968,7 +968,7 @@ namespace ControlUnitTests
         auto& term{ *core->_terminal };
 
         // Output enough text for view to start scrolling
-        for (auto i = 0; i < core->ViewHeight() * 2; ++i)
+        for (int32_t i = 0, h = core->ViewportSize().Height * 2; i < h; ++i)
         {
             conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         }
