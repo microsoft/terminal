@@ -518,6 +518,15 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         const bool activated = LOWORD(wparam) != 0;
         WindowActivated.raise(activated);
 
+        // GH#18662: After raising WindowActivated, XAML may be busy processing
+        // the activation (focus, layout, rendering). During this time, WM_SETCURSOR
+        // may go unanswered, causing Windows to show a busy cursor until the next
+        // mouse move. Post a WM_SETCURSOR to force re-evaluation once XAML is idle.
+        if (activated)
+        {
+            PostMessageW(GetHandle(), WM_SETCURSOR, 0, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+        }
+
         if (_autoHideWindow && !activated)
         {
             if (_isQuakeWindow || _minimizeToNotificationArea)
