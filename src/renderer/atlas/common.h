@@ -315,6 +315,13 @@ namespace Microsoft::Console::Render::Atlas
         DWRITE_SCRIPT_ANALYSIS analysis;
     };
 
+    struct TextAnalysisBidiRun
+    {
+        uint32_t textPosition;
+        uint32_t textLength;
+        uint8_t resolvedLevel;
+    };
+
     enum class GraphicsAPI
     {
         Automatic,

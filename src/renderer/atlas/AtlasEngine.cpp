@@ -31,6 +31,175 @@
 
 using namespace Microsoft::Console::Render::Atlas;
 
+namespace
+{
+    struct VisualSpan
+    {
+        size_t beg;
+        size_t end;
+        bool custom;
+        u8 resolvedLevel;
+    };
+
+    struct GlyphClusterRange
+    {
+        u16 glyphsFrom;
+        u16 glyphsTo;
+        u32 color;
+    };
+
+    bool _isWhitespaceSeparator(const wchar_t ch) noexcept
+    {
+        // U+2066..U+2069 are normalized to U+200B in PaintBufferLine().
+        if (ch == L'\u200B')
+        {
+            return true;
+        }
+
+        WORD charType = 0;
+        return GetStringTypeW(CT_CTYPE1, &ch, 1, &charType) && WI_IsFlagSet(charType, C1_SPACE);
+    }
+
+    void _appendWhitespaceSeparatedSpan(std::vector<VisualSpan>& spans, const std::span<const wchar_t> bufferLine, const size_t beg, const size_t end, const bool custom, const u8 resolvedLevel)
+    {
+        // DirectWrite may resolve an entire RTL phrase, including whitespace, to a single bidi level.
+        // Splitting same-level spans at whitespace boundaries gives the UAX #9 L2 span ordering below
+        // a useful rendering granularity. This is only render-order support and intentionally does not
+        // implement cursor, selection, copy, wrapping, punctuation, or bracket-mirroring bidi behavior.
+        auto pos = beg;
+        while (pos < end)
+        {
+            const auto separator = _isWhitespaceSeparator(bufferLine[pos]);
+            auto next = pos + 1;
+            while (next < end && _isWhitespaceSeparator(bufferLine[next]) == separator)
+            {
+                ++next;
+            }
+
+            spans.push_back({ pos, next, custom, resolvedLevel });
+            pos = next;
+        }
+    }
+
+    void _appendBidiIntersectedSpan(std::vector<VisualSpan>& spans, const std::span<const wchar_t> bufferLine, const size_t beg, const size_t end, const bool custom, const std::vector<TextAnalysisBidiRun>& bidiRuns)
+    {
+        if (bidiRuns.empty())
+        {
+            _appendWhitespaceSeparatedSpan(spans, bufferLine, beg, end, custom, 0);
+            return;
+        }
+
+        auto pos = beg;
+        for (const auto& run : bidiRuns)
+        {
+            const auto runBeg = static_cast<size_t>(run.textPosition);
+            const auto runEnd = runBeg + run.textLength;
+            if (runEnd <= pos)
+            {
+                continue;
+            }
+            if (runBeg >= end)
+            {
+                break;
+            }
+
+            if (pos < runBeg)
+            {
+                const auto spanEnd = std::min(runBeg, end);
+                _appendWhitespaceSeparatedSpan(spans, bufferLine, pos, spanEnd, custom, 0);
+                pos = spanEnd;
+            }
+
+            const auto spanBeg = std::max(pos, runBeg);
+            const auto spanEnd = std::min(end, runEnd);
+            if (spanBeg < spanEnd)
+            {
+                _appendWhitespaceSeparatedSpan(spans, bufferLine, spanBeg, spanEnd, custom, run.resolvedLevel);
+                pos = spanEnd;
+            }
+
+            if (pos == end)
+            {
+                break;
+            }
+        }
+
+        if (pos < end)
+        {
+            _appendWhitespaceSeparatedSpan(spans, bufferLine, pos, end, custom, 0);
+        }
+    }
+
+    std::vector<VisualSpan> _buildVisualSpans(const std::span<const wchar_t> bufferLine, const bool builtinGlyphs, const std::vector<TextAnalysisBidiRun>& bidiRuns)
+    {
+        std::vector<VisualSpan> spans;
+        spans.reserve(bufferLine.size());
+        size_t segmentBeg = 0;
+        size_t segmentEnd = 0;
+        bool custom = false;
+
+        while (segmentBeg < bufferLine.size())
+        {
+            segmentEnd = segmentBeg;
+            do
+            {
+                auto i = segmentEnd;
+                char32_t codepoint = bufferLine[i++];
+                if (til::is_leading_surrogate(codepoint) && i < bufferLine.size())
+                {
+                    codepoint = til::combine_surrogates(codepoint, bufferLine[i++]);
+                }
+
+                const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
+                if (custom != c)
+                {
+                    break;
+                }
+
+                segmentEnd = i;
+            } while (segmentEnd < bufferLine.size());
+
+            if (segmentBeg != segmentEnd)
+            {
+                _appendBidiIntersectedSpan(spans, bufferLine, segmentBeg, segmentEnd, custom, bidiRuns);
+            }
+
+            segmentBeg = segmentEnd;
+            custom = !custom;
+        }
+
+        return spans;
+    }
+
+    void _applyBidiLevelOrdering(std::vector<VisualSpan>& spans)
+    {
+        if (spans.empty())
+        {
+            return;
+        }
+
+        const auto maxLevel = std::max_element(spans.begin(), spans.end(), [](const auto& lhs, const auto& rhs) noexcept {
+            return lhs.resolvedLevel < rhs.resolvedLevel;
+        })->resolvedLevel;
+
+        for (auto level = maxLevel; level > 0; --level)
+        {
+            for (auto it = spans.begin(); it != spans.end();)
+            {
+                it = std::find_if(it, spans.end(), [level](const auto& span) noexcept {
+                    return span.resolvedLevel >= level;
+                });
+                const auto revBeg = it;
+                it = std::find_if(it, spans.end(), [level](const auto& span) noexcept {
+                    return span.resolvedLevel < level;
+                });
+                std::reverse(revBeg, it);
+            }
+        }
+    }
+
+}
+
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
 {
@@ -819,53 +988,36 @@ void AtlasEngine::_flushBufferLine()
     const auto cleanup = wil::scope_exit([this]() noexcept {
         _api.bufferLine.clear();
         _api.bufferLineColumn.clear();
+        _api.bidiLevels.clear();
+        _api.bidiRuns.clear();
     });
 
     // This would seriously blow us up otherwise.
     Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
-    const auto builtinGlyphs = _p.s->font->builtinGlyphs;
-    const auto beg = _api.bufferLine.data();
-    const auto len = _api.bufferLine.size();
-    size_t segmentBeg = 0;
-    size_t segmentEnd = 0;
-    bool custom = false;
+    _api.analysisResults.clear();
+    _api.bidiLevels.assign(_api.bufferLine.size(), 0);
+    _api.bidiRuns.clear();
 
-    while (segmentBeg < len)
     {
-        segmentEnd = segmentBeg;
-        do
+        TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
+        TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiLevels, &_api.bidiRuns };
+        THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, 0, gsl::narrow<UINT32>(_api.bufferLine.size()), &analysisSink));
+    }
+
+    auto spans = _buildVisualSpans(_api.bufferLine, _p.s->font->builtinGlyphs, _api.bidiRuns);
+    _applyBidiLevelOrdering(spans);
+
+    for (const auto& span : spans)
+    {
+        if (span.custom)
         {
-            auto i = segmentEnd;
-            char32_t codepoint = beg[i++];
-            if (til::is_leading_surrogate(codepoint) && i < len)
-            {
-                codepoint = til::combine_surrogates(codepoint, beg[i++]);
-            }
-
-            const auto c = (builtinGlyphs && BuiltinGlyphs::IsBuiltinGlyph(codepoint)) || BuiltinGlyphs::IsSoftFontChar(codepoint);
-            if (custom != c)
-            {
-                break;
-            }
-
-            segmentEnd = i;
-        } while (segmentEnd < len);
-
-        if (segmentBeg != segmentEnd)
-        {
-            if (custom)
-            {
-                _mapBuiltinGlyphs(segmentBeg, segmentEnd);
-            }
-            else
-            {
-                _mapRegularText(segmentBeg, segmentEnd);
-            }
+            _mapBuiltinGlyphs(span.beg, span.end);
         }
-
-        segmentBeg = segmentEnd;
-        custom = !custom;
+        else
+        {
+            _mapRegularText(span.beg, span.end);
+        }
     }
 }
 
@@ -1033,12 +1185,16 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
 {
     _api.analysisResults.clear();
 
+    _api.bidiLevels.assign(_api.bufferLine.size(), 0);
+
     TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
-    TextAnalysisSink analysisSink{ _api.analysisResults };
+    TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiLevels };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
+    THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, idx, length, &analysisSink));
 
     for (const auto& a : _api.analysisResults)
     {
+        const BOOL isRightToLeft = a.textPosition < _api.bidiLevels.size() && (_api.bidiLevels[a.textPosition] & 1) != 0;
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -1076,7 +1232,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
+                /* isRightToLeft       */ isRightToLeft,
                 /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
@@ -1128,7 +1284,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
+            /* isRightToLeft       */ isRightToLeft,
             /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
@@ -1143,6 +1299,8 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
         auto prevCluster = _api.clusterMap[0];
         size_t beg = 0;
+        std::vector<GlyphClusterRange> clusterRanges;
+        clusterRanges.reserve(a.textLength);
 
         for (size_t i = 1; i <= a.textLength; ++i)
         {
@@ -1164,15 +1322,37 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             }
             _api.glyphAdvances[nextCluster - 1] += expectedAdvance - actualAdvance;
 
-            row.colors.insert(row.colors.end(), nextCluster - prevCluster, fg);
+            clusterRanges.push_back({ prevCluster, nextCluster, fg });
 
             prevCluster = nextCluster;
             beg = i;
         }
 
-        row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + actualGlyphCount);
-        row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
-        row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
+        const auto appendCluster = [&](const GlyphClusterRange& cluster) {
+            row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin() + cluster.glyphsFrom, _api.glyphIndices.begin() + cluster.glyphsTo);
+            row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin() + cluster.glyphsFrom, _api.glyphAdvances.begin() + cluster.glyphsTo);
+            row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin() + cluster.glyphsFrom, _api.glyphOffsets.begin() + cluster.glyphsTo);
+            row.colors.insert(row.colors.end(), cluster.glyphsTo - cluster.glyphsFrom, cluster.color);
+        };
+
+        if (isRightToLeft)
+        {
+            // _flushBufferLine() handles line/span visual order with resolved bidi levels.
+            // DirectWrite shaping preserves glyph relationships within each cluster. Atlas stores
+            // glyphs in a left-to-right stream, so RTL runs emit clusters in reverse order while
+            // preserving glyph order inside each cluster.
+            for (auto it = clusterRanges.rbegin(); it != clusterRanges.rend(); ++it)
+            {
+                appendCluster(*it);
+            }
+        }
+        else
+        {
+            for (const auto& cluster : clusterRanges)
+            {
+                appendCluster(cluster);
+            }
+        }
     }
 }
 
