@@ -50,7 +50,7 @@ namespace winrt::TerminalApp::implementation
     // - wparam: additional message-specific information
     // - lparam: additional message-specific information
     // Return Value:
-    // - 0 if the message is handled (e.g. context menu shown), otherwise falls back to DefSubclassProc.
+    // - 0 if the message is handled (e.g. context menu shown); otherwise falls back to DefSubclassProc.
     [[nodiscard]] LRESULT WindowContextMenu::_ContextMenuMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message)
@@ -68,7 +68,7 @@ namespace winrt::TerminalApp::implementation
         case WM_NCRBUTTONDOWN:
         case WM_CONTEXTMENU:
             _ShowMenu(lparam);
-            return 0;
+            return 0; 
         case WM_SIZE:
             _IsMaximized(wparam == SIZE_MAXIMIZED);
             break;
@@ -234,7 +234,8 @@ namespace winrt::TerminalApp::implementation
 
         for (int32_t i = contextMenuItemCount; i < itemsCount; ++i)
         {
-            MENUITEMINFOW info{
+            MENUITEMINFOW info
+            {
                 .cbSize = sizeof(MENUITEMINFOW),
                 .fMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE
             };
@@ -261,7 +262,8 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 uint32_t cmdId = info.wID;
-                menuFlyoutItem.Click([weak = get_weak(), parent = _parentWindow, cmdId](auto&&, auto&&) {
+                menuFlyoutItem.Click([weak = get_weak(), parent = _parentWindow, cmdId](auto&&, auto&&)
+                {
                     if (auto strongThis{ weak.get() })
                     {
                         strongThis->Hide();
@@ -312,7 +314,8 @@ namespace winrt::TerminalApp::implementation
     // - The cleaned menu item text as a std::wstring, or an empty string on failure.
     std::wstring WindowContextMenu::_GetMenuItemText(gsl::not_null<HMENU> menu, uint32_t itemIndex)
     {
-        MENUITEMINFOW menuItemInfo{
+        MENUITEMINFOW menuItemInfo
+        {
             .cbSize = sizeof(MENUITEMINFOW),
             .fMask = MIIM_STRING
         };
@@ -324,7 +327,7 @@ namespace winrt::TerminalApp::implementation
 
         std::wstring menuItemText(menuItemInfo.cch + 1, L'\0');
         menuItemInfo.dwTypeData = menuItemText.data();
-        menuItemInfo.cch++;
+        menuItemInfo.cch++; 
 
         if (LOG_LAST_ERROR_IF(!GetMenuItemInfoW(menu.get(), itemIndex, TRUE, &menuItemInfo)))
         {
