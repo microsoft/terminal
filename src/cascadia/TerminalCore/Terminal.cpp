@@ -53,6 +53,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
+    _adaptDispatch = dispatch.get();
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
@@ -1044,6 +1045,12 @@ bool Terminal::IsFocused() const noexcept
     return _focused;
 }
 
+AdaptDispatch& Microsoft::Terminal::Core::Terminal::GetAdaptDispatch() noexcept
+{
+    _assertLocked();
+    return *_adaptDispatch;
+}
+
 RenderSettings& Terminal::GetRenderSettings() noexcept
 {
     _assertLocked();
@@ -1287,6 +1294,11 @@ void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::f
 void Microsoft::Terminal::Core::Terminal::SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept
 {
     _pfnShowNotification.swap(pfn);
+}
+
+void Terminal::SetEnterTmuxControlCallback(std::function<std::function<bool(wchar_t)>()> pfn) noexcept
+{
+    _pfnEnterTmuxControl = std::move(pfn);
 }
 
 void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept

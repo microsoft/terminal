@@ -117,6 +117,7 @@ public:
     int ViewEndIndex() const noexcept;
     bool IsFocused() const noexcept;
 
+    ::Microsoft::Console::VirtualTerminal::AdaptDispatch& GetAdaptDispatch() noexcept;
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
@@ -156,14 +157,12 @@ public:
     void ShowWindow(bool showOrHide) override;
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
-
     bool IsVtInputEnabled() const noexcept override;
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
-
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
-
     void SearchMissingCommand(const std::wstring_view command) override;
+    std::function<bool(wchar_t)> EnterTmuxControl() override;
 
     void ShowNotification(const std::wstring_view title, const std::wstring_view body) override;
 
@@ -236,6 +235,7 @@ public:
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
     void SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept;
+    void SetEnterTmuxControlCallback(std::function<std::function<bool(wchar_t)>()> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
@@ -345,10 +345,12 @@ private:
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
     std::function<void(std::wstring_view, std::wstring_view)> _pfnShowNotification;
+    std::function<std::function<bool(wchar_t)>()> _pfnEnterTmuxControl;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
+    ::Microsoft::Console::VirtualTerminal::AdaptDispatch* _adaptDispatch = nullptr;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 

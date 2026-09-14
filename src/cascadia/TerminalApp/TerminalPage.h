@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalSettingsCache;
+    struct TmuxControl;
 
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
 
@@ -312,6 +313,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
+        std::shared_ptr<TmuxControl> _tmuxControl{ nullptr };
 
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
@@ -645,6 +647,7 @@ namespace winrt::TerminalApp::implementation
 
         friend class TerminalAppLocalTests::TabTests;
         friend class TerminalAppLocalTests::SettingsTests;
+        friend struct TmuxControl;
     };
 }
 
