@@ -42,6 +42,8 @@ Terminal::Terminal(TestDummyMarker) :
 
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
+    viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
+    viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
     const til::size bufferSize{ viewportSize.width,
@@ -75,8 +77,8 @@ void Terminal::HardResetWithoutErase()
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Renderer& renderer)
 {
-    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
-                                  Utils::ClampToShortMax(settings.InitialRows(), 1) };
+    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
+                                  Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
@@ -289,9 +291,14 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]] HRESULT Terminal::UserResize(const til::size viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const til::size requestedSize) noexcept
 try
 {
+    const til::size viewportSize{
+        std::max(requestedSize.width, MINIMUM_VISIBLE_CELLS),
+        std::max(requestedSize.height, MINIMUM_VISIBLE_CELLS)
+    };
+
     const auto oldDimensions = _GetMutableViewport().Dimensions();
     if (viewportSize == oldDimensions)
     {

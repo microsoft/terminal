@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // bell style bits
         hstring BellStylePreview() const;
+        hstring BellStyleAccessibleName() const;
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
@@ -65,6 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
+        hstring BellSoundAccessibleName();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
 
@@ -81,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         double RightPadding() const noexcept;
         void BottomPadding(double value) noexcept;
         double BottomPadding() const noexcept;
+        hstring PaddingAccessibleName() const;
 
         winrt::hstring EvaluatedIcon() const
         {
@@ -117,8 +120,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
         bool Orphaned() const;
+        hstring AccessibleStateDescription() const;
+        bool ShowHiddenBadge() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
+        hstring AnswerbackMessageAccessibleName() const;
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;
 
@@ -194,6 +200,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 
         Model::CascadiaSettings _appSettings;
+        Model::WindowSettings _windowSettings{ nullptr };
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
     };
 

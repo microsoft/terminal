@@ -7,8 +7,6 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Compatibility.h"
-#include "Rendering.h"
-#include "RenderingViewModel.h"
 #include "Extensions.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
@@ -16,7 +14,7 @@
 #include "GlobalAppearanceViewModel.h"
 #include "ColorSchemes.h"
 #include "EditColorScheme.h"
-#include "AddProfile.h"
+#include "Profiles.h"
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
 #include "NewTabMenuViewModel.h"
@@ -75,9 +73,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return icon;
     }
 
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, windowSettings, dispatcher);
     }
 
     static ProfileSubPage ProfileSubPageFromBreadcrumb(BreadcrumbSubPage subPage)
@@ -99,10 +97,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    MainPage::MainPage(const CascadiaSettings& settings) :
+    MainPage::MainPage(const CascadiaSettings& settings, const Model::WindowSettings& windowSettings) :
         _settingsSource{ settings },
         _settingsClone{ settings.Copy() },
-        _profileVMs{ single_threaded_observable_vector<Editor::ProfileViewModel>() }
+        _windowSettingsSource{ windowSettings },
+        _windowSettingsClone{ _settingsClone.WindowSettingsDefaults() },
+        _profilesPageVM{ winrt::make<ProfilesPageViewModel>() }
     {
         InitializeComponent();
         _UpdateBackgroundForMica();
@@ -156,8 +156,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        _SetupProfilesPageEventHandling();
+
         // Make sure to initialize the profiles _after_ we have initialized the color schemes page VM, because we pass
-        // that VM into the appearance VMs within the profiles
+        // that VM into the appearance VMs within the profiles. The Profiles VM owns the per-profile list itself.
         _InitializeProfilesList();
 
         // Apply icons and tooltips (GH#19688, long names may be truncated) to static nav items
@@ -196,37 +198,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - Update the Settings UI with a new CascadiaSettings to bind to
     // Arguments:
     // - settings - the new settings source
+    // - windowSettings - the new window settings source
     // Return value:
     // - <none>
-    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings)
+    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings)
     {
         _settingsSource = settings;
         _settingsClone = settings.Copy();
+        _windowSettingsSource = windowSettings;
+        // NOTE: explicitly using the default window settings for the settings editor.
+        // The settings editor isn't really per-window-name aware currently. We can fix that in the future.
+        _windowSettingsClone = _settingsClone.WindowSettingsDefaults();
 
         _UpdateBackgroundForMica();
 
-        // Deduce information about the currently selected item
-        IInspectable lastBreadcrumb;
-        const auto size = _breadcrumbs.Size();
-        if (size > 0)
+        // Capture data about where we are right now, so we can re-navigate to the same
+        // place after we rebuild all the settings.
+        IInspectable destination{ nullptr };
+        auto subPage = BreadcrumbSubPage::None;
+        if (const auto size = _breadcrumbs.Size(); size > 0)
         {
-            lastBreadcrumb = _breadcrumbs.GetAt(size - 1);
+            const auto& crumb = _breadcrumbs.GetAt(size - 1).as<Breadcrumb>();
+            destination = crumb->Tag();
+            subPage = crumb->SubPage();
         }
 
-        // Collect only the first items out of the menu item source, the static
-        // ones that we don't want to regenerate.
-        //
-        // By manipulating a MenuItemsSource this way, rather than manipulating the
-        // MenuItems directly, we avoid a crash in WinUI.
-        //
-        // By making the vector only _originalNumItems big to start, GetMany
-        // will only fill that number of elements out of the current source.
-        std::vector<IInspectable> menuItemsSTL(_originalNumItems, nullptr);
-        _menuItemSource.GetMany(0, menuItemsSTL);
-        // now, just stick them back in.
-        _menuItemSource.ReplaceAll(menuItemsSTL);
-
-        // Repopulate profile-related menu items
         _InitializeProfilesList();
 
         // Update the Nav State with the new version of the settings
@@ -236,64 +232,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
         _profileDefaultsVM = nullptr; // Lazy-loaded upon navigation
 
-        // Now that the menuItems are repopulated,
-        // refresh the current page using the breadcrumb data we collected before the refresh
-        if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() }; crumb && crumb->Tag())
+        if (const auto& profileTag{ destination.try_as<Editor::ProfileViewModel>() })
         {
-            bool foundNavigationParams = false;
-            auto destination = crumb->Tag();
-            auto subPage = crumb->SubPage();
-            for (const auto& item : _menuItemSource)
+            // Find the new profile VM by guid
+            if (const auto newProfileVM = _FindProfileViewModelByGuid(profileTag.OriginalProfileGuid()))
             {
-                const auto menuItem = item.try_as<MUX::Controls::NavigationViewItem>();
-                if (!menuItem)
-                {
-                    continue;
-                }
-
-                const auto& tag = menuItem.Tag();
-                if (const auto& stringTag{ tag.try_as<hstring>() })
-                {
-                    if (const auto& destString{ destination.try_as<hstring>() })
-                    {
-                        foundNavigationParams = (*stringTag == *destString);
-                    }
-                    else if (destination.try_as<Editor::FolderEntryViewModel>() && *stringTag == newTabMenuTag)
-                    {
-                        foundNavigationParams = true;
-                        subPage = BreadcrumbSubPage::NewTabMenu_Folder;
-                    }
-                    else if (destination.try_as<Editor::ExtensionPackageViewModel>() && *stringTag == extensionsTag)
-                    {
-                        foundNavigationParams = true;
-                        subPage = BreadcrumbSubPage::Extensions_Extension;
-                    }
-                }
-                else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
-                {
-                    const auto destProfile = destination.try_as<ProfileViewModel>();
-                    if (destProfile && profileTag->OriginalProfileGuid() == destProfile->OriginalProfileGuid())
-                    {
-                        // Use the new profile VM from the refreshed menu items
-                        destination = tag;
-                        foundNavigationParams = true;
-                    }
-                }
-
-                if (foundNavigationParams)
-                {
-                    // found the one that was selected before the refresh
-                    _Navigate(destination, subPage);
-                    return;
-                }
+                destination = newProfileVM;
+            }
+            else
+            {
+                // Fall back to the Profiles landing page
+                destination = box_value(profilesTag);
+                subPage = BreadcrumbSubPage::None;
+            }
+        }
+        else if (destination.try_as<Editor::FolderEntryViewModel>())
+        {
+            destination = box_value(newTabMenuTag);
+            subPage = BreadcrumbSubPage::NewTabMenu_Folder;
+        }
+        else if (destination.try_as<Editor::ExtensionPackageViewModel>())
+        {
+            destination = box_value(extensionsTag);
+            subPage = BreadcrumbSubPage::Extensions_Extension;
+        }
+        else if (!destination.try_as<hstring>())
+        {
+            // Couldn't find a meaningful previous page. Fall back to the first menu item.
+            if (_menuItemSource && _menuItemSource.Size() > 0)
+            {
+                destination = _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>().Tag();
+                subPage = BreadcrumbSubPage::None;
             }
         }
 
-        // Couldn't find the selected item, fall back to first menu item
-        // This happens when the selected item was a profile which doesn't exist in the new configuration
-        // We can use menuItemsSTL here because the only things they miss are profile entries.
-        const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
-        _Navigate(firstItem.Tag(), BreadcrumbSubPage::None);
+        _Navigate(destination, subPage);
 
         _UpdateSearchIndex();
     }
@@ -325,12 +298,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     //                can be empty to indicate that we should create a fresh profile
     void MainPage::_AddProfileHandler(winrt::guid profileGuid)
     {
-        uint32_t insertIndex;
-        auto selectedItem{ SettingsNav().SelectedItem() };
-        if (_menuItemSource)
-        {
-            _menuItemSource.IndexOf(selectedItem, insertIndex);
-        }
         if (profileGuid != winrt::guid{})
         {
             // if we were given a non-empty guid, we want to duplicate the corresponding profile
@@ -338,13 +305,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (profile)
             {
                 const auto duplicated = _settingsClone.DuplicateProfile(profile);
-                _CreateAndNavigateToNewProfile(insertIndex, duplicated);
+                _CreateAndNavigateToNewProfile(duplicated);
             }
         }
         else
         {
             // we were given an empty guid, create a new profile
-            _CreateAndNavigateToNewProfile(insertIndex, nullptr);
+            _CreateAndNavigateToNewProfile(nullptr);
         }
     }
 
@@ -375,7 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // GH#19927 - Theme the search box's internal popup now that the
         // visual tree is ready and control templates are applied
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_windowSettingsSource);
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
         _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
@@ -543,6 +510,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (currentPage == ProfileSubPage::Base)
                 {
                     _breadcrumbs.Clear();
+                    _AppendProfilesRootCrumb();
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None));
                 }
                 _NavigateToProfileSubPage(profile, currentPage, breadcrumbTag, {});
@@ -573,13 +541,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == interactionTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None));
-            }
-            else if (*clickedItemTag == renderingTag)
-            {
-                contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToPageArgs>(winrt::make<RenderingViewModel>(_settingsClone), *this, elementToFocus));
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == compatibilityTag)
             {
@@ -638,12 +601,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None));
                 }
             }
+            else if (*clickedItemTag == profilesTag)
+            {
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<NavigateToPageArgs>(_profilesPageVM, *this, elementToFocus));
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Profiles/Content"), BreadcrumbSubPage::None));
+            }
             else if (*clickedItemTag == globalProfileTag)
             {
+                _AppendProfilesRootCrumb();
+
                 // lazy load profile defaults VM
                 if (!_profileDefaultsVM)
                 {
-                    _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, Dispatcher());
+                    _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, _windowSettingsClone, Dispatcher());
                     _profileDefaultsVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                     _profileDefaultsVM.IsBaseLayer(true);
                 }
@@ -658,9 +628,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
                 // Register handler for future user-driven sub-page changes
                 _SetupProfileEventHandling(_profileDefaultsVM);
+
+                // Keep the Profiles nav item selected.
+                selectedNavTag = profilesTag;
             }
             else if (*clickedItemTag == colorSchemesTag)
             {
+                _AppendProfilesRootCrumb();
+                selectedNavTag = profilesTag;
+
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
                 contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
 
@@ -671,51 +647,45 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == globalAppearanceTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
-            }
-            else if (*clickedItemTag == addProfileTag)
-            {
-                auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-                addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
-                contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this, elementToFocus));
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None));
             }
         }
         else if (const auto& profile = vm.try_as<Editor::ProfileViewModel>())
         {
+            _AppendProfilesRootCrumb();
+            selectedNavTag = profilesTag;
+
             if (profile.Orphaned())
             {
                 contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
                 profile.CurrentPage(ProfileSubPage::Base);
                 _SetupProfileEventHandling(profile);
-                return;
             }
-
-            // Set CurrentPage before registering the handler to avoid double-navigation
-            const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
-            profile.CurrentPage(profileSubPage);
-
-            // Navigate directly to the correct sub-page
-            _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
-            _NavigateToProfileSubPage(profile, profileSubPage, vm, elementToFocus);
-
-            if (const auto profileNavItem = _FindProfileNavItem(profile.OriginalProfileGuid()))
+            else
             {
-                SettingsNav().SelectedItem(profileNavItem);
-            }
+                // Set CurrentPage before registering the handler to avoid double-navigation
+                const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
+                profile.CurrentPage(profileSubPage);
 
-            // Register handler for future user-driven sub-page changes
-            _SetupProfileEventHandling(profile);
+                // Navigate directly to the correct sub-page
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
+                _NavigateToProfileSubPage(profile, profileSubPage, vm, elementToFocus);
+
+                // Register handler for future user-driven sub-page changes
+                _SetupProfileEventHandling(profile);
+            }
         }
         else if (const auto& colorSchemeVM = vm.try_as<Editor::ColorSchemeViewModel>())
         {
-            selectedNavTag = colorSchemesTag;
             const auto boxedColorSchemesTag = box_value(colorSchemesTag);
 
             // Suppress the handler to avoid double-navigation
             _colorSchemesPageViewModelChangedRevoker.revoke();
+
+            _AppendProfilesRootCrumb();
+            selectedNavTag = profilesTag;
 
             _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedColorSchemesTag, RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
 
@@ -835,26 +805,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Select the appropriate nav item
-        // NOTE: profiles are special in that they have their own nav item, so those are handled in the profile branch above
         if (!selectedNavTag.empty())
         {
-            for (auto&& menuItem : _menuItemSource)
-            {
-                if (const auto& navViewItem{ menuItem.try_as<MUX::Controls::NavigationViewItem>() })
-                {
-                    if (const auto& tag{ navViewItem.Tag() })
-                    {
-                        if (const auto& stringTag{ tag.try_as<hstring>() })
-                        {
-                            if (*stringTag == selectedNavTag)
-                            {
-                                SettingsNav().SelectedItem(navViewItem);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            _SelectNavItemByTag(selectedNavTag);
         }
     }
 
@@ -869,7 +822,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
-        UpdateSettings(_settingsSource);
+        UpdateSettings(_settingsSource, _windowSettingsSource);
     }
 
     void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
@@ -894,35 +847,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _MoveXamlParsedNavItemsIntoItemSource();
         }
 
-        // Manually create a NavigationViewItem and view model for each profile
-        // and keep a reference to them in a map so that we
-        // can easily modify the correct one when the associated
-        // profile changes.
-        _profileVMs.Clear();
+        // Populate the per-profile view models on the Profiles VM. The Profiles landing
+        // page (and the search index) read this same list back through the VM.
+        const auto& profileVMs = _profilesPageVM.Profiles();
+        profileVMs.Clear();
         for (const auto& profile : _settingsClone.AllProfiles())
         {
             if (!profile.Deleted())
             {
-                auto profileVM = _viewModelForProfile(profile, _settingsClone, Dispatcher());
+                auto profileVM = _viewModelForProfile(profile, _settingsClone, _windowSettingsClone, Dispatcher());
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
-                auto navItem = _CreateProfileNavViewItem(profileVM);
-                _menuItemSource.Append(navItem);
+                profileVM.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
+                profileVMs.Append(profileVM);
             }
         }
-
-        // Top off (the end of the nav view) with the Add Profile item
-        MUX::Controls::NavigationViewItem addProfileItem;
-        const auto addProfileText = RS_(L"Nav_AddNewProfile/Content");
-        addProfileItem.Content(box_value(addProfileText));
-        addProfileItem.Tag(box_value(addProfileTag));
-        WUX::Controls::ToolTipService::SetToolTip(addProfileItem, box_value(addProfileText));
-
-        FontIcon icon;
-        // This is the "Add" symbol
-        icon.Glyph(NavTagIconMap[addProfileTag]);
-        addProfileItem.Icon(icon);
-
-        _menuItemSource.Append(addProfileItem);
     }
 
     // BODGY
@@ -958,79 +896,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().MenuItemsSource(_menuItemSource);
     }
 
-    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
+    void MainPage::_CreateAndNavigateToNewProfile(const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, Dispatcher()) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, _windowSettingsClone, Dispatcher()) };
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
-        const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
+        profileViewModel.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
 
-        if (_menuItemSource)
-        {
-            _menuItemSource.InsertAt(index, navItem);
-        }
+        _profilesPageVM.Profiles().Append(profileViewModel);
 
         // Select and navigate to the new profile
-        _Navigate(profileViewModel, BreadcrumbSubPage::None);
-    }
-
-    static MUX::Controls::InfoBadge _createGlyphIconBadge(wil::zwstring_view glyph)
-    {
-        MUX::Controls::InfoBadge badge;
-        MUX::Controls::FontIconSource icon;
-        icon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-        icon.FontSize(12);
-        icon.Glyph(glyph);
-        badge.IconSource(icon);
-        return badge;
-    }
-
-    MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Editor::ProfileViewModel& profile)
-    {
-        MUX::Controls::NavigationViewItem profileNavItem;
-        profileNavItem.Content(box_value(profile.Name()));
-        profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
-        profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
-        WUX::Controls::ToolTipService::SetToolTip(profileNavItem, box_value(profile.Name()));
-
-        if (profile.Orphaned())
-        {
-            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xE7BA") /* Warning Triangle */);
-        }
-        else if (profile.Hidden())
-        {
-            profileNavItem.InfoBadge(_createGlyphIconBadge(L"\xED1A") /* Hide */);
-        }
-
-        // Update the menu item when the icon/name changes
-        auto weakMenuItem{ make_weak(profileNavItem) };
-        profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
-            if (auto menuItem{ weakMenuItem.get() })
-            {
-                const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon")
-                {
-                    menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
-                }
-                else if (args.PropertyName() == L"Name")
-                {
-                    menuItem.Content(box_value(tag.Name()));
-                    WUX::Controls::ToolTipService::SetToolTip(menuItem, box_value(tag.Name()));
-                }
-                else if (args.PropertyName() == L"Hidden")
-                {
-                    menuItem.InfoBadge(tag.Hidden() ? _createGlyphIconBadge(L"\xED1A") /* Hide */ : nullptr);
-                }
-            }
-        });
-
-        // Add an event handler for when the user wants to delete a profile.
-        profile.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
-
-        // Register the VM so that it appears in the search index
-        _profileVMs.Append(profile);
-
-        return profileNavItem;
+        _Navigate(profileViewModel);
     }
 
     void MainPage::_DeleteProfile(const IInspectable /*sender*/, const Editor::DeleteProfileEventArgs& args)
@@ -1047,33 +923,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // remove selected item
-        uint32_t index;
-        auto selectedItem{ SettingsNav().SelectedItem() };
-        if (_menuItemSource)
+        // Remove the profile VM
+        const auto& profileVMs = _profilesPageVM.Profiles();
+        for (uint32_t i = 0; i < profileVMs.Size(); ++i)
         {
-            _menuItemSource.IndexOf(selectedItem, index);
-            _menuItemSource.RemoveAt(index);
-
-            // Remove it from the list of VMs
-            auto profileVM = selectedItem.as<MUX::Controls::NavigationViewItem>().Tag().as<Editor::ProfileViewModel>();
-            uint32_t vmIndex;
-            if (_menuItemSource.IndexOf(profileVM, vmIndex))
+            if (profileVMs.GetAt(i).OriginalProfileGuid() == guid)
             {
-                _profileVMs.RemoveAt(vmIndex);
+                profileVMs.RemoveAt(i);
+                break;
             }
-
-            // navigate to the profile next to this one
-            const auto newSelectedItem{ _menuItemSource.GetAt(index < _menuItemSource.Size() - 1 ? index : index - 1) };
-            const auto newTag = newSelectedItem.as<MUX::Controls::NavigationViewItem>().Tag();
-            if (const auto profileViewModel = newTag.try_as<ProfileViewModel>())
-            {
-                profileViewModel->FocusDeleteButton(true);
-            }
-            _Navigate(newTag, BreadcrumbSubPage::None);
-            // Since we are navigating to a new profile after deletion, scroll up to the top
-            SettingsMainPage_ScrollViewer().ChangeView(nullptr, 0.0, nullptr);
         }
+
+        // Go back to the Profiles landing page
+        _Navigate(box_value(profilesTag));
+        SettingsMainPage_ScrollViewer().ChangeView(nullptr, 0.0, nullptr);
     }
 
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
@@ -1083,29 +946,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_NavigateToProfileHandler(const IInspectable& /*sender*/, winrt::guid profileGuid)
     {
-        if (const auto profileNavItem = _FindProfileNavItem(profileGuid))
+        if (const auto profileVM = _FindProfileViewModelByGuid(profileGuid))
         {
-            _Navigate(profileNavItem.Tag(), BreadcrumbSubPage::None);
+            _Navigate(profileVM);
         }
         // Silently fail if the profile wasn't found
     }
 
-    MUX::Controls::NavigationViewItem MainPage::_FindProfileNavItem(winrt::guid profileGuid) const
+    Editor::ProfileViewModel MainPage::_FindProfileViewModelByGuid(winrt::guid profileGuid) const
     {
-        for (auto&& menuItem : _menuItemSource)
+        for (const auto& profileVM : _profilesPageVM.Profiles())
         {
-            if (const auto& navViewItem{ menuItem.try_as<MUX::Controls::NavigationViewItem>() })
+            if (profileVM.OriginalProfileGuid() == profileGuid)
             {
-                if (const auto& tag{ navViewItem.Tag() })
-                {
-                    if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
-                    {
-                        if (profileTag->OriginalProfileGuid() == profileGuid)
-                        {
-                            return navViewItem;
-                        }
-                    }
-                }
+                return profileVM;
             }
         }
         return nullptr;
@@ -1114,6 +968,52 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_NavigateToColorSchemeHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _Navigate(box_value(hstring{ colorSchemesTag }), BreadcrumbSubPage::ColorSchemes_Edit);
+    }
+
+    void MainPage::_AppendProfilesRootCrumb()
+    {
+        _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(profilesTag), RS_(L"Nav_Profiles/Content"), BreadcrumbSubPage::None));
+    }
+
+    void MainPage::_SelectNavItemByTag(std::wstring_view tag)
+    {
+        if (!_menuItemSource)
+        {
+            return;
+        }
+        for (auto&& menuItem : _menuItemSource)
+        {
+            if (const auto& navViewItem{ menuItem.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                if (const auto& itemTag{ navViewItem.Tag() })
+                {
+                    if (const auto& stringTag{ itemTag.try_as<hstring>() })
+                    {
+                        if (*stringTag == tag)
+                        {
+                            SettingsNav().SelectedItem(navViewItem);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void MainPage::_SetupProfilesPageEventHandling()
+    {
+        _profilesPageVM.OpenDefaultsRequested([this](const auto&, const auto&) {
+            _Navigate(box_value(globalProfileTag));
+        });
+        _profilesPageVM.OpenColorSchemesRequested([this](const auto&, const auto&) {
+            _Navigate(box_value(colorSchemesTag));
+        });
+        _profilesPageVM.AddProfileRequested([this](const auto&, const winrt::guid& sourceProfile) {
+            _AddProfileHandler(sourceProfile);
+        });
+        _profilesPageVM.OpenProfileRequested([this](const auto&, const Editor::ProfileViewModel& profile) {
+            _Navigate(profile);
+        });
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()
@@ -1149,7 +1049,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_windowSettingsSource);
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto appTheme = theme.RequestedTheme();
         const auto requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
@@ -1198,6 +1098,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& searchBox = SettingsSearchBox();
             searchBox.ItemsSource(nullptr);
             searchBox.IsSuggestionListOpen(false);
+            _highlightedSearchResult = nullptr;
             co_return;
         }
 
@@ -1208,6 +1109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& searchBox = SettingsSearchBox();
             searchBox.ItemsSource(nullptr);
             searchBox.IsSuggestionListOpen(false);
+            _highlightedSearchResult = nullptr;
             co_return;
         }
 
@@ -1218,7 +1120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             co_return;
         }
         _currentSearch = SearchIndex::Instance().SearchAsync(sanitizedQuery,
-                                                             _profileVMs.GetView(),
+                                                             _profilesPageVM.Profiles().GetView(),
                                                              get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList().GetView(),
                                                              _colorSchemesPageVM.AllColorSchemes().GetView(),
                                                              _extensionsVM.ExtensionPackages().GetView(),
@@ -1228,36 +1130,81 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Update the UI with the results
         const auto& searchBox = SettingsSearchBox();
+        _highlightedSearchResult = nullptr;
         searchBox.ItemsSource(results);
         searchBox.IsSuggestionListOpen(true);
     }
 
-    void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    void MainPage::_NavigateToSearchResult(const IInspectable& result)
     {
-        if (args.ChosenSuggestion())
+        const auto searchResult{ result.try_as<Editor::FilteredSearchResult>() };
+        if (!searchResult)
         {
-            const auto& chosenResult{ args.ChosenSuggestion().as<FilteredSearchResult>() };
-            if (chosenResult->IsNoResultsPlaceholder())
-            {
-                // don't navigate anywhere
-                return;
-            }
+            return;
+        }
 
-            // Navigate to the target page
-            const auto& indexEntry{ chosenResult->SearchIndexEntry() };
-            const auto& navigationArg{ chosenResult->NavigationArg() };
-            const auto& subpage{ indexEntry.Entry->SubPage };
-            const hstring elementToFocus{ indexEntry.Entry->ElementName };
-            _Navigate(navigationArg, subpage, elementToFocus);
-            SettingsSearchBox().Text(L"");
+        const auto searchResultImpl{ get_self<implementation::FilteredSearchResult>(searchResult) };
+        if (searchResultImpl->IsNoResultsPlaceholder())
+        {
+            // don't navigate anywhere
+            return;
+        }
+
+        // Navigate to the target page
+        const auto& indexEntry{ searchResultImpl->SearchIndexEntry() };
+        const auto navigationArg{ searchResultImpl->NavigationArg() };
+        const auto subpage{ indexEntry.Entry->SubPage };
+        const hstring elementToFocus{ indexEntry.Entry->ElementName };
+
+        // Reset the search box before navigating
+        // LOAD-BEARING: closing the suggestion list moves focus back to the search box,
+        // which would fight elementToFocus if we navigated first. Since Text() raises
+        // TextChanged as a ProgrammaticChange (which is ignored), we have to drop the stale
+        // results ourselves. Otherwise, the query button would reuse them on the next click.
+        const auto& searchBox{ SettingsSearchBox() };
+        searchBox.Text(L"");
+        searchBox.ItemsSource(nullptr);
+        searchBox.IsSuggestionListOpen(false);
+        _highlightedSearchResult = nullptr;
+
+        _Navigate(navigationArg, subpage, elementToFocus);
+    }
+
+    void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    {
+        if (const auto& chosenSuggestion{ args.ChosenSuggestion() })
+        {
+            _NavigateToSearchResult(chosenSuggestion);
+            return;
+        }
+        else if (_currentSearch)
+        {
+            // a search for the current query is still running, so the results are stale
+            return;
+        }
+        else if (_highlightedSearchResult)
+        {
+            // navigate to the suggestion the user highlighted with the arrow keys
+            _NavigateToSearchResult(_highlightedSearchResult);
+            return;
+        }
+        else if (const auto& itemsSource{ sender.ItemsSource() })
+        {
+            if (const auto& results{ itemsSource.try_as<IObservableVector<IInspectable>>() }; results && results.Size() > 0)
+            {
+                // otherwise, navigate to the top result
+                _NavigateToSearchResult(results.GetAt(0));
+            }
         }
     }
 
-    void MainPage::SettingsSearchBox_SuggestionChosen(const AutoSuggestBox&, const AutoSuggestBoxSuggestionChosenEventArgs&)
+    void MainPage::SettingsSearchBox_SuggestionChosen(const AutoSuggestBox&, const AutoSuggestBoxSuggestionChosenEventArgs& args)
     {
         // Don't navigate on arrow keys
         // Handle Enter/Click with QuerySubmitted() to instead
-        // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion()
+        // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion().
+        // Just record the highlighted suggestion so that the query button can navigate to it.
+        _highlightedSearchResult = args.SelectedItem();
     }
 
     safe_void_coroutine MainPage::_UpdateSearchIndex()

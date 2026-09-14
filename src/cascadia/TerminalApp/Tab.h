@@ -61,7 +61,8 @@ namespace winrt::TerminalApp::implementation
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
         void UpdateTitle();
 
         void Close();
@@ -221,7 +222,7 @@ namespace winrt::TerminalApp::implementation
         SafeDispatcherTimer _activityIndicatorTimer;
         void _ActivityIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
-        void _UpdateHeaderControlMaxWidth();
+        void _UpdateHeaderControlMaxWidth(const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         void _CreateContextMenu();
         winrt::hstring _CreateToolTipTitle();

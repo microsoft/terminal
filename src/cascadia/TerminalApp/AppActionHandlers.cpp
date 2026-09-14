@@ -550,7 +550,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
             const auto copyFormatting = realArgs.CopyFormatting();
-            const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
+            const auto format = copyFormatting ? copyFormatting.Value() : _currentWindowSettings().CopyFormatting();
             const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), format);
             args.Handled(handled);
         }
@@ -898,7 +898,7 @@ namespace winrt::TerminalApp::implementation
     // Ask the WindowEmperor (in-process) to open or summon a named window,
     // restoring its persisted workspace if one exists. The event bubbles up
     // through TerminalWindow to AppHost, which calls into the WindowEmperor
-    // directly — no second wt.exe process is launched.
+    // directly. No second wt.exe process is launched.
     void TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
     {
         const auto args = winrt::make<implementation::OpenWindowRequestedArgs>(name);
@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
 
         // If this is a NewTerminalArgs, resolve its profile up-front so the
         // spawned window doesn't need to re-resolve it. Other content types
-        // (e.g. scratchpad) don't have profiles to evaluate — they get passed
+        // (e.g. scratchpad) don't have profiles to evaluate and get passed
         // through as-is.
         if (const auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
@@ -1089,7 +1089,7 @@ namespace winrt::TerminalApp::implementation
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
+                    queryUrl = std::wstring_view{ _currentWindowSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };

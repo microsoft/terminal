@@ -206,8 +206,8 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TilSize dimensions = new NativeMethods.TilSize
             {
-                X = (int)columns,
-                Y = (int)rows,
+                X = Math.Max((int)columns, 2),
+                Y = Math.Max((int)rows, 2),
             };
 
             NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out var dimensionsInPixels);

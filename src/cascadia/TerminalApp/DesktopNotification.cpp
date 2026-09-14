@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        // Attempt to update; if another thread beat us, that's fine — we'll skip this one.
+        // Attempt to update; if another thread beat us, that's fine. We'll skip this one.
         return _lastNotificationTime.compare_exchange_strong(last, now, std::memory_order_relaxed);
     }
 

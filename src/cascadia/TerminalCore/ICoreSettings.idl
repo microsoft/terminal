@@ -57,6 +57,12 @@ namespace Microsoft.Terminal.Core
         Int32 Y;
     };
 
+    struct Size
+    {
+        Int32 Width;
+        Int32 Height;
+    };
+
     // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
     // we'll declare our own.
     struct Padding {

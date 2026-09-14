@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>加载用户设置时遇到错误</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>你的计算机上未运行 "{0}"。这可能会阻止终端接收键盘输入。</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>确定</value>
   </data>
@@ -743,6 +739,10 @@
     <value>未命名的窗口</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>新建窗口</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>命名此窗口...</value>
     <comment>Menu item text shown when the current window has no name assigned</comment>
@@ -999,5 +999,11 @@
   </data>
   <data name="InvalidRegex" xml:space="preserve">
     <value>发现无效的正则表达式。</value>
+  </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>注意: 无法识别的参数会自动传递给 "new-tab" 子命令。
+例如，"wt -p "Ubuntu" -d C:\" 等同于 "wt new-tab -p "Ubuntu" -d C:\"。
+如需了解所有可用选项，请运行 "wt new-tab --help"。</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
   </data>
 </root>

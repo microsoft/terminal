@@ -268,7 +268,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
-
+    _handoffTimeoutTimer.Stop();
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
 
@@ -600,9 +600,12 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         if (args.size() == 2 && args[1] == L"-Embedding")
         {
             // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
-            //
-            // TODO: Here we could start a timer and exit after, say, 5 seconds
-            // if no windows are created. But that's a minor concern.
+            // But if we don't receive any handoff within a reasonable timeout, we should exit.
+            _handoffTimeoutTimer.Interval(5s);
+            _handoffTimeoutTimer.Tick([this](auto&&, auto&&) {
+                _postQuitMessageIfNeeded();
+            });
+            _handoffTimeoutTimer.Start();
         }
         else
         {
@@ -1038,8 +1041,11 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
     // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
     // message handler, which then stores the HWND in this->_window.
+    // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+    // redirection surface for reduced memory usage, because this window
+    // is never shown and never paints anything.
     WINRT_VERIFY(CreateWindowExW(
-        /* dwExStyle    */ 0,
+        /* dwExStyle    */ WS_EX_NOREDIRECTIONBITMAP,
         /* lpClassName  */ className,
         /* lpWindowName */ L"Windows Terminal",
         /* dwStyle      */ 0,
@@ -1683,8 +1689,9 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // themselves getting the new settings, only ask the app logic for the
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
-    const auto globals = _app.Logic().Settings().GlobalSettings();
-    auto needsIcon = globals.AlwaysShowNotificationIcon() || globals.MinimizeToNotificationArea();
+    const auto settings = _app.Logic().Settings();
+    const auto globals = settings.GlobalSettings();
+    auto needsIcon = globals.AlwaysShowNotificationIcon() || settings.WindowSettingsDefaults().MinimizeToNotificationArea();
     if (!needsIcon)
     {
         for (const auto& host : _windows)
