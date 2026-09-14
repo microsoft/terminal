@@ -742,6 +742,10 @@
     <value>Unbenanntes Fenster</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Neues Fenster</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>Dieses Fenster benennen...</value>
     <comment>Menu item text shown when the current window has no name assigned</comment>
