@@ -30,12 +30,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         icon.FontSize(14.0);
         Content(icon);
 
-        // Self-owned Click handler. Use a weak ref to avoid a reference cycle.
-        Click([weakThis{ get_weak() }](const IInspectable& sender, const RoutedEventArgs& args) {
-            if (const auto self{ weakThis.get() })
-            {
-                self->_OnClick(sender, args);
-            }
+        // (Safety) we are guaranteed to exist if we are being clicked.
+        Click([this](const IInspectable& sender, const RoutedEventArgs& args) {
+            this->_OnClick(sender, args);
         });
 
         _Update();
