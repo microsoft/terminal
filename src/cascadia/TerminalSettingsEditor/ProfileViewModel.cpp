@@ -438,8 +438,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    // Compile-time tripwire. PROFILE_INHERITABLE_SETTINGS now generates both the
-    // property accessors and the dispatch above, so those two can no longer drift.
 #define PROFILE_COUNT(target, name) +1
     static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
                   "The set of inheritable profile settings changed. Update this count, then make "

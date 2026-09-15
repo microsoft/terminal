@@ -291,7 +291,7 @@
             </local:SettingsExpander>
             <!--
                 The cards below only apply to the default appearance.
-                Group them in a single visibility-gated group to avoid phantom spacing when collapsed.
+                Group them in a single group to avoid phantom spacing when collapsed.
             -->
             <StackPanel Margin="0,4,0,0"
                         Style="{StaticResource SettingsStackStyle}"

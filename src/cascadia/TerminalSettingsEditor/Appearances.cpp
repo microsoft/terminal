@@ -1073,12 +1073,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    // Compile-time tripwire. APPEARANCE_INHERITABLE_SETTINGS now generates both the
-    // property accessors and the dispatch above, so those two can no longer drift.
     // Every inheritable setting must ALSO be projected in Appearances.idl and
-    // given a reset button in the relevant *.xaml - neither of which is
-    // generated from this list. If you add or remove a setting, this count changes and
-    // forces you to revisit those two hand-maintained places before bumping it.
+    // given a reset button in the relevant *.xaml, neither of which is
+    // generated here. If you add or remove a setting, this count changes and
+    // forces you to revisit those places before bumping it.
 #define APPEARANCE_COUNT(target, name) +1
 #define APPEARANCE_COUNT_CUSTOM(name) +1
     static_assert(0 APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_COUNT, APPEARANCE_COUNT_CUSTOM) == 24,
