@@ -628,7 +628,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewportSize().Height : _rowsToScroll };
         const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
         // Update the Core's viewport position, and raise a
@@ -677,7 +677,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // _core->ScrollOffset() is now set to newValue
             ScrollPositionChanged.raise(*this,
                                         winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                               _core->ViewHeight(),
+                                                                               _core->ViewportSize().Height,
                                                                                _core->BufferHeight()));
         }
     }
@@ -760,7 +760,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const SHORT wheelDelta,
                                                      Control::MouseButtonState buttonState)
     {
-        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewportSize().Height;
         // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
         const auto adjustedY = terminalPosition.y - adjustment;
         return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));

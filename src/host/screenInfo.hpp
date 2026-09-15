@@ -193,6 +193,7 @@ private:
     // Rendering / Viewport
     void _CalculateViewportSize(const til::rect* clientArea, til::size* size);
     void _AdjustViewportSize(const til::rect* clientNew, const til::rect* clientOld, const til::size* size);
+    void _CommitViewport(const Microsoft::Console::Types::Viewport& viewport);
     void _InternalSetViewportSize(const til::size* size, bool resizeFromTop, bool resizeFromLeft);
 
     // Windowing

@@ -759,6 +759,11 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
             return true;
         }
     }
+    else if (lastEvent.EventType == WINDOW_BUFFER_SIZE_EVENT && inEvent.EventType == WINDOW_BUFFER_SIZE_EVENT)
+    {
+        lastEvent = inEvent;
+        return true;
+    }
     else if (lastEvent.EventType == KEY_EVENT && inEvent.EventType == KEY_EVENT)
     {
         const auto& inKey = inEvent.Event.KeyEvent;

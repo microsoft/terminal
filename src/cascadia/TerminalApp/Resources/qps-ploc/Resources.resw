@@ -739,6 +739,10 @@
     <value>υŉňàмěđ ẅіπďōẅ !!! !</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Ņêώ ŵīηðōώ !!!</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>Ńªmè ťнĩš ώìńðőẃ... !!! !!!</value>
     <comment>Menu item text shown when the current window has no name assigned</comment>

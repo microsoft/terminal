@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset() const;
-        int ViewHeight() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -316,6 +316,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
+
+        std::optional<SafeDispatcherTimer> _resizeOverlayTimer;
+        Core::Size _lastResizeOverlaySize{};
+        void _ShowResizeOverlay();
 
         bool _isBackgroundLight{ false };
         bool _detached{ false };
