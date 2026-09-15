@@ -546,7 +546,7 @@
     <value>OSC 777 (Desktop Notification) zum Anzeigen von Popupbenachrichtigungen zulassen</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>Wenn diese Option aktiviert ist, können Anwendungen die OSC 777 Escapesequenz senden, um eine Desktopbenachrichtigung mit einem benutzerdefinierten Titel und Text auszulösen.</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -798,7 +798,7 @@
     <value>Oben rechts</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Durchsuchen…</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -907,7 +907,7 @@
     <value>Im Profil verwendete ausführbare Datei.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Durchsuchen…</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1078,25 +1078,13 @@
     <value>Die ausgewählte Schriftart weist keine Schriftartfeatures auf.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Profil in Dropdownliste ausblenden</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
-  </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>Wenn aktiviert, wird das Profil nicht in der Profilliste angezeigt. Dies kann verwendet werden, um Standardprofile und dynamisch generierte Profile auszublenden, sie aber zugleich in Ihrer Einstellungsdatei zu belassen.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
   <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Im Dropdownmenü ausgeblendet</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
-    <value>Dieses Profil als Administrator ausführen</value>
-    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>Wenn diese Option aktiviert ist, wird das Profil automatisch als Administrator in einem Terminalfenster geöffnet. Wenn das aktuelle Fenster bereits mit Administratorrechten ausgeführt wird, wird es in diesem Fenster geöffnet.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Größe des Verlaufs</value>
@@ -1130,7 +1118,7 @@
     <value>Emoji- oder Bilddateipfad des im Profil verwendeten Symbols.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Durchsuchen…</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1186,21 +1174,9 @@
     <value>Startverzeichnis</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
-    <value>Startverzeichnis</value>
-    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
-  </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Startverzeichnis</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
-  </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>Das Verzeichnis, in dem das Profil beim Laden gestartet wird.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
-    <value>Durchsuchen…</value>
-    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.Content" xml:space="preserve">
     <value>Verzeichnis des übergeordneten Prozesses verwenden</value>
@@ -1233,10 +1209,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>Unscharfes Erscheinungsbild</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Erscheinungsbild erstellen</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Löschen</value>
@@ -1603,8 +1575,16 @@
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Profil</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Name</value>
-    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
+    <value>Passen Sie die visuelle Darstellung des Profils an, einschließlich Farben, Schriftarten und Textstil.</value>
+    <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparenz</value>
@@ -1773,14 +1753,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Wenn diese Option aktiviert ist, werden alle installierten Schriftarten in der Liste oben angezeigt. Andernfalls wird nur die Liste der Schriftarten mit fester Breite angezeigt.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Erscheinungsbild erstellen</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Erstellen Sie ein unscharfes Erscheinungsbild für dieses Profil. So sieht das Profil aus, als ob es inaktiv ist.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Erscheinungsbild löschen</value>
@@ -2186,7 +2158,7 @@
     <value>Keine Farbe</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
-  <data name="Actions_Browse.Content" xml:space="preserve">
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Durchsuchen…</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2703,10 +2675,6 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>Gibt die Software an, die dieses Profil ursprünglich erstellt hat.</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>Keine</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Der automatische Start wurde im Abschnitt "Start-Apps" der einstellungen für Windows deaktiviert.</value>
     <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
@@ -2764,10 +2732,6 @@
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>Keine</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>Keine</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>Auf Standardeinstellungen zurücksetzen</value>
