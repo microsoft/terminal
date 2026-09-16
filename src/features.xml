@@ -189,7 +189,7 @@
 
     <feature>
         <name>Feature_TmuxIntegration</name>
-        <description>Detect TMUX init sequences and map Windows Terminal tabs/panes onto htmd</description>
+        <description>Detect tmux control mode and map Windows Terminal windows, tabs, and panes onto the tmux session</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledReleaseTokens/>
         <alwaysDisabledBrandingTokens>
