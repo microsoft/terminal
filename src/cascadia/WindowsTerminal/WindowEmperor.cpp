@@ -912,6 +912,11 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
         window = _mostRecentWindow();
     }
 
+    if (!window)
+    {
+        window = _mostRecentWindow();
+    }
+
     if (window)
     {
         window->DispatchCommandline(std::move(args));

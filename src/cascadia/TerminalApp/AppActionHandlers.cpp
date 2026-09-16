@@ -5,7 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
-#include "HtmConnections.h"
+#include "TmuxConnections.h"
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
@@ -65,13 +65,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        if (Feature_HtmIntegration::IsEnabled())
+        if (Feature_TmuxIntegration::IsEnabled())
         {
-            if (auto* session{ _HtmSessionForConnection(_HtmFocusedConnection()) })
+            auto focusedConnection{ _TmuxFocusedConnection() };
+            auto* session = _TmuxSessionForConnection(focusedConnection);
+            // A new TermControl from a split can briefly own XAML focus while
+            // its TMUX connection is still being established. Keep duplicate
+            // tab in the same mux by selecting an existing window connection.
+            if (!session)
             {
-                if (const auto follower{ session->CreateFollowerForUserTab() })
+                focusedConnection = _TmuxAnyConnectionInWindow();
+                session = _TmuxSessionForConnection(focusedConnection);
+            }
+            if (session)
+            {
+                if (const auto follower{ session->CreateFollowerForUserTab(_TmuxPaneIdFromConnection(focusedConnection)) })
                 {
-                    _HtmOpenFollowerAsTab(follower);
+                    _TmuxOpenFollowerAsTab(follower);
                     args.Handled(true);
                     return;
                 }
@@ -109,11 +119,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        if (Feature_HtmIntegration::IsEnabled())
+        if (Feature_TmuxIntegration::IsEnabled())
         {
-            if (const auto conn{ _HtmFocusedConnection() })
+            if (const auto conn{ _TmuxFocusedConnection() })
             {
-                if (auto* session{ _HtmSessionForConnection(conn) })
+                if (auto* session{ _TmuxSessionForConnection(conn) })
                 {
                     session->HandleUserClose(conn);
                 }
@@ -302,20 +312,20 @@ namespace winrt::TerminalApp::implementation
             const auto& activeTab{ _senderOrFocusedTab(sender) };
 
             // Intercept before the invalid-profile bail-out so a command-line
-            // duplicate split on an HTM follower still talks to htmd.
-            // Prefer any HTM connection in this window: CLI ``-w last`` often
+            // duplicate split on an TMUX follower still talks to htmd.
+            // Prefer any TMUX connection in this window: CLI ``-w last`` often
             // arrives before the TermControl is the XAML focus target.
-            if (Feature_HtmIntegration::IsEnabled())
+            if (Feature_TmuxIntegration::IsEnabled())
             {
-                const auto htmConn{ _HtmAnyConnectionInWindow() };
-                auto* session = _HtmSessionForConnection(htmConn);
-                if (!session && _htmSession && _htmSession->IsActive())
+                const auto tmuxConn{ _TmuxAnyConnectionInWindow() };
+                auto* session = _TmuxSessionForConnection(tmuxConn);
+                if (!session && _tmuxSession && _tmuxSession->IsActive())
                 {
-                    session = _htmSession.get();
+                    session = _tmuxSession.get();
                 }
                 if (session)
                 {
-                    auto sourceId = _HtmPaneIdFromConnection(htmConn);
+                    auto sourceId = _TmuxPaneIdFromConnection(tmuxConn);
                     if (sourceId.empty() || !session->HasFollower(sourceId))
                     {
                         sourceId = session->LeaderPaneId();
@@ -336,8 +346,8 @@ namespace winrt::TerminalApp::implementation
                     {
                         // Prefer splitting the focused follower tab; otherwise
                         // locate the source pane across windows.
-                        if (htmConn && htmConn.try_as<HtmFollowerConnection>() && session->HasFollower(sourceId) &&
-                            _HtmPaneIdFromConnection(htmConn) == sourceId)
+                        if (tmuxConn && AsTmuxFollower(tmuxConn) && session->HasFollower(sourceId) &&
+                            _TmuxPaneIdFromConnection(tmuxConn) == sourceId)
                         {
                             _SplitPane(activeTab,
                                        direction,
@@ -346,7 +356,7 @@ namespace winrt::TerminalApp::implementation
                         }
                         else
                         {
-                            _HtmSplitExisting(sourceId, follower, vertical);
+                            _TmuxSplitExisting(sourceId, follower, vertical);
                         }
                         args.Handled(true);
                         return;
@@ -988,22 +998,22 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
-        if (Feature_HtmIntegration::IsEnabled())
+        if (Feature_TmuxIntegration::IsEnabled())
         {
-            if (auto* session{ _HtmSessionForConnection(_HtmFocusedConnection()) })
+            if (auto* session{ _TmuxSessionForConnection(_TmuxFocusedConnection()) })
             {
-                if (const auto follower{ session->CreateFollowerForUserTab() })
+                if (const auto follower{ session->CreateFollowerForUserWindow() })
                 {
-                    _HtmOpenFollowerAsWindow(follower);
+                    _TmuxOpenFollowerAsWindow(follower);
                     actionArgs.Handled(true);
                     return;
                 }
             }
-            else if (_htmSession && _htmSession->IsActive())
+            else if (_tmuxSession && _tmuxSession->IsActive())
             {
-                if (const auto follower{ _htmSession->CreateFollowerForUserTab() })
+                if (const auto follower{ _tmuxSession->CreateFollowerForUserWindow() })
                 {
-                    _HtmOpenFollowerAsWindow(follower);
+                    _TmuxOpenFollowerAsWindow(follower);
                     actionArgs.Handled(true);
                     return;
                 }

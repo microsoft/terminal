@@ -2,22 +2,22 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "HtmConnections.h"
-#include "HtmSession.h"
+#include "TmuxConnections.h"
+#include "TmuxSession.h"
 
 #include <winrt/Windows.System.Threading.h>
 
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
-using namespace ::Microsoft::Terminal::Htm;
+using namespace ::Microsoft::Terminal::Tmux;
 
 namespace winrt::TerminalApp::implementation
 {
-    HtmLeaderConnection::HtmLeaderConnection(ITerminalConnection wrapped, HtmSession* session) :
+    TmuxLeaderConnection::TmuxLeaderConnection(ITerminalConnection wrapped, TmuxSession* session) :
         _wrapped{ wrapped },
         _sessionId{ wrapped.SessionId() },
         _session{ session }
     {
-        _outputRevoker = _wrapped.TerminalOutput(winrt::auto_revoke, { get_weak(), &HtmLeaderConnection::_OutputHandler });
+        _outputRevoker = _wrapped.TerminalOutput(winrt::auto_revoke, { get_weak(), &TmuxLeaderConnection::_OutputHandler });
         _stateChangedRevoker = _wrapped.StateChanged(winrt::auto_revoke, [weak = get_weak()](auto&&, auto&&) {
             if (const auto self = weak.get())
             {
@@ -26,19 +26,19 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    void HtmLeaderConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
+    void TmuxLeaderConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         _wrapped.Initialize(settings);
     }
 
-    void HtmLeaderConnection::Start()
+    void TmuxLeaderConnection::Start()
     {
         _wrapped.Start();
     }
 
-    void HtmLeaderConnection::WriteInput(const winrt::array_view<const char16_t> data)
+    void TmuxLeaderConnection::WriteInput(const winrt::array_view<const char16_t> data)
     {
-        if (_htmMode)
+        if (_tmuxMode)
         {
             // Stateful conversion: KEYEVENTF_UNICODE may deliver one surrogate
             // per WriteInput; til::u16u8 without state would emit CESU-8.
@@ -62,10 +62,10 @@ namespace winrt::TerminalApp::implementation
         _wrapped.WriteInput(data);
     }
 
-    void HtmLeaderConnection::Resize(uint32_t rows, uint32_t columns)
+    void TmuxLeaderConnection::Resize(uint32_t rows, uint32_t columns)
     {
         _wrapped.Resize(rows, columns);
-        if (!_htmMode || !_session || rows == 0 || columns == 0)
+        if (!_tmuxMode || !_session || rows == 0 || columns == 0)
         {
             return;
         }
@@ -99,14 +99,14 @@ namespace winrt::TerminalApp::implementation
             std::chrono::milliseconds{ 75 });
     }
 
-    void HtmLeaderConnection::_flushPendingClientSize()
+    void TmuxLeaderConnection::_flushPendingClientSize()
     {
-        HtmSession* session = nullptr;
+        TmuxSession* session = nullptr;
         uint32_t rows = 0;
         uint32_t cols = 0;
         {
             std::lock_guard lock{ _stateMutex };
-            if (_closed || !_htmMode || !_session || _rows == 0 || _cols == 0)
+            if (_closed || !_tmuxMode || !_session || _rows == 0 || _cols == 0)
             {
                 return;
             }
@@ -123,14 +123,14 @@ namespace winrt::TerminalApp::implementation
         session->WriteToLeader("refresh-client -C " + std::to_string(cols) + "x" + std::to_string(rows));
     }
 
-    void HtmLeaderConnection::Close()
+    void TmuxLeaderConnection::Close()
     {
         {
             std::lock_guard lock{ _stateMutex };
             ++_resizeGeneration;
         }
         _closed = true;
-        if (_session && _htmMode)
+        if (_session && _tmuxMode)
         {
             _session->DetachLeader(this);
         }
@@ -143,24 +143,24 @@ namespace winrt::TerminalApp::implementation
         _wrapped = nullptr;
     }
 
-    winrt::guid HtmLeaderConnection::SessionId() const noexcept
+    winrt::guid TmuxLeaderConnection::SessionId() const noexcept
     {
         return _sessionId;
     }
 
-    ConnectionState HtmLeaderConnection::State() const noexcept
+    ConnectionState TmuxLeaderConnection::State() const noexcept
     {
         return _closed ? ConnectionState::Closed : ConnectionState::Connected;
     }
 
-    void HtmLeaderConnection::WriteRaw(std::string_view bytes)
+    void TmuxLeaderConnection::WriteRaw(std::string_view bytes)
     {
         if (bytes.empty())
         {
             return;
         }
         // Pane input, resizes, and app actions can arrive on different UI and
-        // connection threads. Keep each HTM frame in one ConPTY write so a
+        // connection threads. Keep each TMUX frame in one ConPTY write so a
         // resize cannot splice itself into a key or split packet.
         try
         {
@@ -178,7 +178,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void HtmLeaderConnection::InjectOutput(std::string_view utf8)
+    void TmuxLeaderConnection::InjectOutput(std::string_view utf8)
     {
         if (utf8.empty())
         {
@@ -188,9 +188,9 @@ namespace winrt::TerminalApp::implementation
         TerminalOutput.raise(winrt_wstring_to_array_view(wide));
     }
 
-    void HtmLeaderConnection::ForceCloseClient()
+    void TmuxLeaderConnection::ForceCloseClient()
     {
-        _htmMode = false;
+        _tmuxMode = false;
         _session = nullptr;
         _outputRevoker.revoke();
         _stateChangedRevoker.revoke();
@@ -203,27 +203,27 @@ namespace winrt::TerminalApp::implementation
         StateChanged.raise(*this, nullptr);
     }
 
-    void HtmLeaderConnection::_OutputHandler(const winrt::array_view<const char16_t> str)
+    void TmuxLeaderConnection::_OutputHandler(const winrt::array_view<const char16_t> str)
     {
         const auto utf8 = til::u16u8(winrt_array_to_wstring_view(str));
-        const auto carrier = DecodeConPtyHtmCarrier(_carrierPending, utf8);
+        const auto carrier = DecodeConPtyTmuxCarrier(_carrierPending, utf8);
         _carrierPending = carrier.pending;
         if (carrier.decoded.empty())
         {
             return;
         }
-        if (_htmMode)
+        if (_tmuxMode)
         {
             if (carrier.decoded.find(TmuxControlSt) != std::string::npos)
             {
-                _htmMode = false;
+                _tmuxMode = false;
                 if (_session)
                 {
                     _session->HandleExitSequence();
                 }
                 return;
             }
-            _ProcessHtmBytes(carrier.decoded);
+            _ProcessTmuxBytes(carrier.decoded);
             return;
         }
 
@@ -248,21 +248,21 @@ namespace winrt::TerminalApp::implementation
         }
         const auto remainder = _pendingInit.substr(marker + TmuxControlDcs.size());
         _pendingInit.clear();
-        _htmMode = true;
+        _tmuxMode = true;
         if (_session)
             _session->AttachLeader(this);
         if (!remainder.empty())
-            _ProcessHtmBytes(remainder);
+            _ProcessTmuxBytes(remainder);
     }
 
-    void HtmLeaderConnection::_ProcessHtmBytes(std::string_view utf8)
+    void TmuxLeaderConnection::_ProcessTmuxBytes(std::string_view utf8)
     {
-        _htmBuffer.append(utf8);
+        _tmuxBuffer.append(utf8);
         size_t newline = 0;
-        while ((newline = _htmBuffer.find('\n')) != std::string::npos)
+        while ((newline = _tmuxBuffer.find('\n')) != std::string::npos)
         {
-            auto line = _htmBuffer.substr(0, newline);
-            _htmBuffer.erase(0, newline + 1);
+            auto line = _tmuxBuffer.substr(0, newline);
+            _tmuxBuffer.erase(0, newline + 1);
             if (!line.empty() && line.back() == '\r')
                 line.pop_back();
             if (_session)
@@ -270,15 +270,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    HtmFollowerConnection::HtmFollowerConnection(HtmSession* session, std::string paneId) :
+    TmuxFollowerConnection::TmuxFollowerConnection(TmuxSession* session, std::string paneId) :
         _session{ session },
         _paneId{ std::move(paneId) }
     {
     }
 
-    void HtmFollowerConnection::Start()
+    void TmuxFollowerConnection::Start()
     {
-        HtmSession* session = nullptr;
+        TmuxSession* session = nullptr;
         std::string paneId;
         std::wstring pendingWide;
         uint32_t rows = 0;
@@ -316,7 +316,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void HtmFollowerConnection::WriteInput(const winrt::array_view<const char16_t> data)
+    void TmuxFollowerConnection::WriteInput(const winrt::array_view<const char16_t> data)
     {
         if (!_session || _closed)
         {
@@ -337,7 +337,7 @@ namespace winrt::TerminalApp::implementation
         _session->SendKeys(_paneId, keys);
     }
 
-    void HtmFollowerConnection::Resize(uint32_t rows, uint32_t columns)
+    void TmuxFollowerConnection::Resize(uint32_t rows, uint32_t columns)
     {
         // TermControl may report 0x0 during first layout; never push that to htmd.
         if (rows == 0 || columns == 0)
@@ -377,9 +377,9 @@ namespace winrt::TerminalApp::implementation
             std::chrono::milliseconds{ 75 });
     }
 
-    void HtmFollowerConnection::_flushPendingResize()
+    void TmuxFollowerConnection::_flushPendingResize()
     {
-        HtmSession* session = nullptr;
+        TmuxSession* session = nullptr;
         std::string paneId;
         uint32_t rows = 0;
         uint32_t cols = 0;
@@ -403,9 +403,9 @@ namespace winrt::TerminalApp::implementation
         session->WriteToLeader("resize-pane -t " + paneId + " -x " + std::to_string(cols) + " -y " + std::to_string(rows));
     }
 
-    void HtmFollowerConnection::SetPaneId(std::string paneId)
+    void TmuxFollowerConnection::SetPaneId(std::string paneId)
     {
-        HtmSession* session = nullptr;
+        TmuxSession* session = nullptr;
         uint32_t rows = 0;
         uint32_t cols = 0;
         {
@@ -427,7 +427,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void HtmFollowerConnection::Close()
+    void TmuxFollowerConnection::Close()
     {
         if (_session)
         {
@@ -442,7 +442,7 @@ namespace winrt::TerminalApp::implementation
         StateChanged.raise(*this, nullptr);
     }
 
-    void HtmFollowerConnection::ForceCloseUi()
+    void TmuxFollowerConnection::ForceCloseUi()
     {
         {
             std::lock_guard lock{ _stateMutex };
@@ -462,7 +462,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void HtmFollowerConnection::InjectOutput(std::string_view utf8)
+    void TmuxFollowerConnection::InjectOutput(std::string_view utf8)
     {
         if (utf8.empty())
         {

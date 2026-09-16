@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "HtmProtocol.h"
+#include "TmuxProtocol.h"
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <til/winrt.h>
@@ -13,13 +13,23 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    class HtmSession;
+    class TmuxSession;
 
-    class HtmLeaderConnection : public winrt::implements<HtmLeaderConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
+    struct __declspec(uuid("6B5B3E45-97F1-4F18-97F3-7EE92B1C2381"))
+    ITmuxLeaderMarker : ::IUnknown
+    {
+    };
+
+    struct __declspec(uuid("5A4A2B34-8C12-4E09-B812-4DD12A34B456"))
+    ITmuxFollowerMarker : ::IUnknown
+    {
+    };
+
+    class TmuxLeaderConnection : public winrt::implements<TmuxLeaderConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, ITmuxLeaderMarker>
     {
     public:
-        HtmLeaderConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection wrapped,
-                            HtmSession* session);
+        TmuxLeaderConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection wrapped,
+                            TmuxSession* session);
 
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
         void Start();
@@ -33,8 +43,8 @@ namespace winrt::TerminalApp::implementation
         void WriteRaw(std::string_view bytes);
         void InjectOutput(std::string_view utf8);
         void ForceCloseClient();
-        bool InHtmMode() const noexcept { return _htmMode; }
-        HtmSession* Session() const noexcept { return _session; }
+        bool InTmuxMode() const noexcept { return _tmuxMode; }
+        TmuxSession* Session() const noexcept { return _session; }
         void SetPaneId(std::string paneId)
         {
             std::lock_guard lock{ _stateMutex };
@@ -51,25 +61,25 @@ namespace winrt::TerminalApp::implementation
 
     private:
         void _OutputHandler(const winrt::array_view<const char16_t> str);
-        void _ProcessHtmBytes(std::string_view utf8);
+        void _ProcessTmuxBytes(std::string_view utf8);
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _wrapped{ nullptr };
         winrt::guid _sessionId{};
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
-        HtmSession* _session{ nullptr };
-        bool _htmMode{ false };
+        TmuxSession* _session{ nullptr };
+        bool _tmuxMode{ false };
         std::string _pendingInit;
         std::string _carrierPending;
-        std::string _htmBuffer;
-        mutable std::mutex _stateMutex;
+        std::string _tmuxBuffer;
+        mutable std::recursive_mutex _stateMutex;
         std::string _paneId;
         std::mutex _writeMutex;
         bool _closed{ false };
         // SendInput KEYEVENTF_UNICODE delivers one UTF-16 code unit per call;
         // hold high surrogates across WriteInput so emoji becomes real UTF-8.
         til::u16state _u16ToUtf8;
-        ::Microsoft::Terminal::Htm::Win32InputDecodeState _win32Decode;
+        ::Microsoft::Terminal::Tmux::Win32InputDecodeState _win32Decode;
         uint32_t _rows{ 24 };
         uint32_t _cols{ 80 };
         uint32_t _flushedRows{ 0 };
@@ -78,10 +88,10 @@ namespace winrt::TerminalApp::implementation
         void _flushPendingClientSize();
     };
 
-    class HtmFollowerConnection : public winrt::implements<HtmFollowerConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
+    class TmuxFollowerConnection : public winrt::implements<TmuxFollowerConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, ITmuxFollowerMarker>
     {
     public:
-        HtmFollowerConnection(HtmSession* session, std::string paneId);
+        TmuxFollowerConnection(TmuxSession* session, std::string paneId);
 
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {};
         void Start();
@@ -96,7 +106,7 @@ namespace winrt::TerminalApp::implementation
                              winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::Connected;
         }
 
-        HtmSession* Session() const noexcept { return _session; }
+        TmuxSession* Session() const noexcept { return _session; }
         std::string PaneId() const noexcept
         {
             std::lock_guard lock{ _stateMutex };
@@ -115,7 +125,7 @@ namespace winrt::TerminalApp::implementation
             _suppressClosePacket = value;
         }
         // Stop accepting output/input without raising StateChanged; the page
-        // still owns the TermControl and will close it via _HtmClosePane.
+        // still owns the TermControl and will close it via _TmuxClosePane.
         void SilenceForDetach() noexcept
         {
             std::lock_guard lock{ _stateMutex };
@@ -131,8 +141,8 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
 
     private:
-        HtmSession* _session{ nullptr };
-        mutable std::mutex _stateMutex;
+        TmuxSession* _session{ nullptr };
+        mutable std::recursive_mutex _stateMutex;
         std::string _paneId;
         bool _started{ false };
         bool _suppressClosePacket{ false };
@@ -141,7 +151,7 @@ namespace winrt::TerminalApp::implementation
         // SendInput KEYEVENTF_UNICODE delivers one UTF-16 code unit per call;
         // hold high surrogates across WriteInput so emoji becomes real UTF-8.
         til::u16state _u16ToUtf8;
-        ::Microsoft::Terminal::Htm::Win32InputDecodeState _win32Decode;
+        ::Microsoft::Terminal::Tmux::Win32InputDecodeState _win32Decode;
         uint32_t _rows{ 24 };
         uint32_t _cols{ 80 };
         // Last size pushed to htmd. Split layout animates through many
@@ -150,4 +160,28 @@ namespace winrt::TerminalApp::implementation
         uint32_t _flushedCols{ 0 };
         uint32_t _resizeGeneration{ 0 };
     };
+
+    inline TmuxLeaderConnection* AsTmuxLeader(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& conn) noexcept
+    {
+        if (conn)
+        {
+            if (const auto marker = conn.try_as<ITmuxLeaderMarker>())
+            {
+                return winrt::get_self<TmuxLeaderConnection>(marker);
+            }
+        }
+        return nullptr;
+    }
+
+    inline TmuxFollowerConnection* AsTmuxFollower(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& conn) noexcept
+    {
+        if (conn)
+        {
+            if (const auto marker = conn.try_as<ITmuxFollowerMarker>())
+            {
+                return winrt::get_self<TmuxFollowerConnection>(marker);
+            }
+        }
+        return nullptr;
+    }
 }

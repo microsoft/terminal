@@ -16,8 +16,8 @@
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
-#include "HtmConnections.h"
-#include "HtmSession.h"
+#include "TmuxConnections.h"
+#include "TmuxSession.h"
 #include "MarkdownPaneContent.h"
 #include "Remoting.h"
 #include "ScratchpadContent.h"
@@ -229,9 +229,9 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
-        if (Feature_HtmIntegration::IsEnabled())
+        if (Feature_TmuxIntegration::IsEnabled())
         {
-            _htmSession = std::make_unique<HtmSession>(this);
+            _tmuxSession = std::make_unique<TmuxSession>(this);
         }
     }
 
@@ -821,10 +821,10 @@ namespace winrt::TerminalApp::implementation
             pane->FinalizeConfigurationGivenDefault();
         });
         _CreateNewTabFromPane(newPane);
-        // First HTM follower window becomes the tab host for later new-windows.
+        // First TMUX follower window becomes the tab host for later new-windows.
         if (const auto control{ newPane->GetTerminalControl() })
         {
-            if (const auto follower{ control.Connection().try_as<HtmFollowerConnection>() })
+            if (const auto follower{ AsTmuxFollower(control.Connection()) })
             {
                 if (auto* session{ follower->Session() })
                 {
@@ -1610,7 +1610,7 @@ namespace winrt::TerminalApp::implementation
             auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
             auto environment = settingsInternal->EnvironmentVariables();
             Windows::Foundation::Collections::IMapView<hstring, hstring> environmentView = environment;
-            if (Feature_HtmIntegration::IsEnabled() && environment && environment.HasKey(L"HTM_BIN_DIR"))
+            if (Feature_TmuxIntegration::IsEnabled() && environment && environment.HasKey(L"HTM_BIN_DIR"))
             {
                 auto envMap = winrt::single_threaded_map<hstring, hstring>();
                 for (const auto& [k, v] : environment)
@@ -1683,7 +1683,7 @@ namespace winrt::TerminalApp::implementation
 
         connection.Initialize(valueSet);
 
-        if (Feature_HtmIntegration::IsEnabled() && _htmSession &&
+        if (Feature_TmuxIntegration::IsEnabled() && _tmuxSession &&
             connection.try_as<TerminalConnection::ConptyConnection>())
         {
             std::wstring cmd{ settings.Commandline() };
@@ -1694,7 +1694,7 @@ namespace winrt::TerminalApp::implementation
             if (cmd.find(L"htm.exe") != std::wstring::npos || cmd == L"htm" ||
                 cmd.ends_with(L"\\htm") || cmd.ends_with(L"/htm"))
             {
-                connection = winrt::make<HtmLeaderConnection>(connection, _htmSession.get());
+                connection = winrt::make<TmuxLeaderConnection>(connection, _tmuxSession.get());
             }
         }
 
@@ -2952,7 +2952,7 @@ namespace winrt::TerminalApp::implementation
         // Instead, let's just promote this first split to be a tab instead.
         // Crash avoided, and we don't need to worry about inserting a new-tab
         // command in at the start.
-        if (!tab)
+        if (!activeTab)
         {
             if (_tabs.Size() == 0)
             {
@@ -2962,7 +2962,17 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 activeTab = _GetFocusedTabImpl();
+                if (!activeTab && _tabs.Size() > 0)
+                {
+                    activeTab = _GetTabImpl(_tabs.GetAt(0));
+                }
             }
+        }
+
+        if (!activeTab)
+        {
+            _CreateNewTabFromPane(newPane);
+            return;
         }
 
         // For now, prevent splitting the _settingsTab. We can always revisit this later.
@@ -3663,7 +3673,7 @@ namespace winrt::TerminalApp::implementation
         // else:
         // - Reset conpty to its original size back
         if (!WindowProperties().IsQuakeWindow() && !Fullscreen() &&
-            NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
+            NumberOfTabs() == 1 && _GetFocusedTabImpl() && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
         {
             WindowSizeChanged.raise(*this, args);
         }
@@ -3863,7 +3873,7 @@ namespace winrt::TerminalApp::implementation
                 // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
                 controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, _currentWindowSettings(), profile);
-                // HTM follower panes already have a live connection; querying
+                // TMUX follower panes already have a live connection; querying
                 // WorkingDirectory can block the UI while the gateway ConPTY
                 // is busy and is unused for virtual followers anyway.
                 if (!existingConnection)
@@ -4722,7 +4732,10 @@ namespace winrt::TerminalApp::implementation
     winrt::com_ptr<Tab> TerminalPage::_GetTabImpl(const TerminalApp::Tab& tab)
     {
         winrt::com_ptr<Tab> tabImpl;
-        tabImpl.copy_from(winrt::get_self<Tab>(tab));
+        if (tab)
+        {
+            tabImpl.copy_from(winrt::get_self<Tab>(tab));
+        }
         return tabImpl;
     }
 
@@ -6292,7 +6305,7 @@ namespace winrt::TerminalApp::implementation
         return profileMenuItemFlyout;
     }
 
-    std::string TerminalPage::_HtmPaneIdFromConnection(const TerminalConnection::ITerminalConnection& connection) const
+    std::string TerminalPage::_TmuxPaneIdFromConnection(const TerminalConnection::ITerminalConnection& connection) const
     {
         if (!connection)
         {
@@ -6300,18 +6313,18 @@ namespace winrt::TerminalApp::implementation
         }
         // Follower before leader: both only implement ITerminalConnection, so a
         // leader try_as on a follower can falsely succeed and read garbage.
-        if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+        if (const auto follower{ AsTmuxFollower(connection) })
         {
             return follower->PaneId();
         }
-        if (const auto leader{ connection.try_as<HtmLeaderConnection>() })
+        if (const auto leader{ AsTmuxLeader(connection) })
         {
             return leader->PaneId();
         }
         return {};
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_HtmFocusedConnection() const
+    TerminalConnection::ITerminalConnection TerminalPage::_TmuxFocusedConnection() const
     {
         if (const auto tab{ _GetFocusedTabImpl() })
         {
@@ -6323,22 +6336,22 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
-    TerminalConnection::ITerminalConnection TerminalPage::_HtmAnyConnectionInWindow() const
+    TerminalConnection::ITerminalConnection TerminalPage::_TmuxAnyConnectionInWindow() const
     {
         // Prefer the focused pane, but CLI actions (``wt -w last split-pane``)
         // often land before XAML focus is on the TermControl. Fall back to any
-        // HTM leader/follower in this window so we never ConPTY-split an HTM pane.
-        if (const auto focused{ _HtmFocusedConnection() })
+        // TMUX leader/follower in this window so we never ConPTY-split an TMUX pane.
+        if (const auto focused{ _TmuxFocusedConnection() })
         {
-            // Follower before leader — see _HtmPaneIdFromConnection.
-            if (const auto follower{ focused.try_as<HtmFollowerConnection>() })
+            // Follower before leader — see _TmuxPaneIdFromConnection.
+            if (const auto follower{ AsTmuxFollower(focused) })
             {
                 if (!follower->IsClosed())
                 {
                     return focused;
                 }
             }
-            else if (focused.try_as<HtmLeaderConnection>())
+            else if (AsTmuxLeader(focused))
             {
                 return focused;
             }
@@ -6361,7 +6374,7 @@ namespace winrt::TerminalApp::implementation
                             return false;
                         }
                         const auto connection = control.Connection();
-                        if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+                        if (const auto follower{ AsTmuxFollower(connection) })
                         {
                             if (!follower->IsClosed())
                             {
@@ -6370,7 +6383,7 @@ namespace winrt::TerminalApp::implementation
                             }
                             return false;
                         }
-                        if (connection.try_as<HtmLeaderConnection>())
+                        if (AsTmuxLeader(connection))
                         {
                             found = connection;
                             return true;
@@ -6387,7 +6400,7 @@ namespace winrt::TerminalApp::implementation
         return nullptr;
     }
 
-    std::shared_ptr<Pane> TerminalPage::_HtmFindPane(const std::string& paneId) const
+    std::shared_ptr<Pane> TerminalPage::_TmuxFindPane(const std::string& paneId) const
     {
         if (paneId.empty())
         {
@@ -6397,27 +6410,30 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto tabImpl{ _GetTabImpl(tab) })
             {
-                if (const auto pane{ tabImpl->GetRootPane()->_FindPane([&](const auto& candidate) {
-                        const auto control = candidate->GetTerminalControl();
-                        if (!control)
-                        {
-                            return false;
-                        }
-                        return _HtmPaneIdFromConnection(control.Connection()) == paneId;
-                    }) })
+                if (const auto root{ tabImpl->GetRootPane() })
                 {
-                    return pane;
+                    if (const auto pane{ root->_FindPane([&](const auto& candidate) {
+                            const auto control = candidate->GetTerminalControl();
+                            if (!control)
+                            {
+                                return false;
+                            }
+                            return _TmuxPaneIdFromConnection(control.Connection()) == paneId;
+                        }) })
+                    {
+                        return pane;
+                    }
                 }
             }
         }
         return nullptr;
     }
 
-    void TerminalPage::_HtmSplitExisting(const std::string& sourcePaneId,
+    void TerminalPage::_TmuxSplitExisting(const std::string& sourcePaneId,
                                          TerminalConnection::ITerminalConnection follower,
                                          bool vertical)
     {
-        auto sourcePane = _HtmFindPane(sourcePaneId);
+        auto sourcePane = _TmuxFindPane(sourcePaneId);
         winrt::com_ptr<Tab> tabImpl;
         if (sourcePane)
         {
@@ -6439,28 +6455,28 @@ namespace winrt::TerminalApp::implementation
             // Never split the tmux -CC gateway; if the home pane is not ready
             // yet, open the new follower as its own tab instead.
             if (!focused->GetActiveTerminalControl() ||
-                !focused->GetActiveTerminalControl().Connection().try_as<HtmLeaderConnection>())
+                !AsTmuxLeader(focused->GetActiveTerminalControl().Connection()))
             {
                 tabImpl = focused;
             }
         }
         if (!tabImpl)
         {
-            _HtmOpenFollowerAsTab(follower);
+            _TmuxOpenFollowerAsTab(follower);
             return;
         }
         winrt::TerminalApp::Tab sourceTab{ *tabImpl };
         auto newPane = _MakeTerminalPane(nullptr, sourceTab, follower);
         if (!newPane)
         {
-            _HtmOpenFollowerAsTab(follower);
+            _TmuxOpenFollowerAsTab(follower);
             return;
         }
         const auto direction = vertical ? SplitDirection::Right : SplitDirection::Down;
         _SplitPane(tabImpl, direction, 0.5f, newPane);
     }
 
-    void TerminalPage::_HtmNewWindow(TerminalConnection::ITerminalConnection follower)
+    void TerminalPage::_TmuxNewWindow(TerminalConnection::ITerminalConnection follower)
     {
         // Always a new OS window (gateway stays a control plane). Used for
         // ShortcutAction::NewWindow and server-driven new-window panes.
@@ -6474,21 +6490,22 @@ namespace winrt::TerminalApp::implementation
         RequestNewWindow.raise(*this, request);
     }
 
-    void TerminalPage::_HtmNewTab(TerminalConnection::ITerminalConnection follower)
+    void TerminalPage::_TmuxNewTab(TerminalConnection::ITerminalConnection follower)
     {
         if (!follower)
         {
             return;
         }
-        // Adding a tab on this page (must already be a native HTM host window).
-        if (auto* session{ _HtmSessionForConnection(follower) })
+        // Adding a tab on this page (must already be a native TMUX host window).
+        if (auto* session{ _TmuxSessionForConnection(follower) })
         {
+            session->SetFollowerAffinityHost(follower, _TmuxPaneIdFromConnection(_TmuxAnyConnectionInWindow()));
             session->RegisterFollowerPage(this);
         }
         auto newPane = _MakeTerminalPane(nullptr, nullptr, follower);
         if (!newPane)
         {
-            _HtmNewWindow(std::move(follower));
+            _TmuxNewWindow(std::move(follower));
             return;
         }
         newPane->WalkTree([](const auto& pane) {
@@ -6497,47 +6514,47 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFromPane(newPane);
     }
 
-    void TerminalPage::_HtmOpenFollowerAsTab(TerminalConnection::ITerminalConnection follower)
+    void TerminalPage::_TmuxOpenFollowerAsTab(TerminalConnection::ITerminalConnection follower)
     {
         if (!follower)
         {
             return;
         }
-        if (auto* session{ _HtmSessionForConnection(follower) })
+        if (auto* session{ _TmuxSessionForConnection(follower) })
         {
-            // If this window already hosts HTM followers, tab here directly.
-            if (_HtmAnyConnectionInWindow().try_as<HtmFollowerConnection>())
+            // If this window already hosts TMUX followers, tab here directly.
+            if (AsTmuxFollower(_TmuxAnyConnectionInWindow()))
             {
-                _HtmNewTab(std::move(follower));
+                _TmuxNewTab(std::move(follower));
                 return;
             }
             session->OpenFollowerAsTab(follower);
             return;
         }
-        _HtmNewWindow(std::move(follower));
+        _TmuxNewWindow(std::move(follower));
     }
 
-    void TerminalPage::_HtmOpenFollowerAsWindow(TerminalConnection::ITerminalConnection follower)
+    void TerminalPage::_TmuxOpenFollowerAsWindow(TerminalConnection::ITerminalConnection follower)
     {
         if (!follower)
         {
             return;
         }
-        if (auto* session{ _HtmSessionForConnection(follower) })
+        if (auto* session{ _TmuxSessionForConnection(follower) })
         {
             session->OpenFollowerAsWindow(follower);
             return;
         }
-        _HtmNewWindow(std::move(follower));
+        _TmuxNewWindow(std::move(follower));
     }
 
-    bool TerminalPage::_HtmClosePane(const std::string& paneId)
+    bool TerminalPage::_TmuxClosePane(const std::string& paneId)
     {
-        if (auto pane{ _HtmFindPane(paneId) })
+        if (auto pane{ _TmuxFindPane(paneId) })
         {
             if (const auto control{ pane->GetTerminalControl() })
             {
-                if (const auto follower{ control.Connection().try_as<HtmFollowerConnection>() })
+                if (const auto follower{ AsTmuxFollower(control.Connection()) })
                 {
                     follower->SetSuppressClosePacket(true);
                 }
@@ -6548,7 +6565,7 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    bool TerminalPage::_HtmSetTabTitleForPane(const std::string& paneId, const winrt::hstring& title)
+    bool TerminalPage::_TmuxSetTabTitleForPane(const std::string& paneId, const winrt::hstring& title)
     {
         if (paneId.empty() || title.empty())
         {
@@ -6566,7 +6583,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             return false;
                         }
-                        return _HtmPaneIdFromConnection(control.Connection()) == paneId;
+                        return _TmuxPaneIdFromConnection(control.Connection()) == paneId;
                     });
                     if (found)
                     {
@@ -6579,23 +6596,23 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    HtmSession* TerminalPage::_HtmSessionForConnection(const TerminalConnection::ITerminalConnection& connection) const
+    TmuxSession* TerminalPage::_TmuxSessionForConnection(const TerminalConnection::ITerminalConnection& connection) const
     {
-        // Follower before leader — see _HtmPaneIdFromConnection.
+        // Follower before leader — see _TmuxPaneIdFromConnection.
         if (connection)
         {
-            if (const auto follower{ connection.try_as<HtmFollowerConnection>() })
+            if (const auto follower{ AsTmuxFollower(connection) })
             {
                 return follower->Session();
             }
-            if (const auto leader{ connection.try_as<HtmLeaderConnection>() })
+            if (const auto leader{ AsTmuxLeader(connection) })
             {
                 return leader->Session();
             }
         }
-        if (_htmSession && _htmSession->IsActive())
+        if (_tmuxSession && _tmuxSession->IsActive())
         {
-            return _htmSession.get();
+            return _tmuxSession.get();
         }
         return nullptr;
     }

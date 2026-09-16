@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "../TerminalApp/HtmProtocol.h"
+#include "../TerminalApp/TmuxProtocol.h"
 #include <atomic>
 #include <filesystem>
 #include <mutex>
@@ -14,13 +14,13 @@
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace Microsoft::Terminal::Htm;
+using namespace Microsoft::Terminal::Tmux;
 
 namespace TerminalAppUnitTests
 {
-    class HtmProtocolTests
+    class TmuxProtocolTests
     {
-        TEST_CLASS(HtmProtocolTests);
+        TEST_CLASS(TmuxProtocolTests);
 
         TEST_METHOD(EncodeLengthRoundTrip)
         {
@@ -72,24 +72,24 @@ namespace TerminalAppUnitTests
             VERIFY_ARE_EQUAL("REST", second.remainder);
         }
 
-        TEST_METHOD(ConPtyHtmCarrierRoundTrip)
+        TEST_METHOD(ConPtyTmuxCarrierRoundTrip)
         {
             const std::string payload{ TmuxControlDcs };
-            const auto encoded = EncodeConPtyHtmCarrier(payload);
+            const auto encoded = EncodeConPtyTmuxCarrier(payload);
             VERIFY_IS_TRUE(encoded.find("\x1b[?777;") == 0);
-            const auto decoded = DecodeConPtyHtmCarrier("", encoded);
+            const auto decoded = DecodeConPtyTmuxCarrier("", encoded);
             VERIFY_ARE_EQUAL(payload, decoded.decoded);
             VERIFY_IS_TRUE(decoded.pending.empty());
         }
 
-        TEST_METHOD(ConPtyHtmCarrierSplitAcrossChunks)
+        TEST_METHOD(ConPtyTmuxCarrierSplitAcrossChunks)
         {
-            const auto encoded = EncodeConPtyHtmCarrier("ab");
+            const auto encoded = EncodeConPtyTmuxCarrier("ab");
             const auto cut = encoded.size() / 2;
-            const auto first = DecodeConPtyHtmCarrier("", encoded.substr(0, cut));
+            const auto first = DecodeConPtyTmuxCarrier("", encoded.substr(0, cut));
             VERIFY_IS_TRUE(first.decoded.empty());
             VERIFY_IS_FALSE(first.pending.empty());
-            const auto second = DecodeConPtyHtmCarrier(first.pending, encoded.substr(cut));
+            const auto second = DecodeConPtyTmuxCarrier(first.pending, encoded.substr(cut));
             VERIFY_ARE_EQUAL("ab", second.decoded);
             VERIFY_IS_TRUE(second.pending.empty());
         }
@@ -108,7 +108,7 @@ namespace TerminalAppUnitTests
             // U+1F600 😀 arrives as two KEYEVENTF_UNICODE units (D83D DE00).
             Win32InputDecodeState state;
             VERIFY_ARE_EQUAL("", DecodeWin32InputMode("\x1b[0;0;55357;1;0;1_", state));
-            VERIFY_ARE_EQUAL(u8"\U0001F600", DecodeWin32InputMode("\x1b[0;0;56832;1;0;1_", state));
+            VERIFY_ARE_EQUAL("\xF0\x9F\x98\x80", DecodeWin32InputMode("\x1b[0;0;56832;1;0;1_", state));
             VERIFY_ARE_EQUAL(static_cast<char16_t>(0), state.pendingHigh);
         }
 
@@ -146,17 +146,17 @@ namespace TerminalAppUnitTests
         }
 
         // This stress test is NOT headless: it spawns a real htmd daemon
-        // indirectly by launching htm.exe (which is exactly how Windows Terminal
+        // indirectly by launching the EternalTerminal client (which is exactly how Windows Terminal
         // does it). The test then drives several tabs/panes and does concurrent
         // read/write on all of them to expose framing races and clean-exit bugs.
         TEST_METHOD(ConcurrentTabsPanesStressReadWrite)
         {
             // ------------------------------------------------------------------
-            // 1) Locate htm.exe / htmd.exe – built by EternalTerminal.
+            // 1) Locate EternalTerminal client / daemon binaries – built by EternalTerminal.
             //    We probe HTM_BIN_DIR, then common build outputs. If not found
             //    we skip rather than fail so CI without ET checkout still passes.
             // ------------------------------------------------------------------
-            auto findHtmBinary = [](const wchar_t* name) -> std::wstring {
+            auto findTmuxBinary = [](const wchar_t* name) -> std::wstring {
                 wchar_t* dup = nullptr;
                 size_t len = 0;
                 if (_wdupenv_s(&dup, &len, L"HTM_BIN_DIR") == 0 && dup && *dup)
@@ -198,14 +198,14 @@ namespace TerminalAppUnitTests
                 return L"";
             };
 
-            const auto htmPath = findHtmBinary(L"htm.exe");
-            const auto htmdPath = findHtmBinary(L"htmd.exe");
-            if (htmPath.empty() || htmdPath.empty())
+            const auto tmuxPath = findTmuxBinary(L"htm.exe");
+            const auto htmdPath = findTmuxBinary(L"htmd.exe");
+            if (tmuxPath.empty() || htmdPath.empty())
             {
-                Log::Comment(L"htm/htmd not found – skipping live-daemon stress (build EternalTerminal first)");
+                Log::Comment(L"tmux/htmd not found – skipping live-daemon stress (build EternalTerminal first)");
                 return;
             }
-            Log::Comment(NoThrowString().Format(L"Using htm=%s htmd=%s", htmPath.c_str(), htmdPath.c_str()));
+            Log::Comment(NoThrowString().Format(L"Using tmux=%s htmd=%s", tmuxPath.c_str(), htmdPath.c_str()));
 
             // ------------------------------------------------------------------
             // 2) Isolated TEMP for AF_UNIX socket: Windows htmd uses
@@ -283,9 +283,9 @@ namespace TerminalAppUnitTests
             }
 
             // ------------------------------------------------------------------
-            // 3) Spawn htmd INDIRECTLY by launching htm.exe -x with anonymous pipes.
+            // 3) Spawn htmd INDIRECTLY by launching the EternalTerminal client with -x.
             //    This is exactly how TerminalPage does it: the leader ConPTY runs
-            //    htm, htm daemonizes htmd on demand.
+            //    tmux, tmux daemonizes htmd on demand.
             // ------------------------------------------------------------------
             SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, TRUE };
             HANDLE hStdinRd{}, hStdinWr{}, hStdoutRd{}, hStdoutWr{};
@@ -300,14 +300,14 @@ namespace TerminalAppUnitTests
             si.hStdOutput = hStdoutWr;
             si.hStdError = hStdoutWr;
             PROCESS_INFORMATION pi{};
-            std::wstring cmd = L"\"" + htmPath + L"\" -x";
+            std::wstring cmd = L"\"" + tmuxPath + L"\" -x";
             // Mutable buffer for CreateProcess
             std::vector<wchar_t> cmdBuf(cmd.begin(), cmd.end());
             cmdBuf.push_back(L'\0');
 
             // Environment block with TEMP/TMP/HTM_BIN_DIR pointing at isolated dir
             // Build a tiny env: copy current + override.
-            std::wstring envExtra = L"TEMP=" + std::wstring(tmpDir) + L"\0TMP=" + std::wstring(tmpDir) + L"\0HTM_BIN_DIR=" + std::filesystem::path(htmPath).parent_path().wstring() + L"\0";
+            std::wstring envExtra = L"TEMP=" + std::wstring(tmpDir) + L"\0TMP=" + std::wstring(tmpDir) + L"\0HTM_BIN_DIR=" + std::filesystem::path(tmuxPath).parent_path().wstring() + L"\0";
             // We'll just set process env for child via SetEnvironmentVariable before CreateProcess
             // and restore after – simpler than building full block.
             wchar_t oldTemp[MAX_PATH]{}, oldTmp[MAX_PATH]{};
@@ -338,7 +338,7 @@ namespace TerminalAppUnitTests
                 if (pi.hThread)
                     CloseHandle(pi.hThread);
             });
-            VERIFY_IS_TRUE(ok, NoThrowString().Format(L"CreateProcess htm -x failed %d", GetLastError()));
+            VERIFY_IS_TRUE(ok, NoThrowString().Format(L"CreateProcess tmux -x failed %d", GetLastError()));
 
             // Child no longer needs write end of stdout / read end of stdin
             CloseHandle(hStdoutWr);
@@ -346,7 +346,7 @@ namespace TerminalAppUnitTests
             CloseHandle(hStdinRd);
             hStdinRd = nullptr;
 
-            // Helper: peek + read like HtmPipeSession
+            // Helper: peek + read like TmuxPipeSession
             auto peekAvail = [&](HANDLE h) -> DWORD {
                 DWORD avail = 0;
                 PeekNamedPipe(h, nullptr, 0, nullptr, &avail, nullptr);
@@ -354,7 +354,7 @@ namespace TerminalAppUnitTests
             };
             auto writePacket = [&](HANDLE h, const std::string& pkt) {
                 DWORD written = 0;
-                // Like HtmLeaderConnection::WriteRaw – one WriteFile per packet
+                // Like TmuxLeaderConnection::WriteRaw – one WriteFile per packet
                 // so concurrent writers cannot splice.
                 WriteFile(h, pkt.data(), (DWORD)pkt.size(), &written, nullptr);
             };
@@ -406,7 +406,7 @@ namespace TerminalAppUnitTests
             return;
 
             std::string readBuf;
-            std::string htmBuffer;
+            std::string tmuxBuffer;
             std::vector<Packet> packets;
             std::string initJson;
             auto pump = [&](DWORD timeoutMs) {
@@ -426,16 +426,16 @@ namespace TerminalAppUnitTests
                             if (readBuf.find("\x1b[###q") != std::string::npos)
                             {
                                 size_t pos = readBuf.find("\x1b[###q");
-                                htmBuffer.append(readBuf.substr(pos + 6));
+                                tmuxBuffer.append(readBuf.substr(pos + 6));
                                 readBuf.clear();
-                                auto res = ParsePackets(htmBuffer);
+                                auto res = ParsePackets(tmuxBuffer);
                                 for (auto& p : res.first)
                                 {
                                     if (p.header == InitState && initJson.empty())
                                         initJson = p.payload;
                                     packets.push_back(std::move(p));
                                 }
-                                htmBuffer = std::move(res.second);
+                                tmuxBuffer = std::move(res.second);
                                 if (!initJson.empty())
                                     return true;
                             }
@@ -452,7 +452,7 @@ namespace TerminalAppUnitTests
             };
 
             // Wait for INIT_STATE (daemon handshake)
-            VERIFY_IS_TRUE(pump(15000), L"did not receive INIT_STATE from htm/htmd");
+            VERIFY_IS_TRUE(pump(15000), L"did not receive INIT_STATE from tmux/htmd");
             Log::Comment(NoThrowString().Format(L"INIT json %hs", initJson.c_str()));
 
             // Extract first pane ID from JSON (simple scan for 36-char uuid)
@@ -485,7 +485,7 @@ namespace TerminalAppUnitTests
             VERIFY_IS_TRUE(p0.size() == 36, NoThrowString().Format(L"first pane %hs", p0.c_str()));
 
             // ------------------------------------------------------------------
-            // 4) Create several tabs/panes via HTM framing – like TerminalApp
+            // 4) Create several tabs/panes via TMUX framing – like TerminalApp
             //    does when applying INIT_STATE splits. Use real daemon.
             // ------------------------------------------------------------------
             auto makeId = []() -> std::string {
@@ -536,11 +536,11 @@ namespace TerminalAppUnitTests
                     ReadFile(hStdoutRd, tmp, std::min<DWORD>(avail, sizeof(tmp)), &got, nullptr);
                     if (got)
                     {
-                        htmBuffer.append(tmp, got);
-                        auto res = ParsePackets(htmBuffer);
+                        tmuxBuffer.append(tmp, got);
+                        auto res = ParsePackets(tmuxBuffer);
                         for (auto& p : res.first)
                             packets.push_back(std::move(p));
-                        htmBuffer = std::move(res.second);
+                        tmuxBuffer = std::move(res.second);
                     }
                 }
             }
@@ -548,7 +548,7 @@ namespace TerminalAppUnitTests
             // ------------------------------------------------------------------
             // 5) Concurrent I/O stress: 4 writers × 60 keys × 6 panes + resizes,
             //    all through the single leader pipe protected by a mutex like
-            //    HtmLeaderConnection::_writeMutex. Concurrent readers drain stdout.
+            //    TmuxLeaderConnection::_writeMutex. Concurrent readers drain stdout.
             // ------------------------------------------------------------------
             std::mutex writeMtx;
             auto writeLocked = [&](const std::string& pkt) {
@@ -601,8 +601,8 @@ namespace TerminalAppUnitTests
                         if (ReadFile(hStdoutRd, tmp, sizeof(tmp), &got, nullptr) && got)
                         {
                             std::lock_guard<std::mutex> lk{ outMtx };
-                            htmBuffer.append(tmp, got);
-                            auto res = ParsePackets(htmBuffer);
+                            tmuxBuffer.append(tmp, got);
+                            auto res = ParsePackets(tmuxBuffer);
                             for (auto& p : res.first)
                             {
                                 if (p.header == AppendToPane && p.payload.size() >= 36)
@@ -613,7 +613,7 @@ namespace TerminalAppUnitTests
                                     collectedOutput.append(dec);
                                 }
                             }
-                            htmBuffer = std::move(res.second);
+                            tmuxBuffer = std::move(res.second);
                         }
                     }
                     else
@@ -640,8 +640,8 @@ namespace TerminalAppUnitTests
                     ReadFile(hStdoutRd, tmp, sizeof(tmp), &got, nullptr);
                     if (got)
                     {
-                        htmBuffer.append(tmp, got);
-                        auto res = ParsePackets(htmBuffer);
+                        tmuxBuffer.append(tmp, got);
+                        auto res = ParsePackets(tmuxBuffer);
                         for (auto& p : res.first)
                         {
                             if (p.header == AppendToPane && p.payload.size() >= 36)
@@ -650,7 +650,7 @@ namespace TerminalAppUnitTests
                                 collectedOutput.append(Base64Decode(b64));
                             }
                         }
-                        htmBuffer = std::move(res.second);
+                        tmuxBuffer = std::move(res.second);
                     }
                 }
             }
@@ -676,19 +676,19 @@ namespace TerminalAppUnitTests
                 writeLocked(pkt);
             }
             // Wait for daemon exit (htmd) – poll by trying to connect or by
-            // checking that htm process exits after daemon closes pipe
+            // checking that tmux process exits after daemon closes pipe
             for (int i = 0; i < 50; ++i)
             {
                 if (WaitForSingleObject(pi.hProcess, 0) == WAIT_OBJECT_0)
                     break;
                 Sleep(100);
             }
-            // htm should have exited after htmd closed SESSION_END
-            bool htmExited = (WaitForSingleObject(pi.hProcess, 0) == WAIT_OBJECT_0);
-            Log::Comment(NoThrowString().Format(L"htm exited=%d collected %d bytes", (int)htmExited, (int)collectedOutput.size()));
-            VERIFY_IS_TRUE(htmExited, L"htm should exit cleanly after daemon 'x' shutdown");
+            // tmux should have exited after htmd closed SESSION_END
+            bool tmuxExited = (WaitForSingleObject(pi.hProcess, 0) == WAIT_OBJECT_0);
+            Log::Comment(NoThrowString().Format(L"tmux exited=%d collected %d bytes", (int)tmuxExited, (int)collectedOutput.size()));
+            VERIFY_IS_TRUE(tmuxExited, L"tmux should exit cleanly after daemon 'x' shutdown");
 
-            // Verify IPC file removed (tmpDir\htm.<user>.ipc) - poll because htmd unlinks asynchronously after SESSION_END
+            // Verify IPC file removed (tmpDir\tmux.<user>.ipc) - poll because htmd unlinks asynchronously after SESSION_END
             {
                 bool ipcExists = false;
                 for (int i = 0; i < 50; ++i)

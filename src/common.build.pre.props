@@ -181,6 +181,16 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Lib>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
+    <Lib>
+      <TargetMachine>MachineARM64</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
 
   <!-- For Debug ONLY -->
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">

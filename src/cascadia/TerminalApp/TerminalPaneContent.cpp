@@ -6,7 +6,7 @@
 
 #include <mmsystem.h>
 
-#include "HtmConnections.h"
+#include "TmuxConnections.h"
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
 
@@ -247,14 +247,14 @@ namespace winrt::TerminalApp::implementation
                 closePane = true;
             }
         }
-        // HTM followers are virtual mux panes: when ForceCloseUi / kill-pane marks
+        // TMUX followers are virtual mux panes: when ForceCloseUi / kill-pane marks
         // them Closed, the TermControl must tear down even if closeOnExit is never
         // (otherwise detach leaves inert native windows the e2e had to WM_CLOSE).
         if (!closePane &&
-            Feature_HtmIntegration::IsEnabled() &&
+            Feature_TmuxIntegration::IsEnabled() &&
             newConnectionState == ConnectionState::Closed &&
             _control &&
-            _control.Connection().try_as<HtmFollowerConnection>())
+            AsTmuxFollower(_control.Connection()))
         {
             closePane = true;
         }

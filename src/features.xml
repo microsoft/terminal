@@ -188,8 +188,8 @@
     </feature>
 
     <feature>
-        <name>Feature_HtmIntegration</name>
-        <description>Detect HTM init sequences and map Windows Terminal tabs/panes onto htmd</description>
+        <name>Feature_TmuxIntegration</name>
+        <description>Detect TMUX init sequences and map Windows Terminal tabs/panes onto htmd</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledReleaseTokens/>
         <alwaysDisabledBrandingTokens>

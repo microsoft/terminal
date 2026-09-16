@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-// HTM (headless terminal multiplexer) wire protocol, matching
-// EternalTerminal HtmHeaderCodes and hyper-htm/htm-core.js.
+// tmux control-mode wire protocol carried by EternalTerminal.
 
 #pragma once
 
@@ -15,9 +14,9 @@
 #include <utility>
 #include <vector>
 
-namespace Microsoft::Terminal::Htm
+namespace Microsoft::Terminal::Tmux
 {
-    // HTM now uses tmux control mode. These are terminal-facing markers; the
+    // tmux control mode uses these terminal-facing markers; the
     // bytes after DCS are ordinary newline-delimited tmux control records.
     inline constexpr std::string_view TmuxControlDcs{ "\x1bP1000p" };
     inline constexpr std::string_view TmuxControlSt{ "\x1b\\" };
@@ -31,19 +30,19 @@ namespace Microsoft::Terminal::Htm
         "  L    Toggle logging.\r\n"
         "  C    Run tmux command.\r\n"
     };
-    // ConPTY strips DCS. EternalTerminal's Windows htm client carries control
+    // ConPTY strips DCS. EternalTerminal's Windows client carries control
     // bytes as CSI ?777;b0;b1;...q (at most 15 payload bytes per sequence).
-    inline constexpr std::string_view ConPtyHtmCarrierPrefix{ "\x1b[?777" };
+    inline constexpr std::string_view ConPtyTmuxCarrierPrefix{ "\x1b[?777" };
     inline size_t LongestInitPrefix(std::string_view data, std::string_view needle);
 
-    inline std::string EncodeConPtyHtmCarrier(std::string_view bytes)
+    inline std::string EncodeConPtyTmuxCarrier(std::string_view bytes)
     {
         std::string out;
         constexpr size_t chunkSize = 15;
         for (size_t offset = 0; offset < bytes.size(); offset += chunkSize)
         {
             const auto end = std::min(bytes.size(), offset + chunkSize);
-            out.append(ConPtyHtmCarrierPrefix);
+            out.append(ConPtyTmuxCarrierPrefix);
             for (size_t i = offset; i < end; ++i)
             {
                 out.push_back(';');
@@ -60,7 +59,7 @@ namespace Microsoft::Terminal::Htm
         std::string pending;
     };
 
-    inline CarrierDecodeResult DecodeConPtyHtmCarrier(std::string_view pending, std::string_view incoming)
+    inline CarrierDecodeResult DecodeConPtyTmuxCarrier(std::string_view pending, std::string_view incoming)
     {
         std::string data;
         data.reserve(pending.size() + incoming.size());
@@ -70,16 +69,16 @@ namespace Microsoft::Terminal::Htm
         size_t i = 0;
         while (i < data.size())
         {
-            const auto pos = data.find(ConPtyHtmCarrierPrefix, i);
+            const auto pos = data.find(ConPtyTmuxCarrierPrefix, i);
             if (pos == std::string::npos)
             {
-                const auto keep = LongestInitPrefix(std::string_view{ data }.substr(i), ConPtyHtmCarrierPrefix);
+                const auto keep = LongestInitPrefix(std::string_view{ data }.substr(i), ConPtyTmuxCarrierPrefix);
                 result.decoded.append(data.substr(i, data.size() - i - keep));
                 result.pending = data.substr(data.size() - keep);
                 return result;
             }
             result.decoded.append(data.substr(i, pos - i));
-            size_t cursor = pos + ConPtyHtmCarrierPrefix.size();
+            size_t cursor = pos + ConPtyTmuxCarrierPrefix.size();
             std::string payload;
             bool complete = false;
             bool invalid = false;
