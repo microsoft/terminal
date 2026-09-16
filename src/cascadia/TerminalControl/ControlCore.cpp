@@ -1019,6 +1019,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         renderEngine->SetDisablePartialInvalidation(settings.DisablePartialInvalidation());
         renderEngine->SetSoftwareRendering(settings.SoftwareRendering());
         renderEngine->SetAntialiasingMode(parseAntialiasingMode(settings.AntialiasingMode()));
+
+        const auto padding = settings.Padding();
+        renderEngine->SetPadding(padding.Left, padding.Top, padding.Right, padding.Bottom);
     }
 
     void ControlCore::_updateRenderEngineAppearance(::Microsoft::Console::Render::AtlasEngine* renderEngine, const IControlAppearance& appearance)
