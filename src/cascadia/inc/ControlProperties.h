@@ -64,7 +64,7 @@
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
-    X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
+    X(winrt::Microsoft::Terminal::Core::Padding, Padding, 8, 8, 8, 8)                                                                                    \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \

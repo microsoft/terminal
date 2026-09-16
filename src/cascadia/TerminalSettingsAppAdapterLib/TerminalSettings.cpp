@@ -318,7 +318,14 @@ namespace winrt::Microsoft::Terminal::Settings
         _EnableColorGlyphs = fontInfo.EnableColorGlyphs();
         _CellWidth = fontInfo.CellWidth();
         _CellHeight = fontInfo.CellHeight();
-        _Padding = profile.Padding();
+
+        const auto p{ StringToXamlThicknessArray(profile.Padding()) };
+        _Padding = Core::Padding{
+            static_cast<float>(p[0]),
+            static_cast<float>(p[1]),
+            static_cast<float>(p[2]),
+            static_cast<float>(p[3]),
+        };
 
         _Commandline = profile.Commandline();
 

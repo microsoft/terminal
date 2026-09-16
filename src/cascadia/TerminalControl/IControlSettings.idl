@@ -44,7 +44,7 @@ namespace Microsoft.Terminal.Control
         String FontFace { get; };
         Single FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };
-        String Padding { get; };
+        Microsoft.Terminal.Core.Padding Padding { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontFeatures { get; };
         Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
         Boolean EnableBuiltinGlyphs { get; };

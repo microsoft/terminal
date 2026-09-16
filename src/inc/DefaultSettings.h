@@ -37,7 +37,6 @@ constexpr int DEFAULT_COLS = 120;
 // TextBuffer::Reflow on a wide glyph (GH#19996).
 constexpr int MINIMUM_VISIBLE_CELLS = 2;
 
-constexpr std::wstring_view DEFAULT_PADDING{ L"8, 8, 8, 8" };
 constexpr std::wstring_view DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
 
 constexpr auto DEFAULT_CURSOR_COLOR = COLOR_WHITE;

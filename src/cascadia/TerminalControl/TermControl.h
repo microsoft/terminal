@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        const Windows::UI::Xaml::Thickness GetPadding();
+        const Microsoft::Terminal::Core::Padding GetPadding();
 
         static Windows::Foundation::Size GetProposedDimensions(const IControlSettings& settings,
                                                                const uint32_t dpi,
@@ -169,7 +169,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
-        static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
         hstring ReadEntireBuffer() const;
         Control::CommandHistoryContext CommandHistory() const;
@@ -286,6 +285,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
+
+        winrt::Microsoft::Terminal::Core::Padding _padding{};
 
         std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
