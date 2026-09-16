@@ -53,6 +53,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    static D2D1_TEXT_ANTIALIAS_MODE parseAntialiasingMode(Control::TextAntialiasingMode antialiasingMode)
+    {
+        switch (antialiasingMode)
+        {
+        case TextAntialiasingMode::Cleartype:
+            return D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+        case TextAntialiasingMode::Aliased:
+            return D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
+        default:
+            return D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
+        }
+    }
+
     TextColor SelectionColor::AsTextColor() const noexcept
     {
         if (IsIndex16())
@@ -440,18 +453,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderEngineSwapChainChanged(handle);
             });
 
-            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            _renderEngine->SetPixelShaderImagePath(_settings.PixelShaderImagePath());
-            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
-            _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
-            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-
-            _updateAntiAliasingMode();
-
-            // GH#5098: Inform the engine of the opacity of the default text background.
-            // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            _updateRenderEngineSettings(_renderEngine.get(), _settings);
+            _updateRenderEngineAppearance(_renderEngine.get(), _settings);
 
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
@@ -948,17 +951,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_initializedTerminal.load(std::memory_order_relaxed))
             {
-                _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
-                _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
-                _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-                // Inform the renderer of our opacity
-                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+                _updateRenderEngineSettings(_renderEngine.get(), _settings);
+                // TODO(DH) This is not quite right, but it is the same as the code which was here before.
+                _updateRenderEngineAppearance(_renderEngine.get(), _settings);
+
                 _renderFailures = 0; // We may have changed the engine; reset the failure counter.
 
                 // Trigger a redraw to repaint the window background and tab colors.
                 _renderer->TriggerRedrawAll(true, true);
-
-                _updateAntiAliasingMode();
 
                 if (sizeChanged)
                 {
@@ -987,11 +987,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update AtlasEngine settings under the lock
         if (_renderEngine)
         {
-            // Update AtlasEngine settings under the lock
-            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-            _renderEngine->SetPixelShaderImagePath(newAppearance.PixelShaderImagePath());
-
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
             // The Focused Opacity from settings should be ignored if overridden at runtime.
@@ -1006,9 +1001,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance.UseAcrylic();
             }
 
-            // Update the renderer as well. It might need to fall back from
-            // cleartype -> grayscale if the BG is transparent / acrylic.
-            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+            // Update AtlasEngine settings under the lock
+            _updateRenderEngineAppearance(_renderEngine.get(), newAppearance);
+
             _renderer->NotifyPaintFrame();
 
             auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
@@ -1016,6 +1011,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderer->TriggerRedrawAll(true, true);
         }
+    }
+
+    void ControlCore::_updateRenderEngineSettings(::Microsoft::Console::Render::AtlasEngine* renderEngine, const IControlSettings& settings)
+    {
+        renderEngine->SetGraphicsAPI(parseGraphicsAPI(settings.GraphicsAPI()));
+        renderEngine->SetDisablePartialInvalidation(settings.DisablePartialInvalidation());
+        renderEngine->SetSoftwareRendering(settings.SoftwareRendering());
+        renderEngine->SetAntialiasingMode(parseAntialiasingMode(settings.AntialiasingMode()));
+    }
+
+    void ControlCore::_updateRenderEngineAppearance(::Microsoft::Console::Render::AtlasEngine* renderEngine, const IControlAppearance& appearance)
+    {
+        renderEngine->SetRetroTerminalEffect(appearance.RetroTerminalEffect());
+        renderEngine->SetPixelShaderPath(appearance.PixelShaderPath());
+        renderEngine->SetPixelShaderImagePath(appearance.PixelShaderImagePath());
+
+        // GH#5098: Inform the engine of the opacity of the default text background.
+        // GH#11315: Always do this, even if they don't have acrylic on.
+        renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
     }
 
     void ControlCore::SetHighContrastMode(const bool enabled)
@@ -1080,26 +1094,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal->UpdateColorScheme(scheme ? scheme : _settings.as<Core::ICoreScheme>());
         _renderer->TriggerRedrawAll(true);
-    }
-
-    void ControlCore::_updateAntiAliasingMode()
-    {
-        D2D1_TEXT_ANTIALIAS_MODE mode;
-        // Update AtlasEngine's AntialiasingMode
-        switch (_settings.AntialiasingMode())
-        {
-        case TextAntialiasingMode::Cleartype:
-            mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-            break;
-        case TextAntialiasingMode::Aliased:
-            mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
-            break;
-        default:
-            mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
-            break;
-        }
-
-        _renderEngine->SetAntialiasingMode(mode);
     }
 
     // Method Description:

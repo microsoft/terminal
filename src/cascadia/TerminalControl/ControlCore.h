@@ -313,6 +313,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setupDispatcherAndCallbacks();
         void _closeConnection();
 
+        void _updateRenderEngineSettings(::Microsoft::Console::Render::Atlas::AtlasEngine*, const IControlSettings&);
+        void _updateRenderEngineAppearance(::Microsoft::Console::Render::Atlas::AtlasEngine*, const IControlAppearance&);
+
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
         void _raiseFontSizeChanged();
@@ -350,7 +353,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         void _raiseReadOnlyWarning();
-        void _updateAntiAliasingMode();
         void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
