@@ -9,15 +9,18 @@ $VCToolsRoot = Join-Path $VSRoot "VC\Tools\MSVC"
 # We have observed a few instances where the VC tools package version actually
 # differs from the version on the files themselves. We might as well check
 # whether the version we just found _actually exists_ before we use it.
-# We'll use whichever highest version exists.
+# We'll use whichever highest revision (within the same major.minor version) exists.
 $PackageVCToolPath = Join-Path $VCToolsRoot $LatestVCToolsVersion
 If ($Null -Eq (Get-Item $PackageVCToolPath -ErrorAction:Ignore)) {
+    $LatestVCToolsVersionAsVersion = [Version]$LatestVCToolsVersion
     $VCToolsVersions = Get-ChildItem $VCToolsRoot | ForEach-Object {
         [Version]$_.Name
-    } | Sort -Descending
+    } | Sort -Descending | Where-Object {
+        $_.Major -eq $LatestVCToolsVersionAsVersion.Major -and $_.Minor -eq $LatestVCToolsVersionAsVersion.Minor
+    }
     $LatestActualVCToolsVersion = $VCToolsVersions | Select -First 1
 
-    If ([Version]$LatestVCToolsVersion -Ne $LatestActualVCToolsVersion) {
+    If ($LatestVCToolsVersionAsVersion -Ne $LatestActualVCToolsVersion) {
         Write-Output "VC Tools Mismatch: Directory = $LatestActualVCToolsVersion, Package = $LatestVCToolsVersion"
         $LatestVCToolsVersion = $LatestActualVCToolsVersion.ToString(3)
     }
