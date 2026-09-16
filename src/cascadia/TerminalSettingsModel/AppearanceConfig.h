@@ -38,6 +38,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
+        // Returns the OriginTag of the settings layer that actually set the effective
+        // dark (or light) color scheme name -- the leaf if it set its own value,
+        // otherwise the nearest ancestor that did. Returns OriginTag::None if no layer
+        // (including this one) ever set a value.
+        Model::OriginTag ColorSchemeNameOrigin(bool dark);
+
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);

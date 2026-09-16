@@ -170,6 +170,17 @@ void AppearanceConfig::ResolveMediaResources(const Model::MediaResourceResolver&
     }
 }
 
+Model::OriginTag AppearanceConfig::ColorSchemeNameOrigin(bool dark)
+{
+    const auto source{ dark ? _getDarkColorSchemeNameOverrideSourceImpl() : _getLightColorSchemeNameOverrideSourceImpl() };
+    if (!source)
+    {
+        // Nobody -- not even this leaf -- ever set a value.
+        return Model::OriginTag::None;
+    }
+    return std::get<1>(source->_getSourceProfileBasePathAndOrigin());
+}
+
 void AppearanceConfig::_logSettingSet(const std::string_view& setting)
 {
     _changeLog.emplace(setting);

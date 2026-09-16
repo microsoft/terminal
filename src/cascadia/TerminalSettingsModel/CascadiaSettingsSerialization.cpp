@@ -821,6 +821,20 @@ std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfil
     return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
 
+// GH#11457: ColorScheme::FromJson() only fails to parse when the scheme has no "name",
+// or when it doesn't define all of its colors. So if parsing failed but a non-empty
+// "name" is present, the scheme exists but is incomplete. We collect those names to
+// report a precise "incomplete" warning rather than an "unknown scheme" one.
+static std::optional<winrt::hstring> _incompleteSchemeName(const Json::Value& schemeJson)
+{
+    winrt::hstring name;
+    if (schemeJson.isObject() && JsonUtils::GetValueForKey(schemeJson, "name", name) && !name.empty())
+    {
+        return name;
+    }
+    return std::nullopt;
+}
+
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
 // This function is to be used for user settings files.
 void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
@@ -838,6 +852,12 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
             {
                 scheme->Origin(origin);
                 settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+            }
+            else if (auto name = _incompleteSchemeName(schemeJson))
+            {
+                // GH#11457: the scheme exists but is incomplete; remember it so a profile
+                // referencing it gets an accurate warning.
+                incompleteColorSchemes.emplace(std::move(*name));
             }
         }
     }
@@ -934,6 +954,14 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const winrt::h
                         // cause layering issues later. Add them to a staging area for later processing.
                         // (search for STAGED COLORS to find the next step)
                         settings.colorSchemes.emplace(scheme->Name(), std::move(scheme));
+                    }
+                }
+                else if (applyToUserSettings)
+                {
+                    // GH#11457: an incomplete scheme that would apply to the user's settings.
+                    if (auto name = _incompleteSchemeName(schemeJson))
+                    {
+                        incompleteColorSchemes.emplace(std::move(*name));
                     }
                 }
             }
@@ -1502,6 +1530,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
+    _incompleteColorSchemes = std::move(loader.incompleteColorSchemes);
 
     // Initialize the WindowSettings to delegate to the GlobalAppSettings.
     // In the future, per-window-name settings will be separate objects.
