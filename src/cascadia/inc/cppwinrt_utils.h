@@ -17,6 +17,10 @@ Revision History:
 
 #pragma once
 
+#include <string>
+#include <string_view>
+#include <til.h>
+
 // This type is identical to winrt::fire_and_forget, but its unhandled_exception
 // handler logs the exception instead of terminating the application.
 //
@@ -356,6 +360,64 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
         BASIC_FACTORY(className);                                                                                 \
     }
 
+inline std::array<double, 4> StringToXamlThicknessArray(std::wstring_view padding)
+{
+    // BODGY: Making this a function-body-try confuses MSVC into believing
+    // that a pragma detect_mismatch occurs inside a namespace (this function,
+    // perhaps?)
+    try
+    {
+        uintptr_t count{ 0 };
+        std::array<double, 4> t{ 0. }; // left, top, right, bottom
+        std::wstring buf;
+        auto& errnoRef = errno; // Nonzero cost, pay it once
+        for (const auto& token : til::split_iterator{ padding, L',' })
+        {
+            buf.assign(token);
+            // wcstod handles whitespace prefix (which is ignored) & stops the
+            // scan when first char outside the range of radix is encountered.
+            // We'll be permissive till the extent that stod function allows us to be by default
+            // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+            errnoRef = 0;
+            wchar_t* end;
+            const auto val{ std::wcstod(buf.c_str(), &end) };
+            if (end != buf.c_str() && errnoRef != ERANGE)
+            {
+                til::at(t, count) = val;
+            }
+
+            if (++count >= 4)
+            {
+                break;
+            }
+        }
+
+#pragma warning(push)
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+        switch (count)
+        {
+        case 1: // one input = all 4 values are the same
+            t[1] = t[0]; // top = left
+            __fallthrough;
+        case 2: // two inputs = top/bottom and left/right are the same
+            t[2] = t[0]; // right = left
+            t[3] = t[1]; // bottom = top
+            __fallthrough;
+        case 4: // four inputs = fully specified
+            break;
+        default:
+            return {};
+        }
+        return t;
+#pragma warning(pop)
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+    }
+    return {};
+}
+
 #ifdef WINRT_Windows_UI_Xaml_H
 
 inline ::winrt::hstring XamlThicknessToOptimalString(const ::winrt::Windows::UI::Xaml::Thickness& t)
@@ -376,56 +438,9 @@ inline ::winrt::hstring XamlThicknessToOptimalString(const ::winrt::Windows::UI:
 }
 
 inline ::winrt::Windows::UI::Xaml::Thickness StringToXamlThickness(std::wstring_view padding)
-try
 {
-    uintptr_t count{ 0 };
-    double t[4]{ 0. }; // left, top, right, bottom
-    std::wstring buf;
-    auto& errnoRef = errno; // Nonzero cost, pay it once
-    for (const auto& token : til::split_iterator{ padding, L',' })
-    {
-        buf.assign(token);
-        // wcstod handles whitespace prefix (which is ignored) & stops the
-        // scan when first char outside the range of radix is encountered.
-        // We'll be permissive till the extent that stod function allows us to be by default
-        // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-        errnoRef = 0;
-        wchar_t* end;
-        const auto val{ std::wcstod(buf.c_str(), &end) };
-        if (end != buf.c_str() && errnoRef != ERANGE)
-        {
-            til::at(t, count) = val;
-        }
-
-        if (++count >= 4)
-        {
-            break;
-        }
-    }
-
-#pragma warning(push)
-#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
-    switch (count)
-    {
-    case 1: // one input = all 4 values are the same
-        t[1] = t[0]; // top = left
-        __fallthrough;
-    case 2: // two inputs = top/bottom and left/right are the same
-        t[2] = t[0]; // right = left
-        t[3] = t[1]; // bottom = top
-        __fallthrough;
-    case 4: // four inputs = fully specified
-        break;
-    default:
-        return {};
-    }
+    const auto t{ StringToXamlThicknessArray(padding) };
     return { t[0], t[1], t[2], t[3] };
-#pragma warning(pop)
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
 }
 
 #endif
