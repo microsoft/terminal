@@ -909,6 +909,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
 
 void AtlasEngine::SetPadding(float left, float top, float right, float bottom) noexcept
 {
+    // TODO(DH) - we aren't invalidating the right pixels/presenting the right area (lol oops)
     f32x4 newPadding{ left, top, right, bottom };
     if (_api.paddingInDip != newPadding)
     {
