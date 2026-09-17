@@ -1038,6 +1038,18 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        // MUX TabViewItem does not honor Handled on PointerPressed. After our
+        // handler returns it still records the middle button and RequestClose()
+        // on release whenever IsClosable is true. Flip that off for this
+        // gesture so closeOnMiddleClick:false actually suppresses the default
+        // (visible close button) path. Do not restore a tab that was already
+        // not closable (read-only, or showCloseButton never).
+        const auto restoreClosable = !closeOnMiddleClick && tabViewItem.IsClosable();
+        if (restoreClosable)
+        {
+            tabViewItem.IsClosable(false);
+        }
+
         _tabItemMiddleClickExited = false;
 
         _tabItemMiddleClickPointerEntered = tabViewItem.PointerEntered(winrt::auto_revoke, [this](auto&&, auto&& e) {
@@ -1048,7 +1060,7 @@ namespace winrt::TerminalApp::implementation
             _tabItemMiddleClickExited = true;
             e.Handled(true);
         });
-        _tabItemMiddleClickPointerCaptureLost = tabViewItem.PointerCaptureLost(winrt::auto_revoke, [this, closeOnMiddleClick](auto&& sender, auto&& e) {
+        _tabItemMiddleClickPointerCaptureLost = tabViewItem.PointerCaptureLost(winrt::auto_revoke, [this, closeOnMiddleClick, restoreClosable](auto&& sender, auto&& e) {
             // The WinUI TabView calls CapturePointer() internally and it's not reference counted,
             // so when it calls ReleasePointerCapture() in its PointerReleased handler,
             // we get a PointerCaptureLost before we receive the PointerReleased event.
@@ -1058,6 +1070,14 @@ namespace winrt::TerminalApp::implementation
             _tabItemMiddleClickPointerEntered.revoke();
             _tabItemMiddleClickPointerExited.revoke();
             _tabItemMiddleClickPointerCaptureLost.revoke();
+
+            if (restoreClosable)
+            {
+                if (const auto item = sender.try_as<MUX::Controls::TabViewItem>())
+                {
+                    item.IsClosable(true);
+                }
+            }
 
             if (!_tabItemMiddleClickExited && !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed() && closeOnMiddleClick)
             {
