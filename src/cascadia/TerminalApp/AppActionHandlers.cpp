@@ -547,14 +547,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
                                      const ActionEventArgs& args)
     {
-        const auto realArgs = args ? args.ActionArgs().try_as<NewTabArgs>() : nullptr;
-
         if (args == nullptr)
         {
             LOG_IF_FAILED(_OpenNewTab(nullptr));
-            return;
+            args.Handled(true);
         }
-        else if (realArgs)
+        else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
