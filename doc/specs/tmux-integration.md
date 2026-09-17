@@ -17,7 +17,7 @@ The work is gated by `Feature_TmuxIntegration`. It is enabled in non-Inbox build
 
 ## Background
 
-iTerm2 introduced a native tmux integration based on `tmux -CC`. In control mode, the terminal is a tmux client: it receives structured notifications about output, layouts, and lifecycle events, and it sends tmux commands for input and UI operations. WezTerm implements the same model.
+iTerm2 introduced a native tmux integration based on `tmux -CC`. In control mode, the terminal is a tmux client: it receives structured notifications about output, layouts, and lifecycle events, and it sends tmux commands for input and UI operations. Other terminal emulators implement the same model.
 
 EternalTerminal supplies a Windows tmux-compatible client and daemon through `htm.exe` and `htmd.exe`. On Windows, `htmd` owns the pane ConPTY processes and exposes tmux control mode to `htm`. Windows Terminal provides the native renderer and maps its UI actions back to tmux commands.
 
@@ -97,7 +97,7 @@ Terminal translates native actions into standard tmux commands:
 | Open a tab or window | `new-window -P -F '#{pane_id}'` |
 | Close a pane | `kill-pane -t %pane` |
 | Resize a pane | `resize-pane -t %pane -x cols -y rows` |
-| Resize the control client | `refresh-client -C colsxrows` |
+| Resize the control client | `refresh-client -C <columns>x<rows>` |
 | Detach | `detach-client` |
 
 Keyboard input is converted to UTF-8 and sent with hexadecimal `send-keys -H` arguments so spaces, control characters, and Unicode are not reinterpreted by the command parser. Windows win32-input-mode records are decoded, and UTF-16 surrogate pairs are preserved across input callbacks.
@@ -137,7 +137,7 @@ While control mode is active, the gateway accepts the iTerm2-style command menu 
 | `L` | Toggle display of non-output protocol records in the gateway. |
 | `C` | Prompt for and send an arbitrary tmux command. |
 
-Receiving ST or `%exit`, closing the leader, or detaching closes and unregisters all followers. Followers are silenced before their `TermControl`s are closed so late `%output` records and resize callbacks cannot write through a torn-down session. Closing an individual native pane sends `kill-pane`; server-driven layout changes close the corresponding native UI without echoing another close command.
+Receiving ST or `%exit`, closing the leader, or detaching closes all followers and removes their registrations. Followers are silenced before their `TermControl`s are closed so late `%output` records and resize callbacks cannot write through a torn-down session. Closing an individual native pane sends `kill-pane`; server-driven layout changes close the corresponding native UI without echoing another close command.
 
 ## Implementation types
 

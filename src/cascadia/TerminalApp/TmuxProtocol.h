@@ -20,7 +20,7 @@ namespace Microsoft::Terminal::Tmux
     // bytes after DCS are ordinary newline-delimited tmux control records.
     inline constexpr std::string_view TmuxControlDcs{ "\x1bP1000p" };
     inline constexpr std::string_view TmuxControlSt{ "\x1b\\" };
-    // iTerm2's tmux -CC gateway banner. WezTerm prints the same text.
+    // iTerm2's tmux -CC gateway banner. Other tmux clients print the same text.
     inline constexpr std::string_view TmuxCommandMenu{
         "\r\n** tmux mode started **\r\n\r\n"
         "Command Menu\r\n"
@@ -181,7 +181,7 @@ namespace Microsoft::Terminal::Tmux
         }
     }
 
-    // KEYEVENTF_UNICODE may deliver one UTF-16 code unit per win32-input-mode
+    // Unicode SendInput events may deliver one UTF-16 code unit per win32-input-mode
     // record; hold an unpaired high surrogate across DecodeWin32InputMode calls.
     struct Win32InputDecodeState
     {

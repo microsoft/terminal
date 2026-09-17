@@ -40,8 +40,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (_tmuxMode)
         {
-            // Stateful conversion: KEYEVENTF_UNICODE may deliver one surrogate
-            // per WriteInput; til::u16u8 without state would emit CESU-8.
+            // Stateful conversion: Unicode SendInput may deliver one surrogate
+            // per WriteInput; conversion without state would emit invalid UTF-8.
             const auto utf8 = til::u16u8(winrt_array_to_wstring_view(data), _u16ToUtf8);
             if (utf8.empty() || utf8 == "\x1b[I" || utf8 == "\x1b[O")
             {
@@ -322,8 +322,8 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        // Stateful conversion: KEYEVENTF_UNICODE may deliver one surrogate
-        // per WriteInput; til::u16u8 without state would emit CESU-8.
+        // Stateful conversion: Unicode SendInput may deliver one surrogate
+        // per WriteInput; conversion without state would emit invalid UTF-8.
         const auto utf8 = til::u16u8(winrt_array_to_wstring_view(data), _u16ToUtf8);
         if (utf8.empty() || utf8 == "\x1b[I" || utf8 == "\x1b[O")
         {

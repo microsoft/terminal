@@ -105,7 +105,7 @@ namespace TerminalAppUnitTests
 
         TEST_METHOD(Win32InputModeSurrogatePairEmoji)
         {
-            // U+1F600 😀 arrives as two KEYEVENTF_UNICODE units (D83D DE00).
+            // U+1F600 😀 arrives as two Unicode SendInput units (D83D DE00).
             Win32InputDecodeState state;
             VERIFY_ARE_EQUAL("", DecodeWin32InputMode("\x1b[0;0;55357;1;0;1_", state));
             VERIFY_ARE_EQUAL("\xF0\x9F\x98\x80", DecodeWin32InputMode("\x1b[0;0;56832;1;0;1_", state));

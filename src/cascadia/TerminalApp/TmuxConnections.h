@@ -76,7 +76,7 @@ namespace winrt::TerminalApp::implementation
         std::string _paneId;
         std::mutex _writeMutex;
         bool _closed{ false };
-        // SendInput KEYEVENTF_UNICODE delivers one UTF-16 code unit per call;
+        // Unicode SendInput events deliver one UTF-16 code unit per call;
         // hold high surrogates across WriteInput so emoji becomes real UTF-8.
         til::u16state _u16ToUtf8;
         ::Microsoft::Terminal::Tmux::Win32InputDecodeState _win32Decode;
@@ -148,7 +148,7 @@ namespace winrt::TerminalApp::implementation
         bool _suppressClosePacket{ false };
         bool _closed{ false };
         std::string _pendingOutput;
-        // SendInput KEYEVENTF_UNICODE delivers one UTF-16 code unit per call;
+        // Unicode SendInput events deliver one UTF-16 code unit per call;
         // hold high surrogates across WriteInput so emoji becomes real UTF-8.
         til::u16state _u16ToUtf8;
         ::Microsoft::Terminal::Tmux::Win32InputDecodeState _win32Decode;
