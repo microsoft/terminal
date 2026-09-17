@@ -214,6 +214,7 @@ struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IC
     HARDCODED_PROPERTY(bool, EnableUnfocusedAcrylic, false);
     HARDCODED_PROPERTY(bool, RainbowSuggestions, false);
     HARDCODED_PROPERTY(bool, AllowVtClipboardWrite, true);
+    HARDCODED_PROPERTY(bool, AllowOscNotifications, false);
     HARDCODED_PROPERTY(bool, AllowVtChecksumReport, false);
     HARDCODED_PROPERTY(winrt::hstring, AnswerbackMessage, L"");
     HARDCODED_PROPERTY(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None);

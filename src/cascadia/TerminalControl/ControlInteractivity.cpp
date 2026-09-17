@@ -464,7 +464,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // SwapChainPanel, not the entire control. If they drag out of
                 // the bounds of the text, into the padding, we still what that
                 // to auto-scroll
-                const auto height = _core->ViewHeight() * _core->FontSize().Height;
+                const auto height = _core->ViewportSize().Height * _core->FontSize().Height;
                 const auto cursorBelowBottomDist = pixelPosition.Y - height;
                 const auto cursorAboveTopDist = -1 * pixelPosition.Y;
 
