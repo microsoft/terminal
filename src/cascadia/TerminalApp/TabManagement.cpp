@@ -88,6 +88,38 @@ namespace winrt::TerminalApp::implementation
 
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
+        if (Feature_TmuxIntegration::IsEnabled())
+        {
+            // new-window is session-scoped. Prefer the focused TMUX connection's
+            // session so a native TMUX window can spawn another OS window.
+            auto focusedConnection{ _TmuxFocusedConnection() };
+            auto* session = _TmuxSessionForConnection(focusedConnection);
+            // Action dispatch can run while a split's new TermControl is
+            // becoming focused. Use any live TMUX follower in this native
+            // window, just as SplitPane does, rather than falling through to
+            // a non-TMUX ConPTY tab.
+            if (!session)
+            {
+                focusedConnection = _TmuxAnyConnectionInWindow();
+                session = _TmuxSessionForConnection(focusedConnection);
+            }
+            if (session)
+            {
+                if (const auto follower{ session->CreateFollowerForUserTab(_TmuxPaneIdFromConnection(focusedConnection)) })
+                {
+                    _TmuxOpenFollowerAsTab(follower);
+                    return S_OK;
+                }
+            }
+            else if (_tmuxSession && _tmuxSession->IsActive())
+            {
+                if (const auto follower{ _tmuxSession->CreateFollowerForUserTab() })
+                {
+                    _TmuxOpenFollowerAsTab(follower);
+                    return S_OK;
+                }
+            }
+        }
         _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
         return S_OK;
     }
@@ -539,6 +571,17 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
+            if (Feature_TmuxIntegration::IsEnabled())
+            {
+                if (auto* session{ _TmuxSessionForConnection(_TmuxAnyConnectionInWindow()) })
+                {
+                    session->ClearNativeHostPage(this);
+                }
+                else if (_tmuxSession)
+                {
+                    _tmuxSession->ClearNativeHostPage(this);
+                }
+            }
             // If we are supposed to save state, make sure we clear it out
             // if the user manually closed all tabs.
             // Do this only if we are the last window; the monarch will notice
