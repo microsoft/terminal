@@ -2407,6 +2407,11 @@
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
           "type": "boolean"
         },
+        "closeOnMiddleClick": {
+          "default": true,
+          "description": "When set to true, middle-clicking a tab closes it. When set to false, middle-clicking a tab does nothing.",
+          "type": "boolean"
+        },
         "focusFollowMouse": {
           "default": false,
           "description": "When set to true, the terminal will focus the pane on mouse hover.",

@@ -182,6 +182,13 @@
         </local:SettingsExpander>
 
 
+        <!--  Close tab on middle-click  -->
+        <local:SettingsCard x:Name="CloseOnMiddleClick"
+                            ContentAlignment="Left">
+            <CheckBox x:Uid="Globals_CloseOnMiddleClick"
+                      IsChecked="{x:Bind ViewModel.CloseOnMiddleClick, Mode=TwoWay}" />
+        </local:SettingsCard>
+
         <!--  Confirm Close On  -->
         <local:SettingsCard x:Name="ConfirmOnClose"
                             x:Uid="Globals_ConfirmOnClose">

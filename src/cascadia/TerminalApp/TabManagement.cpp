@@ -1021,7 +1021,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
-        if (!_tabItemMiddleClickHookEnabled || !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        if (!e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        {
+            return;
+        }
+
+        const auto closeOnMiddleClick = _currentWindowSettings().CloseOnMiddleClick();
+        if (closeOnMiddleClick && !_tabItemMiddleClickHookEnabled)
         {
             return;
         }
@@ -1030,6 +1036,18 @@ namespace winrt::TerminalApp::implementation
         if (!tabViewItem || !tabViewItem.CapturePointer(e.Pointer()))
         {
             return;
+        }
+
+        // MUX TabViewItem does not honor Handled on PointerPressed. After our
+        // handler returns it still records the middle button and RequestClose()
+        // on release whenever IsClosable is true. Flip that off for this
+        // gesture so closeOnMiddleClick:false actually suppresses the default
+        // (visible close button) path. Do not restore a tab that was already
+        // not closable (read-only, or showCloseButton never).
+        const auto restoreClosable = !closeOnMiddleClick && tabViewItem.IsClosable();
+        if (restoreClosable)
+        {
+            tabViewItem.IsClosable(false);
         }
 
         _tabItemMiddleClickExited = false;
@@ -1042,7 +1060,7 @@ namespace winrt::TerminalApp::implementation
             _tabItemMiddleClickExited = true;
             e.Handled(true);
         });
-        _tabItemMiddleClickPointerCaptureLost = tabViewItem.PointerCaptureLost(winrt::auto_revoke, [this](auto&& sender, auto&& e) {
+        _tabItemMiddleClickPointerCaptureLost = tabViewItem.PointerCaptureLost(winrt::auto_revoke, [this, closeOnMiddleClick, restoreClosable](auto&& sender, auto&& e) {
             // The WinUI TabView calls CapturePointer() internally and it's not reference counted,
             // so when it calls ReleasePointerCapture() in its PointerReleased handler,
             // we get a PointerCaptureLost before we receive the PointerReleased event.
@@ -1053,7 +1071,15 @@ namespace winrt::TerminalApp::implementation
             _tabItemMiddleClickPointerExited.revoke();
             _tabItemMiddleClickPointerCaptureLost.revoke();
 
-            if (!_tabItemMiddleClickExited && !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+            if (restoreClosable)
+            {
+                if (const auto item = sender.try_as<MUX::Controls::TabViewItem>())
+                {
+                    item.IsClosable(true);
+                }
+            }
+
+            if (!_tabItemMiddleClickExited && !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed() && closeOnMiddleClick)
             {
                 _OnTabPointerReleasedCloseTab(std::move(sender));
             }
