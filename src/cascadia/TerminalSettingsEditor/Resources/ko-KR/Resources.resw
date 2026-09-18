@@ -1090,6 +1090,10 @@
     <value>드롭다운 메뉴에 표시하지 않음</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>관리자 권한으로 실행(이미 권한이 승격된 경우 현재 창 사용)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>기록 크기</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1177,6 +1181,10 @@
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>시작 디렉터리</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>기본 시작 디렉터리</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>시작 디렉터리</value>
@@ -1586,13 +1594,29 @@
     <value>프로필</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>프로필 기본값</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
   <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>이름</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
   </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>탭 모양</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>색상, 글꼴 및 텍스트 스타일을 포함하여 프로필의 시각적 모양을 사용자 지정합니다.</value>
     <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>프로필이 비활성(포커스 해제) 상태일 때의 모양을 사용자 지정합니다.</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
+    <value>터미널이 키보드 입력과 제어 시퀀스를 처리하는 방식을 구성합니다.</value>
+    <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>투명성</value>
@@ -1769,6 +1793,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>이 프로필의 포커스되지 않은 모양을 삭제합니다.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>이 비활성 상태 모양 삭제</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>비활성 상태 모양을 제거하여 프로필이 비활성 상태일 때 기본 모양을 사용하도록 합니다.</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>바로 가기에 대해 자세히 알아보기</value>
@@ -2798,6 +2830,10 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>없음</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>비활성 상태 모양</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>시작 동작</value>

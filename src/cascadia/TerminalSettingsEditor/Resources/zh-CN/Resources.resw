@@ -338,7 +338,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>选择将文本分组到单元格中的方式。“Grapheme 群集”提供最新的 Unicode 行为。重启终端以应用更改。仅影响从终端启动的应用程序。</value>
+    <value>选择将文本分组到单元格中的方式。“Grapheme 群集”提供最新的 Unicode 行为。重启终端即可应用更改。仅影响从终端启动的应用程序。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 群集</value>
@@ -802,6 +802,10 @@
     <value>右上角</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>浏览...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
   <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>添加新字体轴</value>
   </data>
@@ -1086,6 +1090,10 @@
     <value>已在下拉菜单中隐藏</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>以管理员身份运行(如果已提升，则使用当前窗口)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>历史记录大小</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1173,6 +1181,10 @@
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>启动目录</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>默认启动目录</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>正在启动目录</value>
@@ -1578,9 +1590,21 @@
     <value>名称</value>
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
+  <data name="Profile_Name.Header" xml:space="preserve">
+    <value>配置文件</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>配置文件默认设置</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
   <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>名称</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>选项卡外观</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
   </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>自定义配置文件的视觉外观，包括颜色、字体和文本样式。</value>
@@ -1769,6 +1793,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>删除此配置文件的无焦点外观。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>删除此无焦点外观</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>删除无焦点外观，以便配置文件在处于非活动状态时使用其默认外观</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>详细了解快捷方式</value>
@@ -2798,6 +2830,10 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>无</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>无焦点外观</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>启动行为</value>

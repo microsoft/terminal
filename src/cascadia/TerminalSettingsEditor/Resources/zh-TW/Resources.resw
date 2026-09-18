@@ -547,7 +547,7 @@
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
   <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
-    <value>啟用時，應用程式可以傳送 OSC 777 逸出序列，以觸發具有自訂標題和本文的桌面通知。</value>
+    <value>啟用後，應用程式可以傳送 OSC 777 逸出序列，以觸發具有自訂標題和內文的桌面通知。</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
@@ -1090,6 +1090,10 @@
     <value>已從下拉式功能表中隱藏</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>以系統管理員身分執行 (如果已提升，則使用目前視窗)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>歷史大小</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1177,6 +1181,10 @@
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>起始目錄</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>預設起始目錄</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>起始目錄</value>
@@ -1586,6 +1594,18 @@
     <value>設定檔</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>設定檔預設值</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
+    <value>名稱</value>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>索引標籤外觀</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>自訂設定檔的視覺外觀，包括顏色、字體和文字樣式。</value>
     <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
@@ -1595,7 +1615,7 @@
     <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
-    <value>設定終端處理鍵盤輸入和控制順序的方式</value>
+    <value>設定終端機處理鍵盤輸入和控制序列的方式</value>
     <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
@@ -1773,6 +1793,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>刪除此設定檔的非焦點外觀。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>刪除此非焦點外觀</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>移除非焦點外觀，讓設定檔在非使用中時使用其預設外觀</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>深入了解捷徑</value>
@@ -2802,6 +2830,10 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>無</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>非焦點外觀</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>啟動行為</value>

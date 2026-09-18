@@ -734,6 +734,10 @@
     <value>Aparência</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>Nenhum</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Caminho da imagem de tela de fundo</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -797,6 +801,10 @@
   <data name="Profile_BackgroundImageAlignmentTopRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Superior direito</value>
     <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Procurar...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Adicionar novo eixo de fonte</value>
@@ -902,6 +910,10 @@
   <data name="Profile_Commandline.Description" xml:space="preserve">
     <value>Arquivo executável usado no perfil.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
+  </data>
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Procurar...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Altura do cursor</value>
@@ -1078,6 +1090,10 @@
     <value>Oculto no menu suspenso</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>Executar como administrador (usa a janela atual se já estiver elevada)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Tamanho de histórico</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1109,6 +1125,10 @@
   <data name="Profile_Icon.Description" xml:space="preserve">
     <value>Local do arquivo de imagem ou emoji do ícone usado no perfil.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
+  </data>
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Procurar...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Preenchimento</value>
@@ -1162,9 +1182,17 @@
     <value>Diretório inicial</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>Diretório inicial padrão</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Diretório inicial</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Procurar...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.Content" xml:space="preserve">
     <value>Usar o diretório de processo pai</value>
@@ -1566,9 +1594,17 @@
     <value>Perfil</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>Padrões de Perfil</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
   <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Nome</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>Aparência da Guia</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
   </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>Personalize a aparência visual do perfil, incluindo cores, fontes e estilo de texto.</value>
@@ -1757,6 +1793,10 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Exclua a aparência desfocada para este perfil.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>Excluir esta aparência desfocada</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
     <value>Remove a aparência sem foco para que o perfil use sua aparência padrão quando inativo</value>
@@ -2157,6 +2197,10 @@
   <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Sem cor</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Procurar...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Inserir o atalho de teclado desejado.</value>
@@ -2786,6 +2830,10 @@ Esta ação é aplicada imediatamente e não pode ser desfeita.</value>
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>Nenhum</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>Aparência Desfocada</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>Comportamento de Inicialização</value>
