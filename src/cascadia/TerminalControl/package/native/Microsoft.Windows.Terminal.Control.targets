@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)..\Microsoft.Windows.Terminal.Control.targets" />
+  <ItemGroup>
+    <Reference Include="$(MSBuildThisFileDirectory)..\..\lib\uap10.0\Microsoft.Terminal.Core.winmd">
+        <WinMDFile>true</WinMDFile>
+        <Implementation>TerminalConnection.dll</Implementation>
+    </Reference>
+    <Reference Include="$(MSBuildThisFileDirectory)..\..\lib\uap10.0\Microsoft.Terminal.TerminalConnection.winmd">
+        <WinMDFile>true</WinMDFile>
+        <Implementation>TerminalConnection.dll</Implementation>
+    </Reference>
+    <Reference Include="$(MSBuildThisFileDirectory)..\..\lib\uap10.0\Microsoft.Terminal.UI.winmd">
+        <WinMDFile>true</WinMDFile>
+        <Implementation>Microsoft.Terminal.UI.dll</Implementation>
+    </Reference>
+    <Reference Include="$(MSBuildThisFileDirectory)..\..\lib\uap10.0\Microsoft.Terminal.Control.winmd">
+        <WinMDFile>true</WinMDFile>
+        <Implementation>Microsoft.Terminal.Control.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-$(TerminalNativePlatform)\native\*.dll" />
+    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)..\..\runtimes\win-$(TerminalNativePlatform)\native\*.pri" />
+  </ItemGroup>
+</Project>
