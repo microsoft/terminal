@@ -734,6 +734,10 @@
     <value>Apparence</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>Aucune</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Chemin d'accès de l’image d’arrière-plan</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -1086,6 +1090,10 @@
     <value>Masqué dans le menu déroulant</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>Exécuter en tant qu’administrateur (utilise la fenêtre actuelle si elle est déjà élevée)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Taille de l’historique</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1173,6 +1181,10 @@
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Répertoire de démarrage</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>Répertoire de démarrage par défaut</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Répertoire de démarrage</value>
@@ -1582,9 +1594,17 @@
     <value>Profil</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>Valeurs par défaut du profil</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
   <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Nom</value>
     <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>Apparence de l’onglet</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
   </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>Personnalisez l’apparence visuelle du profil, notamment les couleurs, les polices et le style du texte.</value>
@@ -1773,6 +1793,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Supprimez l’apparence sans focus pour ce profil.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>Supprimer cette apparence non active</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>Supprime l’apparence non focalisée afin que le profil utilise son apparence par défaut lorsqu’il est inactif</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>En savoir plus sur les raccourcis</value>
@@ -2802,6 +2830,10 @@ Cette action est appliquée immédiatement et ne peut pas être annulée.</value
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>Aucune</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>Apparence sans focus</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>Comportement au lancement</value>

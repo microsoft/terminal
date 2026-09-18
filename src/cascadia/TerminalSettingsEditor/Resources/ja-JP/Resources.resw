@@ -802,6 +802,10 @@
     <value>右上</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>参照...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
   <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>新しいフォント軸の追加</value>
   </data>
@@ -1086,6 +1090,10 @@
     <value>ドロップダウン メニューから非表示になっています</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>管理者として実行 (既に昇格済みの場合は現在のウィンドウを使用)</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>履歴のサイズ</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
@@ -1173,6 +1181,10 @@
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>開始ディレクトリ</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>既定の開始ディレクトリ</value>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>開始ディレクトリ</value>
@@ -1582,9 +1594,25 @@
     <value>プロファイル</value>
     <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
   </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>プロファイルの既定値</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
+    <value>名前</value>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>タブの外観</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
   <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
     <value>色、フォント、テキストのスタイルなど、プロファイルの外観をカスタマイズします。</value>
     <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>プロファイルが非アクティブ (非フォーカス) のときの外観をカスタマイズします。</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
     <value>ターミナルがキーボード入力と制御シーケンスを処理する方法を構成します</value>
@@ -1765,6 +1793,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>このプロファイルのフォーカスされていない外観を削除します。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>この非フォーカス時の外観を削除する</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>非フォーカス時の外観を削除すると、非アクティブ時にプロファイルは既定の外観を使用します</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>ショートカットに関する詳細情報</value>
@@ -2794,6 +2830,10 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>なし</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>非フォーカス時の外観</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>動作の開始</value>
