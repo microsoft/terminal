@@ -2016,6 +2016,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     safe_void_coroutine ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
     {
+        if (!sourceHandle)
+        {
+            co_return;
+        }
+
         // `sourceHandle` is a weak ref to a HANDLE that's ultimately owned by the
         // render engine's own unique_handle. We'll add another ref to it here.
         // This will make sure that we always have a valid HANDLE to give to
