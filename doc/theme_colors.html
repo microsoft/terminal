@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Terminal Color Schemes</title>
+    <script src="https://colorjs.io/dist/color.global.js"></script>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0b0b0e;
+            --panel: #131318;
+            --line: #272730;
+            --text: #e8e8ee;
+            --muted: #8a8a96;
+            --sans: system-ui, sans-serif;
+            --mono: ui-monospace, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px clamp(16px, 4vw, 48px) 64px;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.5 var(--sans);
+        }
+
+        button {
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: transparent;
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        button:hover {
+            background: #1e1e26;
+        }
+
+        /* Page header */
+
+        .masthead {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .views {
+            display: flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .views label {
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .views input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .views label:has(:checked) {
+            background: #23232c;
+            color: var(--text);
+        }
+
+        /* Custom scheme input */
+
+        details {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: var(--panel);
+        }
+
+        summary {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        details[open] summary {
+            border-bottom: 1px solid var(--line);
+            color: var(--text);
+        }
+
+        .adder {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            resize: vertical;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #0e0e12;
+            color: var(--text);
+            font: 12px/1.5 var(--mono);
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 12px;
+        }
+
+        /* Scheme cards */
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(348px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+
+        .scheme {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--panel);
+            overflow: hidden;
+        }
+
+        .scheme>header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
+        }
+
+        .scheme>header h2 {
+            flex: 1;
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .scheme.dragging {
+            opacity: 0.4;
+        }
+
+        .grip,
+        .close {
+            border: 0;
+            padding: 0 3px;
+            color: var(--muted);
+            line-height: 1;
+        }
+
+        .grip {
+            cursor: grab;
+        }
+
+        .grip:active {
+            cursor: grabbing;
+        }
+
+        .close:hover {
+            color: #ff6b6b;
+        }
+
+        .grip:hover,
+        .close:hover {
+            background: transparent;
+        }
+
+        .swatch {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+
+        .extras {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .extras .chip {
+            aspect-ratio: auto;
+            padding: 8px 0;
+        }
+
+        .extras .chip span {
+            opacity: 1;
+        }
+
+        .chip {
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            aspect-ratio: 5 / 4;
+            display: grid;
+            place-items: center;
+            font: 10px/1 var(--mono);
+            letter-spacing: -0.02em;
+        }
+
+        .chip span {
+            opacity: 0;
+            transition: opacity 80ms;
+        }
+
+        .swatch:hover .chip span {
+            opacity: 0.7;
+        }
+
+        .chip:hover span {
+            opacity: 1;
+        }
+
+        .preview {
+            margin: 0;
+            padding: 12px 14px;
+            font: 11.5px/1.65 var(--mono);
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .preview::selection,
+        .preview ::selection {
+            background: var(--sel);
+        }
+
+        figure {
+            margin: 0;
+            border-top: 1px solid var(--line);
+        }
+
+        figure svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        body:not(.v-swatch) :is(.swatch, .extras),
+        body:not(.v-preview) .preview,
+        body:not(.v-hue) .fig-hue,
+        body:not(.v-light) .fig-light {
+            display: none;
+        }
+
+        /* Toast */
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            translate: -50% 8px;
+            padding: 8px 16px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #1c1c24;
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 120ms, translate 120ms;
+        }
+
+        #toast.show {
+            opacity: 1;
+            translate: -50% 0;
+        }
+    </style>
+</head>
+
+<body class="v-swatch v-preview v-hue v-light">
+
+    <div class="masthead">
+        <div class="views">
+            <label><input type="checkbox" data-view="swatch" checked> Swatch</label>
+            <label><input type="checkbox" data-view="preview" checked> Preview</label>
+            <label><input type="checkbox" data-view="hue" checked> Hue / chroma</label>
+            <label><input type="checkbox" data-view="light" checked> Lightness</label>
+        </div>
+    </div>
+
+    <details>
+        <summary>Add a scheme</summary>
+        <div class="adder">
+            <textarea id="scheme-input" spellcheck="false" placeholder='{ "name": "My Scheme", "black": "#000000", ... }'></textarea>
+            <button id="scheme-add">Add</button>
+            <span class="error" id="scheme-error"></span>
+        </div>
+    </details>
+
+    <main id="schemes"></main>
+    <div id="toast"></div>
+
+    <script>(() => {
+            const grey = l => new Color("oklch", [l, 0, 0]);
+            const maxChroma = (l, h) => {
+                let lo = 0;
+                let hi = 0.4;
+                while (hi - lo > 1e-7) {
+                    const mid = (lo + hi) / 2;
+                    if (new Color("oklch", [l, mid, h]).inGamut("srgb")) {
+                        lo = mid;
+                    } else {
+                        hi = mid;
+                    }
+                }
+                return lo;
+            };
+            // Maximum chroma (and corresponding lightness) for a given hue within the sRGB gamut.
+            const cusp = hue => {
+                let lo = 0;
+                let hi = 1;
+                while (hi - lo > 1e-7) {
+                    const a = lo + (hi - lo) / 3;
+                    const b = hi - (hi - lo) / 3;
+                    if (maxChroma(a, hue) < maxChroma(b, hue)) {
+                        lo = a;
+                    } else {
+                        hi = b;
+                    }
+                }
+                const peakLightness = (lo + hi) / 2;
+                const peakChroma = maxChroma(peakLightness, hue);
+                return [peakLightness, peakChroma];
+            };
+            // For a given hue and chroma, this function returns the lightest
+            // (or darkest if light=false) color that is still in the sRGB gamut.
+            // To be clear, it does not return white or black, because it tries to reach the given chroma.
+            const colorAtChroma = (hue, chroma, light) => {
+                const [peakLightness, peakChroma] = cusp(hue);
+
+                if (chroma >= peakChroma) {
+                    return new Color("oklch", [peakLightness, peakChroma, hue]);
+                } else if (light) {
+                    // Black to the cusp is an exact ray in Oklab, because scaling linear RGB
+                    // scales L, a and b alike. So C/L is constant below the cusp, no search.
+                    const l = chroma * peakLightness / peakChroma;
+                    return new Color("oklch", [l, chroma, hue]);
+                } else {
+                    lo = peakLightness;
+                    hi = 1;
+                    while (hi - lo > 1e-7) {
+                        const mid = (lo + hi) / 2;
+                        if (maxChroma(mid, hue) > chroma) {
+                            lo = mid;
+                        } else {
+                            hi = mid;
+                        }
+                    }
+                    return new Color("oklch", [lo, chroma, hue]);
+                }
+            };
+            // For a given hue and lightness, this function returns the maximally chromatic color within the sRGB gamut.
+            const colorAtLightness = (hue, lightness) => new Color("oklch", [lightness, maxChroma(lightness, hue), hue]);
+            const interpolate = (a, b, t) => a + (b - a) * t;
+            const dim = (colors, factor) => colors.map(c => new Color("oklch", [c.l * factor, c.c * factor, c.h]));
+
+            const ottossonDark = (() => {
+                const dimming = 0.75;
+                const foreground = Color.to("#ccc", "oklch").l;
+                const yellow = colorAtChroma(90, Infinity, false);
+
+                // The ideal theme would have a uniform chroma and lightness for all colors,
+                // but due to limited sRGB gamut this is not anywhere remotely possible.
+                // My experiments with users (sample size 1, myself) suggest that a
+                // uniform chroma is more important than a uniform lightness.
+                //
+                // As such, I first compute a common chroma for green and red,
+                // since these two are the most important colors for text.
+                // As it turns out, when red, green and yellow sit on a brightness
+                // ramp of 67.6%, 77.0%, and 86.4%, they have uniform chroma (~0.212),
+                // with the exception of yellow which is limited by the sRGB gamut.
+                // The following computes it numerically.
+                let lo = yellow.c;
+                let hi = Math.min(
+                    colorAtChroma(30, Infinity, false).c,
+                    colorAtChroma(150, Infinity, true).c,
+                );
+                while (hi - lo > 1e-7) {
+                    const mid = (lo + hi) / 2;
+                    const green = colorAtChroma(150, mid, true).l;
+                    if ((yellow.l - green) > (green - colorAtChroma(30, mid, false).l)) {
+                        lo = mid;
+                    } else {
+                        hi = mid;
+                    }
+                }
+                const targetChroma = (lo + hi) / 2;
+
+                const red = colorAtChroma(30, targetChroma, false);
+                // We use green as it is rising to its cusp (from black to bright green, before loosing color
+                // again when going back down to white), because a full-bright green is just too bright.
+                // It turns out, this yields a green with acceptable lightness and chroma.
+                const green = colorAtChroma(150, targetChroma, true);
+
+                // Cyan is limited by the sRGB gamut, just like yellow. The targetChroma
+                // is effectively ignored. It's the least chromatic of all colors.
+                const cyan = colorAtChroma(210, targetChroma, false);
+                // Blue and magenta are the problem children: Blue is too dark and magenta is too bright.
+                // I was unable to find any elegant solution, so I picked the chroma of the opposing colors.
+                // This just so happens to yield colors that are visually sufficiently pleasant.
+                const blue = colorAtChroma(270, yellow.c, false);
+                const magenta = colorAtChroma(330, green.c, false);
+
+                const bright = [red, green, yellow, blue, magenta, cyan];
+                const dark = dim(bright, dimming);
+                const maxLightness = Math.max(...bright.map(c => c.l));
+                const colors = [
+                    grey(0), ...dark, grey(foreground),
+                    grey(foreground * dimming), ...bright, grey(1),
+                ];
+
+                return {
+                    colors,
+                    background: colors[0],
+                    foreground: colors[7],
+                    selectionBackground: new Color("oklch", [
+                        interpolate(0, maxLightness, 0.5),
+                        interpolate(0, cyan.c, 0.5),
+                        240,
+                    ]),
+                };
+            })();
+            const ottossonLight = (() => {
+                const foreground = Color.to("#444", "oklch").l;
+                const dimming = 0.6;
+
+                // Unlike the dark theme, the light theme's biggest problem is not uniform chroma.
+                // Even if Oklab is perceptually uniform, reading text (thin lines) on a bright background is not
+                // predictable by Oklab. So, we need to dial that lightness way down to get sufficient contrast.
+                // The following loosely mirrors the dark theme's coincidental brightness ramps.
+                // They just so happen to also work quite well for the light theme.
+                // Unfortunately, the chosen magenta works poorly with Protanopia, but fixing it requires lowering
+                // its brightness, which in turn makes it hard to distinguish for those without Protanopia.
+                const red = colorAtLightness(30, 0.5);
+                const green = colorAtLightness(150, 0.6);
+                const yellow = colorAtLightness(90, 0.7);
+                const blue = colorAtLightness(270, 0.5);
+                const magenta = colorAtLightness(330, 0.6);
+                const cyan = colorAtLightness(210, 0.7);
+
+                const bright = [red, green, yellow, blue, magenta, cyan];
+                const dark = dim(bright, dimming);
+                const maxLightness = Math.max(...bright.map(c => c.l));
+                const colors = [
+                    grey(1), ...dark, grey(foreground),
+                    grey(foreground / dimming), ...bright, grey(0),
+                ];
+
+                return {
+                    colors,
+                    background: colors[0],
+                    foreground: colors[7],
+                    selectionBackground: new Color("oklch", [
+                        interpolate(1, maxLightness, 0.5),
+                        interpolate(0, cyan.c, 0.5),
+                        240,
+                    ]),
+                };
+            })();
+
+            const schemes = {
+                "Ottosson Dark": ottossonDark,
+                "Ottosson Light": ottossonLight,
+            };
+
+            const KEYS = [
+                "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white",
+                "brightBlack", "brightRed", "brightGreen", "brightYellow", "brightBlue", "brightMagenta", "brightCyan", "brightWhite",
+            ];
+            // "brightBlack" reads as "Bright Black".
+            const LABELS = KEYS.map(k => k.replace(/[A-Z]/g, c => ` ${c}`).replace(/^./, c => c.toUpperCase()));
+            // Every maximally saturated sRGB color lies on the hexagon spanned by the
+            // primaries and secondaries, so walking it yields the peak chroma per hue.
+            const GAMUT = (() => {
+                const corners = [[1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 1, 1], [0, 0, 1], [1, 0, 1]];
+                const steps = 96;
+                const points = [];
+
+                for (let i = 0; i < corners.length; i++) {
+                    const a = corners[i];
+                    const b = corners[(i + 1) % corners.length];
+                    for (let s = 0; s < steps; s++) {
+                        const t = s / steps;
+                        const { h, c } = new Color("srgb", a.map((v, k) => v + (b[k] - v) * t)).to("oklch");
+                        points.push([h, c]);
+                    }
+                }
+
+                return points.sort((x, y) => x[0] - y[0]);
+            })();
+
+            const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+            const hexOf = c => new Color(c).to("srgb").toString({ format: "hex", collapse: false }).toUpperCase();
+            const isLight = c => Color.to(c, "oklch").l > 0.6;
+
+            // Ink for anything drawn on top of a scheme's own colors.
+            const ink = (over, alpha) => `rgba(${isLight(over) ? "0,0,0" : "255,255,255"},${alpha})`;
+
+            const huePlot = ({ hex, oklch, bg, sel }) => {
+                const SIZE = 320;
+                const CENTER = SIZE / 2;
+                const RADIUS = 132;
+                const MAX_CHROMA = 0.4;
+                const grid = ink(bg, 0.14);
+                const axis = ink(bg, 0.45);
+                const link = ink(bg, 0.3);
+                const edge = ink(bg, 0.5);
+
+                const polar = (h, c) => {
+                    const r = Math.min(c, MAX_CHROMA) / MAX_CHROMA * RADIUS;
+                    const a = (h || 0) * Math.PI / 180;
+                    return [CENTER + r * Math.cos(a), CENTER - r * Math.sin(a)];
+                };
+                const at = (h, c) => polar(h, c).map(v => v.toFixed(1));
+
+                const rings = [0.1, 0.2, 0.3, 0.4].map(c => `
+            <circle cx="${CENTER}" cy="${CENTER}" r="${c / MAX_CHROMA * RADIUS}" fill="none" stroke="${grid}"/>
+            <text x="${CENTER + 4}" y="${CENTER - c / MAX_CHROMA * RADIUS + 11}" fill="${axis}" font-size="9">${c.toFixed(1)}</text>`).join("");
+
+                const spokes = Array.from({ length: 12 }, (_, i) => {
+                    const [x, y] = at(i * 30, MAX_CHROMA);
+                    return `<line x1="${CENTER}" y1="${CENTER}" x2="${x}" y2="${y}" stroke="${grid}"/>`;
+                }).join("");
+
+                const gamut = GAMUT.map(([h, c], i) => `${i ? "L" : "M"}${at(h, c).join(" ")}`).join("") + "Z";
+
+                // Connect each dark color to its bright counterpart.
+                const pairs = Array.from({ length: 8 }, (_, i) => {
+                    const [x1, y1] = at(oklch[i].h, oklch[i].c);
+                    const [x2, y2] = at(oklch[i + 8].h, oklch[i + 8].c);
+                    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${link}"/>`;
+                }).join("");
+
+                const dots = oklch.map((c, i) => {
+                    const [x, y] = at(c.h, c.c);
+                    return `
+            <circle cx="${x}" cy="${y}" r="${i < 8 ? 5 : 6}" fill="${hex[i]}" stroke="${edge}">
+                <title>${LABELS[i]} ${hex[i]} — h ${(c.h || 0).toFixed(1)}° c ${c.c.toFixed(3)}</title></circle>`;
+                }).join("");
+
+                // A diamond, so the selection reads as separate from the 16 palette dots.
+                const selection = (() => {
+                    const { l, c, h } = Color.to(sel, "oklch");
+                    const [x, y] = polar(h, c);
+                    const r = 7;
+                    return `<path d="M${x.toFixed(1)} ${(y - r).toFixed(1)}L${(x + r).toFixed(1)} ${y.toFixed(1)}L${x.toFixed(1)} ${(y + r).toFixed(1)}L${(x - r).toFixed(1)} ${y.toFixed(1)}Z"
+                    fill="${sel}" stroke="${edge}"><title>Selection ${sel} — L ${(l * 100).toFixed(1)} c ${c.toFixed(3)}</title></path>`;
+                })();
+
+                return `<figure class="fig-hue"><svg viewBox="0 0 ${SIZE} ${SIZE}" font-family="var(--mono)">
+            <circle cx="${CENTER}" cy="${CENTER}" r="${RADIUS}" fill="${bg}"/>
+            ${spokes}${rings}
+            <path d="${gamut}" fill="none" stroke="${axis}" stroke-dasharray="3 3"/>
+            ${pairs}${dots}${selection}
+        </svg></figure>`;
+            };
+
+            const lightPlot = ({ hex, oklch, bg }) => {
+                const WIDTH = 320;
+                const HEIGHT = 104;
+                const PAD = { left: 26, right: 6, top: 8, bottom: 18 };
+                const plotW = WIDTH - PAD.left - PAD.right;
+                const plotH = HEIGHT - PAD.top - PAD.bottom;
+                const slot = plotW / 16;
+                const y = l => PAD.top + (1 - l) * plotH;
+
+                // Axis labels sit outside the plot area, on the card rather than on the
+                // scheme's background.
+                const grid = [0, 0.25, 0.5, 0.75, 1].map(l => `
+            <line x1="${PAD.left}" y1="${y(l)}" x2="${WIDTH - PAD.right}" y2="${y(l)}" stroke="${ink(bg, 0.14)}"/>
+            <text x="${PAD.left - 5}" y="${y(l) + 3}" fill="var(--muted)" font-size="9" text-anchor="end">${l * 100}</text>`).join("");
+
+                const bars = oklch.map((c, i) => `
+            <rect x="${(PAD.left + i * slot + 1).toFixed(1)}" y="${y(c.l).toFixed(1)}" width="${(slot - 2).toFixed(1)}" height="${(PAD.top + plotH - y(c.l)).toFixed(1)}"
+                  fill="${hex[i]}" stroke="${ink(bg, 0.3)}"><title>${LABELS[i]} ${hex[i]} — L ${(c.l * 100).toFixed(1)}</title></rect>
+            <text x="${(PAD.left + (i + 0.5) * slot).toFixed(1)}" y="${HEIGHT - 5}" fill="var(--muted)" font-size="8" text-anchor="middle">${i}</text>`).join("");
+
+                return `<figure class="fig-light"><svg viewBox="0 0 ${WIDTH} ${HEIGHT}" font-family="var(--mono)">
+            <rect x="${PAD.left}" y="${PAD.top}" width="${plotW}" height="${plotH}" fill="${bg}"/>
+            ${grid}${bars}
+        </svg></figure>`;
+            };
+
+            const preview = ({ hex, bg, fg, sel }) => `<pre class="preview" style="background:${bg};color:${fg};--sel:${sel}"><span style="color:${hex[10]}">user</span>@<span style="color:${hex[2]}">host</span> <span style="color:${hex[12]}">~/projects/terminal</span> <span style="color:${hex[13]}">main*</span>
+<span style="color:${hex[6]}">&gt;</span> cargo build --release
+<span style="color:${hex[11]}">warning</span>: unused variable <span style="color:${hex[15]}">'foobar'</span>
+<span style="color:${hex[9]}">error[E0308]</span>: mismatched types
+<span style="color:${hex[8]}">// 1 warning, 1 error</span>
+<span style="color:${hex[1]}">&#x2588;</span><span style="color:${hex[3]}">&#x2588;</span><span style="color:${hex[5]}">&#x2588;</span><span style="color:${hex[4]}">&#x2588;</span><span style="color:${hex[14]}">&#x2588;</span><span style="color:${hex[15]}">&#x2588;</span> <span style="color:${hex[8]}">&#x2591;&#x2592;&#x2593;&#x2588;</span></pre>`;
+
+            const toJson = ({ name, hex, bg, fg, sel }) => JSON.stringify({
+                name,
+                background: bg,
+                foreground: fg,
+                cursorColor: fg,
+                selectionBackground: sel,
+                ...Object.fromEntries(KEYS.map((k, i) => [k, hex[i]])),
+            }, null, 4);
+
+            const toastEl = document.getElementById("toast");
+            let toastTimer;
+            const copy = (text, message) => {
+                navigator.clipboard.writeText(text);
+                toastEl.textContent = message;
+                toastEl.classList.add("show");
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1400);
+            };
+
+            const chip = (color, text, title) => `
+            <button class="chip" data-hex="${color}" title="${title}" style="background:${color};color:${isLight(color) ? "#000" : "#fff"}">
+                <span>${text}</span>
+            </button>`;
+
+            let dragged = null;
+
+            const card = (name, scheme) => {
+                const colors = scheme.colors ?? scheme;
+                const hex = colors.map(hexOf);
+                const resolved = {
+                    name,
+                    hex,
+                    oklch: hex.map(c => Color.to(c, "oklch")),
+                    bg: hexOf(scheme.background ?? colors[0]),
+                    fg: hexOf(scheme.foreground ?? colors[7]),
+                    sel: hexOf(scheme.selectionBackground ?? colors[8]),
+                };
+
+                const chips = hex.map((c, i) => chip(c, c.slice(1), `${LABELS[i]} — ${c}`)).join("");
+                const extras = [["Background", resolved.bg], ["Foreground", resolved.fg], ["Selection", resolved.sel]]
+                    .map(([label, c]) => chip(c, label, `${label} — ${c}`)).join("");
+
+                const el = document.createElement("article");
+                el.className = "scheme";
+                el.innerHTML = `
+            <header>
+                <button class="grip" data-drag title="Drag to reorder">&#x283F;</button>
+                <h2>${esc(name)}</h2>
+                <button data-json>Copy JSON</button>
+                <button class="close" data-remove title="Remove">&times;</button>
+            </header>
+            <div class="swatch">${chips}</div>
+            <div class="extras">${extras}</div>
+            ${preview(resolved)}
+            ${huePlot(resolved)}
+            ${lightPlot(resolved)}`;
+
+                el.querySelector("[data-json]").onclick = () => copy(toJson(resolved), "Scheme copied");
+                el.querySelector("[data-remove]").onclick = () => el.remove();
+                el.querySelectorAll(".chip").forEach(chip => {
+                    chip.onclick = () => copy(chip.dataset.hex, `${chip.dataset.hex} copied`);
+                });
+
+                // Only arm dragging from the grip, so selecting preview text still works.
+                const grip = el.querySelector("[data-drag]");
+                grip.onpointerdown = () => el.setAttribute("draggable", "true");
+                grip.onpointerup = () => el.removeAttribute("draggable");
+                el.ondragstart = e => {
+                    dragged = el;
+                    e.dataTransfer.effectAllowed = "move";
+                    el.classList.add("dragging");
+                };
+                el.ondragend = () => {
+                    el.removeAttribute("draggable");
+                    el.classList.remove("dragging");
+                    dragged = null;
+                };
+
+                return el;
+            };
+
+            const container = document.getElementById("schemes");
+            for (const [name, scheme] of Object.entries(schemes)) {
+                container.appendChild(card(name, scheme));
+            }
+
+            container.ondragover = e => {
+                if (!dragged) {
+                    return;
+                }
+                e.preventDefault();
+                // First card that sits after the cursor in reading order.
+                const target = [...container.querySelectorAll(".scheme:not(.dragging)")].find(c => {
+                    const r = c.getBoundingClientRect();
+                    return e.clientY < r.top || (e.clientY <= r.bottom && e.clientX < r.left + r.width / 2);
+                });
+                if (target !== dragged.nextSibling) {
+                    container.insertBefore(dragged, target ?? null);
+                }
+            };
+            container.ondrop = e => e.preventDefault();
+
+            document.querySelectorAll("[data-view]").forEach(input => {
+                input.onchange = () => document.body.classList.toggle(`v-${input.dataset.view}`, input.checked);
+            });
+
+            const input = document.getElementById("scheme-input");
+            const error = document.getElementById("scheme-error");
+            document.getElementById("scheme-add").onclick = () => {
+                error.textContent = "";
+                try {
+                    const scheme = JSON.parse(input.value);
+                    const colors = KEYS.map(key => {
+                        if (!scheme[key]) {
+                            throw new Error(`missing "${key}"`);
+                        }
+                        return new Color(scheme[key]);
+                    });
+                    // background, foreground and selectionBackground carry over as they are.
+                    container.prepend(card(scheme.name || "Untitled", { ...scheme, colors }));
+                    input.value = "";
+                } catch (e) {
+                    error.textContent = e.message;
+                }
+            };
+        })()</script>
+</body>
+
+</html>
