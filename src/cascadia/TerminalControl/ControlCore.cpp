@@ -586,19 +586,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudioSkipTimer)
         {
-            _midiAudioSkipTimer = _dispatcher.CreateTimer();
-            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
-            _midiAudioSkipTimer.IsRepeating(false);
-            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
-                if (const auto self = weakSelf.get())
-                {
-                    self->_midiAudio.EndSkip();
-                }
-            });
+            _midiAudioSkipTimer.reset(CreateThreadpoolTimer(
+                [](PTP_CALLBACK_INSTANCE, PVOID ctx, PTP_TIMER) {
+                    auto myThis = static_cast<ControlCore*>(ctx);
+                    myThis->_midiAudio.EndSkip();
+                },
+                this,
+                nullptr));
         }
 
         _midiAudio.BeginSkip();
-        _midiAudioSkipTimer.Start();
+        FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
+        SetThreadpoolTimer(_midiAudioSkipTimer.get(), &oneMsFileTime, 0, 0);
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
