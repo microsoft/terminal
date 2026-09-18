@@ -38,7 +38,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
                                                Control::IControlAppearance unfocusedAppearance,
-                                               TerminalConnection::ITerminalConnection connection) :
+                                               TerminalConnection::ITerminalConnection connection,
+                                               Windows::System::DispatcherQueue dispatcher) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
@@ -46,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _id = _nextId.fetch_add(1, std::memory_order_relaxed);
 
-        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection, dispatcher);
 
         _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })

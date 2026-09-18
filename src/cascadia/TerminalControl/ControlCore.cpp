@@ -67,9 +67,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+                             TerminalConnection::ITerminalConnection connection,
+                             Windows::System::DispatcherQueue dispatcher) :
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
+        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _dispatcher{ dispatcher }
     {
         static const auto textMeasurementInit = [&]() {
             TextMeasurementMode mode = TextMeasurementMode::Graphemes;
@@ -182,16 +184,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_setupDispatcherAndCallbacks()
     {
-        // Get our dispatcher. If we're hosted in-proc with XAML, this will get
-        // us the same dispatcher as TermControl::Dispatcher(). If we're out of
-        // proc, this'll return null. We'll need to instead make a new
-        // DispatcherQueue (on a new thread), so we can use that for throttled
-        // functions.
-        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!_dispatcher)
         {
-            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
-            _dispatcher = controller.DispatcherQueue();
+            // Get our dispatcher. If we're hosted in-proc with XAML, this will get
+            // us the same dispatcher as TermControl::Dispatcher(). If we're out of
+            // proc, this'll return null. We'll need to instead make a new
+            // DispatcherQueue (on a new thread), so we can use that for throttled
+            // functions.
+            _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+            if (!_dispatcher)
+            {
+                auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+                _dispatcher = controller.DispatcherQueue();
+            }
         }
 
         const auto shared = _shared.lock();
