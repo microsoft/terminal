@@ -47,6 +47,20 @@ try
         _handleSwapChainUpdate();
     }
 
+    // Skip frames that have nothing to present. _present() wouldn't call Present1() for them anyway,
+    // but some drivers only recycle the resources that Render() touches once a frame has actually
+    // been presented, and so every such frame leaks a bit of memory. This adds up quickly while a
+    // pane is scrolled up with output still arriving below the viewport, or when a TUI keeps moving
+    // a hidden cursor around (GH#20342). Render() only ever widens a dirty rect that's already
+    // non-empty, so an empty one stays empty. The exception are custom shaders (the retro effect
+    // included), which mark the entire target as dirty. Skipping them is fine as long as they don't
+    // use the time variable, since their output then only depends on the text texture, which hasn't
+    // changed. Those that do use it have to run every frame, and RequiresContinuousRedraw() says so.
+    if (_p.dirtyRectInPx.empty() && !_b->RequiresContinuousRedraw())
+    {
+        return S_OK;
+    }
+
     _b->Render(_p);
     _present();
     return S_OK;
