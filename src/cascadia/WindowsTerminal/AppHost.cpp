@@ -84,11 +84,11 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     QueryPerformanceCounter(&_lastActivatedTime);
 }
 
-bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down)
 {
     if (_windowLogic)
     {
-        return _windowLogic.OnDirectKeyEvent(vkey, scanCode, down);
+        return _windowLogic.OnDirectKeyEvent(vkey, scanCode, extended, down);
     }
     return false;
 }
