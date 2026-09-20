@@ -348,6 +348,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ApplicationState::SaveWorkspace(const hstring& name, const Model::WindowLayout& layout)
     {
+        // Quake windows always start in focus mode. Preserve the user's choice
+        // to show the tab row by explicitly toggling focus mode after restore.
+        if (name == L"_quake" &&
+            layout.LaunchMode() &&
+            WI_IsFlagClear(layout.LaunchMode().Value(), Model::LaunchMode::FocusMode))
+        {
+            if (const auto actions = layout.TabLayout())
+            {
+                auto alreadyTogglesFocusMode = false;
+                for (const auto& action : actions)
+                {
+                    if (action.Action() == Model::ShortcutAction::ToggleFocusMode)
+                    {
+                        alreadyTogglesFocusMode = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyTogglesFocusMode)
+                {
+                    actions.Append(Model::ActionAndArgs{ Model::ShortcutAction::ToggleFocusMode });
+                }
+            }
+        }
+
         {
             const auto state = _state.lock();
             if (!state->PersistedWorkspaces || !*state->PersistedWorkspaces)

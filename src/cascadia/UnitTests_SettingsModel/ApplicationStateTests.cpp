@@ -29,6 +29,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RenameWorkspaceNoOpForMissingEntry);
         TEST_METHOD(TakeWorkspaceRemovesAndReturns);
         TEST_METHOD(TakeWorkspaceReturnsNullWhenMissing);
+        TEST_METHOD(SaveQuakeWorkspacePreservesDisabledFocusMode);
+        TEST_METHOD(SaveWorkspaceDoesNotChangeOtherLayouts);
 
     private:
         static std::filesystem::path _tempRoot()
@@ -134,5 +136,35 @@ namespace SettingsModelUnitTests
     {
         auto state = _make();
         VERIFY_IS_NULL(state->TakeWorkspace(L"missing"));
+    }
+
+    void ApplicationStateTests::SaveQuakeWorkspacePreservesDisabledFocusMode()
+    {
+        auto state = _make();
+        const auto layout = _makeLayout();
+        layout.LaunchMode({ LaunchMode::DefaultMode });
+
+        state->SaveWorkspace(L"_quake", layout);
+        state->SaveWorkspace(L"_quake", layout);
+
+        const auto actions = state->AllPersistedWorkspaces().Lookup(L"_quake").TabLayout();
+        VERIFY_ARE_EQUAL(1u, actions.Size());
+        VERIFY_ARE_EQUAL(ShortcutAction::ToggleFocusMode, actions.GetAt(0).Action());
+    }
+
+    void ApplicationStateTests::SaveWorkspaceDoesNotChangeOtherLayouts()
+    {
+        auto state = _make();
+
+        const auto focusedQuake = _makeLayout();
+        focusedQuake.LaunchMode({ LaunchMode::FocusMode });
+        state->SaveWorkspace(L"_quake", focusedQuake);
+
+        const auto regularWindow = _makeLayout();
+        regularWindow.LaunchMode({ LaunchMode::DefaultMode });
+        state->SaveWorkspace(L"regular", regularWindow);
+
+        VERIFY_ARE_EQUAL(0u, state->AllPersistedWorkspaces().Lookup(L"_quake").TabLayout().Size());
+        VERIFY_ARE_EQUAL(0u, state->AllPersistedWorkspaces().Lookup(L"regular").TabLayout().Size());
     }
 }
