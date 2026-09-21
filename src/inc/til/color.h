@@ -230,7 +230,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 static_assert(sizeof(til::color) == sizeof(uint32_t));
 
-#ifdef __WEX_COMMON_H__
+#ifdef VERIFY_ARE_EQUAL
 namespace WEX::TestExecution
 {
     template<>

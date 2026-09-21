@@ -25,7 +25,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
         winrt::hstring LaunchSizeCurrentValue() const;
+        winrt::hstring LaunchSizeAccessibleName() const;
         winrt::hstring LaunchParametersCurrentValue();
+        winrt::hstring LaunchParametersAccessibleName();
         double InitialPosX();
         double InitialPosY();
         void InitialPosX(double xCoord);
@@ -46,13 +48,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentLaunchMode(const winrt::Windows::Foundation::IInspectable& enumEntry);
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchModeList();
 
-        GETSET_BINDABLE_ENUM_SETTING(DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope, _Settings.GlobalSettings().DefaultInputScope);
+        GETSET_BINDABLE_ENUM_SETTING(DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope, _Settings.WindowSettingsDefaults().DefaultInputScope);
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
 
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), CenterOnLaunch);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialRows);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.GlobalSettings(), InitialCols);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), CenterOnLaunch);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), InitialRows);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), InitialCols);
 
         bool StartOnUserLoginAvailable();
         safe_void_coroutine PrepareStartOnUserLoginSettings();

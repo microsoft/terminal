@@ -19,6 +19,10 @@ namespace TerminalApp
     {
         String ProposedName { get; };
     };
+    [default_interface] runtimeclass OpenWindowRequestedArgs
+    {
+        String Name { get; };
+    };
     [default_interface] runtimeclass SummonWindowByIdRequestedArgs
     {
         UInt64 WindowId { get; };
@@ -92,8 +96,6 @@ namespace TerminalApp
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
         IDialogPresenter DialogPresenter;
-        void ShowKeyboardServiceWarning();
-        String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
 
@@ -124,5 +126,12 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
         event Windows.Foundation.TypedEventHandler<Object, WindowListRequest> RequestWindowList;
+
+        // Raised when the page wants the monarch to open (or summon) a
+        // named window in-process, restoring its persisted workspace if
+        // one exists. No new wt.exe process is spawned.
+        event Windows.Foundation.TypedEventHandler<Object, OpenWindowRequestedArgs> RequestOpenWindow;
+
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     }
 }

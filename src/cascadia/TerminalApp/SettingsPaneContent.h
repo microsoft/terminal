@@ -10,9 +10,11 @@ namespace winrt::TerminalApp::implementation
     class SettingsPaneContent : public winrt::implements<SettingsPaneContent, IPaneContent>, public BasicPaneEvents
     {
     public:
-        SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
+        SettingsPaneContent(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings,
+                            winrt::Microsoft::Terminal::Settings::Model::WindowSettings windowSettings);
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Settings::Editor::MainPage SettingsUI() { return _sui; }

@@ -10,6 +10,7 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
+#include "OpenWindowRequestedArgs.g.h"
 #include "SummonWindowByIdRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
@@ -42,7 +43,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettingsCache;
 
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
-    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
     enum StartupState : int
     {
@@ -74,6 +74,15 @@ namespace winrt::TerminalApp::implementation
     public:
         RenameWindowRequestedArgs(const winrt::hstring& name) :
             _ProposedName{ name } {};
+    };
+
+    struct OpenWindowRequestedArgs : OpenWindowRequestedArgsT<OpenWindowRequestedArgs>
+    {
+        WINRT_PROPERTY(winrt::hstring, Name);
+
+    public:
+        OpenWindowRequestedArgs(const winrt::hstring& name) :
+            _Name{ name } {};
     };
 
     struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
@@ -192,9 +201,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState() const;
 
-        void ShowKeyboardServiceWarning() const;
-        winrt::hstring KeyboardServiceDisabledText();
-
         void IdentifyWindow();
         void ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
         void ActionSaveFailed(winrt::hstring message);
@@ -251,6 +257,8 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
         til::typed_event<IInspectable, winrt::TerminalApp::WindowListRequest> RequestWindowList;
+        til::typed_event<IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs> RequestOpenWindow;
+        til::typed_event<IInspectable, winrt::TerminalApp::WindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);
@@ -336,6 +344,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
+
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
         struct StashedDragData
@@ -375,8 +385,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
-        safe_void_coroutine _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs newContentArgs);
-        safe_void_coroutine _OpenWorkspaceWindow(const winrt::hstring name);
+        void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
+        void _OpenWorkspaceWindow(const winrt::hstring name);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -589,7 +599,6 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
-        void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 

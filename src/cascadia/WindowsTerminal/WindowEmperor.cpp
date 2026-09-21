@@ -268,7 +268,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
-
+    _handoffTimeoutTimer.Stop();
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
 
@@ -294,6 +294,60 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
             }
         }
     }
+}
+
+// Public entry point used by in-process callers (e.g. AppHost reacting to a
+// TerminalPage RequestOpenWindow event) to open or summon a named window -
+// restoring its persisted workspace if one exists - without spawning a second
+// wt.exe. Bypasses the commandline parser entirely.
+void WindowEmperor::OpenWindow(const winrt::hstring& name)
+{
+    _assertIsMainThread();
+
+    if (name.empty())
+    {
+        return;
+    }
+
+    // If a window with this name is already live, just summon it.
+    // This mirrors the summon behavior in AppHost::DispatchCommandline (which is
+    // what the old `wt -w <name>` ShellExecute path effectively triggered).
+    if (const auto window = GetWindowByName(name))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summon{};
+        summon.MoveToCurrentDesktop(false);
+        summon.DropdownDuration(0);
+        summon.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summon.ToggleVisibility(false);
+        window->HandleSummon(std::move(summon));
+        return;
+    }
+
+    // Otherwise, create a new window under that name. A default-constructed
+    // CommandlineArgs is supplied as the launch fallback for the case where
+    // no persisted workspace exists; AppHost ignores it when PersistedLayout
+    // is set.
+    _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
+}
+
+// Shared tail used by both the commandline dispatch path and OpenWindow():
+// build a WindowRequestedArgs for a new window and, if the request carries a
+// name, atomically claim any persisted workspace stored under that name so
+// it's restored here and no subsequent caller can pick up the same entry.
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+{
+    winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
+    request.WindowName(windowName);
+
+    if (!windowName.empty())
+    {
+        if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(windowName))
+        {
+            request.PersistedLayout(layout);
+        }
+    }
+
+    CreateNewWindow(std::move(request));
 }
 
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
@@ -490,6 +544,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         __assume(false);
     }
 
+    // !! LOAD BEARING !!
+    // This prevents loader lock contention with some versions of the nvidia
+    // driver, which calls SHGetKnownFolderPath triggering a delay load while
+    // under lock during application startup. See GH#20348.
+    {
+        wil::unique_cotaskmem_string localAppDataFolder;
+        SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
+    }
+
     _app = winrt::TerminalApp::App{};
     _app.Logic().ReloadSettings();
 
@@ -537,9 +600,12 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         if (args.size() == 2 && args[1] == L"-Embedding")
         {
             // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
-            //
-            // TODO: Here we could start a timer and exit after, say, 5 seconds
-            // if no windows are created. But that's a minor concern.
+            // But if we don't receive any handoff within a reasonable timeout, we should exit.
+            _handoffTimeoutTimer.Interval(5s);
+            _handoffTimeoutTimer.Tick([this](auto&&, auto&&) {
+                _postQuitMessageIfNeeded();
+            });
+            _handoffTimeoutTimer.Start();
         }
         else
         {
@@ -801,22 +867,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
-        request.WindowName(std::move(windowName));
-
-        // If we're opening a named window that doesn't exist yet, atomically
-        // claim any persisted workspace with that name so we restore it here
-        // and no subsequent window can pick up the same entry.
-        const auto& reqName = request.WindowName();
-        if (!reqName.empty())
-        {
-            if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(reqName))
-            {
-                request.PersistedLayout(layout);
-            }
-        }
-
-        CreateNewWindow(std::move(request));
+        _createWindowMaybeRestoringWorkspace(windowId, windowName, std::move(args));
     }
 }
 
@@ -990,8 +1041,11 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     // receive any HWND_BROADCAST messages, like WM_QUERYENDSESSION.
     // NOTE: Before CreateWindowExW() returns it invokes our WM_NCCREATE
     // message handler, which then stores the HWND in this->_window.
+    // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+    // redirection surface for reduced memory usage, because this window
+    // is never shown and never paints anything.
     WINRT_VERIFY(CreateWindowExW(
-        /* dwExStyle    */ 0,
+        /* dwExStyle    */ WS_EX_NOREDIRECTIONBITMAP,
         /* lpClassName  */ className,
         /* lpWindowName */ L"Windows Terminal",
         /* dwStyle      */ 0,
@@ -1635,8 +1689,9 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // themselves getting the new settings, only ask the app logic for the
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
-    const auto globals = _app.Logic().Settings().GlobalSettings();
-    auto needsIcon = globals.AlwaysShowNotificationIcon() || globals.MinimizeToNotificationArea();
+    const auto settings = _app.Logic().Settings();
+    const auto globals = settings.GlobalSettings();
+    auto needsIcon = globals.AlwaysShowNotificationIcon() || settings.WindowSettingsDefaults().MinimizeToNotificationArea();
     if (!needsIcon)
     {
         for (const auto& host : _windows)

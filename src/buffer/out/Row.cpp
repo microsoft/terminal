@@ -336,7 +336,7 @@ void ROW::_init() noexcept
 
     do
     {
-        vst1q_u16(chars, whitespace);
+        vst1q_u16(reinterpret_cast<uint16_t*>(chars), whitespace);
         vst1q_u16(charOffsets, offsets);
         offsets = vaddq_u16(offsets, increment);
         chars += 8;

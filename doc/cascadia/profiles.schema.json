@@ -2403,11 +2403,6 @@
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
           "type": "boolean"
         },
-        "warning.inputService": {
-          "default": true,
-          "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
-          "type": "boolean"
-        },
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
@@ -2559,10 +2554,11 @@
         },
         "firstWindowPreference": {
           "default": "defaultProfile",
-          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "description": "Defines how the terminal behaves when it starts. \"defaultProfile\" launches one tab using the default profile. \"persistedWindowLayout\" saves the window layout on close and restores it on open. \"persistedLayoutAndContent\" saves both the layout and the tab content on close and restores them on open.",
           "enum": [
             "defaultProfile",
-            "persistedWindowLayout"
+            "persistedWindowLayout",
+            "persistedLayoutAndContent"
           ],
           "type": "string"
         },

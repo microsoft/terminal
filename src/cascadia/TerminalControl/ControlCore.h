@@ -171,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
-        int ViewHeight() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -315,6 +315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
+        void _raiseFontSizeChanged();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
@@ -353,6 +354,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
+        void _refreshHoveredCell();
         void _setOpacity(const float opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();

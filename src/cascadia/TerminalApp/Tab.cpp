@@ -7,8 +7,9 @@
 #include "SettingsPaneContent.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/ColorFix.hpp"
+
+#include <ThrottledFunc.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -106,8 +107,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _UpdateHeaderControlMaxWidth();
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -162,18 +161,51 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // BODGY: Work around a fail-fast crash in WinUI 2's TabView. When a
+        // game controller (e.g. an XBOX controller's d-pad/stick) moves focus
+        // Up or Down between two TabViewItems, MUX's TabView::OnListViewGettingFocus
+        // runs a GameController-only code path that calls
+        // DispatcherQueue.TryEnqueue, which fails with E_INVALIDARG. That
+        // unhandled error inside a GettingFocus callback makes XAML fail-fast,
+        // and the whole window vanishes. See
+        // microsoft-ui-xaml/blob/840c6cd4ac9d16d9aa99b24f0bd43997fe21bef8/dev/TabView/TabView.cpp#L246
+        //
+        // This GettingFocus handler is on the TabViewItem, which is closer to
+        // the focus source than the TabViewListView that MUX's handler lives
+        // on, so it runs first. Marking the event Handled - and cancelling the
+        // focus move, which is exactly what MUX itself does for the keyboard
+        // case - preempts MUX's broken handler. Keyboard navigation is left
+        // untouched; MUX handles that path safely.
+        TabViewItem().GettingFocus([](auto&&, const winrt::WUX::Input::GettingFocusEventArgs& args) {
+            const auto direction{ args.Direction() };
+            if (direction != winrt::WUX::Input::FocusNavigationDirection::Up &&
+                direction != winrt::WUX::Input::FocusNavigationDirection::Down)
+            {
+                return;
+            }
+            if (args.InputDevice() != winrt::WUX::Input::FocusInputDeviceKind::GameController)
+            {
+                return;
+            }
+            if (args.OldFocusedElement().try_as<winrt::MUX::Controls::TabViewItem>() &&
+                args.NewFocusedElement().try_as<winrt::MUX::Controls::TabViewItem>())
+            {
+                args.Cancel(true);
+                args.Handled(true);
+            }
+        });
+
         UpdateTitle();
         _RecalculateAndApplyTabColor();
     }
 
-    void Tab::_UpdateHeaderControlMaxWidth()
+    void Tab::_UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
     {
         try
         {
             // Make sure to try/catch this, because the LocalTests won't be
             // able to use this helper.
-            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            if (windowSettings.TabWidthMode() == MUX::Controls::TabViewWidthMode::SizeToContent)
             {
                 _headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }
@@ -315,8 +347,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_focused())
         {
-            auto lastFocusedControl = GetActiveTerminalControl();
-            if (lastFocusedControl)
+            if (auto lastFocusedControl{ GetActiveTerminalControl() })
             {
                 lastFocusedControl.Focus(_focusState);
 
@@ -354,16 +385,17 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void Tab::UpdateSettings(const CascadiaSettings& settings)
+    void Tab::UpdateSettings(const CascadiaSettings& settings,
+                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
-        _UpdateHeaderControlMaxWidth();
+        _UpdateHeaderControlMaxWidth(windowSettings);
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](const auto& pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, windowSettings);
             return false;
         });
     }
@@ -514,9 +546,11 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        auto control = GetActiveTerminalControl();
-        const auto currentOffset = control.ScrollOffset();
-        control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
+        if (auto control{ GetActiveTerminalControl() })
+        {
+            const auto currentOffset = control.ScrollOffset();
+            control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
+        }
     }
 
     // Method Description:
@@ -2124,8 +2158,7 @@ namespace winrt::TerminalApp::implementation
     // If, after the calculation, the tab is read-only we hide the close button on the tab view item
     void Tab::_RecalculateAndApplyReadOnly()
     {
-        const auto control = GetActiveTerminalControl();
-        if (control)
+        if (const auto control{ GetActiveTerminalControl() })
         {
             const auto isReadOnlyActive = control.ReadOnly();
             _tabStatus.IsReadOnlyActive(isReadOnlyActive);

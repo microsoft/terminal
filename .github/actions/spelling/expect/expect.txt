@@ -1,8 +1,8 @@
 aaaaabbb
+ABANDONFONT
 abbcc
 abcc
 abgr
-ABANDONFONT
 ABORTIFHUNG
 ACCESSTOKEN
 acidev
@@ -29,6 +29,7 @@ allocing
 alpc
 ALTERNATENAME
 ALTF
+ALTGR
 ALTNUMPAD
 ALWAYSTIP
 ansicpg
@@ -76,6 +77,7 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZERTY
 azurecr
 backgrounded
 Backgrounder
@@ -84,6 +86,7 @@ backstory
 Bazz
 bbccb
 bbwe
+bcde
 bcount
 bcx
 bcz
@@ -164,7 +167,9 @@ changelist
 CHARSETINFO
 chshdng
 CHT
+CInput
 CLASSSTRING
+CLAUDE
 cleartype
 CLICKACTIVE
 clickdown
@@ -244,10 +249,12 @@ consrv
 consteval
 constexprable
 contentfiles
+contentproperty
 conterm
 contsf
 contypes
 conwinuserrefs
+cooldown
 COPYCOLOR
 COPYDATA
 COPYDATASTRUCT
@@ -663,6 +670,7 @@ GHIJK
 GHIJKL
 gitcheckin
 gitfilters
+gksks
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -841,6 +849,8 @@ kinda
 KIYEOK
 KKP
 KLF
+klid
+KLLF
 KLMNO
 KOK
 KPRIORITY
@@ -1075,7 +1085,6 @@ NOCONTEXTHELP
 NOCOPYBITS
 nodiscard
 NODUP
-NODEFAULT
 noexcepts
 NOFONT
 NOHIDDENTEXT
@@ -1104,9 +1113,9 @@ NOSELECTION
 NOSENDCHANGING
 NOSIZE
 NOSNAPSHOT
+NOTELLSHELL
 NOTHOUSANDS
 NOTICKS
-notif
 NOTIMEOUTIFNOTHUNG
 NOTIMPL
 NOTOPMOST
@@ -1139,7 +1148,7 @@ nullopts
 NUMSCROLL
 NUnit
 nupkg
-NVIDIA
+nvidia
 NVT
 OACR
 ocolor
@@ -1563,7 +1572,6 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
-SND
 snk
 SOLIDBOX
 Solutiondir
@@ -1599,6 +1607,7 @@ STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
 stl
+storyboards
 STRINGTABLE
 STRSAFE
 STUBHEAD
@@ -1687,6 +1696,7 @@ TMAE
 TMPF
 tmultiple
 tofrom
+Tombstoning
 toolbars
 TOOLINFO
 TOOLWINDOW
@@ -1751,6 +1761,7 @@ Unittesting
 unittests
 unknwn
 UNORM
+unsend
 untextured
 UPDATEDISPLAY
 UPDOWN
@@ -1844,6 +1855,7 @@ wcs
 WCSHELPER
 wcsrev
 wcswidth
+WCT
 wddm
 wddmcon
 WDDMCONSOLECONTEXT

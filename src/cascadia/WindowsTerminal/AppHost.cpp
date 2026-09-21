@@ -130,7 +130,10 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
 {
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
-    _windowLogic = _appLogic.CreateNewWindow();
+    //
+    // Pass the WindowName along to CreateNewWindow, so that the AppLogic can
+    // pick up per-window startupActions (rather than just the defaults).
+    _windowLogic = _appLogic.CreateNewWindow(windowArgs.WindowName());
 
     if (const auto layout = windowArgs.PersistedLayout())
     {
@@ -140,6 +143,11 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
     else if (const auto content = windowArgs.Content(); !content.empty())
     {
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
+    {
+        _windowLogic.SetStartupActions(actions);
         _launchShowWindowCommand = SW_NORMAL;
     }
     else
@@ -278,6 +286,8 @@ void AppHost::Initialize()
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
     _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
+    _revokers.RequestOpenWindow = _windowLogic.RequestOpenWindow(winrt::auto_revoke, { this, &AppHost::_HandleOpenWindowRequested });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -436,6 +446,30 @@ void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspec
         w.Id(entry.Id);
         w.Name(winrt::hstring{ entry.Name });
         windowEntries.Append(w);
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w ...")` dance.
+// Asks the WindowEmperor to summon a named window or restore its persisted
+// workspace, without launching a second wt.exe.
+void AppHost::_HandleOpenWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::OpenWindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->OpenWindow(args.Name());
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
+// dance. The page hands us a pre-built WindowRequestedArgs (with its
+// StartupActions already populated); we just forward it to the WindowEmperor.
+void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                        const winrt::TerminalApp::WindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->CreateNewWindow(args);
     }
 }
 
@@ -960,7 +994,7 @@ void _frameColorHelper(const HWND h, const COLORREF color)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _appLogic.Settings().GlobalSettings().CurrentTheme();
+    auto theme = _windowLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 

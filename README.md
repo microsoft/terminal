@@ -1,4 +1,4 @@
-![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
+![Windows Terminal project logos and branding image](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
 
@@ -51,7 +51,7 @@ This repository contains the source code for:
 
 Related repositories include:
 
-* [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal)
+* [Windows Terminal Documentation](https://learn.microsoft.com/windows/terminal)
   ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
@@ -93,7 +93,7 @@ Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 > [!NOTE]
 > If you install Terminal manually:
 >
-> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
+> * You may need to install the [VC++ v14 Desktop Framework Package](https://learn.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
 >   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
 > * Terminal will not auto-update when new builds are released so you will need
 >   to regularly install the latest Terminal release to receive all the latest
@@ -339,7 +339,7 @@ You can configure your environment to build Terminal in one of two ways:
 ### Using WinGet configuration file
 
 After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
-to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2026 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2026. To run the default configuration file, you can either double-click the file from explorer or run the following command:
 
 ```powershell
 winget configure .config\configuration.winget
@@ -350,22 +350,16 @@ winget configure .config\configuration.winget
 * You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
   Windows Terminal
 * You must [enable Developer Mode in the Windows Settings
-  app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
+  app](https://learn.microsoft.com/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 11 (10.0.22621.0)
-  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
-  installed
-* You must have at least [VS
-  2022](https://visualstudio.microsoft.com/downloads/) installed
+* You must have the [Windows 11 (10.0.26100) SDK](https://developer.microsoft.com/windows/downloads/windows-sdk/) installed at version 10.0.26100.8249 or greater.
+* You must have at least [VS 2026](https://visualstudio.microsoft.com/downloads/) version 18.6 installed
 * You must install the following Workloads via the VS Installer. Note: Opening
-  the solution in VS 2022 will [prompt you to install missing components
-  automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
+  the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
-  * Universal Windows Platform Development
-  * **The following Individual Components**
-    * C++ (v143) Universal Windows Platform Tools
-* You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
+  * WinUI application development
+* You must install the [.NET Framework 4.7.2 Targeting Pack](https://learn.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
 

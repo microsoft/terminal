@@ -25,6 +25,7 @@ Author(s):
 
 #include "GlobalAppSettings.h"
 #include "Profile.h"
+#include "WindowSettings.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
@@ -163,6 +164,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
         Model::GlobalAppSettings GlobalSettings() const;
+        Model::WindowSettings WindowSettingsDefaults() const;
+        Model::WindowSettings WindowSettings(const winrt::hstring& windowName) const;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;
@@ -228,6 +231,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // user settings
         winrt::hstring _hash;
         winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
+        winrt::com_ptr<implementation::WindowSettings> _windowSettings = winrt::make_self<implementation::WindowSettings>();
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();

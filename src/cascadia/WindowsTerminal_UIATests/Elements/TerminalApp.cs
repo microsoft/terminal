@@ -152,12 +152,8 @@ namespace WindowsTerminal.UIA.Tests.Elements
             Actions = new Actions(Session);
             Verify.IsNotNull(Session);
 
-            Globals.WaitForLongTimeout();
-
-            UIRoot = Session.FindElementByName(WindowTitleToFind);
-
-            // Set the timeout to 15 seconds after we found the initial window.
             Session.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
+            UIRoot = Session.FindElementByName(WindowTitleToFind);
         }
 
         private bool IsRunningAsAdmin()

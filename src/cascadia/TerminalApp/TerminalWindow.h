@@ -80,6 +80,7 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
+        void SetStartupActions(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         void SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout);
         int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
@@ -196,14 +197,14 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& exceptionText);
         void _ShowLoadWarningsDialog(const IInspectable& sender, const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
-        bool _IsKeyboardServiceEnabled();
-
         void _RefreshThemeRoutine();
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();
         void _WindowSizeChanged(const IInspectable& sender, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
         void _RenameWindowRequested(const IInspectable& sender, const winrt::TerminalApp::RenameWindowRequestedArgs args);
+
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
 
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
                                                                                                                                       const bool replaceFirstWithNewTab);
@@ -235,6 +236,8 @@ namespace winrt::TerminalApp::implementation
 
         FORWARDED_TYPED_EVENT(RequestLaunchPosition, Windows::Foundation::IInspectable, winrt::TerminalApp::LaunchPositionRequest, _root, RequestLaunchPosition);
         FORWARDED_TYPED_EVENT(RequestWindowList, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowListRequest, _root, RequestWindowList);
+        FORWARDED_TYPED_EVENT(RequestOpenWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs, _root, RequestOpenWindow);
+        FORWARDED_TYPED_EVENT(RequestNewWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowRequestedArgs, _root, RequestNewWindow);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;
