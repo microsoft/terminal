@@ -578,15 +578,16 @@ namespace winrt::TerminalApp::implementation
 
     std::wstring Tab::ResolveTitleVariable(const std::wstring_view name) const
     {
-        if (name == L"tabTitle") return std::wstring{ Title() };
-        if (name == L"tabIndex") return std::to_wstring(TabViewIndex() + 1);
-        if (name == L"workspaceName" || name == L"windowName") return std::wstring{ _titleWorkspaceName };
-        if (name == L"appName") return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
+        namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
+        if (name == TitleVariables::TabTitle) return std::wstring{ Title() };
+        if (name == TitleVariables::TabIndex) return std::to_wstring(TabViewIndex() + 1);
+        if (name == TitleVariables::WorkspaceName || name == TitleVariables::WindowName) return std::wstring{ _titleWorkspaceName };
+        if (name == TitleVariables::AppName) return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
 
         const auto profile = _GetTitleProfile();
         if (!profile) return {};
-        if (name == L"paneTitle") return std::wstring{ _GetPaneTitle() };
-        if (name == L"numPanes" || name == L"numOtherPanes" || name == L"otherPanes")
+        if (name == TitleVariables::PaneTitle) return std::wstring{ _GetPaneTitle() };
+        if (name == TitleVariables::NumPanes || name == TitleVariables::NumOtherPanes || name == TitleVariables::OtherPanes)
         {
             size_t count = 0;
             _rootPane->WalkTree([&](const auto& pane) {
@@ -595,28 +596,28 @@ namespace winrt::TerminalApp::implementation
                     if (content.template try_as<TerminalApp::TerminalPaneContent>()) ++count;
                 }
             });
-            if (name == L"numPanes") return std::to_wstring(count);
+            if (name == TitleVariables::NumPanes) return std::to_wstring(count);
             if (count <= 1) return {};
             const auto others = std::to_wstring(count - 1);
-            return name == L"otherPanes" ? L"[+" + others + L"]" : others;
+            return name == TitleVariables::OtherPanes ? L"[+" + others + L"]" : others;
         }
         if (!_activePane->_IsLeaf()) return {};
-        if (name == L"profileName") return std::wstring{ profile.Name() };
+        if (name == TitleVariables::ProfileName) return std::wstring{ profile.Name() };
         if (const auto control = GetActiveTerminalControl())
         {
-            if (name == L"cwd" || name == L"cwdFolder")
+            if (name == TitleVariables::Cwd || name == TitleVariables::CwdFolder)
             {
-                const auto directory = control.ReportedWorkingDirectory();
-                return name == L"cwd" ? std::wstring{ directory } : ::Microsoft::Terminal::TitleFormat::DirectoryName(directory);
+                const auto directory = control.WorkingDirectory();
+                return name == TitleVariables::Cwd ? std::wstring{ directory } : ::Microsoft::Terminal::TitleFormat::DirectoryName(directory);
             }
             if (const auto connection = control.Connection())
             {
                 if (const auto conpty = connection.try_as<Microsoft::Terminal::TerminalConnection::ConptyConnection>())
                 {
-                    if (name == L"elevated" || name == L"elevatedShield")
+                    if (name == TitleVariables::Elevated || name == TitleVariables::ElevatedShield)
                     {
-                        if (conpty.TitleVariable(L"elevated").empty()) return {};
-                        return name == L"elevated" ? std::wstring{ RS_(L"TitleFormatAdministrator") } : L"\U0001F6E1";
+                        if (conpty.TitleVariable(TitleVariables::Elevated).empty()) return {};
+                        return name == TitleVariables::Elevated ? std::wstring{ RS_(L"TitleFormatAdministrator") } : L"\U0001F6E1";
                     }
                     return std::wstring{ conpty.TitleVariable(winrt::hstring{ name }) };
                 }

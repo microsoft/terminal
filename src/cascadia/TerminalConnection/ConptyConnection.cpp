@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "ConptyConnection.h"
+#include "../inc/TitleVariables.h"
 
 #include <conpty-static.h>
 #include <winmeta.h>
@@ -181,10 +182,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const std::filesystem::path processName = wil::GetModuleFileNameExW<std::wstring>(_piClient.hProcess, nullptr);
         _clientName = processName.filename().wstring();
         {
-            const std::scoped_lock lock{ _titleMetadataLock };
-            _titleEnvironment = std::move(environment);
+            const std::scoped_lock lock{ _metadataLock };
+            _launchEnvironment = std::move(environment);
         }
-        _CaptureTitleMetadata();
+        _CaptureMetadata();
 
 #pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
         TraceLoggingWrite(
@@ -382,7 +383,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         CATCH_LOG()
 
-        _CaptureTitleMetadata();
+        _CaptureMetadata();
 
         _pipe = std::move(pipe.server);
         *in = pipe.client.release();
@@ -671,30 +672,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return reinterpret_cast<uint64_t>(_piClient.hProcess);
     }
 
-    void ConptyConnection::_CaptureTitleMetadata()
+    void ConptyConnection::_CaptureMetadata()
     {
-        const std::scoped_lock lock{ _titleMetadataLock };
-        _titleShellPid = GetProcessId(_piClient.hProcess);
-        _titleShellName = _clientName;
+        const std::scoped_lock lock{ _metadataLock };
+        _shellPid = GetProcessId(_piClient.hProcess);
+        _shellName = _clientName;
         wil::unique_handle token;
         TOKEN_ELEVATION elevation{};
         DWORD returned{};
-        _titleElevated = OpenProcessToken(_piClient.hProcess, TOKEN_QUERY, token.put()) &&
-                         GetTokenInformation(token.get(), TokenElevation, &elevation, sizeof(elevation), &returned) &&
-                         elevation.TokenIsElevated;
+        _elevated = OpenProcessToken(_piClient.hProcess, TOKEN_QUERY, token.put()) &&
+                GetTokenInformation(token.get(), TokenElevation, &elevation, sizeof(elevation), &returned) &&
+                elevation.TokenIsElevated;
     }
 
     winrt::hstring ConptyConnection::TitleVariable(const winrt::hstring& name)
     {
-        const std::scoped_lock lock{ _titleMetadataLock };
-        if (name == L"shellName") return _titleShellName;
-        if (name == L"shellPid") return _titleShellPid ? winrt::to_hstring(_titleShellPid) : winrt::hstring{};
-        if (name == L"elevated") return _titleElevated ? L"1" : L"";
+        namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
+        const std::scoped_lock lock{ _metadataLock };
+        if (name == TitleVariables::ShellName) return _shellName;
+        if (name == TitleVariables::ShellPid) return _shellPid ? winrt::to_hstring(_shellPid) : winrt::hstring{};
+        if (name == TitleVariables::Elevated) return _elevated ? L"1" : L"";
         const std::wstring_view key{ name };
-        if (key.substr(0, 4) == L"env:")
+        constexpr std::wstring_view environmentPrefix{ TitleVariables::EnvironmentPrefix };
+        if (key.starts_with(environmentPrefix))
         {
-            const auto& environment = _titleEnvironment.as_map();
-            const auto found = environment.find(std::wstring{ key.substr(4) });
+            const auto& environment = _launchEnvironment.as_map();
+            const auto found = environment.find(std::wstring{ key.substr(environmentPrefix.size()) });
             if (found != environment.end()) return winrt::hstring{ found->second };
         }
         return {};

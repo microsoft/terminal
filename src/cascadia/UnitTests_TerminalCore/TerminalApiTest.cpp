@@ -339,10 +339,12 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     // Test setting working directory using OSC 9;9
     // Initial CWD should be empty
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
-    VERIFY_IS_TRUE(term.GetReportedWorkingDirectory().empty());
-    term.SetStartingDirectory(L"C:\\launch");
-    VERIFY_IS_TRUE(term.GetReportedWorkingDirectory().empty());
-    term.SetStartingDirectory(L"");
+    {
+        const auto lock = term.LockForWriting();
+        term.SetWorkingDirectory(L"C:\\launch");
+        VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\launch");
+        term.SetWorkingDirectory(L"");
+    }
     size_t directoryNotifications = 0;
     term.SetTitleContextChangedCallback([&] { ++directoryNotifications; });
 
@@ -380,7 +382,6 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     // Valid sequences should change CWD
     stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
-    VERIFY_ARE_EQUAL(term.GetReportedWorkingDirectory(), L"C:\\");
     VERIFY_ARE_EQUAL(size_t{ 1 }, directoryNotifications);
     stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x1b\\");
     VERIFY_ARE_EQUAL(size_t{ 1 }, directoryNotifications);

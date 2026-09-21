@@ -3059,8 +3059,9 @@ namespace winrt::TerminalApp::implementation
             }
             const auto tab = _GetFocusedTabImpl();
             const auto title = _windowTitleFormat.Evaluate([&](const std::wstring_view name) -> std::wstring {
-                if (name == L"workspaceName" || name == L"windowName") return std::wstring{ _WindowProperties.WindowName() };
-                if (name == L"appName") return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
+                namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
+                if (name == TitleVariables::WorkspaceName || name == TitleVariables::WindowName) return std::wstring{ _WindowProperties.WindowName() };
+                if (name == TitleVariables::AppName) return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
                 return tab ? tab->ResolveTitleVariable(name) : std::wstring{};
             }, _settings.GlobalSettings().WindowTitleSeparator());
             if (!title.empty())

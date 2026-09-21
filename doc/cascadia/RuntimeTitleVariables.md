@@ -57,18 +57,19 @@ characters and trim outer whitespace.
 | `elevated`, `elevatedShield` | Localized administrator label or U+1F6E1 for known elevated local connections. |
 | `shellName`, `shellPid` | Launched local executable basename and PID when known to ConPTY. |
 | `processName` | Reserved for a reliable active-local-process provider; currently unavailable. |
-| `cwd`, `cwdFolder` | Most recent supported directory report and its final component; roots remain roots. |
+| `cwd`, `cwdFolder` | Existing working directory and its final component, initially seeded from the configured starting directory and updated by supported directory reports; roots remain roots. |
 | `env:NAME` | Effective ConPTY launch environment value after profile overrides. |
 
 Leaf-specific values are empty for a selected pane group; its most recently
 focused terminal profile selects the tab format. Non-terminal tabs retain their
 own title logic and expose only tab/window identity to the window formatter.
 
-Directory variables are empty before a report; the configured starting directory
-is not a report. Environment lookups use Windows case-insensitive rules and are
+Directory variables use the same working directory as other terminal operations.
+Without directory reports, this value does not track shell directory changes.
+Environment lookups use Windows case-insensitive rules and are
 not live shell state. Inbound console handoffs have no launch-environment snapshot.
-Connection replacement clears reported directory context. No process-tree
-scraping, remote-state inference, shell execution, or refresh timer is used.
+No process-tree scraping, remote-state inference, shell execution, or refresh
+timer is used.
 
 Putting an environment value in a title exposes it in tabs, window captions,
 task switching, taskbar previews, and screen sharing. Do not use secrets.

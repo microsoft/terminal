@@ -231,10 +231,9 @@ void Terminal::SetWorkingDirectory(std::wstring_view uri)
         logged = true;
     }
 
-    _workingDirectory = uri;
-    if (_reportedWorkingDirectory != uri)
+    if (_workingDirectory != uri)
     {
-        _reportedWorkingDirectory = uri;
+        _workingDirectory = uri;
         if (_pfnTitleContextChanged)
         {
             _pfnTitleContextChanged();

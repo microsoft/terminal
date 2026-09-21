@@ -1,5 +1,7 @@
 #pragma once
 
+#include "TitleVariables.h"
+
 #include <algorithm>
 #include <functional>
 #include <set>
@@ -46,23 +48,31 @@ namespace Microsoft::Terminal
                     const auto letter = [](const wchar_t value) {
                         return (value >= L'a' && value <= L'z') || (value >= L'A' && value <= L'Z');
                     };
-                    const auto environment = name.substr(0, 4) == L"env:";
-                    const auto validName = environment ? name.size() > 4 && name.find_first_of(L"{}") == std::wstring_view::npos :
+                    constexpr std::wstring_view environmentPrefix{ TitleVariables::EnvironmentPrefix };
+                    const auto environment = name.starts_with(environmentPrefix);
+                    const auto validName = environment ? name.size() > environmentPrefix.size() && name.find_first_of(L"{}") == std::wstring_view::npos :
                         !name.empty() && letter(name.front()) && std::all_of(name.begin(), name.end(), [&](const wchar_t value) {
                             return letter(value) || (value >= L'0' && value <= L'9');
                         });
-                    if (!validName || (surface == Surface::Tab && name == L"tabTitle"))
+                    if (!validName || (surface == Surface::Tab && name == TitleVariables::TabTitle))
                     {
                         _valid = false;
                         return;
                     }
-                    if (name == L"separator")
+                    if (name == TitleVariables::Separator)
                     {
                         _tokens.push_back({ Kind::Separator, {} });
                     }
                     else
                     {
-                        static constexpr std::wstring_view names[]{ L"paneTitle", L"tabTitle", L"profileName", L"workspaceName", L"windowName", L"appName", L"tabIndex", L"numPanes", L"numOtherPanes", L"otherPanes", L"elevated", L"elevatedShield", L"shellName", L"shellPid", L"processName", L"cwd", L"cwdFolder" };
+                        static constexpr std::wstring_view names[]{
+                            TitleVariables::PaneTitle, TitleVariables::TabTitle, TitleVariables::ProfileName,
+                            TitleVariables::WorkspaceName, TitleVariables::WindowName, TitleVariables::AppName,
+                            TitleVariables::TabIndex, TitleVariables::NumPanes, TitleVariables::NumOtherPanes,
+                            TitleVariables::OtherPanes, TitleVariables::Elevated, TitleVariables::ElevatedShield,
+                            TitleVariables::ShellName, TitleVariables::ShellPid, TitleVariables::ProcessName,
+                            TitleVariables::Cwd, TitleVariables::CwdFolder
+                        };
                         if (environment || std::find(std::begin(names), std::end(names), name) != std::end(names))
                         {
                             _dependencies.emplace(name);

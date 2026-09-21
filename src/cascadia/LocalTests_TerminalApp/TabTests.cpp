@@ -701,6 +701,7 @@ namespace TerminalAppLocalTests
 
     void TabTests::RuntimeTitleFormats()
     {
+        namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
         auto page = _commonSetup();
         const auto result = RunOnUIThread([&] {
             const auto tab = page->_GetFocusedTabImpl();
@@ -712,31 +713,31 @@ namespace TerminalAppLocalTests
             const auto globals = page->_settings.GlobalSettings();
             globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}${separator}${paneTitle}" }).as<winrt::Windows::Foundation::IPropertyValue>());
             _windowProperties->WindowName(L"workspace");
-            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(L"paneTitle") }, page->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(TitleVariables::PaneTitle) }, page->Title());
 
             tab->SetTabText(L"literal ${paneTitle}");
             VERIFY_ARE_EQUAL(winrt::hstring{ L"literal ${paneTitle}" }, tab->Title());
-            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(L"paneTitle") }, page->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(TitleVariables::PaneTitle) }, page->Title());
             tab->ResetTabText();
             VERIFY_ARE_EQUAL(profile.Name(), tab->Title());
 
             profile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"${numPanes}${separator}${otherPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
             tab->UpdateTitle();
             VERIFY_ARE_EQUAL(winrt::hstring{ L"1" }, tab->Title());
-            VERIFY_IS_TRUE(tab->ResolveTitleVariable(L"numOtherPanes").empty());
+            VERIFY_IS_TRUE(tab->ResolveTitleVariable(TitleVariables::NumOtherPanes).empty());
             SplitPaneArgs split{ SplitType::Duplicate };
             ActionEventArgs splitEvent{ split };
             page->_HandleSplitPane(nullptr, splitEvent);
             VERIFY_ARE_EQUAL(winrt::hstring{ L"2 - [+1]" }, tab->Title());
             tab->EnterZoom();
-            VERIFY_ARE_EQUAL(std::wstring{ L"2" }, tab->ResolveTitleVariable(L"numPanes"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"2" }, tab->ResolveTitleVariable(TitleVariables::NumPanes));
             tab->ExitZoom();
             page->_HandleSplitPane(nullptr, splitEvent);
             VERIFY_ARE_EQUAL(winrt::hstring{ L"3 - [+2]" }, tab->Title());
             tab->_UpdateActivePane(tab->GetRootPane());
             VERIFY_ARE_EQUAL(winrt::hstring{ L"3 - [+2]" }, tab->Title());
-            VERIFY_IS_TRUE(tab->ResolveTitleVariable(L"profileName").empty());
-            VERIFY_IS_FALSE(tab->ResolveTitleVariable(L"paneTitle").empty());
+            VERIFY_IS_TRUE(tab->ResolveTitleVariable(TitleVariables::ProfileName).empty());
+            VERIFY_IS_FALSE(tab->ResolveTitleVariable(TitleVariables::PaneTitle).empty());
 
             globals.WindowTitleFormat(nullptr);
             page->_currentWindowSettings().ShowTitleInTitlebar(false);

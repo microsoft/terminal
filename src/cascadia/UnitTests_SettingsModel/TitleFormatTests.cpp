@@ -17,7 +17,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(Separators)
         {
             const auto resolve = [](std::wstring_view name) -> std::wstring {
-                return name == L"paneTitle" ? L"PowerShell" : L"";
+                return name == Microsoft::Terminal::TitleVariables::PaneTitle ? L"PowerShell" : L"";
             };
             for (const auto text : { L"${paneTitle}", L"${separator}${paneTitle}${separator}", L"${paneTitle}${separator}${workspaceName}${separator}${separator}" })
             {

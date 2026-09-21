@@ -91,6 +91,7 @@
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="TitleFormatSettings.h" />
     <ClInclude Include="..\inc\TitleFormat.h" />
+    <ClInclude Include="..\inc\TitleVariables.h" />
     <ClInclude Include="HashUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>

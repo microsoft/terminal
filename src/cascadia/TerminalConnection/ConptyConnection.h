@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
         void _LaunchAttachedClient();
-        void _CaptureTitleMetadata();
+        void _CaptureMetadata();
         void _indicateExitWithStatus(unsigned int status) noexcept;
         static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;
@@ -93,11 +93,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD _flags{ 0 };
 
         til::env _initialEnv{};
-        til::ticket_lock _titleMetadataLock;
-        til::env _titleEnvironment{};
-        winrt::hstring _titleShellName;
-        uint32_t _titleShellPid{ 0 };
-        bool _titleElevated{ false };
+        til::ticket_lock _metadataLock;
+        til::env _launchEnvironment{};
+        winrt::hstring _shellName;
+        uint32_t _shellPid{ 0 };
+        bool _elevated{ false };
         guid _profileGuid{};
 
         struct StartupInfoFromDefTerm

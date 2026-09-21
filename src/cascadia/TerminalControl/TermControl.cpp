@@ -2614,11 +2614,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.WorkingDirectory();
     }
 
-    hstring TermControl::ReportedWorkingDirectory() const
-    {
-        return _core.ReportedWorkingDirectory();
-    }
-
     bool TermControl::BracketedPasteEnabled() const noexcept
     {
         return _core.BracketedPasteEnabled();

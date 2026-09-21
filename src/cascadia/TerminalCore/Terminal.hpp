@@ -99,9 +99,6 @@ public:
     void SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
-    std::wstring_view GetReportedWorkingDirectory() const noexcept { return _reportedWorkingDirectory; }
-    void SetStartingDirectory(std::wstring_view directory) { _workingDirectory = directory; }
-    void ClearReportedWorkingDirectory() { _reportedWorkingDirectory.clear(); }
     void SetTitleContextChangedCallback(std::function<void()> callback) { _pfnTitleContextChanged = std::move(callback); }
 
     til::point GetViewportRelativeCursorPosition() const noexcept;
@@ -386,7 +383,6 @@ private:
 
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
-    std::wstring _reportedWorkingDirectory;
     std::function<void()> _pfnTitleContextChanged;
     bool _highContrastMode = false;
 
