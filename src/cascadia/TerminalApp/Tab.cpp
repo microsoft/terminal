@@ -394,8 +394,20 @@ namespace winrt::TerminalApp::implementation
         _UpdateHeaderControlMaxWidth(windowSettings);
 
         // Update the settings on all our panes.
+        _titleFormats.clear();
         _rootPane->WalkTree([&](const auto& pane) {
             pane->UpdateSettings(settings, windowSettings);
+            if (const auto content = pane->GetContent())
+            {
+                if (const auto terminal = content.template try_as<TerminalApp::TerminalPaneContent>())
+                {
+                    if (const auto format = terminal.GetProfile().TabTitleFormat())
+                    {
+                        const auto text = format.GetString();
+                        _titleFormats.try_emplace(std::wstring{ text }, text, ::Microsoft::Terminal::TitleFormat::Surface::Tab);
+                    }
+                }
+            }
             return false;
         });
     }
@@ -498,11 +510,34 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title string of the last focused terminal control in our tree.
-    winrt::hstring Tab::_GetActiveTitle() const
+    winrt::hstring Tab::_GetActiveTitle()
     {
         if (!_runtimeTabText.empty())
         {
             return _runtimeTabText;
+        }
+        const auto paneTitle = _GetPaneTitle();
+        if (const auto profile = _GetTitleProfile())
+        {
+            if (const auto format = profile.TabTitleFormat())
+            {
+                const auto text = format.GetString();
+                const auto parsed = _titleFormats.try_emplace(std::wstring{ text }, text, ::Microsoft::Terminal::TitleFormat::Surface::Tab).first;
+                const auto result = parsed->second.Evaluate([this](auto name) { return ResolveTitleVariable(name); }, profile.TabTitleSeparator());
+                if (!result.empty())
+                {
+                    return winrt::hstring{ result };
+                }
+            }
+        }
+        return paneTitle;
+    }
+
+    winrt::hstring Tab::_GetPaneTitle() const
+    {
+        if (!_activePane)
+        {
+            return {};
         }
         if (!_activePane->_IsLeaf())
         {
@@ -510,6 +545,84 @@ namespace winrt::TerminalApp::implementation
         }
         const auto activeContent = GetActiveContent();
         return activeContent ? activeContent.Title() : winrt::hstring{};
+    }
+
+    Profile Tab::_GetTitleProfile() const
+    {
+        if (!_activePane || !_rootPane) return nullptr;
+        if (_activePane->_IsLeaf()) return GetFocusedProfile();
+        for (const auto paneId : _mruPanes)
+        {
+            if (const auto pane = _rootPane->FindPane(paneId))
+            {
+                if (const auto content = pane->GetContent())
+                {
+                    if (const auto terminal = content.try_as<TerminalApp::TerminalPaneContent>())
+                    {
+                        return terminal.GetProfile();
+                    }
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    void Tab::TitleWorkspaceName(const winrt::hstring& name)
+    {
+        if (_titleWorkspaceName != name)
+        {
+            _titleWorkspaceName = name;
+            UpdateTitle();
+        }
+    }
+
+    std::wstring Tab::ResolveTitleVariable(const std::wstring_view name) const
+    {
+        if (name == L"tabTitle") return std::wstring{ Title() };
+        if (name == L"tabIndex") return std::to_wstring(TabViewIndex() + 1);
+        if (name == L"workspaceName" || name == L"windowName") return std::wstring{ _titleWorkspaceName };
+        if (name == L"appName") return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
+
+        const auto profile = _GetTitleProfile();
+        if (!profile) return {};
+        if (name == L"paneTitle") return std::wstring{ _GetPaneTitle() };
+        if (name == L"numPanes" || name == L"numOtherPanes" || name == L"otherPanes")
+        {
+            size_t count = 0;
+            _rootPane->WalkTree([&](const auto& pane) {
+                if (const auto content = pane->GetContent())
+                {
+                    if (content.template try_as<TerminalApp::TerminalPaneContent>()) ++count;
+                }
+            });
+            if (name == L"numPanes") return std::to_wstring(count);
+            if (count <= 1) return {};
+            const auto others = std::to_wstring(count - 1);
+            return name == L"otherPanes" ? L"[+" + others + L"]" : others;
+        }
+        if (!_activePane->_IsLeaf()) return {};
+        if (name == L"profileName") return std::wstring{ profile.Name() };
+        if (const auto control = GetActiveTerminalControl())
+        {
+            if (name == L"cwd" || name == L"cwdFolder")
+            {
+                const auto directory = control.ReportedWorkingDirectory();
+                return name == L"cwd" ? std::wstring{ directory } : ::Microsoft::Terminal::TitleFormat::DirectoryName(directory);
+            }
+            if (const auto connection = control.Connection())
+            {
+                if (const auto conpty = connection.try_as<Microsoft::Terminal::TerminalConnection::ConptyConnection>())
+                {
+                    if (name == L"elevated" || name == L"elevatedShield")
+                    {
+                        if (conpty.TitleVariable(L"elevated").empty()) return {};
+                        return name == L"elevated" ? std::wstring{ RS_(L"TitleFormatAdministrator") } : L"\U0001F6E1";
+                    }
+                    return std::wstring{ conpty.TitleVariable(winrt::hstring{ name }) };
+                }
+            }
+        }
+        return {};
     }
 
     // Method Description:
@@ -524,6 +637,11 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
+        if (!_rootPane || !_activePane)
+        {
+            return;
+        }
+
         const auto activeTitle = _GetActiveTitle();
         // Bubble our current tab text to anyone who's listening for changes.
         Title(activeTitle);
@@ -532,6 +650,7 @@ namespace winrt::TerminalApp::implementation
         _headerControl.Title(activeTitle);
         Automation::AutomationProperties::SetName(TabViewItem(), activeTitle);
         _UpdateToolTip();
+        TitleContextChanged.raise();
     }
 
     // Method Description:
@@ -1140,6 +1259,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto tab{ weakThisCopy.get() })
                 {
                     tab->_UpdateConnectionClosedState();
+                    tab->UpdateTitle();
                 }
             });
 
@@ -1476,6 +1596,12 @@ namespace winrt::TerminalApp::implementation
         auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
+                DispatcherQueue::GetForCurrentThread().TryEnqueue([weakThis] {
+                    if (const auto remainingTab = weakThis.get())
+                    {
+                        remainingTab->UpdateTitle();
+                    }
+                });
                 if (tab->_zoomedPane)
                 {
                     tab->Content(tab->_rootPane->GetRootElement());
@@ -1882,6 +2008,7 @@ namespace winrt::TerminalApp::implementation
         TabViewNumTabs(numTabs);
         _EnableMenuItems();
         _UpdateSwitchToTabKeyChord();
+        UpdateTitle();
     }
 
     // Method Description:

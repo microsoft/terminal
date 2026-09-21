@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "../inc/TitleFormat.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 #include "MatchProfilesEntry.h"
@@ -338,6 +339,8 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 
     // These aren't in MTSM_PROFILE_SETTINGS because they're special
     DUPLICATE_SETTING_MACRO(TabColor);
+    DUPLICATE_SETTING_MACRO(TabTitleFormat);
+    DUPLICATE_SETTING_MACRO(TabTitleSeparator);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Icon);
 
@@ -461,6 +464,41 @@ void CascadiaSettings::_validateSettings()
     _validateThemeExists();
     _validateProfileEnvironmentVariables();
     _validateRegexes();
+    using TitleFormat = ::Microsoft::Terminal::TitleFormat;
+    std::set<std::wstring> checkedTabFormats;
+    if (_baseLayerProfile->InvalidTitleSettings())
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+    }
+    if (const auto format = _baseLayerProfile->TabTitleFormat())
+    {
+        const auto text = format.GetString();
+        checkedTabFormats.emplace(text);
+        if (TitleFormat{ text, TitleFormat::Surface::Tab }.HasWarning())
+        {
+            _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+        }
+    }
+    for (const auto& profile : _allProfiles)
+    {
+        if (winrt::get_self<Profile>(profile)->InvalidTitleSettings())
+        {
+            _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+        }
+        if (const auto format = profile.TabTitleFormat())
+        {
+            const auto text = format.GetString();
+            if (checkedTabFormats.emplace(text).second && TitleFormat{ text, TitleFormat::Surface::Tab }.HasWarning())
+            {
+                _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+            }
+        }
+    }
+    const auto windowFormat = _globals->WindowTitleFormat();
+    if (_globals->InvalidTitleSettings() || (windowFormat && TitleFormat{ windowFormat.GetString(), TitleFormat::Surface::Window }.HasWarning()))
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+    }
 }
 
 // Method Description:

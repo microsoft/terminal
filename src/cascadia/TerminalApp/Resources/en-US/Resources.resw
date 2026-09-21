@@ -286,6 +286,12 @@
   <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
     <value>Found multiple environment variables with the same name in different cases (lower/upper) - only one value will be used.</value>
   </data>
+  <data name="InvalidTitleFormat" xml:space="preserve">
+    <value>A title format contains an unknown variable, malformed reference, or variable that is not available on that title surface, or a title setting has an invalid type. Invalid formats use the unformatted title; unknown variables display no text.</value>
+  </data>
+  <data name="TitleFormatAdministrator" xml:space="preserve">
+    <value>Administrator</value>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>

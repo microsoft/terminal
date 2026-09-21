@@ -81,6 +81,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring SourceBasePath;
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
+        INHERITABLE_NULLABLE_STRING_SETTING(Model::GlobalAppSettings, WindowTitleFormat, L"${workspaceName}${separator}${tabTitle}");
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WindowTitleSeparator, L" - ");
+        bool InvalidTitleSettings() const noexcept { return _invalidTitleSettings; }
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
@@ -96,6 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid _defaultProfile{};
         bool _fixupsAppliedDuringLoad{ false };
+        bool _invalidTitleSettings{ false };
         bool _legacyReloadEnvironmentVariables{ true };
         bool _legacyForceVTInput{ false };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };

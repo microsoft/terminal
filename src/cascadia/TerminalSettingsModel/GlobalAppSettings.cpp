@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "TitleFormatSettings.h"
 #include "GlobalAppSettings.h"
 #include <DefaultSettings.h>
 #include "../../types/inc/Utils.hpp"
@@ -60,6 +61,9 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     auto globals{ winrt::make_self<GlobalAppSettings>() };
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    globals->_WindowTitleFormat = _WindowTitleFormat;
+    globals->_WindowTitleSeparator = _WindowTitleSeparator;
+    globals->_invalidTitleSettings = _invalidTitleSettings;
 
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
@@ -159,6 +163,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
+    _invalidTitleSettings |= !LoadTitleSetting(json, "windowTitleFormat", _WindowTitleFormat, true);
+    _invalidTitleSettings |= !LoadTitleSetting(json, "windowTitleSeparator", _WindowTitleSeparator, false);
+    if (!_getWindowTitleFormatImpl() && !json.isMember("windowTitleFormat") && json.isMember("showTerminalTitleInTitlebar") &&
+        json["showTerminalTitleInTitlebar"].isBool() && !json["showTerminalTitleInTitlebar"].asBool())
+    {
+        _WindowTitleFormat = std::optional<hstring>{};
+        _fixupsAppliedDuringLoad = true;
+    }
 
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
@@ -354,6 +366,8 @@ Json::Value GlobalAppSettings::ToJson()
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
 #undef GLOBAL_SETTINGS_TO_JSON
+    SaveTitleSetting(json, "windowTitleFormat", _WindowTitleFormat);
+    SaveTitleSetting(json, "windowTitleSeparator", _WindowTitleSeparator);
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     json[JsonKey(KeybindingsKey)] = _actionMap->KeyBindingsToJson();

@@ -326,6 +326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
         _revokers.TitleChanged = _core.TitleChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleChanged });
+        _revokers.TitleContextChanged = _core.TitleContextChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTitleContextChanged });
         _revokers.TabColorChanged = _core.TabColorChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleTabColorChanged });
         _revokers.TaskbarProgressChanged = _core.TaskbarProgressChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSetTaskbarProgress });
         _revokers.ConnectionStateChanged = _core.ConnectionStateChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleConnectionStateChanged });
@@ -2611,6 +2612,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring TermControl::WorkingDirectory() const
     {
         return _core.WorkingDirectory();
+    }
+
+    hstring TermControl::ReportedWorkingDirectory() const
+    {
+        return _core.ReportedWorkingDirectory();
     }
 
     bool TermControl::BracketedPasteEnabled() const noexcept

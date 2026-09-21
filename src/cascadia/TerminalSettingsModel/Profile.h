@@ -124,6 +124,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Nullable/optional settings
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_NULLABLE_STRING_SETTING(Model::Profile, TabTitleFormat, std::nullopt);
+        INHERITABLE_SETTING(Model::Profile, hstring, TabTitleSeparator, L" - ");
+        bool InvalidTitleSettings() const noexcept { return _invalidTitleSettings; }
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
         // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
@@ -146,6 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
         std::set<std::string> _changeLog;
+        bool _invalidTitleSettings{ false };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 

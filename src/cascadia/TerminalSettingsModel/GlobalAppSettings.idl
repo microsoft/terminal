@@ -67,6 +67,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Windows.Foundation.IPropertyValue, WindowTitleFormat);
+        INHERITABLE_SETTING(String, WindowTitleSeparator);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
         // ---- Color schemes ----

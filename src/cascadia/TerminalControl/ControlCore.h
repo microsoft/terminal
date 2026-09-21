@@ -167,6 +167,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
+        hstring ReportedWorkingDirectory() const;
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
@@ -273,6 +274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
+        til::typed_event<IInspectable, IInspectable> TitleContextChanged;
         til::typed_event<IInspectable, Control::WriteToClipboardEventArgs> WriteToClipboard;
         til::typed_event<> WarningBell;
         til::typed_event<> TabColorChanged;

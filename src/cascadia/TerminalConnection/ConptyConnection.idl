@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.TerminalConnection
         void ReparentWindow(UInt64 newParent);
 
         UInt64 RootProcessHandle();
+        String TitleVariable(String name);
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

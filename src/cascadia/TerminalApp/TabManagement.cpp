@@ -1123,7 +1123,7 @@ namespace winrt::TerminalApp::implementation
             tab.TabViewItem().StartBringIntoView();
 
             // Raise an event that our title changed
-            TitleChanged.raise(*this, nullptr);
+            _ScheduleTitleUpdate();
 
             _updateThemeColors();
 

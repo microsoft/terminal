@@ -92,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
         hstring WorkingDirectory() const;
+        hstring ReportedWorkingDirectory() const;
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
@@ -221,6 +222,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Those attach the handler to the core directly, and will explode if
         // the core ever gets detached & reattached to another window.
         BUBBLED_FORWARDED_TYPED_EVENT(TitleChanged,             IInspectable, Control::TitleChangedEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(TitleContextChanged,      IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(TabColorChanged,          IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,       IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(ConnectionStateChanged,   IInspectable, IInspectable);
@@ -464,6 +466,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
             Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::TitleContextChanged_revoker TitleContextChanged;
             Control::ControlCore::WriteToClipboard_revoker WriteToClipboard;
             Control::ControlCore::TabColorChanged_revoker TabColorChanged;
             Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;

@@ -36,6 +36,7 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ProfileTests.cpp" />
+    <ClCompile Include="TitleFormatTests.cpp" />
     <ClCompile Include="ColorSchemeTests.cpp" />
     <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="CommandTests.cpp" />

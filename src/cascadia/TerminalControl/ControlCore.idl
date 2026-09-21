@@ -190,6 +190,7 @@ namespace Microsoft.Terminal.Control
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleContextChanged;
         event Windows.Foundation.TypedEventHandler<Object, WriteToClipboardEventArgs> WriteToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;

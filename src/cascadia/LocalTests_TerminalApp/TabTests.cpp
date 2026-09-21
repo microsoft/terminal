@@ -96,6 +96,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
         TEST_METHOD(TestClampSwitchToTab);
+        TEST_METHOD(RuntimeTitleFormats);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -696,6 +697,54 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
 
         return page;
+    }
+
+    void TabTests::RuntimeTitleFormats()
+    {
+        auto page = _commonSetup();
+        const auto result = RunOnUIThread([&] {
+            const auto tab = page->_GetFocusedTabImpl();
+            const auto profile = tab->GetFocusedProfile();
+            profile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"${profileName}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            tab->UpdateTitle();
+            VERIFY_ARE_EQUAL(profile.Name(), tab->Title());
+
+            const auto globals = page->_settings.GlobalSettings();
+            globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}${separator}${paneTitle}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            _windowProperties->WindowName(L"workspace");
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(L"paneTitle") }, page->Title());
+
+            tab->SetTabText(L"literal ${paneTitle}");
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"literal ${paneTitle}" }, tab->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(L"paneTitle") }, page->Title());
+            tab->ResetTabText();
+            VERIFY_ARE_EQUAL(profile.Name(), tab->Title());
+
+            profile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"${numPanes}${separator}${otherPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            tab->UpdateTitle();
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"1" }, tab->Title());
+            VERIFY_IS_TRUE(tab->ResolveTitleVariable(L"numOtherPanes").empty());
+            SplitPaneArgs split{ SplitType::Duplicate };
+            ActionEventArgs splitEvent{ split };
+            page->_HandleSplitPane(nullptr, splitEvent);
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"2 - [+1]" }, tab->Title());
+            tab->EnterZoom();
+            VERIFY_ARE_EQUAL(std::wstring{ L"2" }, tab->ResolveTitleVariable(L"numPanes"));
+            tab->ExitZoom();
+            page->_HandleSplitPane(nullptr, splitEvent);
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"3 - [+2]" }, tab->Title());
+            tab->_UpdateActivePane(tab->GetRootPane());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"3 - [+2]" }, tab->Title());
+            VERIFY_IS_TRUE(tab->ResolveTitleVariable(L"profileName").empty());
+            VERIFY_IS_FALSE(tab->ResolveTitleVariable(L"paneTitle").empty());
+
+            globals.WindowTitleFormat(nullptr);
+            page->_currentWindowSettings().ShowTitleInTitlebar(false);
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"Terminal" }, page->Title());
+            globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"explicit caption" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"explicit caption" }, page->Title());
+        });
+        VERIFY_SUCCEEDED(result);
     }
 
     void TabTests::TryZoomPane()

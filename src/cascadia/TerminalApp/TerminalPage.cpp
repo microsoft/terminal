@@ -2025,8 +2025,28 @@ namespace winrt::TerminalApp::implementation
     {
         if (tab == _GetFocusedTab())
         {
-            TitleChanged.raise(*this, nullptr);
+            _ScheduleTitleUpdate();
         }
+    }
+
+    void TerminalPage::_ScheduleTitleUpdate()
+    {
+        if (_titleUpdatePending)
+        {
+            return;
+        }
+        _titleUpdatePending = DispatcherQueue::GetForCurrentThread().TryEnqueue([weakThis = get_weak()] {
+            if (const auto page = weakThis.get())
+            {
+                page->_titleUpdatePending = false;
+                const auto title = page->Title();
+                if (!page->_lastWindowTitle || *page->_lastWindowTitle != title)
+                {
+                    page->_lastWindowTitle = title;
+                    page->TitleChanged.raise(*page, nullptr);
+                }
+            }
+        });
     }
 
     // Method Description:
@@ -2105,6 +2125,16 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
+        hostingTab.TitleWorkspaceName(_WindowProperties.WindowName());
+        hostingTab.TitleContextChanged([weakTab, weakThis] {
+            if (const auto page = weakThis.get())
+            {
+                if (const auto tab = weakTab.get())
+                {
+                    page->_UpdateTitle(*tab);
+                }
+            }
+        });
         // PropertyChanged is the generic mechanism by which the Tab
         // communicates changes to any of its observable properties, including
         // the Title
@@ -3019,6 +3049,25 @@ namespace winrt::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Terminal"
     hstring TerminalPage::Title()
     {
+        if (const auto format = _settings.GlobalSettings().WindowTitleFormat())
+        {
+            const auto text = format.GetString();
+            if (!_windowTitleFormatText || *_windowTitleFormatText != text)
+            {
+                _windowTitleFormatText = text;
+                _windowTitleFormat = { text, ::Microsoft::Terminal::TitleFormat::Surface::Window };
+            }
+            const auto tab = _GetFocusedTabImpl();
+            const auto title = _windowTitleFormat.Evaluate([&](const std::wstring_view name) -> std::wstring {
+                if (name == L"workspaceName" || name == L"windowName") return std::wstring{ _WindowProperties.WindowName() };
+                if (name == L"appName") return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
+                return tab ? tab->ResolveTitleVariable(name) : std::wstring{};
+            }, _settings.GlobalSettings().WindowTitleSeparator());
+            if (!title.empty())
+            {
+                return hstring{ title };
+            }
+        }
         if (_currentWindowSettings().ShowTitleInTitlebar())
         {
             if (const auto tab{ _GetFocusedTab() })
@@ -4154,7 +4203,7 @@ namespace winrt::TerminalApp::implementation
         _updateAllTabCloseButtons();
 
         // The user may have changed the "show title in titlebar" setting.
-        TitleChanged.raise(*this, nullptr);
+        _ScheduleTitleUpdate();
     }
 
     void TerminalPage::_updateAllTabCloseButtons()
@@ -5919,6 +5968,12 @@ namespace winrt::TerminalApp::implementation
         // Keep the workspace dropdown label in sync with the window name.
         // Use raw WindowName() so clearing the name hides the text.
         _tabRow.WorkspaceName(_WindowProperties.WindowName());
+
+        for (const auto& tab : _tabs)
+        {
+            _GetTabImpl(tab)->TitleWorkspaceName(_WindowProperties.WindowName());
+        }
+        _ScheduleTitleUpdate();
 
         // DON'T display the confirmation if this is the name we were
         // given on startup!

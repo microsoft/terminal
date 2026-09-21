@@ -17,6 +17,7 @@
 #include "WindowListEntry.g.h"
 #include "WindowListRequest.g.h"
 #include "Toast.h"
+#include "../inc/TitleFormat.h"
 
 #include "WindowsPackageManagerFactory.h"
 
@@ -397,6 +398,11 @@ namespace winrt::TerminalApp::implementation
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const Tab& tab);
+        void _ScheduleTitleUpdate();
+        bool _titleUpdatePending{ false };
+        std::optional<winrt::hstring> _lastWindowTitle;
+        std::optional<winrt::hstring> _windowTitleFormatText;
+        ::Microsoft::Terminal::TitleFormat _windowTitleFormat;
         void _UpdateTabIcon(Tab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();

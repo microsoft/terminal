@@ -229,6 +229,25 @@ public:                                                                         
         _##name = value;                                                          \
     }
 
+#define INHERITABLE_NULLABLE_STRING_SETTING(projectedType, name, ...)                         \
+    _BASE_INHERITABLE_SETTING(projectedType, NullableSetting<winrt::hstring>, name, __VA_ARGS__) \
+public:                                                                                      \
+    winrt::Windows::Foundation::IPropertyValue name() const                                   \
+    {                                                                                        \
+        const auto value = _get##name##Impl().value_or(                                       \
+            std::optional<winrt::hstring>{ __VA_ARGS__ });                                    \
+        if (value)                                                                           \
+        {                                                                                    \
+            return winrt::box_value(*value).as<winrt::Windows::Foundation::IPropertyValue>(); \
+        }                                                                                    \
+        return nullptr;                                                                      \
+    }                                                                                        \
+    void name(const winrt::Windows::Foundation::IPropertyValue& value)                         \
+    {                                                                                        \
+        _##name = value ? std::optional<winrt::hstring>{ value.GetString() }                  \
+                        : std::optional<winrt::hstring>{};                                   \
+    }
+
 // This macro is similar to the one above, but is reserved for optional settings
 // like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")

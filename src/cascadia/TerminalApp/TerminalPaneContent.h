@@ -85,6 +85,7 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
 
             winrt::Microsoft::Terminal::Control::TermControl::TitleChanged_revoker _TitleChanged;
+            winrt::Microsoft::Terminal::Control::TermControl::TitleContextChanged_revoker _TitleContextChanged;
             winrt::Microsoft::Terminal::Control::TermControl::TabColorChanged_revoker _TabColorChanged;
             winrt::Microsoft::Terminal::Control::TermControl::SetTaskbarProgress_revoker _SetTaskbarProgress;
             winrt::Microsoft::Terminal::Control::TermControl::ReadOnlyChanged_revoker _ReadOnlyChanged;

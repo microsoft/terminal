@@ -35,6 +35,7 @@ namespace Microsoft.Terminal.Control
         UInt64 TaskbarProgress { get; };
 
         String WorkingDirectory { get; };
+        String ReportedWorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
 

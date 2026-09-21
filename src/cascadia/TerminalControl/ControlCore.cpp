@@ -109,7 +109,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+        _terminal->SetStartingDirectory(_settings.StartingDirectory());
+        _terminal->SetTitleContextChangedCallback([this] { TitleContextChanged.raise(*this, nullptr); });
 
         _terminal->SetCopyToClipboardCallback([this](wil::zwstring_view wstr) {
             WriteToClipboard.raise(*this, winrt::make<WriteToClipboardEventArgs>(winrt::hstring{ std::wstring_view{ wstr } }, std::string{}, std::string{}));
@@ -323,6 +324,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _closeConnection();
 
         _connection = newConnection;
+        {
+            const auto lock = _terminal->LockForWriting();
+            _terminal->ClearReportedWorkingDirectory();
+        }
+        TitleContextChanged.raise(*this, nullptr);
         if (_connection)
         {
             // Subscribe to the connection's disconnected event and call our connection closed handlers.
@@ -1549,6 +1555,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForReading();
         return hstring{ _terminal->GetWorkingDirectory() };
+    }
+
+    hstring ControlCore::ReportedWorkingDirectory() const
+    {
+        const auto lock = _terminal->LockForReading();
+        return hstring{ _terminal->GetReportedWorkingDirectory() };
     }
 
     bool ControlCore::BracketedPasteEnabled() const noexcept

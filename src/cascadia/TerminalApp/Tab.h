@@ -6,6 +6,7 @@
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Tab.g.h"
+#include "../inc/TitleFormat.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -61,6 +62,9 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
         void UpdateTitle();
+        void TitleWorkspaceName(const winrt::hstring& name);
+        std::wstring ResolveTitleVariable(std::wstring_view name) const;
+        til::event<winrt::delegate<>> TitleContextChanged;
 
         void Close();
         void Shutdown();
@@ -208,6 +212,8 @@ namespace winrt::TerminalApp::implementation
         bool _changingActivePane{ false };
 
         winrt::hstring _runtimeTabText{};
+        winrt::hstring _titleWorkspaceName;
+        std::map<std::wstring, ::Microsoft::Terminal::TitleFormat, std::less<>> _titleFormats;
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
@@ -228,7 +234,9 @@ namespace winrt::TerminalApp::implementation
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
         void _UpdateMenuItemStates();
 
-        winrt::hstring _GetActiveTitle() const;
+        winrt::hstring _GetActiveTitle();
+        winrt::hstring _GetPaneTitle() const;
+        winrt::Microsoft::Terminal::Settings::Model::Profile _GetTitleProfile() const;
 
         void _RecalculateAndApplyReadOnly();
 

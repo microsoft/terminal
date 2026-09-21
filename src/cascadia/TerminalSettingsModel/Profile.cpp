@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "TitleFormatSettings.h"
 #include "Profile.h"
 #include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
@@ -110,6 +111,9 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
+    profile->_TabTitleFormat = _TabTitleFormat;
+    profile->_TabTitleSeparator = _TabTitleSeparator;
+    profile->_invalidTitleSettings = _invalidTitleSettings;
     profile->_Padding = _Padding;
 
     profile->_Origin = _Origin;
@@ -194,6 +198,8 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     _logSettingIfSet(TabColorKey, _TabColor.has_value());
+    _invalidTitleSettings |= !LoadTitleSetting(json, "tabTitleFormat", _TabTitleFormat, true);
+    _invalidTitleSettings |= !LoadTitleSetting(json, "tabTitleSeparator", _TabTitleSeparator, false);
 
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
@@ -344,6 +350,8 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
+    SaveTitleSetting(json, "tabTitleFormat", _TabTitleFormat);
+    SaveTitleSetting(json, "tabTitleSeparator", _TabTitleSeparator);
 
 #define PROFILE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
