@@ -96,14 +96,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_uiaEngine->Disable());
             _core->DetachUiaEngine(_uiaEngine.get());
         }
-        _destroyInteractivityTimers();
         _core->Detach();
     }
 
     void ControlInteractivity::AttachToNewControl()
     {
         _core->AttachToNewControl();
-        //_createInteractivityTimers();
     }
 
     // Method Description:
@@ -144,7 +142,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::_createInteractivityTimers()
     {
-        _autoScrollTimer = _core->RegisterTimer("autoscroll", [weak = get_weak()]() {
+        _autoScrollTimer = _core->RegisterRenderTimer("autoscroll", [weak = get_weak()]() {
             if (auto strong = weak.get())
             {
                 strong->_updateAutoScroll();
@@ -156,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_autoScrollTimer)
         {
-            _core->StopTimer(_autoScrollTimer);
+            _core->StopRenderTimer(_autoScrollTimer);
         }
     }
 
@@ -894,10 +892,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Apparently this check is not necessary but greatly improves performance
-            if (!_core->IsTimerRunning(_autoScrollTimer))
+            if (!_core->IsRenderTimerRunning(_autoScrollTimer))
             {
                 static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
-                _core->StartRepeatingTimer(_autoScrollTimer, AutoScrollUpdateInterval.count());
+                _core->StartRepeatingRenderTimer(_autoScrollTimer, AutoScrollUpdateInterval.count());
             }
         }
     }
@@ -917,7 +915,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _lastAutoScrollUpdateTime = std::nullopt;
 
             // Apparently this check is not necessary but greatly improves performance
-            _core->StopTimer(_autoScrollTimer);
+            _core->StopRenderTimer(_autoScrollTimer);
         }
     }
 

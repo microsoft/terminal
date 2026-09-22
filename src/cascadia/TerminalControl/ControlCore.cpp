@@ -2980,21 +2980,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->PreviewText(input);
     }
 
-    ControlCore::TimerHandle ControlCore::RegisterTimer(const char* name, std::function<void()> callback)
+    ControlCore::TimerHandle ControlCore::RegisterRenderTimer(const char* name, std::function<void()> callback)
     {
         return _renderer->RegisterTimer(name, [cb = std::move(callback)](auto&&, auto&&) {
             cb();
         });
     }
-    bool ControlCore::IsTimerRunning(TimerHandle h)
+
+    bool ControlCore::IsRenderTimerRunning(TimerHandle h)
     {
         return _renderer->IsTimerRunning(h);
     }
-    void ControlCore::StartRepeatingTimer(TimerHandle h, uint64_t micros)
+
+    void ControlCore::StartRepeatingRenderTimer(TimerHandle h, uint64_t micros)
     {
         _renderer->StartRepeatingTimer(h, std::chrono::microseconds(micros));
     }
-    void ControlCore::StopTimer(TimerHandle h)
+
+    void ControlCore::StopRenderTimer(TimerHandle h)
     {
         _renderer->StopTimer(h);
     }

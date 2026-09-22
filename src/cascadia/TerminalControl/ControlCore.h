@@ -267,10 +267,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void PreviewInput(std::wstring_view input);
 
         using TimerHandle = ::Microsoft::Console::Render::TimerHandle;
-        TimerHandle RegisterTimer(const char* name, std::function<void()> callback);
-        bool IsTimerRunning(TimerHandle h);
-        void StartRepeatingTimer(TimerHandle h, uint64_t micros);
-        void StopTimer(TimerHandle h);
+        TimerHandle RegisterRenderTimer(const char* name, std::function<void()> callback);
+        bool IsRenderTimerRunning(TimerHandle h);
+        void StartRepeatingRenderTimer(TimerHandle h, uint64_t micros);
+        void StopRenderTimer(TimerHandle h);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
