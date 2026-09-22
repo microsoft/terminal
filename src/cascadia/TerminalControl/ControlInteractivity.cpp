@@ -455,14 +455,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             SetEndSelectionPoint(pixelPosition);
 
-            // GH#9109 - Only start an auto-scroll when the drag actually
-            // started within our bounds. Otherwise, someone could start a drag
-            // outside the terminal control, drag into the padding, and trick us
-            // into starting to scroll.
+            // Automatic scrolling; only triggers when the drag originated inside the terminal.
             {
                 // We want to find the distance relative to the bounds of the
                 // SwapChainPanel, not the entire control. If they drag out of
-                // the bounds of the text, into the padding, we still what that
+                // the bounds of the text, into the padding, we still want that
                 // to auto-scroll
                 const auto height = _core->ViewportSize().Height * _core->FontSize().Height;
                 const auto cursorBelowBottomDist = pixelPosition.Y - height;
@@ -939,7 +936,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 static constexpr auto microSecPerSec = 1000000.0;
                 const auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
-                UpdateScrollbar(static_cast<float>(_core->ScrollOffset()) + static_cast<float>(_autoScrollVelocity * deltaTime) /* TODO(DH) */);
+                UpdateScrollbar(static_cast<float>(_core->ScrollOffset()) + static_cast<float>(_autoScrollVelocity * deltaTime));
 
                 if (_autoScrollingPointerPoint)
                 {
