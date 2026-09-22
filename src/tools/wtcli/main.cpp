@@ -167,44 +167,68 @@ static GUID GuidFromString(const std::string& target)
     return g;
 }
 
+static void PrintProtocolError(const char* operation, HRESULT hr)
+{
+    if (hr == E_ACCESSDENIED)
+    {
+        fprintf(stderr,
+                "[wtcli] %s failed: access denied. Run wtcli at an integrity level at least as high as Terminal.\n",
+                operation);
+    }
+    else
+    {
+        fprintf(stderr, "[wtcli] %s failed: 0x%08X\n", operation, static_cast<uint32_t>(hr));
+    }
+}
+
 // Resolve a session id: an explicit GUID string, or the active pane's id.
-static GUID ResolveSessionId(ITerminalProtocol* server, const std::string& target)
+static bool ResolveSessionId(ITerminalProtocol* server, const std::string& target, GUID& sessionId)
 {
     if (!target.empty())
-        return GuidFromString(target);
+    {
+        sessionId = GuidFromString(target);
+        return sessionId != GUID{};
+    }
 
     Json::Value info;
     const auto hr = CallJson([&](BSTR* j) { return server->GetActivePane(j); }, info);
     if (FAILED(hr))
     {
-        fprintf(stderr, "[wtcli] Could not resolve active pane (GetActivePane failed: 0x%08X)\n", static_cast<uint32_t>(hr));
-        return GUID{};
+        PrintProtocolError("GetActivePane", hr);
+        return false;
     }
-    const auto sessionId = info["session_id"].asString();
-    if (sessionId.empty())
+    const auto sessionIdString = info["session_id"].asString();
+    if (sessionIdString.empty())
     {
         fprintf(stderr, "[wtcli] No active pane.\n");
-        return GUID{};
+        return false;
     }
-    return GuidFromString(sessionId);
+    sessionId = GuidFromString(sessionIdString);
+    return sessionId != GUID{};
 }
 
-static uint64_t GetFirstWindowId(ITerminalProtocol* server)
+static HRESULT GetFirstWindowId(ITerminalProtocol* server, uint64_t& windowId)
 {
     Json::Value windows;
-    CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows);
+    RETURN_IF_FAILED(CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows));
     if (windows.isArray() && !windows.empty())
-        return windows[0u]["window_id"].asUInt64();
-    return 0;
+    {
+        windowId = windows[0u]["window_id"].asUInt64();
+        return S_OK;
+    }
+    return S_FALSE;
 }
 
-static uint32_t GetFirstTabId(ITerminalProtocol* server, uint64_t windowId)
+static HRESULT GetFirstTabId(ITerminalProtocol* server, uint64_t windowId, uint32_t& tabId)
 {
     Json::Value tabs;
-    CallJson([&](BSTR* j) { return server->ListTabs(windowId, j); }, tabs);
+    RETURN_IF_FAILED(CallJson([&](BSTR* j) { return server->ListTabs(windowId, j); }, tabs));
     if (tabs.isArray() && !tabs.empty())
-        return tabs[0u]["tab_id"].asUInt();
-    return UINT32_MAX;
+    {
+        tabId = tabs[0u]["tab_id"].asUInt();
+        return S_OK;
+    }
+    return S_FALSE;
 }
 
 // Allocate a BSTR from a UTF-8 std::string.
@@ -260,7 +284,7 @@ int main()
         auto hr = CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows);
         if (FAILED(hr))
         {
-            fprintf(stderr, "ListWindows failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("ListWindows", hr);
             exitCode = 1;
             return;
         }
@@ -287,12 +311,18 @@ int main()
         uint64_t wid = 0;
         if (listTabsWindowId.empty())
         {
-            wid = GetFirstWindowId(server.get());
-            if (wid == 0)
+            const auto resolveHr = GetFirstWindowId(server.get(), wid);
+            if (FAILED(resolveHr))
+            {
+                PrintProtocolError("ListWindows", resolveHr);
+                exitCode = 1;
+                return;
+            }
+            if (resolveHr == S_FALSE || wid == 0)
             {
                 // 0 is the server's "no filter" sentinel, not a real window id;
                 // bail rather than silently listing tabs for ALL windows.
-                fprintf(stderr, "[wtcli] Could not resolve a window (no windows or ListWindows failed)\n");
+                fprintf(stderr, "[wtcli] Could not resolve a window (no windows found)\n");
                 exitCode = 1;
                 return;
             }
@@ -307,7 +337,7 @@ int main()
         auto hr = CallJson([&](BSTR* j) { return server->ListTabs(wid, j); }, tabs);
         if (FAILED(hr))
         {
-            fprintf(stderr, "ListTabs failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("ListTabs", hr);
             exitCode = 1;
             return;
         }
@@ -355,18 +385,30 @@ int main()
         {
             if (wid == 0)
             {
-                wid = GetFirstWindowId(server.get());
-                if (wid == 0)
+                const auto resolveWindowHr = GetFirstWindowId(server.get(), wid);
+                if (FAILED(resolveWindowHr))
                 {
-                    fprintf(stderr, "[wtcli] Could not resolve a window (no windows or ListWindows failed)\n");
+                    PrintProtocolError("ListWindows", resolveWindowHr);
+                    exitCode = 1;
+                    return;
+                }
+                if (resolveWindowHr == S_FALSE || wid == 0)
+                {
+                    fprintf(stderr, "[wtcli] Could not resolve a window (no windows found)\n");
                     exitCode = 1;
                     return;
                 }
             }
-            tid = GetFirstTabId(server.get(), wid);
-            if (tid == UINT32_MAX)
+            const auto resolveTabHr = GetFirstTabId(server.get(), wid, tid);
+            if (FAILED(resolveTabHr))
             {
-                fprintf(stderr, "[wtcli] Could not resolve a tab (no tabs or ListTabs failed)\n");
+                PrintProtocolError("ListTabs", resolveTabHr);
+                exitCode = 1;
+                return;
+            }
+            if (resolveTabHr == S_FALSE || tid == UINT32_MAX)
+            {
+                fprintf(stderr, "[wtcli] Could not resolve a tab (no tabs found)\n");
                 exitCode = 1;
                 return;
             }
@@ -375,7 +417,7 @@ int main()
         auto hr = CallJson([&](BSTR* j) { return server->ListPanes(wid, tid, j); }, panes);
         if (FAILED(hr))
         {
-            fprintf(stderr, "ListPanes failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("ListPanes", hr);
             exitCode = 1;
             return;
         }
@@ -401,7 +443,7 @@ int main()
         auto hr = CallJson([&](BSTR* j) { return server->GetActivePane(j); }, info);
         if (FAILED(hr))
         {
-            fprintf(stderr, "GetActivePane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("GetActivePane", hr);
             exitCode = 1;
             return;
         }
@@ -423,13 +465,18 @@ int main()
         auto server = connect();
         if (!server)
             return;
-        auto sessionId = ResolveSessionId(server.get(), capturePaneTarget);
+        GUID sessionId{};
+        if (!ResolveSessionId(server.get(), capturePaneTarget, sessionId))
+        {
+            exitCode = 1;
+            return;
+        }
         wil::unique_bstr src{ Bstr(captureLastPrompt ? "last_prompt" : "scrollback") };
         Json::Value output;
         auto hr = CallJson([&](BSTR* j) { return server->ReadPaneOutput(sessionId, src.get(), captureMaxLines, j); }, output);
         if (FAILED(hr))
         {
-            fprintf(stderr, "ReadPaneOutput failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("ReadPaneOutput", hr);
             exitCode = 1;
             return;
         }
@@ -447,12 +494,17 @@ int main()
         auto server = connect();
         if (!server)
             return;
-        auto sessionId = ResolveSessionId(server.get(), paneStatusTarget);
+        GUID sessionId{};
+        if (!ResolveSessionId(server.get(), paneStatusTarget, sessionId))
+        {
+            exitCode = 1;
+            return;
+        }
         Json::Value status;
         auto hr = CallJson([&](BSTR* j) { return server->GetProcessStatus(sessionId, j); }, status);
         if (FAILED(hr))
         {
-            fprintf(stderr, "GetProcessStatus failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("GetProcessStatus", hr);
             exitCode = 1;
             return;
         }
@@ -479,7 +531,7 @@ int main()
         }, result);
         if (FAILED(hr))
         {
-            fprintf(stderr, "CreateTab failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("CreateTab", hr);
             exitCode = 1;
             return;
         }
@@ -504,7 +556,12 @@ int main()
         auto server = connect();
         if (!server)
             return;
-        auto sessionId = ResolveSessionId(server.get(), splitPaneTarget);
+        GUID sessionId{};
+        if (!ResolveSessionId(server.get(), splitPaneTarget, sessionId))
+        {
+            exitCode = 1;
+            return;
+        }
         std::string dir;
         if (!splitPaneDirection.empty())
             dir = splitPaneDirection;
@@ -521,7 +578,7 @@ int main()
         }, result);
         if (FAILED(hr))
         {
-            fprintf(stderr, "SplitPane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("SplitPane", hr);
             exitCode = 1;
             return;
         }
@@ -539,11 +596,16 @@ int main()
         auto server = connect();
         if (!server)
             return;
-        auto sessionId = ResolveSessionId(server.get(), killPaneTarget);
+        GUID sessionId{};
+        if (!ResolveSessionId(server.get(), killPaneTarget, sessionId))
+        {
+            exitCode = 1;
+            return;
+        }
         auto hr = server->ClosePane(sessionId);
         if (FAILED(hr))
         {
-            fprintf(stderr, "ClosePane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("ClosePane", hr);
             exitCode = 1;
             return;
         }
@@ -568,11 +630,16 @@ int main()
         auto server = connect();
         if (!server)
             return;
-        auto sessionId = ResolveSessionId(server.get(), focusPaneTarget);
+        GUID sessionId{};
+        if (!ResolveSessionId(server.get(), focusPaneTarget, sessionId))
+        {
+            exitCode = 1;
+            return;
+        }
         auto hr = server->FocusPane(sessionId);
         if (FAILED(hr))
         {
-            fprintf(stderr, "FocusPane failed: 0x%08X\n", static_cast<uint32_t>(hr));
+            PrintProtocolError("FocusPane", hr);
             exitCode = 1;
             return;
         }

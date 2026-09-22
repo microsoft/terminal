@@ -20,6 +20,7 @@
 
 #include <wrl/module.h>
 #include <wil/resource.h>
+#include <wil/token_helpers.h>
 
 using namespace Microsoft::WRL;
 
@@ -137,6 +138,66 @@ HRESULT TerminalProtocolComServer::s_StopListening()
 // ============================================================================
 // Helpers
 // ============================================================================
+
+static DWORD _getIntegrityRid(HANDLE token)
+{
+    const auto label = wil::get_token_information<TOKEN_MANDATORY_LABEL>(token);
+    const auto sid = label->Label.Sid;
+    THROW_HR_IF(E_ACCESSDENIED, !IsValidSid(sid));
+
+    const auto subAuthorityCount = *GetSidSubAuthorityCount(sid);
+    THROW_HR_IF(E_ACCESSDENIED, subAuthorityCount == 0);
+    return *GetSidSubAuthority(sid, subAuthorityCount - 1);
+}
+
+static HRESULT _authorizeCaller() noexcept
+{
+    const auto impersonateHr = CoImpersonateClient();
+    if (FAILED(impersonateHr))
+    {
+        LOG_HR(impersonateHr);
+        return E_ACCESSDENIED;
+    }
+
+    bool needsRevert = true;
+    const auto revertOnExit = wil::scope_exit([&]() {
+        if (needsRevert)
+        {
+            LOG_IF_FAILED(CoRevertToSelf());
+        }
+    });
+
+    bool authorized = false;
+    try
+    {
+        wil::unique_handle callerToken;
+        THROW_IF_WIN32_BOOL_FALSE(OpenThreadToken(GetCurrentThread(), TOKEN_QUERY, TRUE, callerToken.put()));
+
+        wil::unique_handle serverToken{ GetCurrentProcessToken() };
+        const auto callerUser = wil::get_token_information<TOKEN_USER>(callerToken.get());
+        const auto serverUser = wil::get_token_information<TOKEN_USER>(serverToken.get());
+
+        THROW_HR_IF(E_ACCESSDENIED, !IsValidSid(callerUser->User.Sid));
+        THROW_HR_IF(E_ACCESSDENIED, !IsValidSid(serverUser->User.Sid));
+
+        authorized = EqualSid(callerUser->User.Sid, serverUser->User.Sid) &&
+                     _getIntegrityRid(callerToken.get()) >= _getIntegrityRid(serverToken.get());
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+    }
+
+    const auto revertHr = CoRevertToSelf();
+    if (FAILED(revertHr))
+    {
+        LOG_HR(revertHr);
+        return E_ACCESSDENIED;
+    }
+    needsRevert = false;
+
+    return authorized ? S_OK : E_ACCESSDENIED;
+}
 
 static winrt::TerminalApp::TerminalPage _getPage(AppHost* host)
 {
@@ -288,6 +349,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     const auto host = s_emperor->GetMostRecentWindow();
@@ -313,6 +375,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     const auto mostRecent = s_emperor->GetMostRecentWindow();
@@ -346,6 +409,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     Json::Value arr(Json::arrayValue);
@@ -384,6 +448,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     Json::Value arr(Json::arrayValue);
@@ -422,6 +487,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     const auto src = _hstr(source);
@@ -450,6 +516,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     for (const auto& host : s_emperor->GetWindows())
@@ -475,6 +542,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     for (const auto& host : s_emperor->GetWindows())
@@ -500,6 +568,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
 
     const std::filesystem::path settingsPath{
         std::wstring_view{ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::SettingsPath() }
@@ -525,6 +594,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
     // Find target window.
@@ -582,6 +652,7 @@ try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
     *json = nullptr;
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
     RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
 
@@ -622,6 +693,7 @@ CATCH_RETURN()
 STDMETHODIMP TerminalProtocolComServer::ClosePane(GUID sessionId)
 try
 {
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
     RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
 
@@ -642,6 +714,7 @@ CATCH_RETURN()
 STDMETHODIMP TerminalProtocolComServer::SendInput(GUID sessionId, BSTR text)
 try
 {
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
     RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
 
@@ -671,6 +744,7 @@ CATCH_RETURN()
 STDMETHODIMP TerminalProtocolComServer::FocusPane(GUID sessionId)
 try
 {
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
     RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
 
@@ -691,6 +765,7 @@ CATCH_RETURN()
 STDMETHODIMP TerminalProtocolComServer::SetSessionVariable(GUID sessionId, BSTR name, BSTR value)
 try
 {
+    RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
     RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
 
