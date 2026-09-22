@@ -2036,12 +2036,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
-                                                                       TermControl::GetPressedMouseButtons(point),
-                                                                       TermControl::GetPointerUpdateKind(point),
-                                                                       ControlKeyStates(args.KeyModifiers()),
-                                                                       pixelPosition);
-            /* TODO(DH) */ UNREFERENCED_PARAMETER(suppressFurtherHandling);
+            _interactivity.PointerMoved(point.PointerId(),
+                                        TermControl::GetPressedMouseButtons(point),
+                                        TermControl::GetPointerUpdateKind(point),
+                                        ControlKeyStates(args.KeyModifiers()),
+                                        pixelPosition);
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
