@@ -76,6 +76,7 @@ static void EnsureAllResourcesArePresent(const ScopedResourceLoader& loader)
 
 #endif
 
+static ScopedResourceLoader no_resources{ ScopedResourceLoader::NoResourcesT{} };
 const ScopedResourceLoader& GetLibraryResourceLoader()
 try
 {
@@ -85,7 +86,11 @@ try
 #endif
     return loader;
 }
-CATCH_FAIL_FAST()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return no_resources;
+}
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key)
 try
