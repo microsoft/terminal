@@ -81,7 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    TerminalConnection::ITerminalConnection connection,
+                    Windows::System::DispatcherQueue dispatcher = nullptr);
         ~ControlCore();
 
         bool Initialize(const float actualWidth,
