@@ -289,17 +289,6 @@ static Json::Value _toJson(const Protocol::PaneInfo& p)
     return v;
 }
 
-static Json::Value _toJson(const Protocol::PaneOutput& o)
-{
-    Json::Value v;
-    v["session_id"] = _guidStr(o.SessionId);
-    v["content"] = winrt::to_string(o.Content);
-    v["line_count"] = o.LineCount;
-    v["truncated"] = static_cast<bool>(o.Truncated);
-    v["has_marks"] = static_cast<bool>(o.HasMarks);
-    return v;
-}
-
 static Json::Value _toJson(const Protocol::ProcessStatus& s)
 {
     Json::Value v;
@@ -479,35 +468,6 @@ try
 
     *json = _bstrFromJson(arr);
     return S_OK;
-}
-CATCH_RETURN()
-
-STDMETHODIMP TerminalProtocolComServer::ReadPaneOutput(GUID sessionId, BSTR source, long maxLines, BSTR* json)
-try
-{
-    RETURN_HR_IF_NULL(E_POINTER, json);
-    *json = nullptr;
-    RETURN_IF_FAILED(_authorizeCaller());
-    RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
-
-    const auto src = _hstr(source);
-    const auto effectiveSource = src.empty() ? winrt::hstring{ L"scrollback" } : src;
-
-    for (const auto& host : s_emperor->GetWindows())
-    {
-        const auto page = _getPage(host.get());
-        if (!page)
-            continue;
-
-        auto info = page.ReadProtocolPaneOutput(winrt::guid{ sessionId }, effectiveSource, maxLines).get();
-        if (info.SessionId != winrt::guid{})
-        {
-            *json = _bstrFromJson(_toJson(info));
-            return S_OK;
-        }
-    }
-
-    return E_FAIL; // Pane not found
 }
 CATCH_RETURN()
 

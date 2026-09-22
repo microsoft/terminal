@@ -67,27 +67,4 @@ namespace Microsoft::Terminal::Protocol::Parsing
         // Unrecognized — default to Right
         return SplitDirection::Right;
     }
-
-    // ── ReadPaneOutput source routing ──
-
-    enum class PaneOutputSource
-    {
-        Scrollback,
-        Screen,
-        LastPrompt
-    };
-
-    // Classify the source parameter for ReadPaneOutput.
-    inline PaneOutputSource ClassifyPaneOutputSource(const std::string& source)
-    {
-        if (source == "last_prompt")
-        {
-            return PaneOutputSource::LastPrompt;
-        }
-        if (source == "screen")
-        {
-            return PaneOutputSource::Screen;
-        }
-        return PaneOutputSource::Scrollback;
-    }
 }

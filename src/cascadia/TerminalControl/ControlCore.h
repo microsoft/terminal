@@ -242,7 +242,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetReadOnlyMode(const bool readOnlyState);
 
         hstring ReadEntireBuffer() const;
-        hstring ReadLastPrompt() const;
         Control::CommandHistoryContext CommandHistory() const;
         bool QuickFixesAvailable() const noexcept;
         void UpdateQuickFixes(const Windows::Foundation::Collections::IVector<hstring>& quickFixes);

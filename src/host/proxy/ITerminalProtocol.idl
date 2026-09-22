@@ -30,7 +30,6 @@ import "unknwn.idl";
     HRESULT ListWindows([out, retval] BSTR* json);
     HRESULT ListTabs([in] unsigned hyper windowIdFilter, [out, retval] BSTR* json);
     HRESULT ListPanes([in] unsigned hyper windowIdFilter, [in] unsigned long tabIdFilter, [out, retval] BSTR* json);
-    HRESULT ReadPaneOutput([in] GUID sessionId, [in] BSTR source, [in] long maxLines, [out, retval] BSTR* json);
     HRESULT GetProcessStatus([in] GUID sessionId, [out, retval] BSTR* json);
     HRESULT GetSessionVariable([in] GUID sessionId, [in] BSTR name, [out, retval] BSTR* json);
     HRESULT GetSettings([out, retval] BSTR* json);

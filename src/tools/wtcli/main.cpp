@@ -453,39 +453,6 @@ int main()
             FormatActivePaneHuman(info);
     });
 
-    // ── capture-pane ──
-    std::string capturePaneTarget;
-    int captureMaxLines = 200;
-    bool captureLastPrompt = false;
-    auto* capturePaneCmd = app.add_subcommand("capture-pane", "Capture pane output")->alias("capturep");
-    capturePaneCmd->add_option("-t,--target", capturePaneTarget, "Session ID (GUID)");
-    capturePaneCmd->add_option("-l,--max-lines", captureMaxLines, "Max lines");
-    capturePaneCmd->add_flag("--last-prompt", captureLastPrompt, "Only return the most recent completed shell prompt (command + output, requires OSC 133 shell integration)");
-    capturePaneCmd->callback([&]() {
-        auto server = connect();
-        if (!server)
-            return;
-        GUID sessionId{};
-        if (!ResolveSessionId(server.get(), capturePaneTarget, sessionId))
-        {
-            exitCode = 1;
-            return;
-        }
-        wil::unique_bstr src{ Bstr(captureLastPrompt ? "last_prompt" : "scrollback") };
-        Json::Value output;
-        auto hr = CallJson([&](BSTR* j) { return server->ReadPaneOutput(sessionId, src.get(), captureMaxLines, j); }, output);
-        if (FAILED(hr))
-        {
-            PrintProtocolError("ReadPaneOutput", hr);
-            exitCode = 1;
-            return;
-        }
-        if (jsonMode)
-            PrintJson(output);
-        else
-            printf("%s\n", output["content"].asString().c_str());
-    });
-
     // ── pane-status ──
     std::string paneStatusTarget;
     auto* paneStatusCmd = app.add_subcommand("pane-status", "Show pane process status");

@@ -2,7 +2,6 @@ aci
 allcolors
 breadcrumb
 breadcrumbs
-capturep
 ccmp
 ccon
 clickable

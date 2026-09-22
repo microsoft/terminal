@@ -34,7 +34,6 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::
     STDMETHODIMP ListWindows(BSTR* json) override;
     STDMETHODIMP ListTabs(unsigned __int64 windowIdFilter, BSTR* json) override;
     STDMETHODIMP ListPanes(unsigned __int64 windowIdFilter, unsigned long tabIdFilter, BSTR* json) override;
-    STDMETHODIMP ReadPaneOutput(GUID sessionId, BSTR source, long maxLines, BSTR* json) override;
     STDMETHODIMP GetProcessStatus(GUID sessionId, BSTR* json) override;
     STDMETHODIMP GetSessionVariable(GUID sessionId, BSTR name, BSTR* json) override;
     STDMETHODIMP GetSettings(BSTR* json) override;

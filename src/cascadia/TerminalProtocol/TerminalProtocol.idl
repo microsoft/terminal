@@ -40,19 +40,6 @@ namespace Microsoft.Terminal.Protocol
         String Cwd;
     };
 
-    struct PaneOutput
-    {
-        Guid SessionId;
-        String Content;
-        Int32 LineCount;
-        Boolean Truncated;
-        // True when the content was sliced from an OSC 133 prompt mark
-        // (i.e., shell integration produced a parseable command boundary).
-        // False when no marks were available — the client should fall
-        // back to a line-count read of the same pane.
-        Boolean HasMarks;
-    };
-
     struct ProcessStatus
     {
         Guid SessionId;

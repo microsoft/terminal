@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //
 // Fuzzing harness for Terminal Protocol server parsing logic.
-// Targets: ParseSplitDirection, ClassifyPaneOutputSource.
+// Targets: ParseSplitDirection.
 //
 // Built under the Fuzzing MSBuild configuration with LibFuzzer
 // instrumentation; submittable to OneFuzz via the CI pipeline.
@@ -27,12 +27,6 @@ static int FuzzOneInput(const uint8_t* data, size_t size)
     // values plus arbitrary unrecognized strings.
     {
         ProtocolParsing::ParseSplitDirection(input);
-    }
-
-    // ── Target 2: ClassifyPaneOutputSource ──
-    // Feed fuzzed data as a source parameter.
-    {
-        ProtocolParsing::ClassifyPaneOutputSource(input);
     }
 
     return 0;
