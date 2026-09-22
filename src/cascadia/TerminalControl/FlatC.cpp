@@ -257,13 +257,21 @@ struct HwndTerminal
         LPARAM lParam) noexcept
     try
     {
-#pragma warning(suppress : 26490) // Win32 APIs can only store void*, have to use reinterpret_cast
-        HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        if (terminal)
+#pragma warning(push)
+#pragma warning(disable : 26490) // Win32 APIs can only store void*/LONG_PTR, have to use reinterpret_cast
+        if (uMsg == WM_NCCREATE)
+        {
+            // Setup the GWLP_USERDATA pointer based on the param passed into CreateWindowEx
+            const auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
+            HwndTerminal* that = static_cast<HwndTerminal*>(cs->lpCreateParams);
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
+        }
+        else if (HwndTerminal* terminal = reinterpret_cast<HwndTerminal*>(GetWindowLongPtr(hwnd, GWLP_USERDATA)))
         {
             return terminal->WindowProc(hwnd, uMsg, wParam, lParam);
         }
         return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+#pragma warning(pop)
     }
     catch (...)
     {
@@ -405,10 +413,7 @@ struct HwndTerminal
                 parentHwnd,
                 nullptr,
                 hInstance,
-                nullptr));
-
-#pragma warning(suppress : 26490) // Win32 APIs can only store void*, so we have to use reinterpret_cast
-            SetWindowLongPtr(_hwnd.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+                this));
         }
 
         _settingsBridge = winrt::make_self<CsBridgeTerminalSettings>();
