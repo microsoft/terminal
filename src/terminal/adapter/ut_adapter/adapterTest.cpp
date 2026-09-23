@@ -106,6 +106,11 @@ public:
         return false;
     }
 
+    bool IsConhost() const override
+    {
+        return false;
+    }
+
     void SetSystemMode(const Mode mode, const bool enabled)
     {
         Log::Comment(L"SetSystemMode MOCK called...");
