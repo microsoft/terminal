@@ -103,6 +103,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<hstring, winrt::com_ptr<implementation::ExtensionPackage>> extensionPackageMap;
         bool duplicateProfile = false;
         bool sshProfilesGenerated = false;
+        // GH#11457: Names of color schemes that were present but incomplete (missing colors),
+        // so they were rejected during parsing. Used to emit a precise warning instead of
+        // claiming the scheme doesn't exist. Collected here (not in ParsedSettings) so that
+        // both user and fragment parse paths accumulate into the same set.
+        std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> incompleteColorSchemes;
 
     private:
         struct JsonSettings
@@ -217,6 +222,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _validateSettings();
         void _validateAllSchemesExist();
+        void _noteMissingColorScheme(const winrt::hstring& name, OriginTag origin, bool& foundUnknown, bool& foundIncomplete) const;
         void _resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
         void _validateMediaResources();
         void _validateProfileEnvironmentVariables();
@@ -240,6 +246,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // load errors
         winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
+        // GH#11457: Names of incomplete (missing-color) schemes, moved from the SettingsLoader.
+        // Only read during _validateAllSchemesExist() at load time.
+        std::unordered_set<winrt::hstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _incompleteColorSchemes;
         winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
         bool _foundInvalidUserResources{ false };
