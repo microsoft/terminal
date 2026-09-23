@@ -184,11 +184,18 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 std::wstring_view Terminal::GetConsoleTitle() const noexcept
 {
     _assertLocked();
-    if (_title.has_value())
+
+    if (_title)
     {
         return *_title;
     }
-    return _startingTitle;
+
+    if (_startingTitle)
+    {
+        return *_startingTitle;
+    }
+
+    return {};
 }
 
 // Method Description:

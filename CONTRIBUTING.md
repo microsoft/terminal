@@ -1,5 +1,7 @@
 # Terminal Contributor's Guide
 
+If you use AI when contributing or interacting in this repository, please read and follow our [AI Usage Policy](./AGENTS.md).
+
 Below is our guidance for how to report issues, propose new features, and submit contributions via Pull Requests (PRs).
 
 ## Open Development Workflow

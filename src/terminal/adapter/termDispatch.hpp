@@ -153,6 +153,8 @@ public:
 
     void DoWTAction(const std::wstring_view /*string*/) override {}
 
+    void DoUrxvtAction(const std::wstring_view /*string*/) override {}
+
     StringHandler DefineSixelImage(const VTInt /*macroParameter*/,
                                    const DispatchTypes::SixelBackground /*backgroundSelect*/,
                                    const VTParameter /*backgroundColor*/) override { return nullptr; }; // SIXEL

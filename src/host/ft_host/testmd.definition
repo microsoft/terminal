@@ -11,6 +11,10 @@
   "Dependencies": {
     "Files": [ 
       {
+        "SourcePath": "$(PROJECT_ROOT)\\core\\console\\open\\src\\Terminal.wprp",
+        "DestinationFolderPath": "$$(TEST_DEPLOY_BIN)"
+      },
+      {
         "SourcePath": "$(PROJECT_ROOT)\\core\\console\\open\\src\\ConsolePerf.wprp",
         "DestinationFolderPath": "$$(TEST_DEPLOY_BIN)"
       },
@@ -23,7 +27,22 @@
     "Packages": [ "Microsoft.Console.Tools.Nihilist" ]
   },
   "Logs": [ ],
-  "Plugins": [ ],
+  "Plugins": [
+    {
+        "Type": "Microsoft.TestInfrastructure.UniversalTest.TestMD.Plugins.Etw.EtwPlugin",
+        "Name": "Collecting conhost logs during feature tests",
+        "Parameters": {
+            "$schema": "Microsoft.TestInfrastructure.UniversalTest.TestMD.Plugins.Etw.EtwPlugin-1.json",
+            "Profiles": [
+                {
+                    "ProfileFile": "Terminal.wprp",
+                    "Profile": "DefTerm"
+                }
+            ],
+            "InstanceName": "conhost_FeatureTests"
+        }
+    }
+  ],
   "Profiles": [
     {
       "Name": "Performance",

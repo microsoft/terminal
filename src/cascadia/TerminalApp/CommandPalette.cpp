@@ -224,7 +224,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
         {
             _switchToTab(filteredCommand);
         }

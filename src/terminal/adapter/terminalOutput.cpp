@@ -31,20 +31,37 @@ TerminalOutput::TerminalOutput(const bool grEnabled) noexcept :
     _gsetIds.at(3) = grId;
 }
 
-void TerminalOutput::SoftReset() noexcept
+void TerminalOutput::SoftReset()
 {
-    // For a soft reset we want to reinitialize the character set designations,
-    // but retain the GR translation functionality if it's currently enabled.
-    *this = { _grTranslationEnabled };
+    // A soft reset is essentially the same thing as a restore from a fresh
+    // instance, but that instance must already be initialized with the current
+    // GR translation state in order for the appropriate defaults to be set.
+    RestoreFrom({ _grTranslationEnabled });
 }
 
-void TerminalOutput::RestoreFrom(const TerminalOutput& savedState) noexcept
+void TerminalOutput::RestoreFrom(const TerminalOutput& savedState)
 {
-    // When restoring from a saved instance, we want to preserve the GR
-    // translation functionality if it's currently enabled.
+    // When restoring from a saved instance, we want to preserve the current GR
+    // translation state as well as the DRCS character set.
     const auto preserveGrTranslation = _grTranslationEnabled;
+    const auto preserveDrcsId = _drcsId;
+    const auto preserveDrcsSize = _drcsTranslationTable.size();
     *this = savedState;
     _grTranslationEnabled = preserveGrTranslation;
+    // We can't just set the DRCS ID and translation table directly though. We
+    // need to go through the appropriate SetDrcsDesignation method to ensure
+    // that all the affected G-sets are updated too.
+    if (preserveDrcsId)
+    {
+        if (preserveDrcsSize == 96)
+        {
+            SetDrcs96Designation(preserveDrcsId);
+        }
+        else
+        {
+            SetDrcs94Designation(preserveDrcsId);
+        }
+    }
 }
 
 void TerminalOutput::AssignUserPreferenceCharset(const VTID charset, const bool size96)

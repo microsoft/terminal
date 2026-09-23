@@ -31,6 +31,10 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestGenGuidsForProfiles);
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
         TEST_METHOD(ProfileDefaultsProhibitedSettings);
+
+        TEST_METHOD(SettingInheritanceFallback);
+        TEST_METHOD(ClearSettingRestoresInheritance);
+        TEST_METHOD(HasSettingAtSpecificLayer);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -531,5 +535,131 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(2).Guid()));
         VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(2).Source());
         VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(2).Commandline());
+    }
+
+    void ProfileTests::SettingInheritanceFallback()
+    {
+        // Verify that when no layer defines a setting, the default value is used.
+        // Also verify that when only user defaults defines it, profiles inherit from there.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": {
+                    "historySize": 5000
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    },
+                    {
+                        "name": "profile1",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "snapOnInput": false
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto allProfiles = settings->AllProfiles();
+
+        VERIFY_ARE_EQUAL(2u, allProfiles.Size());
+
+        // profile0: historySize inherited from defaults
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(0).HistorySize());
+        // profile0: snapOnInput not set anywhere, falls back to default (true)
+        VERIFY_ARE_EQUAL(true, allProfiles.GetAt(0).SnapOnInput());
+
+        // profile1: historySize inherited from defaults
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(1).HistorySize());
+        // profile1: snapOnInput explicitly set to false
+        VERIFY_ARE_EQUAL(false, allProfiles.GetAt(1).SnapOnInput());
+    }
+
+    void ProfileTests::ClearSettingRestoresInheritance()
+    {
+        // Verify that clearing a setting at the profile layer causes it to
+        // fall back to the parent's value.
+        static constexpr std::string_view parentString{ R"({
+            "name": "parent",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "historySize": 1000,
+            "tabTitle": "ParentTitle"
+        })" };
+        static constexpr std::string_view childString{ R"({
+            "name": "child",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "historySize": 2000,
+            "tabTitle": "ChildTitle"
+        })" };
+
+        const auto parentJson = VerifyParseSucceeded(parentString);
+        const auto childJson = VerifyParseSucceeded(childString);
+
+        auto parent = implementation::Profile::FromJson(parentJson);
+        auto child = parent->CreateChild();
+        child->LayerJson(childJson);
+
+        // Verify child has its own values
+        VERIFY_ARE_EQUAL(2000, child->HistorySize());
+        VERIFY_ARE_EQUAL(L"ChildTitle", child->TabTitle());
+        VERIFY_IS_TRUE(child->HasHistorySize());
+        VERIFY_IS_TRUE(child->HasTabTitle());
+
+        // Clear historySize on child: should fall back to parent
+        child->ClearHistorySize();
+        VERIFY_IS_FALSE(child->HasHistorySize());
+        VERIFY_ARE_EQUAL(1000, child->HistorySize());
+
+        // Clear tabTitle on child: should fall back to parent
+        child->ClearTabTitle();
+        VERIFY_IS_FALSE(child->HasTabTitle());
+        VERIFY_ARE_EQUAL(L"ParentTitle", child->TabTitle());
+    }
+
+    void ProfileTests::HasSettingAtSpecificLayer()
+    {
+        // Verify that HasXxx() correctly reports whether a setting is defined
+        // at the current layer vs inherited from a parent.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": {
+                    "historySize": 5000,
+                    "tabTitle": "DefaultTitle"
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 9001
+                    },
+                    {
+                        "name": "profile1",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto allProfiles = settings->AllProfiles();
+
+        VERIFY_ARE_EQUAL(2u, allProfiles.Size());
+
+        // profile0: historySize is explicitly set
+        VERIFY_IS_TRUE(allProfiles.GetAt(0).HasHistorySize());
+        VERIFY_ARE_EQUAL(9001, allProfiles.GetAt(0).HistorySize());
+
+        // profile0: tabTitle is NOT set at this layer (inherited from defaults)
+        VERIFY_IS_FALSE(allProfiles.GetAt(0).HasTabTitle());
+        VERIFY_ARE_EQUAL(L"DefaultTitle", allProfiles.GetAt(0).TabTitle());
+
+        // profile1: historySize is NOT set at this layer (inherited from defaults)
+        VERIFY_IS_FALSE(allProfiles.GetAt(1).HasHistorySize());
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(1).HistorySize());
+
+        // ProfileDefaults: historySize is set
+        VERIFY_IS_TRUE(settings->ProfileDefaults().HasHistorySize());
+        VERIFY_ARE_EQUAL(5000, settings->ProfileDefaults().HistorySize());
     }
 }

@@ -250,9 +250,9 @@ public:
                 !singleLine || blockSelection,
 
                 /* trimTrailingWhitespace */
-                // Trim trailing whitespace if we're not in single line mode and — either
-                // we're not in block selection mode or, we're in block selection mode and
-                // trimming is allowed.
+                // Trim trailing whitespace if we're not in single line mode and either
+                // 1. we're not in block selection mode or
+                // 2. we're in block selection mode and trimming is allowed
                 !singleLine && (!blockSelection || trimBlockSelection),
 
                 /* formatWrappedRows */

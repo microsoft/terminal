@@ -74,6 +74,8 @@ public:
 
     void SearchMissingCommand(std::wstring_view missingCommand) override;
 
+    void ShowNotification(std::wstring_view title, std::wstring_view body) override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

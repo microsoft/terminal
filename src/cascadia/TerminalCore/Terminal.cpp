@@ -42,6 +42,8 @@ Terminal::Terminal(TestDummyMarker) :
 
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
+    viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
+    viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
     const til::size bufferSize{ viewportSize.width,
@@ -75,8 +77,8 @@ void Terminal::HardResetWithoutErase()
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Renderer& renderer)
 {
-    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
-                                  Utils::ClampToShortMax(settings.InitialRows(), 1) };
+    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
+                                  Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
     Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
@@ -98,7 +100,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-    _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
@@ -123,6 +124,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     // Save the changes made above and in UpdateAppearance as the new default render settings.
     GetRenderSettings().SaveDefaultSettings();
+
+    if (!_startingTitle)
+    {
+        _startingTitle = settings.StartingTitle();
+    }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
@@ -263,6 +269,7 @@ void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettin
     auto features = til::enumset<ITermDispatch::OptionalFeature>{};
     features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
     features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    features.set(ITermDispatch::OptionalFeature::DesktopNotification, settings.AllowOscNotifications());
     engine.Dispatch().SetOptionalFeatures(features);
 }
 
@@ -284,9 +291,14 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]] HRESULT Terminal::UserResize(const til::size viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const til::size requestedSize) noexcept
 try
 {
+    const til::size viewportSize{
+        std::max(requestedSize.width, MINIMUM_VISIBLE_CELLS),
+        std::max(requestedSize.height, MINIMUM_VISIBLE_CELLS)
+    };
+
     const auto oldDimensions = _GetMutableViewport().Dimensions();
     if (viewportSize == oldDimensions)
     {
@@ -1270,6 +1282,11 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
 void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept
 {
     _pfnSearchMissingCommand.swap(pfn);
+}
+
+void Microsoft::Terminal::Core::Terminal::SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept
+{
+    _pfnShowNotification.swap(pfn);
 }
 
 void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept

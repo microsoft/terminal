@@ -52,6 +52,7 @@ steps:
   inputs:
     teamId: 7105
     FederatedIdentityTDBuildServiceConnection: $(TouchdownServiceConnection)
+    serviceTreeId: $(TouchdownServiceTreeId)
     authType: FederatedIdentityTDBuild
     resourceFilePath: |
      **\en-US\*.resw

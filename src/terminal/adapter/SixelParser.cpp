@@ -90,7 +90,15 @@ std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter
         _state = States::Normal;
         _parameters.clear();
         return [&](const auto ch) {
-            _parseCommandChar(ch);
+            try
+            {
+                _parseCommandChar(ch);
+            }
+            catch (...)
+            {
+                // Ignore all further content.
+                return false;
+            }
             return true;
         };
     }
@@ -234,10 +242,18 @@ void SixelParser::_executeNextLine()
     _executeCarriageReturn();
     _imageLineCount++;
     _maybeFlushImageBuffer();
-    _imageCursor.y += _sixelHeight;
-    _availablePixelHeight -= _sixelHeight;
-    _resizeImageBuffer(_sixelHeight);
-    _fillImageBackgroundWhenScrolled();
+    // If we don't have any available pixel height, that means the image has
+    // extended beyond the bottom of the display and we haven't triggered a
+    // a scroll (because sixel display mode is enabled). In this state, there
+    // is no point in extending the image any further, because the additional
+    // content will never be seen, so we'll just be wasting memory.
+    if (_availablePixelHeight > 0)
+    {
+        _imageCursor.y += _sixelHeight;
+        _availablePixelHeight -= _sixelHeight;
+        _resizeImageBuffer(_sixelHeight);
+        _fillImageBackgroundWhenScrolled();
+    }
 }
 
 void SixelParser::_executeMoveToHome()

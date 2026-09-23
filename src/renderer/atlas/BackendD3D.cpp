@@ -1622,6 +1622,7 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawBuiltinGlyph(const RenderingPayloa
             { 0, 0, 0, 1 }, // Shape_Filled050
             { 1, 1, 0, 1 }, // Shape_Filled075
             { 1, 1, 1, 1 }, // Shape_Filled100
+            { 0, 1, 0, 1 }, // Shape_Invert050
         };
         BuiltinGlyphs::DrawBuiltinGlyph(p.d2dFactory.get(), _d2dRenderTarget.get(), _brush.get(), shadeColorMap, r, glyphIndex);
         shadingType = ShadingType::TextBuiltinGlyph;
@@ -2328,7 +2329,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     {
         // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
         const auto now = queryPerfCount();
-        const auto time = static_cast<int>(now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
+        const auto time = (now % _customShaderPerfTickMod) * _customShaderSecsPerPerfTick;
 
         const CustomConstBuffer data{
             .time = time,

@@ -55,8 +55,9 @@ namespace Microsoft.Terminal.Settings.Editor
         // View-model specific
         String DisplayName { get; };
         String FirstKeyChordText { get; };
-        String AdditionalKeyChordCountText { get; };
-        String AdditionalKeyChordTooltipText { get; };
+        Microsoft.Terminal.Control.KeyChord FirstKeyChord { get; };
+        Boolean HasNoKeyChords { get; };
+        Windows.UI.Xaml.VerticalAlignment NameVerticalAlignment { get; };
         String DisplayNameAndKeyChordAutomationPropName { get; };
 
         // UI side (command list page)
@@ -75,7 +76,6 @@ namespace Microsoft.Terminal.Settings.Editor
         // UI side (edit command page, automation property names)
         String ActionNameTextBoxAutomationPropName { get; };
         String ShortcutActionComboBoxAutomationPropName { get; };
-        String AdditionalArgumentsControlAutomationPropName { get; };
     }
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -111,6 +111,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void UInt32BindBack(Double newValue);
         void UInt32OptionalBindBack(Double newValue);
         void FloatBindBack(Double newValue);
+        void BoolBindBack(Boolean newValue);
         void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
@@ -138,9 +139,12 @@ namespace Microsoft.Terminal.Settings.Editor
         String KeyChordText { get; };
 
         // UI side
+        Microsoft.Terminal.Control.KeyChord CurrentKeys { get; };
         Microsoft.Terminal.Control.KeyChord ProposedKeys;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         Boolean IsInEditMode { get; };
+        Int32 Index;
+        String DisplayLabel { get; };
         void ToggleEditMode();
         void AcceptChanges();
         void CancelChanges();
@@ -148,6 +152,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String CancelButtonName { get; };
         String AcceptButtonName { get; };
         String DeleteButtonName { get; };
+        String EditButtonName { get; };
 
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
@@ -179,5 +184,9 @@ namespace Microsoft.Terminal.Settings.Editor
         CommandViewModel CurrentCommand;
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
+
+        // Raised when a key chord row enters or leaves inline edit mode, so the
+        // hosting Actions page can move focus to (or away from) that row's listener.
+        event Windows.Foundation.TypedEventHandler<CommandViewModel, KeyChordViewModel> FocusKeyChordContainerRequested;
     }
 }

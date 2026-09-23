@@ -30,9 +30,15 @@
     <ClCompile Include="kittyKeyboardProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestHook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

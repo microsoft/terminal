@@ -38,7 +38,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
                                                Control::IControlAppearance unfocusedAppearance,
-                                               TerminalConnection::ITerminalConnection connection) :
+                                               TerminalConnection::ITerminalConnection connection,
+                                               Windows::System::DispatcherQueue dispatcher) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
@@ -46,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _id = _nextId.fetch_add(1, std::memory_order_relaxed);
 
-        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
+        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection, dispatcher);
 
         _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
@@ -303,8 +304,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
             // Rounded coordinates for text selection.
-            // Don't round in VT mouse mode; cell-level precision matters more
-            const auto round = !_core->IsVtMouseModeEnabled();
+            // Don't round in VT mouse mode; cell-level precision matters more.
+            // Only round for single-click: for double/triple-click, rounding
+            // can push the position to the next cell, selecting the wrong word.
+            const auto round = multiClickMapper == 1 && !_core->IsVtMouseModeEnabled();
             _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, round),
                                        multiClickMapper,
                                        altEnabled,
@@ -620,7 +623,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewportSize().Height : _rowsToScroll };
         const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
         // Update the Core's viewport position, and raise a
@@ -669,7 +672,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // _core->ScrollOffset() is now set to newValue
             ScrollPositionChanged.raise(*this,
                                         winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                               _core->ViewHeight(),
+                                                                               _core->ViewportSize().Height,
                                                                                _core->BufferHeight()));
         }
     }
@@ -752,7 +755,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const SHORT wheelDelta,
                                                      Control::MouseButtonState buttonState)
     {
-        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewportSize().Height;
         // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
         const auto adjustedY = terminalPosition.y - adjustment;
         return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));

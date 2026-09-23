@@ -336,6 +336,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return sentinel{};
         }
 
+        typename iterator::value_type next() noexcept
+        {
+            const auto part = value();
+            advance();
+            return part;
+        }
+
+        typename iterator::value_type remaining() noexcept
+        {
+            return { _it, _end };
+        }
+
     private:
         bool valid() const noexcept
         {

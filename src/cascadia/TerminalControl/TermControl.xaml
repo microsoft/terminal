@@ -1365,6 +1365,24 @@
 
         </Grid>
 
+        <!--  Resize overlay: shows columns x rows when terminal is resized  -->
+        <Border x:Name="ResizeOverlay"
+                Padding="16,8,16,8"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{ThemeResource SystemAccentColor}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <TextBlock x:Name="ResizeOverlayText"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                       TextAlignment="Center" />
+        </Border>
+
         <Grid x:Name="RendererFailedNotice"
               HorizontalAlignment="Center"
               VerticalAlignment="Center"
