@@ -34,7 +34,7 @@ namespace Microsoft::Console::Render::Atlas
 
     struct TextAnalysisSink final : IDWriteTextAnalysisSink
     {
-        TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results) noexcept;
+        TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results, std::vector<u8>& bidiLevels, std::vector<TextAnalysisBidiRun>* bidiRuns = nullptr) noexcept;
 #ifndef NDEBUG
         ~TextAnalysisSink();
 #endif
@@ -49,6 +49,8 @@ namespace Microsoft::Console::Render::Atlas
 
     private:
         std::vector<TextAnalysisSinkResult>& _results;
+        std::vector<u8>& _bidiLevels;
+        std::vector<TextAnalysisBidiRun>* _bidiRuns;
 #ifndef NDEBUG
         ULONG _refCount = 1;
 #endif
