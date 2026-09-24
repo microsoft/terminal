@@ -20,10 +20,6 @@ Abstract:
 
 Author(s):
 - Carlos Zamora   (CaZamor)    2019
-
-Modifications:
-- May 2021: Pulled the core logic of ITextProvider implementation into the
-  InteractivityAutomationPeer, to support tab tear out.
 --*/
 
 #pragma once
@@ -40,14 +36,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     struct TermControlAutomationPeer :
         public TermControlAutomationPeerT<TermControlAutomationPeer>,
-        ::Microsoft::Console::Types::IUiaEventDispatcher
+        ::Microsoft::Console::Types::IUiaEventDispatcher,
+        ::Microsoft::Console::Types::IControlAccessibilityInfo
     {
     public:
         TermControlAutomationPeer(winrt::com_ptr<Microsoft::Terminal::Control::implementation::TermControl> owner,
-                                  const Core::Padding padding,
-                                  Control::InteractivityAutomationPeer implementation);
+                                  const Core::Padding padding);
 
-        void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
         void RecordKeyEvent(const WORD vkey);
         void Close();
@@ -79,9 +74,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider DocumentRange();
 #pragma endregion
 
+#pragma region IControlAccessibilityInfo Pattern
+        // Inherited via IControlAccessibilityInfo
+        virtual til::size GetFontSize() const noexcept override;
+        virtual til::rect GetBounds() const noexcept override;
+        virtual til::rect GetPadding() const noexcept override;
+        virtual void ChangeViewport(const til::inclusive_rect& NewWindow) override;
+        virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) override;
+#pragma endregion
+
     private:
+        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider _CreateXamlUiaTextRange(::ITextRangeProvider* returnVal) const;
+        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
+
         winrt::weak_ref<Microsoft::Terminal::Control::implementation::TermControl> _termControl;
-        Control::InteractivityAutomationPeer _contentAutomationPeer;
+        ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
+
+        til::rect _controlPadding{};
         til::shared_mutex<std::deque<wchar_t>> _keyEvents;
     };
 }

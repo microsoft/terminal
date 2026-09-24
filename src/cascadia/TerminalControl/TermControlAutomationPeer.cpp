@@ -67,43 +67,13 @@ static constexpr bool IsReadable(std::wstring_view text)
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner,
-                                                         const Core::Padding padding,
-                                                         Control::InteractivityAutomationPeer impl) :
+                                                         const Core::Padding padding) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
-        _termControl{ owner },
-        _contentAutomationPeer{ impl }
+        _termControl{ owner }
     {
-        UpdateControlBounds();
+        THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, owner->_core->GetRenderData(), this));
         SetControlPadding(padding);
-        // Listen for UIA signalling events from the implementation. We need to
-        // be the one to actually raise these automation events, so they go
-        // through the UI tree correctly.
-        _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
-        _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
-        _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
-        _contentAutomationPeer.NewOutput([this](auto&&, hstring newOutput) { NotifyNewOutput(newOutput); });
-        _contentAutomationPeer.ParentProvider(*this);
     };
-
-    // Method Description:
-    // - Inform the interactivity layer about the bounds of the control.
-    //   IControlAccessibilityInfo needs to know this information, but it cannot
-    //   ask us directly.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TermControlAutomationPeer::UpdateControlBounds()
-    {
-        // FrameworkElementAutomationPeer has this great GetBoundingRectangle
-        // method that's seemingly impossible to recreate just from the
-        // UserControl itself. Weird. But we can use it handily here!
-        _contentAutomationPeer.SetControlBounds(GetBoundingRectangle());
-    }
-    void TermControlAutomationPeer::SetControlPadding(const Core::Padding padding)
-    {
-        _contentAutomationPeer.SetControlPadding(padding);
-    }
 
     void TermControlAutomationPeer::RecordKeyEvent(const WORD vkey)
     {
@@ -121,9 +91,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
         // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
         _termControl = {};
-
-        // Solve the circular reference between us and the content automation peer.
-        _contentAutomationPeer.ParentProvider(nullptr);
     }
 
     // Method Description:
@@ -341,33 +308,124 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
-        return _contentAutomationPeer.GetSelection();
+        SAFEARRAY* pReturnVal;
+        THROW_IF_FAILED(_uiaProvider->GetSelection(&pReturnVal));
+        return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
-        return _contentAutomationPeer.GetVisibleRanges();
+        SAFEARRAY* pReturnVal;
+        THROW_IF_FAILED(_uiaProvider->GetVisibleRanges(&pReturnVal));
+        return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
-    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple /*childElement*/)
     {
-        return _contentAutomationPeer.RangeFromChild(childElement);
+        UIA::ITextRangeProvider* returnVal;
+        // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
+        THROW_IF_FAILED(_uiaProvider->RangeFromChild(/* IRawElementProviderSimple */ nullptr,
+                                                     &returnVal));
+        return _CreateXamlUiaTextRange(returnVal);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
-        return _contentAutomationPeer.RangeFromPoint(screenLocation);
+        UIA::ITextRangeProvider* returnVal;
+        THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
+        return _CreateXamlUiaTextRange(returnVal);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
-        return _contentAutomationPeer.DocumentRange();
+        UIA::ITextRangeProvider* returnVal;
+        THROW_IF_FAILED(_uiaProvider->get_DocumentRange(&returnVal));
+        return _CreateXamlUiaTextRange(returnVal);
     }
 
     XamlAutomation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
-        return _contentAutomationPeer.SupportedTextSelection();
+        UIA::SupportedTextSelection returnVal;
+        THROW_IF_FAILED(_uiaProvider->get_SupportedTextSelection(&returnVal));
+        return static_cast<XamlAutomation::SupportedTextSelection>(returnVal);
     }
 
 #pragma endregion
+
+#pragma region IControlAccessibilityInfo
+    til::size TermControlAutomationPeer::GetFontSize() const noexcept
+    {
+        if (const auto control{ _termControl.get() })
+        {
+            return { til::math::rounding, control->_core->FontSize() };
+        }
+        return {};
+    }
+
+    til::rect TermControlAutomationPeer::GetBounds() const noexcept
+    {
+        return { til::math::rounding, GetBoundingRectangle() };
+    }
+
+    HRESULT TermControlAutomationPeer::GetHostUiaProvider(IRawElementProviderSimple** provider)
+    {
+        RETURN_HR_IF(E_INVALIDARG, provider == nullptr);
+        *provider = nullptr;
+
+        return S_OK;
+    }
+
+    til::rect TermControlAutomationPeer::GetPadding() const noexcept
+    {
+        if (const auto control{ _termControl.get() })
+        {
+            const auto padding{ control->GetPadding() };
+            return {
+                static_cast<float>(padding.Left),
+                static_cast<float>(padding.Top),
+                static_cast<float>(padding.Right),
+                static_cast<float>(padding.Bottom),
+            };
+        }
+        return {};
+    }
+
+    void TermControlAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
+    {
+        if (const auto control{ _termControl.get() })
+        {
+            control->_interactivity->UpdateScrollbar(static_cast<float>(NewWindow.top));
+        }
+    }
+#pragma endregion
+
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::_CreateXamlUiaTextRange(UIA::ITextRangeProvider* returnVal) const
+    {
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, *this);
+        return xutr.as<XamlAutomation::ITextRangeProvider>();
+    };
+
+    // Method Description:
+    // - extracts the UiaTextRanges from the SAFEARRAY and converts them to Xaml ITextRangeProviders
+    // Arguments:
+    // - SAFEARRAY of UIA::UiaTextRange (ITextRangeProviders)
+    // Return Value:
+    // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
+    com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
+    {
+        // transfer ownership of UiaTextRanges to this new vector
+        auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
+        const auto len = gsl::narrow<uint32_t>(providers.size());
+        com_array<XamlAutomation::ITextRangeProvider> result{ len };
+
+        for (uint32_t i = 0; i < len; ++i)
+        {
+            if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
+            {
+                result[i] = std::move(xutr);
+            }
+        }
+
+        return result;
+    }
 }
