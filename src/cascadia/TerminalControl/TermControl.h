@@ -10,8 +10,6 @@
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../tsf/Handle.h"
 
-#include "ControlInteractivity.h"
-
 namespace Microsoft::Console::VirtualTerminal
 {
     struct MouseButtonState;
@@ -19,7 +17,10 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    struct ControlCore;
+    struct ControlInteractivity;
     struct TermControl;
+    struct TermControlAutomationPeer;
 
     struct TsfDataProvider : ::Microsoft::Console::TSF::IDataProvider
     {
@@ -195,9 +196,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
 
-        void ApplyPreviewColorScheme(const Core::ICoreScheme& scheme) { _core.ApplyPreviewColorScheme(scheme); }
-        void ResetPreviewColorScheme() { _core.ResetPreviewColorScheme(); }
-        void SetOverrideColorScheme(const Core::ICoreScheme& scheme) { _core.SetOverrideColorScheme(scheme); }
+        void ApplyPreviewColorScheme(const Core::ICoreScheme& scheme) { _core->ApplyPreviewColorScheme(scheme); }
+        void ResetPreviewColorScheme() { _core->ResetPreviewColorScheme(); }
+        void SetOverrideColorScheme(const Core::ICoreScheme& scheme) { _core->SetOverrideColorScheme(scheme); }
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -238,6 +239,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
+        friend struct TermControlAutomationPeer;
         friend struct TsfDataProvider;
 
         // NOTE: _uiaEngine must be ordered before _core.
@@ -248,9 +250,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
-        Control::TermControlAutomationPeer _automationPeer{ nullptr };
-        Control::ControlInteractivity _interactivity{ nullptr };
-        Control::ControlCore _core{ nullptr };
+        winrt::com_ptr<Control::implementation::TermControlAutomationPeer> _automationPeer{ nullptr };
+        winrt::com_ptr<Control::implementation::ControlInteractivity> _interactivity{ nullptr };
+        winrt::com_ptr<Control::implementation::ControlCore> _core{ nullptr };
         Control::IKeyBindings _keyBindings{ nullptr };
         TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;

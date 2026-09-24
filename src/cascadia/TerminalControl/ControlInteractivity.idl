@@ -5,8 +5,6 @@ import "ICoreState.idl";
 import "IControlSettings.idl";
 import "ControlCore.idl";
 import "EventArgs.idl";
-import "InteractivityAutomationPeer.idl";
-
 
 namespace Microsoft.Terminal.Control
 {
@@ -29,8 +27,6 @@ namespace Microsoft.Terminal.Control
         void Detach();
 
         void Close();
-
-        InteractivityAutomationPeer OnCreateAutomationPeer();
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Boolean withControlSequences, CopyFormat formats);
         void RequestPasteTextFromClipboard();

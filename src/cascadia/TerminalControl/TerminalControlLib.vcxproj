@@ -57,9 +57,6 @@
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="InteractivityAutomationPeer.h">
-      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
     <ClInclude Include="HwndTerminal.hpp" />
     <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
@@ -98,9 +95,6 @@
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="InteractivityAutomationPeer.cpp">
-      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
     <ClCompile Include="HwndTerminal.cpp" />
     <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
@@ -124,7 +118,6 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
-    <Midl Include="InteractivityAutomationPeer.idl" />
     <Midl Include="IMouseWheelListener.idl" />
   </ItemGroup>
   <!-- ========================= XAML Files ======================== -->
