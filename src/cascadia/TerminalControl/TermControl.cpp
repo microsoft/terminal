@@ -507,7 +507,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_initializeForAttach()
     {
-        _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core->SwapChainHandle()));
+        _AttachDxgiSwapChainToXaml(_core->SwapChainHandle());
         _interactivity->AttachToNewControl();
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
@@ -1287,11 +1287,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->ConnectionState();
     }
 
-    void TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable args)
+    void TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
     {
         // This event comes in on the UI thread
-        HANDLE h = reinterpret_cast<HANDLE>(winrt::unbox_value<uint64_t>(args));
-        _AttachDxgiSwapChainToXaml(h);
+        _AttachDxgiSwapChainToXaml(_core->SwapChainHandle());
     }
 
     // Method Description:
