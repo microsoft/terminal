@@ -26,6 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void ResetSize();
         void Close() noexcept;
         void ClearBuffer(bool keepCursorRow);
+        void Reset();
 
         void ShowHide(const bool show);
 

@@ -41,7 +41,8 @@ namespace Microsoft::Console
             ShowHideWindow = 1,
             ClearBuffer = 2,
             SetParent = 3,
-            ResizeWindow = 8
+            ResizeWindow = 8,
+            ResetVtState = 9
         };
 
         struct ResizeWindowData
@@ -70,6 +71,7 @@ namespace Microsoft::Console
         void _DoResizeWindow(const ResizeWindowData& data);
         void _DoSetWindowParent(const SetParentData& data);
         void _DoClearBuffer(bool keepCursorRow) const;
+        void _DoResetVtState() const;
         void _DoShowHide(const ShowHideData& data);
         void _Shutdown();
 
