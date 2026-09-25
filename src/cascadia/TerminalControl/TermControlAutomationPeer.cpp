@@ -5,7 +5,6 @@
 #include <UIAutomationCore.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
-#include "TermControlAutomationPeer.g.cpp"
 
 #include "XamlUiaTextRange.h"
 #include "../types/UiaTracing.h"
@@ -68,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner,
                                                          const Core::Padding padding) :
-        TermControlAutomationPeerT<TermControlAutomationPeer>(*owner.get()), // pass owner to FrameworkElementAutomationPeer
+        FrameworkElementAutomationPeerT(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner }
     {
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, owner->_core->GetRenderData(), this));
@@ -381,10 +380,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto padding{ control->GetPadding() };
             return {
-                static_cast<float>(padding.Left),
-                static_cast<float>(padding.Top),
-                static_cast<float>(padding.Right),
-                static_cast<float>(padding.Bottom),
+                til::math::rounding,
+                padding.Left,
+                padding.Top,
+                padding.Right,
+                padding.Bottom,
             };
         }
         return {};
@@ -401,7 +401,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::_CreateXamlUiaTextRange(UIA::ITextRangeProvider* returnVal) const
     {
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, *this);
+        const auto provider = ProviderFromPeer(*this);
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, provider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 

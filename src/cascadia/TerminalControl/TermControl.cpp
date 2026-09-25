@@ -4180,6 +4180,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _cursorVisibility;
     }
 
+    void TermControl::ApplyPreviewColorScheme(const Core::ICoreScheme& scheme)
+    {
+        _core->ApplyPreviewColorScheme(scheme);
+    }
+
+    void TermControl::ResetPreviewColorScheme()
+    {
+        _core->ResetPreviewColorScheme();
+    }
+
+    void TermControl::SetOverrideColorScheme(const Core::ICoreScheme& scheme)
+    {
+        _core->SetOverrideColorScheme(scheme);
+    }
+
     void TermControl::CursorVisibility(Control::CursorDisplayState cursorVisibility)
     {
         _cursorVisibility = cursorVisibility;
