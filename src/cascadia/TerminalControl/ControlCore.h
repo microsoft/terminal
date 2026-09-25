@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
-        uint64_t SwapChainHandle() const;
+        HANDLE SwapChainHandle() const;
         void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
