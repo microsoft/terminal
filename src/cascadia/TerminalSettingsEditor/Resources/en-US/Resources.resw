@@ -2262,6 +2262,10 @@
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
+  <data name="Globals_CloseOnMiddleClick.Content" xml:space="preserve">
+    <value>Close a tab with a middle-click</value>
+    <comment>Header for a control to toggle whether middle-clicking a tab closes it.</comment>
+  </data>
   <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
     <value>Show a confirmation dialog before closing tabs or windows</value>
     <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
