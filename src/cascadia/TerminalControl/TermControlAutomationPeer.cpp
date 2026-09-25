@@ -65,13 +65,11 @@ static constexpr bool IsReadable(std::wstring_view text)
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner,
-                                                         const Core::Padding padding) :
+    TermControlAutomationPeer::TermControlAutomationPeer(winrt::com_ptr<TermControl> owner) :
         FrameworkElementAutomationPeerT(*owner.get()), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner }
     {
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, owner->_core->GetRenderData(), this));
-        SetControlPadding(padding);
     };
 
     void TermControlAutomationPeer::RecordKeyEvent(const WORD vkey)

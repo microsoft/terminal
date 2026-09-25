@@ -1255,14 +1255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-            const auto margins{ SwapChainPanel().Margin() };
-            const Core::Padding padding{
-                static_cast<float>(margins.Left),
-                static_cast<float>(margins.Top),
-                static_cast<float>(margins.Right),
-                static_cast<float>(margins.Bottom),
-            };
-            _automationPeer = winrt::make_self<implementation::TermControlAutomationPeer>(get_strong(), padding);
+            _automationPeer = winrt::make_self<implementation::TermControlAutomationPeer>(get_strong());
             _interactivity->SetUiaEventDispatcher(_automationPeer.get());
             return *_automationPeer;
         }

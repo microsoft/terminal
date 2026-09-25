@@ -40,10 +40,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Types::IControlAccessibilityInfo
     {
     public:
-        TermControlAutomationPeer(winrt::com_ptr<Microsoft::Terminal::Control::implementation::TermControl> owner,
-                                  const Core::Padding padding);
+        TermControlAutomationPeer(winrt::com_ptr<Microsoft::Terminal::Control::implementation::TermControl> owner);
 
-        void SetControlPadding(const Core::Padding padding);
         void RecordKeyEvent(const WORD vkey);
         void Close();
 
