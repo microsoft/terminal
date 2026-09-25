@@ -62,11 +62,11 @@ namespace
     {
         std::wstring result;
         result.reserve(10);
-        if (mode & LIBSSH2_SFTP_S_IFDIR)
+        if ((mode & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFDIR)
         {
             result += L'd';
         }
-        else if (mode & LIBSSH2_SFTP_S_IFLNK)
+        else if ((mode & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFLNK)
         {
             result += L'l';
         }
@@ -318,12 +318,11 @@ namespace winrt::TerminalApp::implementation
                     entry.fullPath += L'/';
                 }
                 entry.fullPath += name;
-                entry.isDirectory = (attrs.permissions & LIBSSH2_SFTP_S_IFDIR) != 0;
+                entry.isDirectory = (attrs.permissions & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFDIR;
                 entry.permissions = _formatPermissions(attrs.permissions);
-                entry.size = attrs.filesize;
                 entry.sizeText = _formatSize(attrs.filesize);
                 entry.modTimeText = _formatUnixTime(attrs.mtime);
-                entry.glyph = _glyphForFile(name, entry.isDirectory, (attrs.permissions & LIBSSH2_SFTP_S_IFLNK) != 0);
+                entry.glyph = _glyphForFile(name, entry.isDirectory, (attrs.permissions & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFLNK);
                 entries.emplace_back(std::move(entry));
             } while (true);
 
@@ -462,6 +461,21 @@ namespace winrt::TerminalApp::implementation
 
             libssh2_sftp_close_handle(remoteHandle);
             return success;
+        }
+
+        bool HomeDirectoryLocked(std::wstring& home, std::wstring& /*errorMessage*/)
+        {
+            char buffer[4096]{};
+            const auto rc = libssh2_sftp_realpath(sftp, ".", buffer, sizeof(buffer));
+            if (rc > 0)
+            {
+                home = til::u8u16(buffer);
+            }
+            if (home.empty() || home.front() != L'/')
+            {
+                home = L"/";
+            }
+            return true;
         }
 
         std::mutex mutex;
@@ -658,7 +672,7 @@ bool SftpClient::UploadFile(const std::wstring& localPath,
         return true;
     }
 
-    bool SftpClient::Stat(const std::wstring& path, bool& isDirectory, std::wstring& errorMessage)
+    bool SftpClient::GetFileInfo(const std::wstring& path, SftpFileInfoData& info, std::wstring& errorMessage)
     {
         std::lock_guard guard{ _impl->mutex };
         if (!_impl->sftp)
@@ -672,7 +686,45 @@ bool SftpClient::UploadFile(const std::wstring& localPath,
             errorMessage = L"Path does not exist";
             return false;
         }
-        isDirectory = (attrs.permissions & LIBSSH2_SFTP_S_IFDIR) != 0;
+        info.path = path;
+        const auto slash{ path.find_last_of(L'/') };
+        info.name = slash != std::wstring::npos ? path.substr(slash + 1) : path;
+        if ((attrs.flags & LIBSSH2_SFTP_ATTR_SIZE) != 0)
+        {
+            info.size = attrs.filesize;
+            info.sizeText = _formatSize(attrs.filesize);
+        }
+        if ((attrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0)
+        {
+            info.permissions = attrs.permissions;
+            info.isDirectory = (attrs.permissions & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFDIR;
+            info.isSymlink = (attrs.permissions & LIBSSH2_SFTP_S_IFMT) == LIBSSH2_SFTP_S_IFLNK;
+            info.permissionsText = _formatPermissions(attrs.permissions);
+        }
+        if ((attrs.flags & LIBSSH2_SFTP_ATTR_UIDGID) != 0)
+        {
+            info.uid = attrs.uid;
+            info.gid = attrs.gid;
+        }
+        if ((attrs.flags & LIBSSH2_SFTP_ATTR_ACMODTIME) != 0)
+        {
+            info.atime = attrs.atime;
+            info.mtime = attrs.mtime;
+            info.modTimeText = _formatUnixTime(attrs.mtime);
+            info.accessTimeText = _formatUnixTime(attrs.atime);
+        }
+        info.exists = true;
         return true;
+    }
+
+    bool SftpClient::HomeDirectory(std::wstring& home, std::wstring& errorMessage)
+    {
+        std::lock_guard guard{ _impl->mutex };
+        if (!_impl->sftp)
+        {
+            errorMessage = L"Not connected";
+            return false;
+        }
+        return _impl->HomeDirectoryLocked(home, errorMessage);
     }
 }

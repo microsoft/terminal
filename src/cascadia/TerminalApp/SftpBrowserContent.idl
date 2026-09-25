@@ -22,8 +22,10 @@ namespace TerminalApp
     {
         SftpProfileItem();
 
+        String Name { get; set; };
         String Host { get; set; };
         String Username { get; set; };
+        String AuthMode { get; set; };
     }
 
     [default_interface] runtimeclass SftpBrowserContent : Windows.UI.Xaml.Controls.UserControl,

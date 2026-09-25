@@ -20,7 +20,6 @@ namespace winrt::TerminalApp::implementation
         std::wstring sizeText{};
         std::wstring modTimeText{};
         std::wstring glyph{};
-        unsigned long long size{ 0 };
         bool isDirectory{ false };
     };
 
@@ -29,6 +28,26 @@ namespace winrt::TerminalApp::implementation
         unsigned long long totalBytes{ 0 };
         unsigned long long transferredBytes{ 0 };
         bool isIndeterminate{ false };
+    };
+
+    struct SftpFileInfoData
+    {
+        unsigned long long size{ 0 };
+        unsigned long permissions{ 0 };
+        unsigned long uid{ 0 };
+        unsigned long gid{ 0 };
+        unsigned long atime{ 0 };
+        unsigned long mtime{ 0 };
+        bool isDirectory{ false };
+        bool isSymlink{ false };
+        bool exists{ false };
+
+        std::wstring name;
+        std::wstring path;
+        std::wstring sizeText;
+        std::wstring permissionsText;
+        std::wstring modTimeText;
+        std::wstring accessTimeText;
     };
 
     // Thin, blocking wrapper around libssh2's SFTP subsystem. All public
@@ -75,9 +94,13 @@ namespace winrt::TerminalApp::implementation
         bool Rename(const std::wstring& oldPath, const std::wstring& newPath, std::wstring& errorMessage);
         bool Chmod(const std::wstring& path, unsigned long mode, std::wstring& errorMessage);
 
-        // Returns true if the path exists. isDirectory is only meaningful when
-        // the path exists.
-        bool Stat(const std::wstring& path, bool& isDirectory, std::wstring& errorMessage);
+        // Fetches extended attributes (size, permissions, owner, timestamps)
+        // for a single remote path so the UI can show a "Properties" dialog.
+        bool GetFileInfo(const std::wstring& path, SftpFileInfoData& info, std::wstring& errorMessage);
+
+        // Resolves the server-side home directory (typically the user's login
+        // directory). Falls back to "/" if the server does not expose it.
+        bool HomeDirectory(std::wstring& home, std::wstring& errorMessage);
 
     private:
         struct Impl;

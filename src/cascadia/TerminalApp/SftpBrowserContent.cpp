@@ -16,6 +16,11 @@
 #include <fstream>
 #include <string_view>
 
+#include <dpapi.h>
+#include <wincrypt.h>
+
+#pragma comment(lib, "Crypt32.lib")
+
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -30,6 +35,11 @@ using namespace winrt::Windows::UI::Xaml::Media;
 
 namespace
 {
+    // How many consecutive failed sync-upload attempts we tolerate for a file
+    // before giving up and reporting the failure once. Prevents the sync timer
+    // (which ticks every 1.5s) from retrying forever and spamming error dialogs.
+    constexpr uint32_t kMaxSyncAttempts{ 2 };
+
     // Combine a remote parent directory with a child name, handling the
     // leading "/" of the absolute path.
     std::wstring CombineRemotePath(const std::wstring& parent, const std::wstring& name)
@@ -70,7 +80,7 @@ namespace
     // Returns the last path component of an absolute remote path.
     std::wstring GetRemoteFileName(const std::wstring& path)
     {
-        const auto end{ path.find_last_of(L'/') };
+        const auto end{ path.find_last_of(L"/\\") };
         if (end == std::wstring::npos)
         {
             return path;
@@ -188,6 +198,129 @@ namespace
         }
         return out;
     }
+
+    // Marker used to distinguish a DPAPI-encrypted password from a legacy
+    // plaintext one, so old configuration files keep working.
+    constexpr std::wstring_view EncryptedPasswordMarker{ L"sftp-dpapi:" };
+
+    // Encrypts a password with DPAPI (current user scope) and returns it in a
+    // form that is safe to store in the JSON config. An empty input yields an
+    // empty result. The blob is base64-encoded so it survives the hand-rolled
+    // JSON serializer.
+    std::wstring EncryptPassword(const std::wstring& password)
+    {
+        if (password.empty())
+        {
+            return L"";
+        }
+
+        const auto utf8{ til::u16u8(password) };
+        DATA_BLOB plain{};
+        plain.pbData = reinterpret_cast<BYTE*>(const_cast<char*>(utf8.data()));
+        plain.cbData = static_cast<DWORD>(utf8.size());
+
+        DATA_BLOB encrypted{};
+        if (!CryptProtectData(&plain,
+                              L"windows-terminal-sftp-password",
+                              nullptr,
+                              nullptr,
+                              nullptr,
+                              CRYPTPROTECT_UI_FORBIDDEN,
+                              &encrypted))
+        {
+            return L"";
+        }
+
+        std::wstring encoded;
+        DWORD encodedSize{ 0 };
+        if (!CryptBinaryToStringW(encrypted.pbData,
+                                  encrypted.cbData,
+                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
+                                  nullptr,
+                                  &encodedSize))
+        {
+            LocalFree(encrypted.pbData);
+            return L"";
+        }
+        encoded.resize(encodedSize);
+        if (!CryptBinaryToStringW(encrypted.pbData,
+                                  encrypted.cbData,
+                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
+                                  encoded.data(),
+                                  &encodedSize))
+        {
+            LocalFree(encrypted.pbData);
+            return L"";
+        }
+        LocalFree(encrypted.pbData);
+
+        // CryptBinaryToStringW writes a trailing NUL; drop it.
+        if (!encoded.empty() && encoded.back() == L'\0')
+        {
+            encoded.pop_back();
+        }
+
+        return std::wstring{ EncryptedPasswordMarker } + encoded;
+    }
+
+    // Decrypts a password that was stored by EncryptPassword. Values that do
+    // not carry the DPAPI marker (legacy plaintext) are returned untouched.
+    std::wstring DecryptPassword(const std::wstring& password)
+    {
+        if (password.size() < EncryptedPasswordMarker.size() ||
+            password.compare(0, EncryptedPasswordMarker.size(), EncryptedPasswordMarker) != 0)
+        {
+            return password;
+        }
+
+        const auto encoded{ password.substr(EncryptedPasswordMarker.size()) };
+
+        DWORD blobSize{ 0 };
+        if (!CryptStringToBinaryW(encoded.c_str(),
+                                  static_cast<DWORD>(encoded.size()),
+                                  CRYPT_STRING_BASE64,
+                                  nullptr,
+                                  &blobSize,
+                                  nullptr,
+                                  nullptr))
+        {
+            return L"";
+        }
+        std::vector<BYTE> blob(blobSize);
+        if (!CryptStringToBinaryW(encoded.c_str(),
+                                  static_cast<DWORD>(encoded.size()),
+                                  CRYPT_STRING_BASE64,
+                                  blob.data(),
+                                  &blobSize,
+                                  nullptr,
+                                  nullptr))
+        {
+            return L"";
+        }
+
+        DATA_BLOB encrypted{};
+        encrypted.pbData = blob.data();
+        encrypted.cbData = blobSize;
+
+        DATA_BLOB plain{};
+        if (!CryptUnprotectData(&encrypted,
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                CRYPTPROTECT_UI_FORBIDDEN,
+                                &plain))
+        {
+            // Password was encrypted on a different account/machine and cannot
+            // be recovered here.
+            return L"";
+        }
+
+        std::string utf8{ reinterpret_cast<const char*>(plain.pbData), plain.cbData };
+        LocalFree(plain.pbData);
+
+        return til::u8u16(utf8);
+    }
 }
 
 namespace winrt::TerminalApp::implementation
@@ -262,6 +395,16 @@ namespace winrt::TerminalApp::implementation
         _isDirectory = value;
     }
 
+    hstring SftpProfileItem::Name() const
+    {
+        return _name;
+    }
+
+    void SftpProfileItem::Name(hstring const& value)
+    {
+        _name = value;
+    }
+
     hstring SftpProfileItem::Host() const
     {
         return _host;
@@ -282,21 +425,31 @@ namespace winrt::TerminalApp::implementation
         _username = value;
     }
 
+    hstring SftpProfileItem::AuthMode() const
+    {
+        return _authMode;
+    }
+
+    void SftpProfileItem::AuthMode(hstring const& value)
+    {
+        _authMode = value;
+    }
+
     SftpBrowserContent::SftpBrowserContent() :
         _entries{ winrt::single_threaded_observable_vector<TerminalApp::SftpFileEntry>() },
         _profileItems{ winrt::single_threaded_observable_vector<TerminalApp::SftpProfileItem>() }
     {
         InitializeComponent();
 
-        // Sensible defaults so a freshly opened browser can connect to a
-        // typical local server with zero typing.
-        hostBox().Text(L"127.0.0.1");
-        portBox().Text(L"22");
-        userBox().Text(L"root");
-
         _syncTimer = DispatcherTimer{};
         _syncTimer.Interval(std::chrono::milliseconds{ 1500 });
         _syncTimer.Tick({ this, &SftpBrowserContent::_syncTimerTick });
+
+        _statusTimer = DispatcherTimer{};
+        _statusTimer.Interval(std::chrono::milliseconds{ 3000 });
+        _statusTimer.Tick({ this, &SftpBrowserContent::_statusTimerTick });
+
+        KeyDown({ get_weak(), &SftpBrowserContent::_contentKeyDown });
 
         _loadProfiles();
     }
@@ -360,9 +513,24 @@ namespace winrt::TerminalApp::implementation
         // fire-and-forget coroutine that dereferences this object, so letting
         // it fire after the pane is destroyed would crash the process.
         _syncTimer.Stop();
+        _statusTimer.Stop();
+        _syncAttempts.clear();
 
-        _client.Disconnect();
+        // Raise the close event first so the pane closes immediately. The
+        // actual teardown (Disconnect) goes to a background thread: the libssh2
+        // calls inside Disconnect block the caller, and doing them on the UI
+        // thread made the pane look like it refused to close on the X button.
         CloseRequested.raise(*this, nullptr);
+        _disconnectAsync();
+    }
+
+    fire_and_forget SftpBrowserContent::_disconnectAsync()
+    {
+        // The pane is being torn down right now; keep the object alive while
+        // the background disconnect runs so the client stays valid.
+        auto lifetime{ get_strong() };
+        co_await winrt::resume_background();
+        _client.Disconnect();
     }
 
     INewContentArgs SftpBrowserContent::GetNewTerminalArgs(BuildStartupKind /* kind */) const
@@ -383,8 +551,8 @@ namespace winrt::TerminalApp::implementation
 
     hstring SftpBrowserContent::Icon() const
     {
-        // "\xE8A7" is the "Link" glyph which reads nicely as a remote VM.
-        return L"\xE8A7";
+        // "\xE8B7" is the "Folder" glyph which reads as the SFTP browser pane.
+        return L"\xE8B7";
     }
 
 #pragma endregion
@@ -686,8 +854,9 @@ namespace winrt::TerminalApp::implementation
         }
         fileList().ItemsSource(_entries);
 
-        pathBox().Text(_currentPath);
-        _setStatus(til::hstring_format(FMT_COMPILE(L"Connected to {0}  |  {1} item(s)"), _host, _entries.Size()));
+        _updateBreadcrumbBar();
+        _statusText = til::hstring_format(FMT_COMPILE(L"Connected to {0}  |  {1} item(s)"), _host, _entries.Size());
+        _setStatus(_statusText);
     }
 
     fire_and_forget SftpBrowserContent::_connectAsync()
@@ -715,7 +884,6 @@ namespace winrt::TerminalApp::implementation
         _setStatus(L"Connecting...");
         progressRing().IsActive(true);
         progressRing().Visibility(Visibility::Visible);
-        connectButton().IsEnabled(false);
         connectActionButton().IsEnabled(false);
 
         co_await resume_background();
@@ -741,7 +909,6 @@ namespace winrt::TerminalApp::implementation
 
         if (!ok)
         {
-            connectButton().IsEnabled(true);
             connectActionButton().IsEnabled(true);
             _showError(errorMessage.empty() ? L"Failed to connect" : errorMessage);
             _setStatus(L"Connection failed");
@@ -751,6 +918,17 @@ namespace winrt::TerminalApp::implementation
         _isConnected = true;
         _setConnectedUi(true);
         _setStatus(L"Connected");
+
+        {
+            auto home{ std::wstring{} };
+            auto homeError{ std::wstring{} };
+            if (!_client.HomeDirectory(home, homeError) || home.empty())
+            {
+                home = L"/";
+            }
+            _homePath = home;
+            _currentPath = _homePath;
+        }
 
         _loadDirectoryAsync();
     }
@@ -778,69 +956,92 @@ namespace winrt::TerminalApp::implementation
 
     fire_and_forget SftpBrowserContent::_uploadFilesAsync(winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Storage::StorageFile> files)
     {
-        if (!_isConnected)
-        {
-            co_return;
-        }
+        std::wstring errorMessage{};
 
-        // Keep the control alive and remember the dispatcher before the
-        // background hop.
+        // Lifetime and dispatcher reads are thread-safe; this coroutine can be
+        // entered from a threadpool continuation (drag&drop or picker
+        // Completed), so pin to the UI thread before touching StorageFile or
+        // any UI element (RPC_E_WRONG_THREAD).
         auto lifetime{ get_strong() };
         const auto dispatcher{ Dispatcher() };
 
-        auto errorMessage{ std::wstring{} };
-        uint32_t uploaded{ 0 };
-        uint32_t failed{ 0 };
-
-        _setStatus(L"Uploading...");
-        progressRing().IsActive(true);
-        progressRing().Visibility(Visibility::Visible);
-
-        co_await resume_background();
-
-        for (const auto& file : files)
-        {
-            const auto localPath{ file.Path() };
-            const auto remotePath{ CombineRemotePath(_currentPath, GetRemoteFileName(std::wstring{ localPath })) };
-
-            try
-            {
-                auto progress = SftpTransferProgress{};
-                if (_client.UploadFile(std::wstring{ localPath }, remotePath, _cancelTransfer, progress, errorMessage))
-                {
-                    ++uploaded;
-                }
-                else
-                {
-                    ++failed;
-                }
-            }
-            catch (...)
-            {
-                ++failed;
-                if (errorMessage.empty())
-                {
-                    errorMessage = L"Upload failed with an exception";
-                }
-            }
-        }
-
         co_await wil::resume_foreground(dispatcher);
 
-        progressRing().IsActive(false);
-        progressRing().Visibility(Visibility::Collapsed);
-
-        if (failed == 0)
+        try
         {
-            _setStatus(winrt::hstring{ fmt::format(FMT_COMPILE(L"Uploaded {0} file(s)"), uploaded) });
-        }
-        else
-        {
-            _showError(errorMessage.empty() ? L"Some files failed to upload" : errorMessage);
-            _setStatus(winrt::hstring{ fmt::format(FMT_COMPILE(L"Uploaded {0}, failed {1}"), uploaded, failed) });
-        }
+            if (!_isConnected)
+            {
+                co_return;
+            }
 
-        _loadDirectoryAsync();
+            uint32_t uploaded{ 0 };
+            uint32_t failed{ 0 };
+
+            _setStatus(L"Uploading...");
+            progressRing().IsActive(true);
+            progressRing().Visibility(Visibility::Visible);
+
+            // StorageFile is a UI-thread-bound object; materialize the paths
+            // before hopping to the background thread (RPC_E_WRONG_THREAD).
+            std::vector<std::wstring> localPaths;
+            for (const auto& file : files)
+            {
+                localPaths.push_back(std::wstring{ file.Path() });
+            }
+
+            co_await resume_background();
+
+            for (const auto& localPath : localPaths)
+            {
+                try
+                {
+                    const auto remotePath{ CombineRemotePath(_currentPath, GetRemoteFileName(localPath)) };
+
+                    auto progress = SftpTransferProgress{};
+                    if (_client.UploadFile(localPath, remotePath, _cancelTransfer, progress, errorMessage))
+                    {
+                        ++uploaded;
+                    }
+                    else
+                    {
+                        ++failed;
+                    }
+                }
+                catch (...)
+                {
+                    ++failed;
+                    if (errorMessage.empty())
+                    {
+                        errorMessage = L"Upload failed with an exception";
+                    }
+                }
+            }
+
+            co_await wil::resume_foreground(dispatcher);
+
+            progressRing().IsActive(false);
+            progressRing().Visibility(Visibility::Collapsed);
+
+            if (failed == 0)
+            {
+                _setStatus(winrt::hstring{ fmt::format(FMT_COMPILE(L"Uploaded {0} file(s)"), uploaded) });
+            }
+            else
+            {
+                _showError(errorMessage.empty() ? L"Some files failed to upload" : errorMessage);
+                _setStatus(winrt::hstring{ fmt::format(FMT_COMPILE(L"Uploaded {0}, failed {1}"), uploaded, failed) });
+            }
+
+            _loadDirectoryAsync();
+        }
+        catch (const winrt::hresult_error& ex)
+        {
+            _showError(L"Upload failed: " + std::wstring{ ex.message().c_str() });
+        }
+        catch (...)
+        {
+            _showError(errorMessage.empty() ? L"Upload failed with an unexpected error." : L"Upload failed: " + errorMessage);
+        }
     }
 
     fire_and_forget SftpBrowserContent::_newFolderAsync()
@@ -855,28 +1056,9 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto dialog{ ContentDialog{} };
-            dialog.Title(box_value(L"New folder"));
-            dialog.Content(box_value(L"Enter the name of the new folder"));
-            auto input{ TextBox{} };
-            input.PlaceholderText(L"Folder name");
-            dialog.Content(input);
-
-            dialog.PrimaryButtonText(L"Create");
-            dialog.CloseButtonText(L"Cancel");
-            dialog.DefaultButton(ContentDialogButton::Primary);
-            dialog.XamlRoot(XamlRoot());
-
-            const auto result{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-            if (result != ContentDialogResult::Primary)
-            {
-                co_return;
-            }
-
-            const auto name{ input.Text() };
+            const auto name{ co_await _promptForInputAsync(L"New folder", L"Folder name", L"") };
             if (name.empty())
             {
-                _showError(L"Folder name cannot be empty.");
                 co_return;
             }
 
@@ -912,24 +1094,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto dialog{ ContentDialog{} };
-            dialog.Title(box_value(L"New file"));
-            auto input{ TextBox{} };
-            input.PlaceholderText(L"File name");
-            dialog.Content(input);
-
-            dialog.PrimaryButtonText(L"Create");
-            dialog.CloseButtonText(L"Cancel");
-            dialog.DefaultButton(ContentDialogButton::Primary);
-            dialog.XamlRoot(XamlRoot());
-
-            const auto result{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-            if (result != ContentDialogResult::Primary)
-            {
-                co_return;
-            }
-
-            const auto name{ std::wstring{ input.Text() } };
+            const auto name{ std::wstring{ co_await _promptForInputAsync(L"New file", L"File name", L"") } };
             if (name.empty())
             {
                 _showError(L"File name cannot be empty.");
@@ -973,24 +1138,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto dialog{ ContentDialog{} };
-            dialog.Title(box_value(L"Rename"));
-            auto input{ TextBox{} };
-            input.Text(entry.Name());
-            dialog.Content(input);
-
-            dialog.PrimaryButtonText(L"Rename");
-            dialog.CloseButtonText(L"Cancel");
-            dialog.DefaultButton(ContentDialogButton::Primary);
-            dialog.XamlRoot(XamlRoot());
-
-            const auto result{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-            if (result != ContentDialogResult::Primary)
-            {
-                co_return;
-            }
-
-            const auto newName{ input.Text() };
+            const auto newName{ co_await _promptForInputAsync(L"Rename", L"File name", entry.Name()) };
             if (newName.empty() || newName == entry.Name())
             {
                 co_return;
@@ -1093,6 +1241,108 @@ namespace winrt::TerminalApp::implementation
         _loadDirectoryAsync();
     }
 
+    fire_and_forget SftpBrowserContent::_showFileInfoAsync(TerminalApp::SftpFileEntry entry)
+    {
+        if (!_isConnected || entry == nullptr)
+        {
+            co_return;
+        }
+
+        // Remember the dispatcher before the background hop and keep the
+        // control alive across every await point.
+        auto lifetime{ get_strong() };
+        const auto dispatcher{ Dispatcher() };
+
+        const auto path{ std::wstring{ entry.FullPath() } };
+        auto errorMessage{ std::wstring{} };
+        SftpFileInfoData info;
+        auto ok{ false };
+
+        co_await resume_background();
+
+        try
+        {
+            ok = _client.GetFileInfo(path, info, errorMessage);
+        }
+        catch (...)
+        {
+            ok = false;
+            if (errorMessage.empty())
+            {
+                errorMessage = L"Failed to read file information.";
+            }
+        }
+
+        co_await wil::resume_foreground(dispatcher);
+
+        if (!ok)
+        {
+            _showError(errorMessage);
+            co_return;
+        }
+
+        const auto objectType{ info.isSymlink ? L"Symbolic link" : (info.isDirectory ? L"Folder" : L"File") };
+
+        struct InfoRow
+        {
+            winrt::hstring label;
+            winrt::hstring value;
+        };
+        const auto rows{ std::vector<InfoRow>{
+            { L"Name", winrt::hstring{ info.name } },
+            { L"Path", winrt::hstring{ info.path } },
+            { L"Type", winrt::hstring{ objectType } },
+            { L"Size", winrt::hstring{ info.sizeText } },
+            { L"Permissions", winrt::hstring{ info.permissionsText } },
+            { L"UID", winrt::hstring{ fmt::format(L"{}", info.uid) } },
+            { L"GID", winrt::hstring{ fmt::format(L"{}", info.gid) } },
+            { L"Modified", winrt::hstring{ info.modTimeText } },
+            { L"Accessed", winrt::hstring{ info.accessTimeText } },
+        } };
+
+        // Two aligned columns: keys on the left, values on the right.
+        auto content{ Grid{} };
+        auto nameColumn{ ColumnDefinition{} };
+        auto valueColumn{ ColumnDefinition{} };
+        valueColumn.Width(GridLength{ 1, GridUnitType::Star });
+        content.ColumnDefinitions().Append(nameColumn);
+        content.ColumnDefinitions().Append(valueColumn);
+        for (size_t i{ 0 }; i < rows.size(); ++i)
+        {
+            content.RowDefinitions().Append(RowDefinition{});
+
+            auto label{ TextBlock{} };
+            label.Text(rows[i].label);
+            label.Margin(ThicknessHelper::FromLengths(0, 0, 16, 6));
+            label.FontWeight(winrt::Windows::UI::Text::FontWeights::SemiBold());
+            label.TextWrapping(TextWrapping::NoWrap);
+            Grid::SetColumn(label, 0);
+            Grid::SetRow(label, static_cast<int>(i));
+            content.Children().Append(label);
+
+            auto value{ TextBlock{} };
+            value.Text(rows[i].value);
+            value.TextWrapping(TextWrapping::Wrap);
+            Grid::SetColumn(value, 1);
+            Grid::SetRow(value, static_cast<int>(i));
+            content.Children().Append(value);
+        }
+
+        try
+        {
+            auto dialog{ ContentDialog{} };
+            dialog.Title(box_value(entry.Name()));
+            dialog.Content(box_value(content));
+            dialog.PrimaryButtonText(L"OK");
+            dialog.XamlRoot(XamlRoot());
+            co_await dialog.ShowAsync(ContentDialogPlacement::Popup);
+        }
+        catch (...)
+        {
+            _showError(L"Properties dialog failed.");
+        }
+    }
+
     fire_and_forget SftpBrowserContent::_chmodAsync(TerminalApp::SftpFileEntry entry)
     {
         if (!_isConnected || entry == nullptr)
@@ -1105,24 +1355,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto dialog{ ContentDialog{} };
-            dialog.Title(box_value(L"Permissions (chmod)"));
-            auto input{ TextBox{} };
-            input.Text(entry.Permissions());
-            dialog.Content(input);
-
-            dialog.PrimaryButtonText(L"Apply");
-            dialog.CloseButtonText(L"Cancel");
-            dialog.DefaultButton(ContentDialogButton::Primary);
-            dialog.XamlRoot(XamlRoot());
-
-            const auto result{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-            if (result != ContentDialogResult::Primary)
-            {
-                co_return;
-            }
-
-            const auto text{ input.Text() };
+            const auto text{ co_await _promptForInputAsync(L"Permissions (chmod)", L"e.g. 755", entry.Permissions()) };
             if (text.empty())
             {
                 co_return;
@@ -1240,6 +1473,8 @@ namespace winrt::TerminalApp::implementation
 
     void SftpBrowserContent::_showErrorOnUi(const std::wstring& message)
     {
+        progressRing().IsActive(false);
+        progressRing().Visibility(Visibility::Collapsed);
         statusText().Text(L"Error");
         try
         {
@@ -1258,6 +1493,62 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> SftpBrowserContent::_promptForInputAsync(const winrt::hstring& title, const winrt::hstring& placeholder, const winrt::hstring& initial)
+    {
+        // ContentDialog text boxes don't receive keypresses in XAML Islands, so
+        // text input is done through an overlay attached to this control which
+        // stays fully inside the pane's visual tree.
+        auto lifetime{ get_strong() };
+        const auto dispatcher{ Dispatcher() };
+        co_await wil::resume_foreground(dispatcher);
+
+        _inputDialogResult.reset();
+        _inputDialogDone = false;
+        inputTitleText().Text(title);
+        inputValueBox().PlaceholderText(placeholder);
+        inputValueBox().Text(initial);
+        inputOverlay().Visibility(Visibility::Visible);
+        inputValueBox().Focus(FocusState::Programmatic);
+        inputValueBox().SelectAll();
+
+        while (!_inputDialogDone)
+        {
+            co_await winrt::resume_after(std::chrono::milliseconds{ 50 });
+            co_await wil::resume_foreground(dispatcher);
+        }
+
+        inputOverlay().Visibility(Visibility::Collapsed);
+        const auto result{ _inputDialogResult.value_or(winrt::hstring{}) };
+        _inputDialogResult.reset();
+        co_return result;
+    }
+
+    void SftpBrowserContent::_inputOkClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        _inputDialogResult = inputValueBox().Text();
+        _inputDialogDone = true;
+    }
+
+    void SftpBrowserContent::_inputCancelClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        _inputDialogDone = true;
+    }
+
+    void SftpBrowserContent::_inputValueBoxKeyDown(const IInspectable&, KeyRoutedEventArgs const& e)
+    {
+        if (e.Key() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            _inputDialogResult = inputValueBox().Text();
+            _inputDialogDone = true;
+            e.Handled(true);
+        }
+        else if (e.Key() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            _inputDialogDone = true;
+            e.Handled(true);
+        }
+    }
+
     void SftpBrowserContent::_refreshList()
     {
         if (_isConnected)
@@ -1268,17 +1559,16 @@ namespace winrt::TerminalApp::implementation
 
     void SftpBrowserContent::_setConnectedUi(bool connected)
     {
-        connectButton().IsEnabled(!connected);
+        connectActionButton().IsEnabled(!connected);
         disconnectButton().IsEnabled(connected);
         hiddenButton().IsEnabled(connected);
-        upButton().IsEnabled(connected);
+        backButton().IsEnabled(connected && !_backHistory.empty());
+        forwardButton().IsEnabled(connected && !_forwardHistory.empty());
         newFileButton().IsEnabled(connected);
         newFolderButton().IsEnabled(connected);
         uploadButton().IsEnabled(connected);
         downloadButton().IsEnabled(connected);
-        editCodeButton().IsEnabled(connected);
         refreshButton().IsEnabled(connected);
-        pathBox().IsEnabled(connected);
         connectForm().Visibility(connected ? Visibility::Collapsed : Visibility::Visible);
     }
 
@@ -1340,12 +1630,39 @@ namespace winrt::TerminalApp::implementation
 
             if (!ok)
             {
+                // Don't retry forever with a modal dialog on every 1.5s tick:
+                // a persistent failure previously produced an endless stream of
+                // error popups. Retry a bounded number of times, then give up
+                // on the file with a single, actionable error message.
+                auto attempts{ _syncAttempts.find(remotePath) };
+                if (attempts == _syncAttempts.end())
+                {
+                    _syncAttempts.emplace(remotePath, 1);
+                }
+                else if (++attempts->second >= kMaxSyncAttempts)
+                {
+                    _syncAttempts.erase(remotePath);
+                    _editSessions.erase(remotePath);
+                    _pendingSync.erase(remotePath);
+                    _editedTimes.erase(remotePath);
+
+                    // Leave the local cached copy on disk so the user can push
+                    // it manually with Upload.
+                    _setStatus(winrt::hstring{ L"Sync failed; stopped watching " } + winrt::hstring{ remotePath });
+                    _showError((errorMessage.empty() ? L"Failed to sync the edited file." : errorMessage) +
+                               L"\n\nThe file is left on disk; use Upload to push it manually.");
+                    co_return;
+                }
+
                 _pendingSync.emplace(remotePath, localPath); // retry on the next tick
-                _showError(errorMessage.empty() ? L"Failed to sync edited file" : errorMessage);
+                _setStatus(winrt::hstring{ L"Sync failed, retrying: " } + winrt::hstring{ remotePath });
             }
             else
             {
+                _syncAttempts.erase(remotePath);
                 _setStatus(winrt::hstring{ L"Synced " } + winrt::hstring{ remotePath });
+                _statusTimer.Stop();
+                _statusTimer.Start();
             }
         }
         catch (...)
@@ -1367,6 +1684,40 @@ namespace winrt::TerminalApp::implementation
             {
             }
         }
+    }
+
+    void SftpBrowserContent::_statusTimerTick(const IInspectable&, const IInspectable&)
+    {
+        // The "Synced <path>" confirmation is transient; restore the regular
+        // connection/statistics line once it has been visible long enough.
+        _statusTimer.Stop();
+        if (_isConnected && !_statusText.empty())
+        {
+            _setStatus(_statusText);
+        }
+    }
+
+    void SftpBrowserContent::_contentKeyDown(const IInspectable&, const KeyRoutedEventArgs& e)
+    {
+        // Ctrl+R (or Ctrl+Shift+R) refreshes the current directory listing.
+        if (!_isConnected || e.OriginalKey() != winrt::Windows::System::VirtualKey::R)
+        {
+            return;
+        }
+
+        const auto window{ winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread() };
+        if (!window)
+        {
+            return;
+        }
+        const auto ctrlDown{ WI_IsFlagSet(window.GetKeyState(winrt::Windows::System::VirtualKey::Control), winrt::Windows::UI::Core::CoreVirtualKeyStates::Down) };
+        if (!ctrlDown)
+        {
+            return;
+        }
+
+        e.Handled(true);
+        _refreshList();
     }
 
     void SftpBrowserContent::_connectClick(const IInspectable&, const RoutedEventArgs&)
@@ -1398,26 +1749,61 @@ namespace winrt::TerminalApp::implementation
         _isConnected = false;
         _setConnectedUi(false);
         _currentPath = L"/";
+        _homePath = L"/";
+        _backHistory.clear();
+        _forwardHistory.clear();
         _entries.Clear();
         _editSessions.clear();
         _pendingSync.clear();
         _editedTimes.clear();
-        pathBox().Text(L"/");
+        _syncAttempts.clear();
+        _updateBreadcrumbBar();
         _setStatus(L"Disconnected");
     }
 
-    void SftpBrowserContent::_upClick(const IInspectable&, const RoutedEventArgs&)
+    void SftpBrowserContent::_navigateTo(const std::wstring& path)
     {
-        if (!_isConnected)
+        if (!_isConnected || path.empty() || path == _currentPath)
         {
             return;
         }
-        const auto parent{ GetParentRemotePath(_currentPath) };
-        if (parent != _currentPath)
+        _backHistory.push_back(_currentPath);
+        _forwardHistory.clear();
+        _currentPath = path;
+        _updateNavButtons();
+        _loadDirectoryAsync();
+    }
+
+    void SftpBrowserContent::_updateNavButtons()
+    {
+        backButton().IsEnabled(!_backHistory.empty());
+        forwardButton().IsEnabled(!_forwardHistory.empty());
+    }
+
+    void SftpBrowserContent::_backClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        if (!_isConnected || _backHistory.empty())
         {
-            _currentPath = parent;
-            _loadDirectoryAsync();
+            return;
         }
+        _forwardHistory.push_back(_currentPath);
+        _currentPath = _backHistory.back();
+        _backHistory.pop_back();
+        _updateNavButtons();
+        _loadDirectoryAsync();
+    }
+
+    void SftpBrowserContent::_forwardClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        if (!_isConnected || _forwardHistory.empty())
+        {
+            return;
+        }
+        _backHistory.push_back(_currentPath);
+        _currentPath = _forwardHistory.back();
+        _forwardHistory.pop_back();
+        _updateNavButtons();
+        _loadDirectoryAsync();
     }
 
     void SftpBrowserContent::_toggleHiddenFilesClick(const IInspectable&, const RoutedEventArgs&)
@@ -1456,24 +1842,44 @@ namespace winrt::TerminalApp::implementation
             {
                 return;
             }
-            const auto path{ op.GetResults() };
-            if (path.empty())
+            try
             {
-                return;
+                const auto path{ op.GetResults() };
+                if (path.empty())
+                {
+                    return;
+                }
+                StorageFile::GetFileFromPathAsync(path).Completed([weak, path](const IAsyncOperation<StorageFile>& fileOp, AsyncStatus fileStatus) {
+                    try
+                    {
+                        if (fileStatus != AsyncStatus::Completed)
+                        {
+                            return;
+                        }
+                        const auto page2{ weak.get() };
+                        if (!page2)
+                        {
+                            return;
+                        }
+                        std::vector<StorageFile> files{ fileOp.GetResults() };
+                        page2->_uploadFilesAsync(winrt::single_threaded_vector<StorageFile>(std::move(files)));
+                    }
+                    catch (...)
+                    {
+                        if (const auto self{ weak.get() })
+                        {
+                            self->_showError(L"Failed to read the selected file.");
+                        }
+                    }
+                });
             }
-            StorageFile::GetFileFromPathAsync(path).Completed([weak, path](const IAsyncOperation<StorageFile>& fileOp, AsyncStatus fileStatus) {
-                if (fileStatus != AsyncStatus::Completed)
+            catch (...)
+            {
+                if (const auto self{ weak.get() })
                 {
-                    return;
+                    self->_showError(L"Failed to open the file picker result.");
                 }
-                const auto page2{ weak.get() };
-                if (!page2)
-                {
-                    return;
-                }
-                std::vector<StorageFile> files{ fileOp.GetResults() };
-                page2->_uploadFilesAsync(winrt::single_threaded_vector<StorageFile>(std::move(files)));
-            });
+            }
         });
     }
 
@@ -1491,22 +1897,6 @@ namespace winrt::TerminalApp::implementation
             return;
         }
         _downloadToFolderAsync(selected.GetAt(0).try_as<TerminalApp::SftpFileEntry>());
-    }
-
-    void SftpBrowserContent::_openInVSCodeClick(const IInspectable&, const RoutedEventArgs&)
-    {
-        if (!_isConnected)
-        {
-            return;
-        }
-
-        const auto selected{ fileList().SelectedItems() };
-        if (selected.Size() == 0)
-        {
-            _showError(L"Select a file to open first.");
-            return;
-        }
-        _openInVSCodeAsync(selected.GetAt(0).try_as<TerminalApp::SftpFileEntry>());
     }
 
     void SftpBrowserContent::_newFolderClick(const IInspectable&, const RoutedEventArgs&)
@@ -1540,33 +1930,7 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
-            auto dialog{ ContentDialog{} };
-            dialog.Title(box_value(L"Save connection profile"));
-            auto input{ TextBox{} };
-            input.Text(host);
-            input.SelectAll();
-            dialog.Content(input);
-
-            // The dialog defaults focus to its primary button, which swallows
-            // typed characters and makes it look like the text box can't take
-            // input. Move input focus to the box as soon as the dialog opens.
-            dialog.Opened([input](const IInspectable&, const IInspectable&) {
-                input.Focus(FocusState::Programmatic);
-                input.SelectAll();
-            });
-
-            dialog.PrimaryButtonText(L"Save");
-            dialog.CloseButtonText(L"Cancel");
-            dialog.DefaultButton(ContentDialogButton::Primary);
-            dialog.XamlRoot(XamlRoot());
-
-            const auto result{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-            if (result != ContentDialogResult::Primary)
-            {
-                co_return;
-            }
-
-            auto name{ std::wstring{ input.Text() } };
+            auto name{ std::wstring{ co_await _promptForInputAsync(L"Save connection profile", L"Profile name", host) } };
             if (name.empty())
             {
                 name = std::wstring{ host };
@@ -1620,9 +1984,9 @@ namespace winrt::TerminalApp::implementation
 
     void SftpBrowserContent::_newProfileClick(const IInspectable&, const RoutedEventArgs&)
     {
-        hostBox().Text(L"127.0.0.1");
-        portBox().Text(L"22");
-        userBox().Text(L"root");
+        hostBox().Text(L"");
+        portBox().Text(L"");
+        userBox().Text(L"");
         passBox().Password(L"");
         keyBox().Text(L"");
         profilesListView().SelectedIndex(-1);
@@ -1652,8 +2016,10 @@ namespace winrt::TerminalApp::implementation
         for (const auto& profile : _profiles)
         {
             auto item{ winrt::make_self<SftpProfileItem>() };
+            item->Name(winrt::hstring{ profile.name });
             item->Host(winrt::hstring{ profile.host });
             item->Username(winrt::hstring{ profile.username });
+            item->AuthMode(winrt::hstring{ profile.keyPath.empty() ? L"password" : L"key" });
             _profileItems.Append(*item);
         }
         profilesListView().ItemsSource(_profileItems);
@@ -1667,7 +2033,7 @@ namespace winrt::TerminalApp::implementation
         {
             return {};
         }
-        return std::filesystem::path{ localAppData } / L"Microsoft" / L"Windows Terminal" / L"sftp_profiles.json";
+        return std::filesystem::path{ localAppData } / L"Microsoft" / L"Windows Terminal" / L"sftp-profiles.json";
     }
 
     void SftpBrowserContent::_loadProfiles()
@@ -1680,7 +2046,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        std::ifstream is{ path, std::ios::binary | std::ios::in };
+        // One-time migration from the legacy underscore-named file. Load its
+        // contents, save them under the new name (which encrypts any legacy
+        // plaintext passwords) and delete the old file.
+        const auto legacyPath{ path.parent_path() / L"sftp_profiles.json" };
+        const auto useLegacy{ std::filesystem::exists(legacyPath) };
+
+        std::ifstream is{ useLegacy ? legacyPath : path, std::ios::binary | std::ios::in };
         if (!is)
         {
             return;
@@ -1755,10 +2127,10 @@ namespace winrt::TerminalApp::implementation
                     {
                         profile.username = std::move(value);
                     }
-                    else if (key == L"password")
-                    {
-                        profile.password = std::move(value);
-                    }
+else if (key == L"password")
+{
+    profile.password = DecryptPassword(value);
+}
                     else if (key == L"keyPath")
                     {
                         profile.keyPath = std::move(value);
@@ -1802,6 +2174,15 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        if (useLegacy)
+        {
+            // Hand the profiles to the new file (re-encrypting the stored
+            // passwords in the process) and drop the legacy file.
+            _saveProfiles();
+            std::error_code ec;
+            std::filesystem::remove(legacyPath, ec);
+        }
+
         _refreshProfilesList();
     }
 
@@ -1825,7 +2206,7 @@ namespace winrt::TerminalApp::implementation
             json += L"    \"host\": \"" + JsonEscape(profile.host) + L"\",\n";
             json += L"    \"port\": " + std::to_wstring(profile.port) + L",\n";
             json += L"    \"username\": \"" + JsonEscape(profile.username) + L"\",\n";
-            json += L"    \"password\": \"" + JsonEscape(profile.password) + L"\",\n";
+            json += L"    \"password\": \"" + JsonEscape(EncryptPassword(profile.password)) + L"\",\n";
             json += L"    \"keyPath\": \"" + JsonEscape(profile.keyPath) + L"\"\n";
             json += (i + 1 == _profiles.size()) ? L"  }\n" : L"  },\n";
         }
@@ -1839,19 +2220,117 @@ namespace winrt::TerminalApp::implementation
         os.write(reinterpret_cast<const char*>(json.data()), static_cast<std::streamsize>(json.size() * sizeof(wchar_t)));
     }
 
-    void SftpBrowserContent::_pathBoxKeyDown(const IInspectable&, KeyRoutedEventArgs const& e)
+    void SftpBrowserContent::_updateBreadcrumbBar()
     {
-        if (e.Key() == winrt::Windows::System::VirtualKey::Enter && _isConnected)
+        pathBreadcrumbBar().Children().Clear();
+
+        if (!_isConnected || _currentPath.empty())
         {
-            auto text{ pathBox().Text() };
-            if (!text.empty() && text.front() != L'/')
+            return;
+        }
+
+        const auto splitBreadcrumb = [](const std::wstring& path) {
+            std::vector<std::wstring> segments;
+            std::wstring current;
+            for (const auto ch : path)
             {
-                text = L"/" + text;
+                if (ch == L'/')
+                {
+                    if (!current.empty())
+                    {
+                        segments.push_back(std::move(current));
+                        current.clear();
+                    }
+                }
+                else
+                {
+                    current += ch;
+                }
             }
-            if (text != _currentPath)
+            if (!current.empty())
             {
-                _currentPath = text;
-                _loadDirectoryAsync();
+                segments.push_back(std::move(current));
+            }
+            return segments;
+        };
+
+        const auto segments{ splitBreadcrumb(_currentPath) };
+
+        auto makeSeparator = []() {
+            auto separator{ Controls::TextBlock{} };
+            separator.Text(winrt::hstring{ L"\uE76C" });
+            separator.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            separator.FontSize(10);
+            separator.Margin(Thickness{ 4, 0, 4, 0 });
+            separator.VerticalAlignment(VerticalAlignment::Center);
+            return separator;
+        };
+
+        auto makeSegmentButton = [this](const std::wstring& text, const std::wstring& path) {
+            auto button{ Controls::Button{} };
+            button.Content(box_value(winrt::hstring{ text }));
+            button.Background(nullptr);
+            button.BorderThickness(Thickness{ 0, 0, 0, 0 });
+            button.Padding(Thickness{ 4, 2, 4, 2 });
+            button.MinWidth(0);
+            button.MinHeight(0);
+            button.FontSize(12);
+            const auto lifetime{ get_strong() };
+            button.Click([lifetime, path](const auto&, const auto&) { lifetime->_navigateTo(path); });
+            return button;
+        };
+
+        auto makeCrumbText = [](const std::wstring& text) {
+            auto crumb{ Controls::TextBlock{} };
+            crumb.Text(winrt::hstring{ text });
+            crumb.FontSize(12);
+            crumb.Opacity(0.8);
+            crumb.VerticalAlignment(VerticalAlignment::Center);
+            crumb.Margin(Thickness{ 4, 0, 4, 0 });
+            return crumb;
+        };
+
+        // Home button (house icon, navigates to user's home directory).
+        {
+            auto homeBtn{ Controls::Button{} };
+            auto icon{ Controls::FontIcon{} };
+            icon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            icon.FontSize(14);
+            icon.Glyph(L"\uE80F");
+            homeBtn.Content(icon);
+            homeBtn.Background(nullptr);
+            homeBtn.BorderThickness(Thickness{ 0, 0, 0, 0 });
+            homeBtn.Padding(Thickness{ 4, 2, 4, 2 });
+            homeBtn.MinWidth(0);
+            homeBtn.MinHeight(0);
+            const auto lifetime{ get_strong() };
+            const auto hp{ _homePath };
+            homeBtn.Click([lifetime, hp](const auto&, const auto&) { lifetime->_navigateTo(hp); });
+            pathBreadcrumbBar().Children().Append(homeBtn);
+        }
+
+        const auto rootButton{ makeSegmentButton(L"/", L"/") };
+        pathBreadcrumbBar().Children().Append(rootButton);
+
+        if (segments.empty())
+        {
+            return;
+        }
+
+        std::wstring accumulated;
+        const auto count{ segments.size() };
+        for (size_t i = 0; i < count; ++i)
+        {
+            accumulated += L"/";
+            accumulated += segments[i];
+            pathBreadcrumbBar().Children().Append(makeSeparator());
+            if (i == count - 1)
+            {
+                pathBreadcrumbBar().Children().Append(makeCrumbText(segments[i]));
+            }
+            else
+            {
+                pathBreadcrumbBar().Children().Append(makeSegmentButton(segments[i], accumulated));
             }
         }
     }
@@ -1866,8 +2345,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (entry.IsDirectory())
             {
-                _currentPath = entry.FullPath();
-                _loadDirectoryAsync();
+                _navigateTo(std::wstring{ entry.FullPath() });
             }
             else
             {
@@ -1897,19 +2375,9 @@ namespace winrt::TerminalApp::implementation
         fileList().SelectedItem(entry);
 
         auto flyout{ MenuFlyout{} };
-        auto download{ MenuFlyoutItem{} };
-        download.Text(L"Download to folder...");
-        download.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE896"));
-        download.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
-            if (const auto page{ weak.get() })
-            {
-                page->_downloadToFolderAsync(entry);
-            }
-        });
-        flyout.Items().Append(download);
 
         auto editCode{ MenuFlyoutItem{} };
-        editCode.Text(L"Open in VS Code");
+        editCode.Text(L"Edit (VS Code)");
         editCode.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE943"));
         editCode.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
             if (const auto page{ weak.get() })
@@ -1919,10 +2387,19 @@ namespace winrt::TerminalApp::implementation
         });
         flyout.Items().Append(editCode);
 
-        flyout.Items().Append(MenuFlyoutSeparator{});
+        auto download{ MenuFlyoutItem{} };
+        download.Text(L"Download");
+        download.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE896"));
+        download.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
+            if (const auto page{ weak.get() })
+            {
+                page->_downloadToFolderAsync(entry);
+            }
+        });
+        flyout.Items().Append(download);
 
         auto rename{ MenuFlyoutItem{} };
-        rename.Text(L"Rename...");
+        rename.Text(L"Rename");
         rename.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE8AC"));
         rename.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
             if (const auto page{ weak.get() })
@@ -1933,7 +2410,7 @@ namespace winrt::TerminalApp::implementation
         flyout.Items().Append(rename);
 
         auto remove{ MenuFlyoutItem{} };
-        remove.Text(L"Delete...");
+        remove.Text(L"Delete");
         remove.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE74D"));
         remove.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
             if (const auto page{ weak.get() })
@@ -1946,7 +2423,8 @@ namespace winrt::TerminalApp::implementation
         if (!entry.IsDirectory())
         {
             auto chmod{ MenuFlyoutItem{} };
-            chmod.Text(L"Permissions...");
+            chmod.Text(L"Permissions");
+            chmod.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE72E"));
             chmod.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
                 if (const auto page{ weak.get() })
                 {
@@ -1955,6 +2433,17 @@ namespace winrt::TerminalApp::implementation
             });
             flyout.Items().Append(chmod);
         }
+
+        auto properties{ MenuFlyoutItem{} };
+        properties.Text(L"Properties");
+        properties.Icon(Microsoft::Terminal::UI::IconPathConverter::IconWUX(L"\xE946"));
+        properties.Click([weak = get_weak(), entry](const IInspectable&, const RoutedEventArgs&) {
+            if (const auto page{ weak.get() })
+            {
+                page->_showFileInfoAsync(entry);
+            }
+        });
+        flyout.Items().Append(properties);
 
         flyout.ShowAt(element);
     }
