@@ -455,7 +455,7 @@ bool AtlasEngine::_waitUntilCanRender(HANDLE shutdownEvent) noexcept
         if (_p.swapChain.waitForPresentation)
         {
             const HANDLE handles[]{ shutdownEvent, _p.swapChain.frameLatencyWaitableObject.get() };
-            const auto res = WaitForMultipleObjects(ARRAYSIZE(handles), handles, FALSE, INFINITE);
+            const auto res = WaitForMultipleObjects(ARRAYSIZE(handles), &handles[0], FALSE, INFINITE);
             FAIL_FAST_LAST_ERROR_IF(res == WAIT_FAILED);
             if (res == WAIT_OBJECT_0)
             {
