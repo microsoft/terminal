@@ -33,7 +33,7 @@ namespace
 
         HRESULT StartPaint() noexcept { return S_OK; }
         HRESULT EndPaint() noexcept { return S_OK; }
-        HRESULT Present() noexcept { return S_OK; }
+        HRESULT Present(HANDLE /*shutdownEvent*/) noexcept { return S_OK; }
         HRESULT ScrollFrame() noexcept { return S_OK; }
         HRESULT Invalidate(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
         HRESULT InvalidateCursor(const til::rect* /*psrRegion*/) noexcept { return S_OK; }
