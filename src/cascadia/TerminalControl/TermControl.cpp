@@ -259,7 +259,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore* TsfDataProvider::_getCore() const noexcept
     {
-        return get_self<ControlCore>(_termControl->_core);
+        return _termControl->_core.get();
     }
 
     static Windows::UI::ViewManagement::AccessibilitySettings& _GetAccessibilitySettings()
@@ -653,9 +653,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_searchBox && _searchBox->IsOpen())
             {
-                const auto core = winrt::get_self<ControlCore>(_core);
-                const auto& searchMatches = core->SearchResultRows();
-                const auto color = core->ForegroundColor();
+                const auto& searchMatches = _core->SearchResultRows();
+                const auto color = _core->ForegroundColor();
                 const auto rightAlignedOffset = (scrollBarWidthInPx - pipWidth) * sizeof(til::color);
                 til::CoordType lastRow = til::CoordTypeMin;
 
@@ -1445,7 +1444,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 co_return;
             }
 
-            winrt::get_self<ControlCore>(_core)->RestoreFromPath(path.c_str());
+            _core->RestoreFromPath(path.c_str());
         }
         CATCH_LOG();
 
@@ -1909,7 +1908,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (vkey && keyDown && _automationPeer)
         {
-            get_self<TermControlAutomationPeer>(_automationPeer)->RecordKeyEvent(vkey);
+            _automationPeer->RecordKeyEvent(vkey);
         }
 
         return handled;
@@ -2455,8 +2454,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const auto coreImpl = winrt::get_self<ControlCore>(_core);
-        const auto size = coreImpl->ViewportSize();
+        const auto size = _core->ViewportSize();
 
         // Sometimes _SwapChainSizeChanged is called despite no actual size change.
         // This happens, e.g., when switching tabs. Ignore such "updates".
@@ -2663,7 +2661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // file then.
         if (_initializedTerminal)
         {
-            winrt::get_self<ControlCore>(_core)->PersistTo(reinterpret_cast<HANDLE>(handle));
+            _core->PersistTo(reinterpret_cast<HANDLE>(handle));
         }
     }
 
@@ -2679,8 +2677,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _closing = true;
             if (_automationPeer)
             {
-                auto autoPeerImpl{ winrt::get_self<implementation::TermControlAutomationPeer>(_automationPeer) };
-                autoPeerImpl->Close();
+                _automationPeer->Close();
             }
 
             RestorePointerCursor.raise(*this, nullptr);
@@ -3776,7 +3773,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
     {
-        get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
+        _core->UpdateQuickFixes(suggestions);
     }
 
     void TermControl::AdjustOpacity(const float opacity, const bool relative)
@@ -3896,7 +3893,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::PreviewInput(const winrt::hstring& text)
     {
-        get_self<ControlCore>(_core)->PreviewInput(text);
+        _core->PreviewInput(text);
 
         if (!text.empty())
         {
@@ -4069,7 +4066,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"QuickFixButtonCollapsedWidth" });
         VisualStateManager::GoToState(*this, !_quickFixButtonCollapsible ? StateNormal : StateCollapsed, false);
 
-        const auto rd = get_self<ControlCore>(_core)->GetRenderData();
+        const auto rd = _core->GetRenderData();
         rd->LockConsole();
         const auto viewportBufferPosition = rd->GetViewport();
         rd->UnlockConsole();
