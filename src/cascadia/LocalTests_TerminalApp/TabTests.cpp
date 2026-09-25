@@ -77,6 +77,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CreateTerminalPage);
 
         TEST_METHOD(TryDuplicateBadTab);
+        TEST_METHOD(DuplicateTabAlwaysOpensAfterCurrent);
         TEST_METHOD(TryDuplicateBadPane);
 
         TEST_METHOD(TryZoomPane);
@@ -440,6 +441,32 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(3u, page->_tabs.Size(), L"We should successfully duplicate a tab hosting a deleted profile.");
         });
         VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::DuplicateTabAlwaysOpensAfterCurrent()
+    {
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        Log::Comment(L"Create three tabs with new tabs opening at the end");
+        TestOnUIThread([&page]() {
+            page->_settings.WindowSettingsDefaults().NewTabPosition(NewTabPosition::AfterLastTab);
+
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+            page->_OpenNewTab(newTerminalArgs);
+
+            VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
+        });
+
+        Log::Comment(L"Duplicate the middle tab");
+        TestOnUIThread([&page]() {
+            page->_SelectTab(1);
+            page->_DuplicateFocusedTab();
+
+            VERIFY_ARE_EQUAL(4u, page->_tabs.Size());
+            VERIFY_ARE_EQUAL(2u, page->_GetFocusedTabIndex().value(), L"Duplicated tabs should open next to their source tab.");
+        });
     }
 
     void TabTests::TryDuplicateBadPane()
