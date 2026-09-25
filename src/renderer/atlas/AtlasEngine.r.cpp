@@ -380,7 +380,7 @@ void AtlasEngine::_createSwapChain()
 
     WaitUntilCanRender();
 
-    if (_p.swapChainChangedCallback)
+    if (_p.swapChainChangedCallback && _p.swapChain.handle)
     {
         try
         {

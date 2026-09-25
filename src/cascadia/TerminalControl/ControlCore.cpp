@@ -438,12 +438,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
             _terminal->UpdateSettings(_settings);
 
-            // Tell the render engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid
-            // unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](HANDLE handle) {
-                _renderEngineSwapChainChanged(handle);
-            });
+            if (SwapChainChanged)
+            {
+                // Tell the render engine to notify us when the swap chain changes.
+                // We do this after we initially set the swapchain so as to avoid
+                // unnecessary callbacks (and locking problems)
+                //
+                // We only do this if somebody is listening (and they have to have
+                // been listening from the start; see TermControl's constructor for
+                // an example). Otherwise, there is no reason for us to handle this
+                // callback, or copy the handle, or do anything else either.
+                _renderEngine->SetCallback([this](HANDLE handle) {
+                    _renderEngineSwapChainChanged(handle);
+                });
+            }
 
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
