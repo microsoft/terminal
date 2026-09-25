@@ -136,7 +136,7 @@ private:                                                                    \
         return std::nullopt;                                                \
     }                                                                       \
                                                                             \
-    auto _get##name##OverrideSourceImpl() -> decltype(get_strong())         \
+    auto _get##name##OverrideSourceImpl()->decltype(get_strong())           \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
@@ -159,7 +159,7 @@ private:                                                                    \
     }                                                                       \
                                                                             \
     auto _get##name##OverrideSourceAndValueImpl()                           \
-        -> std::pair<decltype(get_strong()), storageType>                   \
+        ->std::pair<decltype(get_strong()), storageType>                    \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
