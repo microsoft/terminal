@@ -25,7 +25,6 @@ Author(s):
 #pragma once
 
 #include "ControlInteractivity.h"
-#include "TermControlAutomationPeer.g.h"
 #include "../types/TermControlUiaProvider.hpp"
 #include "../types/IUiaEventDispatcher.h"
 #include "../types/IControlAccessibilityInfo.h"
@@ -35,7 +34,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct TermControl;
 
     struct TermControlAutomationPeer :
-        public TermControlAutomationPeerT<TermControlAutomationPeer>,
+        public winrt::Windows::UI::Xaml::Automation::Peers::FrameworkElementAutomationPeerT<TermControlAutomationPeer,
+                                                                                            winrt::Windows::UI::Xaml::Automation::Provider::ITextProvider>,
         ::Microsoft::Console::Types::IUiaEventDispatcher,
         ::Microsoft::Console::Types::IControlAccessibilityInfo
     {
