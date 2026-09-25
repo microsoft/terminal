@@ -24,6 +24,8 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
 
+#include <functional>
+
 namespace Microsoft::Console::Render::Atlas
 {
     class AtlasEngine;
@@ -265,6 +267,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void PreviewInput(std::wstring_view input);
 
+        using TimerHandle = ::Microsoft::Console::Render::TimerHandle;
+        TimerHandle RegisterRenderTimer(const char* name, std::function<void()> callback);
+        bool IsRenderTimerRunning(TimerHandle h);
+        void StartRepeatingRenderTimer(TimerHandle h, uint64_t micros);
+        void StopRenderTimer(TimerHandle h);
+
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
@@ -409,7 +417,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Audio stuff.
         MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+        wil::unique_threadpool_timer _midiAudioSkipTimer{};
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };

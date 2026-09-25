@@ -281,6 +281,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // See notes about the _renderer member in the header file.
         _renderer->TriggerTeardown();
+
+        if (_midiAudioSkipTimer)
+        {
+            // Cancel any pending callbacks and wait for ones in flight to complete.
+            WaitForThreadpoolTimerCallbacks(_midiAudioSkipTimer.get(), TRUE);
+            _midiAudioSkipTimer.reset();
+        }
     }
 
     void ControlCore::Detach()
@@ -570,19 +577,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudioSkipTimer)
         {
-            _midiAudioSkipTimer = _dispatcher.CreateTimer();
-            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
-            _midiAudioSkipTimer.IsRepeating(false);
-            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
-                if (const auto self = weakSelf.get())
-                {
-                    self->_midiAudio.EndSkip();
-                }
-            });
+            // Capturing a no-lifetime reference to `this' is acceptable,
+            // as we will cancel outstanding work and wait for completion
+            // in the destructor. `this' will always outlive the timer.
+            _midiAudioSkipTimer.reset(CreateThreadpoolTimer(
+                [](PTP_CALLBACK_INSTANCE, PVOID ctx, PTP_TIMER) {
+                    auto myThis = static_cast<ControlCore*>(ctx);
+                    myThis->_midiAudio.EndSkip();
+                },
+                this,
+                nullptr));
         }
 
         _midiAudio.BeginSkip();
-        _midiAudioSkipTimer.Start();
+        FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
+        SetThreadpoolTimer(_midiAudioSkipTimer.get(), &oneMsFileTime, 0, 0);
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
@@ -2983,5 +2992,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
+    }
+
+    ControlCore::TimerHandle ControlCore::RegisterRenderTimer(const char* name, std::function<void()> callback)
+    {
+        return _renderer->RegisterTimer(name, [cb = std::move(callback)](auto&&, auto&&) {
+            cb();
+        });
+    }
+
+    bool ControlCore::IsRenderTimerRunning(TimerHandle h)
+    {
+        return _renderer->IsTimerRunning(h);
+    }
+
+    void ControlCore::StartRepeatingRenderTimer(TimerHandle h, uint64_t micros)
+    {
+        _renderer->StartRepeatingTimer(h, std::chrono::microseconds(micros));
+    }
+
+    void ControlCore::StopRenderTimer(TimerHandle h)
+    {
+        _renderer->StopTimer(h);
     }
 }
