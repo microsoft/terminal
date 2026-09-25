@@ -276,13 +276,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     TermControl::TermControl(Control::ControlInteractivity content) :
-        _interactivity{ content },
         _isInternalScrollBarUpdate{ false },
         _searchBox{ nullptr }
     {
         InitializeComponent();
 
-        _core = _interactivity->Core();
+        _interactivity.copy_from(winrt::get_self<ControlInteractivity>(content));
+        _core.copy_from(winrt::get_self<ControlCore>(_interactivity->Core()));
 
         // If high contrast mode was changed, update the appearance appropriately.
         _core->SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
