@@ -6,7 +6,7 @@ Module Name:
 - resource.h
 
 Abstract:
-- This file contains resource identifiers for menu popups.
+- This file contains resource identifiers for menu popups and screen reader announcements.
 
 Author(s):
 - Michael Niksa (MiNiksa) 14-Oct-2014
@@ -25,6 +25,10 @@ Author(s):
 #define ID_CONSOLE_MSGMARKMODE           0x100C
 #define ID_CONSOLE_MSGSCROLLMODE         0x100D
 #define ID_CONSOLE_FMT_WINDOWTITLE       0x100E
+
+// Screen reader announcements
+#define ID_CONSOLE_MSGFINDRESULT         0x1010
+#define ID_CONSOLE_MSGFINDNORESULT       0x1011
 
 // Menu Item strings
 #define ID_CONSOLE_COPY         0xFFF0
