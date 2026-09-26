@@ -88,10 +88,12 @@ HRESULT RenderEngineBase::PaintImageSlice(const ImageSlice& /*imageSlice*/,
 
 // Method Description:
 // - Blocks until the engine is able to render without blocking.
-void RenderEngineBase::WaitUntilCanRender() noexcept
+bool RenderEngineBase::WaitUntilCanRender(HANDLE shutdownEvent) noexcept
 {
     // Throttle the render loop a bit by default (~60 FPS), improving throughput.
-    Sleep(8);
+    const auto res = WaitForSingleObject(shutdownEvent, 8);
+    FAIL_FAST_LAST_ERROR_IF(res == WAIT_FAILED);
+    return res == WAIT_TIMEOUT;
 }
 
 void RenderEngineBase::UpdateHyperlinkHoveredId(const uint16_t /*hoveredId*/) noexcept

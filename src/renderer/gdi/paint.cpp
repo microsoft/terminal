@@ -255,7 +255,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT GdiEngine::Present() noexcept
+[[nodiscard]] HRESULT GdiEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }

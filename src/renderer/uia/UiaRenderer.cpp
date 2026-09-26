@@ -204,8 +204,9 @@ CATCH_LOG_RETURN_HR(E_FAIL);
 // RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
 // But UiaEngine is never the only engine running. Overriding this function prevents
 // us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
-void UiaEngine::WaitUntilCanRender() noexcept
+bool UiaEngine::WaitUntilCanRender(HANDLE /*shutdownEvent*/) noexcept
 {
+    return true;
 }
 
 // Routine Description:
@@ -216,7 +217,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT UiaEngine::Present() noexcept
+[[nodiscard]] HRESULT UiaEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     RETURN_HR_IF(S_FALSE, !_isEnabled);
 

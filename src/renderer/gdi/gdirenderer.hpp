@@ -36,7 +36,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
-        [[nodiscard]] HRESULT Present() noexcept override;
+        [[nodiscard]] HRESULT Present(HANDLE shutdownEvent) noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 

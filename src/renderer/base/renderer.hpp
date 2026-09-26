@@ -99,7 +99,7 @@ namespace Microsoft::Console::Render
         // Base rendering loop
         static DWORD WINAPI s_renderThread(void*) noexcept;
         DWORD _renderThread() noexcept;
-        void _waitUntilCanRender() noexcept;
+        [[nodiscard]] bool _waitUntilCanRender() noexcept;
 
         // Timer handling
         void _startTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval);
@@ -113,7 +113,7 @@ namespace Microsoft::Console::Render
 
         // Actual rendering
         [[nodiscard]] HRESULT PaintFrame();
-        [[nodiscard]] HRESULT _PaintFrame() noexcept;
+        [[nodiscard]] HRESULT _PaintFrame(unsigned int attempt) noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
         void _disablePainting() noexcept;
         void _synchronizeWithOutput() noexcept;
@@ -145,6 +145,7 @@ namespace Microsoft::Console::Render
         // Base render loop & timer management
         wil::srwlock _threadMutex;
         wil::unique_handle _thread;
+        wil::unique_event _shutdownEvent;
         wil::slim_event_manual_reset _enable;
         std::atomic<bool> _redraw;
         std::atomic<bool> _threadKeepRunning{ false };
