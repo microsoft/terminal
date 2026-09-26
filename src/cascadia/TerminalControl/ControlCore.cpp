@@ -279,8 +279,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_midiAudioSkipTimer)
         {
-            // Cancel any pending callbacks and wait for ones in flight to complete.
-            WaitForThreadpoolTimerCallbacks(_midiAudioSkipTimer.get(), TRUE);
+            // WIL will cancel any pending callbacks and wait for ones in flight to complete.
             _midiAudioSkipTimer.reset();
         }
     }
@@ -585,8 +584,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _midiAudio.BeginSkip();
-        FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
-        SetThreadpoolTimer(_midiAudioSkipTimer.get(), &oneMsFileTime, 0, 0);
+
+        static constexpr FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
+        SetThreadpoolTimer(_midiAudioSkipTimer.get(), const_cast<PFILETIME>(&oneMsFileTime) /* safe; treated as const internally */, 0, 0);
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
