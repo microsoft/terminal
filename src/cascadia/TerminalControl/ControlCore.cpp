@@ -2033,7 +2033,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _lastSwapChainHandle = std::move(duplicatedHandle);
             // Now bubble the event up to the control.
-            SwapChainChanged.raise(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(_lastSwapChainHandle.get())));
+            SwapChainChanged.raise(*this, nullptr);
         }
     }
 
@@ -2330,13 +2330,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _renderer.get();
     }
 
-    uint64_t ControlCore::SwapChainHandle() const
+    HANDLE ControlCore::SwapChainHandle() const
     {
         // This is only ever called by TermControl::AttachContent, which occurs
         // when we're taking an existing core and moving it to a new control.
         // Otherwise, we only ever use the value from the SwapChainChanged
         // event.
-        return reinterpret_cast<uint64_t>(_lastSwapChainHandle.get());
+        return _lastSwapChainHandle.get();
     }
 
     // Method Description:

@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Close();
         void Detach();
 
-        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        void SetUiaEventDispatcher(::Microsoft::Console::Types::IUiaEventDispatcher* uiaEventDispatcher);
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
