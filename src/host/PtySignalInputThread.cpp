@@ -133,6 +133,12 @@ try
             _DoClearBuffer(msg.keepCursorRow != 0);
             break;
         }
+        case PtySignal::ResetVtState:
+        {
+            // This signal has no data to read.
+            _DoResetVtState();
+            break;
+        }
         case PtySignal::ResizeWindow:
         {
             ResizeWindowData resizeMsg = { 0 };
@@ -207,6 +213,46 @@ void PtySignalInputThread::_DoClearBuffer(const bool keepCursorRow) const
 
     tb.ClearScrollback(cursor.y, keepCursorRow ? 1 : 0);
     tb.GetCursor().SetPosition({ keepCursorRow ? cursor.x : 0, 0 });
+}
+
+// Method Description:
+// - Resets our VT state without erasing the buffer, by writing what a well-behaved
+//   client writes on exit through our own output. That passes through to the
+//   terminal, which resets its copy the same way, so a dead client's modes don't
+//   migrate into the output that follows.
+void PtySignalInputThread::_DoResetVtState() const
+{
+    LockConsole();
+    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+    // If the client app hasn't yet connected, there is no state to reset.
+    if (!_consoleConnected)
+    {
+        return;
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& screenInfo = gci.GetActiveOutputBuffer();
+
+    // Drop any sequence the dead client left half-parsed, then write a clean exit.
+    screenInfo.GetStateMachine().ResetState();
+
+    // Leaving the alternate buffer also restores the cursor saved on entering it, so
+    // only do that when we're actually in it. On the main buffer it'd move the cursor home.
+    if (&screenInfo != &screenInfo.GetMainBuffer())
+    {
+        WriteCharsVT(screenInfo, L"\x1b[?1049l"); // Alternate Screen Buffer
+    }
+
+    // DECSTR doesn't turn off mouse or bracketed-paste modes, so do that separately.
+    // Leaving the alternate buffer freed it, so write to whichever buffer is active now.
+    WriteCharsVT(gci.GetActiveOutputBuffer(),
+                 L"\x1b[!p" // DECSTR: Soft Terminal Reset
+                 L"\x1b[?1000l" // VT200 Mouse Mode
+                 L"\x1b[?1002l" // Button Event Mouse Mode
+                 L"\x1b[?1003l" // Any Event Mouse Mode
+                 L"\x1b[?1006l" // SGR Extended Mouse Mode
+                 L"\x1b[?2004l"); // Bracketed Paste Mode
 }
 
 void PtySignalInputThread::_DoShowHide(const ShowHideData& data)

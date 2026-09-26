@@ -449,6 +449,7 @@
         "renameTab",
         "renameWindow",
         "resetFontSize",
+        "resetTerminalState",
         "resizePane",
         "restoreLastClosed",
         "scrollDown",

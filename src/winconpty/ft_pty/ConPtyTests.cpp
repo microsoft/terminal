@@ -91,6 +91,23 @@ static std::string readOutputToEOF(const InOut& io)
     return accumulator;
 }
 
+// Reads the pty's output until it contains the given text, and returns what it read.
+// There's no timeout here (the class's TestTimeout bounds a read that never finds it).
+static std::string readOutputUntil(const InOut& io, const std::string_view needle)
+{
+    std::string accumulator;
+    char buffer[1024];
+
+    while (accumulator.find(needle) == std::string::npos)
+    {
+        DWORD read;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(io.out.get(), &buffer[0], sizeof(buffer), &read, nullptr));
+        accumulator.append(&buffer[0], read);
+    }
+
+    return accumulator;
+}
+
 class ConPtyTests
 {
     BEGIN_TEST_CLASS(ConPtyTests)
@@ -105,6 +122,7 @@ class ConPtyTests
     TEST_METHOD(SurvivesOnBreakOutput);
     TEST_METHOD(DiesOnClose);
     TEST_METHOD(ReleasePseudoConsole);
+    TEST_METHOD(ResetPseudoConsole);
 };
 
 static HRESULT _CreatePseudoConsole(const COORD size,
@@ -338,4 +356,50 @@ void ConPtyTests::ReleasePseudoConsole()
 
     const auto output = readOutputToEOF(pty.pipes);
     VERIFY_ARE_NOT_EQUAL(std::string::npos, output.find("foobar"));
+}
+
+// PTY_SIGNAL_RESET_VT_STATE (winconpty) and PtySignal::ResetVtState (conhost) are maintained separately, as with the
+// other signal ids, and this test checks they agree. An unknown signal id throws in PtySignalInputThread::_InputThread,
+// which closes the console and with it the connected client, so a client surviving the signal should separate out a
+// handled id from an unhandled one. (conhost itself outlives it either way, while this test holds the pseudoconsole.)
+void ConPtyTests::ResetPseudoConsole()
+{
+    VERIFY_ARE_EQUAL(E_INVALIDARG, ConptyResetPseudoConsole(nullptr));
+
+    const auto pty = createPseudoConsole();
+    const auto send = [&](const std::string_view str) {
+        DWORD written;
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(pty.pipes.in.get(), str.data(), gsl::narrow_cast<DWORD>(str.size()), &written, nullptr));
+    };
+
+    wil::unique_process_information piClient;
+    VERIFY_SUCCEEDED(AttachPseudoConsole(pty.hpcon.get(), L"cmd.exe", piClient.addressof()));
+
+    // The close only reaches clients that have connected, so wait for cmd's prompt first.
+    readOutputUntil(pty.pipes, ">");
+
+    VERIFY_SUCCEEDED(ConptyResetPseudoConsole(pty.hpcon.get()));
+
+    // Wait for a couple seconds, make sure the client is still alive.
+    VERIFY_ARE_EQUAL(WaitForSingleObject(piClient.hProcess, 2000), (DWORD)WAIT_TIMEOUT);
+
+    // On the main buffer the reset must not leave the alternate buffer too. That also restores
+    // the cursor saved on entering it, which would send the terminal's cursor home.
+    const auto output = readOutputUntil(pty.pipes, "\x1b[?2004l");
+    VERIFY_ARE_EQUAL(std::string::npos, output.find("\x1b[?1049l"));
+
+    // Strand cmd in the alternate buffer, the way a killed full-screen app leaves it, with a
+    // prompt we can recognize. Typing a character and waiting for its echo makes sure cmd is
+    // blocked in its line read on the alternate buffer before we signal.
+    send("prompt $E[?1049h$G\r");
+    send("prompt UNIQ$G\r");
+    readOutputUntil(pty.pipes, "UNIQ>");
+    send("#");
+    readOutputUntil(pty.pipes, "#");
+
+    VERIFY_SUCCEEDED(ConptyResetPseudoConsole(pty.hpcon.get()));
+
+    // Leaving the alternate buffer frees it, which cancels cmd's pending read, so cmd prints
+    // its prompt again. Seeing it shows the reset ran.
+    readOutputUntil(pty.pipes, "UNIQ>");
 }
