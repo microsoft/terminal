@@ -409,7 +409,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Audio stuff.
         MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+        wil::unique_threadpool_timer _midiAudioSkipTimer{}; // destroyed before _midiAudio
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
