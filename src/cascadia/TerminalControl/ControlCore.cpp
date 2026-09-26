@@ -276,12 +276,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // See notes about the _renderer member in the header file.
         _renderer->TriggerTeardown();
-
-        if (_midiAudioSkipTimer)
-        {
-            // WIL will cancel any pending callbacks and wait for ones in flight to complete.
-            _midiAudioSkipTimer.reset();
-        }
     }
 
     void ControlCore::Detach()
