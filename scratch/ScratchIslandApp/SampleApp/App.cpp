@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "App.h"
 #include "App.g.cpp"
+#include <clocale>
+#include <cstdlib>
 
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Activation;
@@ -90,6 +92,33 @@ namespace winrt::SampleApp::implementation
 
                 Window::Current().Content(page);
                 Window::Current().Activate();
+            }
+        }
+    }
+
+    void App::Exit()
+    {
+        Logic().Destroy();
+    }
+
+    /// <summary>
+    /// Invoked when the application is being suspended.  In a UWP context,
+    /// we reset the C runtime locale to "C" so that any deferred work that
+    /// runs during suspension uses the deterministic POSIX locale.
+    /// </summary>
+    void App::OnSuspending(IInspectable const&, SuspendingEventArgs const&)
+    {
+        if (_isUwp)
+        {
+            std::setlocale(LC_ALL, "C");
+            std::wcout.imbue(std::locale("C"));
+            std::wcerr.imbue(std::locale("C"));
+            std::wcin.imbue(std::locale("C"));
+
+            if (std::wcout.fail() || std::wcerr.fail() || std::wcin.fail())
+            {
+                std::wcerr << L"Failed to set locale to C" << std::endl;
+                std::exit(EXIT_FAILURE);
             }
         }
     }
