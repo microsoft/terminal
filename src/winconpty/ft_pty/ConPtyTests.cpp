@@ -385,14 +385,14 @@ void ConPtyTests::ResetPseudoConsole()
 
     // On the main buffer the reset must not leave the alternate buffer too. That also restores
     // the cursor saved on entering it, which would send the terminal's cursor home.
-    const auto output = readOutputUntil(pty.pipes, "\x1b[?2004l");
-    VERIFY_ARE_EQUAL(std::string::npos, output.find("\x1b[?1049l"));
+    const auto output = readOutputUntil(pty.pipes, "\x1b[?2004l"); // Bracketed Paste Mode, the last thing the reset writes
+    VERIFY_ARE_EQUAL(std::string::npos, output.find("\x1b[?1049l")); // Alternate Screen Buffer
 
     // Strand cmd in the alternate buffer, the way a killed full-screen app leaves it, with a
     // prompt we can recognize. Typing a character and waiting for its echo makes sure cmd is
     // blocked in its line read on the alternate buffer before we signal.
-    send("prompt $E[?1049h$G\r");
-    send("prompt UNIQ$G\r");
+    send("prompt $E[?1049h$G\r"); // $E is ESC and $G is '>', so this prompt enters the Alternate Screen Buffer
+    send("prompt UNIQ$G\r"); // "UNIQ>", a prompt that appears nowhere else in the output
     readOutputUntil(pty.pipes, "UNIQ>");
     send("#");
     readOutputUntil(pty.pipes, "#");
@@ -402,4 +402,9 @@ void ConPtyTests::ResetPseudoConsole()
     // Leaving the alternate buffer frees it, which cancels cmd's pending read, so cmd prints
     // its prompt again. Seeing it shows the reset ran.
     readOutputUntil(pty.pipes, "UNIQ>");
+
+    // On Windows 10, ClosePseudoConsole doesn't return while an interactive client is still
+    // attached (it does on Windows 11), so end cmd before the pseudoconsole is closed.
+    VERIFY_WIN32_BOOL_SUCCEEDED(TerminateProcess(piClient.hProcess, 0));
+    VERIFY_ARE_EQUAL(WaitForSingleObject(piClient.hProcess, 2000), (DWORD)WAIT_OBJECT_0);
 }
