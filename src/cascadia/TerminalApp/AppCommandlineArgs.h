@@ -48,6 +48,7 @@ public:
     void FullResetState();
 
     std::string_view GetTargetWindow() const noexcept;
+    bool GetBackground() const noexcept;
 
 private:
     static const std::wregex _commandDelimiterRegex;
@@ -137,6 +138,7 @@ private:
 
     int _loadPersistedLayoutIdx{};
     std::string _windowTarget{};
+    bool _background{ false };
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);

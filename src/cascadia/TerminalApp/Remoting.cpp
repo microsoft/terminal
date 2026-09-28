@@ -40,6 +40,11 @@ namespace winrt::TerminalApp::implementation
         return winrt::to_hstring(_parsed.GetTargetWindow());
     }
 
+    bool CommandlineArgs::Background() const noexcept
+    {
+        return _parsed.GetBackground();
+    }
+
     void CommandlineArgs::Commandline(const winrt::array_view<const winrt::hstring>& value)
     {
         _args = { value.begin(), value.end() };

@@ -206,7 +206,8 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine ProcessStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                   const winrt::hstring cwd = winrt::hstring{},
-                                                  const winrt::hstring env = winrt::hstring{});
+                                                  const winrt::hstring env = winrt::hstring{},
+                                                  const bool background = false);
         safe_void_coroutine CreateTabFromConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
@@ -307,6 +308,7 @@ namespace winrt::TerminalApp::implementation
         bool _removing{ false };
 
         bool _activated{ false };
+        bool _backgroundActions{ false };
         bool _visible{ true };
 
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
@@ -414,6 +416,7 @@ namespace winrt::TerminalApp::implementation
         void _SaveWorkspaceIfNeeded();
 
         void _InitializeTab(winrt::com_ptr<Tab> newTabImpl, uint32_t insertPosition = -1);
+        safe_void_coroutine _layOutBackgroundTab(const winrt::TerminalApp::Tab tab);
         void _RegisterTerminalEvents(Microsoft::Terminal::Control::TermControl term);
         void _RegisterTabEvents(Tab& hostingTab);
 
@@ -602,7 +605,8 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenSuggestions(const Microsoft::Terminal::Control::TermControl& sender, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsCollection, winrt::TerminalApp::SuggestionsMode mode, winrt::hstring filterText);
 
-        void _ShowWindowChangedHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        safe_void_coroutine _ShowWindowChangedHandler(const winrt::weak_ref<winrt::Microsoft::Terminal::Control::TermControl> weakTerm, const winrt::Microsoft::Terminal::Control::ShowWindowArgs args);
+        bool _isInFocusedTab(const winrt::Microsoft::Terminal::Control::TermControl& control) const;
         Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
         static Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
