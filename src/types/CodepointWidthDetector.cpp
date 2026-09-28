@@ -856,7 +856,13 @@ bool CodepointWidthDetector::_graphemeNext(GraphemeState& s, const std::wstring_
                     w = 2;
                 }
 
-                width += w;
+                // A grapheme cluster is drawn as a single glyph, so it occupies as many cells
+                // as its widest member, not as many as the sum of all of them. Summing is
+                // wrong for combining marks that aren't zero-width on their own, most notably
+                // the Indic spacing marks (UAX #29 class Mc). "ka" + "vowel sign I" is one
+                // Devanagari syllable drawn as one glyph, yet the mark alone is a wide
+                // character, so summing claims two cells and everything after it drifts.
+                width = width > w ? width : w;
             }
 
             // If we're at the end of the string, we'll break out of the loop, but leave
@@ -871,6 +877,16 @@ bool CodepointWidthDetector::_graphemeNext(GraphemeState& s, const std::wstring_
             const auto trail = ucdLookup(cp);
 
             state = ucdGraphemeJoins(state, lead, trail);
+
+            // A resulting state of 1 is only ever produced by GB12/GB13, which join a pair
+            // of Regional_Indicator into a single cluster. That pair is drawn as one wide
+            // flag, so it's the one case that needs two cells even though each half on its
+            // own is East Asian Neutral and thus one cell wide.
+            if (state == 1)
+            {
+                width = 2;
+            }
+
             if (ucdGraphemeDone(state))
             {
                 // We'll later do `state = ~state` which will result in `state == 0`.
@@ -953,7 +969,13 @@ bool CodepointWidthDetector::_graphemePrev(GraphemeState& s, const std::wstring_
                     w = 2;
                 }
 
-                width += w;
+                // A grapheme cluster is drawn as a single glyph, so it occupies as many cells
+                // as its widest member, not as many as the sum of all of them. Summing is
+                // wrong for combining marks that aren't zero-width on their own, most notably
+                // the Indic spacing marks (UAX #29 class Mc). "ka" + "vowel sign I" is one
+                // Devanagari syllable drawn as one glyph, yet the mark alone is a wide
+                // character, so summing claims two cells and everything after it drifts.
+                width = width > w ? width : w;
             }
 
             // If we're at the end of the string, we'll break out of the loop, but leave
@@ -968,6 +990,16 @@ bool CodepointWidthDetector::_graphemePrev(GraphemeState& s, const std::wstring_
             const auto lead = ucdLookup(cp);
 
             state = ucdGraphemeJoins(state, lead, trail);
+
+            // A resulting state of 1 is only ever produced by GB12/GB13, which join a pair
+            // of Regional_Indicator into a single cluster. That pair is drawn as one wide
+            // flag, so it's the one case that needs two cells even though each half on its
+            // own is East Asian Neutral and thus one cell wide.
+            if (state == 1)
+            {
+                width = 2;
+            }
+
             if (ucdGraphemeDone(state))
             {
                 // We'll later do `state = ~state` which will result in `state == 0`.
