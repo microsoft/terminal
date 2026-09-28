@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SaveButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void ResetButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& sender, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args);
+        void OpenSettingsFolder_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
