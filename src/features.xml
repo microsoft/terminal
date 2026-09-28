@@ -162,7 +162,6 @@
         <alwaysEnabledBrandingTokens>
             <brandingToken>Dev</brandingToken>
             <brandingToken>Canary</brandingToken>
-            <brandingToken>Release</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

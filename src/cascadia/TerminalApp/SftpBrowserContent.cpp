@@ -7,19 +7,13 @@
 #include "SftpFileEntry.g.cpp"
 #include "SftpProfileItem.g.cpp"
 
+#include "SftpProfileStore.h"
 #include "Utils.h"
 
 #include <algorithm>
-#include <cstdlib>
-#include <cwctype>
 #include <filesystem>
 #include <fstream>
 #include <string_view>
-
-#include <dpapi.h>
-#include <wincrypt.h>
-
-#pragma comment(lib, "Crypt32.lib")
 
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -111,215 +105,7 @@ namespace
     std::filesystem::path CacheDirectoryForRemote(const std::wstring& remotePath)
     {
         const auto hash{ std::hash<std::wstring>{}(remotePath) };
-        return std::filesystem::temp_directory_path()
-            / L"WinTermSftp"
-            / (std::to_wstring(hash));
-    }
-
-    // Escapes a string so it can be stored as a JSON string literal.
-    std::wstring JsonEscape(const std::wstring& in)
-    {
-        std::wstring out;
-        out.reserve(in.size());
-        for (const wchar_t ch : in)
-        {
-            switch (ch)
-            {
-            case L'\\': out += L"\\\\"; break;
-            case L'\"': out += L"\\\""; break;
-            case L'\n': out += L"\\n"; break;
-            case L'\r': out += L"\\r"; break;
-            case L'\t': out += L"\\t"; break;
-            default: out.push_back(ch); break;
-            }
-        }
-        return out;
-    }
-
-    // Returns the position of the closing quote for the string that starts at
-    // `open`, skipping escaped characters.
-    size_t FindJsonStringEnd(const std::wstring& text, size_t open)
-    {
-        size_t i{ open + 1 };
-        while (i < text.size())
-        {
-            if (text[i] == L'\\')
-            {
-                i += 2;
-                continue;
-            }
-            if (text[i] == L'"')
-            {
-                return i;
-            }
-            ++i;
-        }
-        return std::wstring::npos;
-    }
-
-    // Decodes the JSON escape sequences used when writing profiles.
-    std::wstring JsonUnescape(const std::wstring& in)
-    {
-        std::wstring out;
-        out.reserve(in.size());
-        for (size_t i = 0; i < in.size(); ++i)
-        {
-            if (in[i] != L'\\')
-            {
-                out.push_back(in[i]);
-                continue;
-            }
-            if (i + 1 >= in.size())
-            {
-                out.push_back(L'\\');
-                break;
-            }
-            switch (in[++i])
-            {
-            case L'n': out.push_back(L'\n'); break;
-            case L'r': out.push_back(L'\r'); break;
-            case L't': out.push_back(L'\t'); break;
-            case L'b': out.push_back(L'\b'); break;
-            case L'f': out.push_back(L'\f'); break;
-            case L'u':
-                if (i + 4 < in.size())
-                {
-                    wchar_t digits[5]{ in[i + 1], in[i + 2], in[i + 3], in[i + 4], L'\0' };
-                    out.push_back(static_cast<wchar_t>(wcstoul(digits, nullptr, 16)));
-                    i += 4;
-                }
-                else
-                {
-                    out.push_back(L'u');
-                }
-                break;
-            default: out.push_back(in[i]); break; // covers escaped quotes and backslashes
-            }
-        }
-        return out;
-    }
-
-    // Marker used to distinguish a DPAPI-encrypted password from a legacy
-    // plaintext one, so old configuration files keep working.
-    constexpr std::wstring_view EncryptedPasswordMarker{ L"sftp-dpapi:" };
-
-    // Encrypts a password with DPAPI (current user scope) and returns it in a
-    // form that is safe to store in the JSON config. An empty input yields an
-    // empty result. The blob is base64-encoded so it survives the hand-rolled
-    // JSON serializer.
-    std::wstring EncryptPassword(const std::wstring& password)
-    {
-        if (password.empty())
-        {
-            return L"";
-        }
-
-        const auto utf8{ til::u16u8(password) };
-        DATA_BLOB plain{};
-        plain.pbData = reinterpret_cast<BYTE*>(const_cast<char*>(utf8.data()));
-        plain.cbData = static_cast<DWORD>(utf8.size());
-
-        DATA_BLOB encrypted{};
-        if (!CryptProtectData(&plain,
-                              L"windows-terminal-sftp-password",
-                              nullptr,
-                              nullptr,
-                              nullptr,
-                              CRYPTPROTECT_UI_FORBIDDEN,
-                              &encrypted))
-        {
-            return L"";
-        }
-
-        std::wstring encoded;
-        DWORD encodedSize{ 0 };
-        if (!CryptBinaryToStringW(encrypted.pbData,
-                                  encrypted.cbData,
-                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
-                                  nullptr,
-                                  &encodedSize))
-        {
-            LocalFree(encrypted.pbData);
-            return L"";
-        }
-        encoded.resize(encodedSize);
-        if (!CryptBinaryToStringW(encrypted.pbData,
-                                  encrypted.cbData,
-                                  CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF,
-                                  encoded.data(),
-                                  &encodedSize))
-        {
-            LocalFree(encrypted.pbData);
-            return L"";
-        }
-        LocalFree(encrypted.pbData);
-
-        // CryptBinaryToStringW writes a trailing NUL; drop it.
-        if (!encoded.empty() && encoded.back() == L'\0')
-        {
-            encoded.pop_back();
-        }
-
-        return std::wstring{ EncryptedPasswordMarker } + encoded;
-    }
-
-    // Decrypts a password that was stored by EncryptPassword. Values that do
-    // not carry the DPAPI marker (legacy plaintext) are returned untouched.
-    std::wstring DecryptPassword(const std::wstring& password)
-    {
-        if (password.size() < EncryptedPasswordMarker.size() ||
-            password.compare(0, EncryptedPasswordMarker.size(), EncryptedPasswordMarker) != 0)
-        {
-            return password;
-        }
-
-        const auto encoded{ password.substr(EncryptedPasswordMarker.size()) };
-
-        DWORD blobSize{ 0 };
-        if (!CryptStringToBinaryW(encoded.c_str(),
-                                  static_cast<DWORD>(encoded.size()),
-                                  CRYPT_STRING_BASE64,
-                                  nullptr,
-                                  &blobSize,
-                                  nullptr,
-                                  nullptr))
-        {
-            return L"";
-        }
-        std::vector<BYTE> blob(blobSize);
-        if (!CryptStringToBinaryW(encoded.c_str(),
-                                  static_cast<DWORD>(encoded.size()),
-                                  CRYPT_STRING_BASE64,
-                                  blob.data(),
-                                  &blobSize,
-                                  nullptr,
-                                  nullptr))
-        {
-            return L"";
-        }
-
-        DATA_BLOB encrypted{};
-        encrypted.pbData = blob.data();
-        encrypted.cbData = blobSize;
-
-        DATA_BLOB plain{};
-        if (!CryptUnprotectData(&encrypted,
-                                nullptr,
-                                nullptr,
-                                nullptr,
-                                nullptr,
-                                CRYPTPROTECT_UI_FORBIDDEN,
-                                &plain))
-        {
-            // Password was encrypted on a different account/machine and cannot
-            // be recovered here.
-            return L"";
-        }
-
-        std::string utf8{ reinterpret_cast<const char*>(plain.pbData), plain.cbData };
-        LocalFree(plain.pbData);
-
-        return til::u8u16(utf8);
+        return std::filesystem::temp_directory_path() / L"WinTermSftp" / (std::to_wstring(hash));
     }
 }
 
@@ -691,13 +477,40 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Open the file in VS Code if it's installed, otherwise fall back to
-        // the default handler for the file type.
-        auto codeArgs{ L"\"" + localPath + L"\"" };
-        auto result = reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", L"code", codeArgs.c_str(), nullptr, SW_SHOWNORMAL));
-        if (result <= 32)
+        // the default handler for the file type. "code" in PATH is only a
+        // .cmd shim; locate the real Code.exe so we launch a GUI process and
+        // never flash a console window.
+        std::wstring codeExePath{};
+        wchar_t codeShim[MAX_PATH]{};
+        if (SearchPathW(nullptr, L"code.exe", nullptr, MAX_PATH, codeShim, nullptr) != 0)
         {
-            result = reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", localPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL));
-            if (result <= 32)
+            codeExePath = codeShim;
+        }
+        else if (SearchPathW(nullptr, L"code.cmd", nullptr, MAX_PATH, codeShim, nullptr) != 0)
+        {
+            // code.cmd lives in "<VS Code>\bin"; the real executable is one
+            // directory up.
+            const auto exe{ std::filesystem::path{ codeShim }.parent_path().parent_path() / L"Code.exe" };
+            if (std::filesystem::exists(exe))
+            {
+                codeExePath = exe.wstring();
+            }
+        }
+
+        if (!codeExePath.empty())
+        {
+            const auto codeArgs{ L"\"" + localPath + L"\"" };
+            const auto launchResult = reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", codeExePath.c_str(), codeArgs.c_str(), nullptr, SW_SHOWNORMAL));
+            if (launchResult <= 32)
+            {
+                _showError(L"Could not launch an editor for the file. It was downloaded to:\n" + localPath);
+                co_return;
+            }
+        }
+        else
+        {
+            const auto openResult = reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", localPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL));
+            if (openResult <= 32)
             {
                 _showError(L"Could not launch an editor for the file. It was downloaded to:\n" + localPath);
                 co_return;
@@ -706,6 +519,10 @@ namespace winrt::TerminalApp::implementation
 
         _setStatus(L"Editing remote file. Save in your editor and changes will sync back.");
         _syncTimer.Start();
+        // The "editing" notice is transient; drop it back to the regular
+        // connection/statistics line once it has been visible for a bit.
+        _statusTimer.Stop();
+        _statusTimer.Start();
     }
 
     fire_and_forget SftpBrowserContent::_downloadAsync(TerminalApp::SftpFileEntry entry, hstring localPath)
@@ -879,18 +696,19 @@ namespace winrt::TerminalApp::implementation
         const auto privateKeyPath{ _privateKeyPath };
 
         auto errorMessage{ std::wstring{} };
-        auto ok{ false };
 
         _setStatus(L"Connecting...");
         progressRing().IsActive(true);
         progressRing().Visibility(Visibility::Visible);
         connectActionButton().IsEnabled(false);
 
+        // Phase 1: transport + SSH handshake (no credentials are sent yet, so
+        // an untrusted host never sees the password).
+        auto ok{ false };
         co_await resume_background();
-
         try
         {
-            ok = _client.Connect(std::wstring{ host }, port, std::wstring{ username }, std::wstring{ password }, std::wstring{ privateKeyPath }, errorMessage);
+            ok = _client.StartConnect(std::wstring{ host }, port, errorMessage);
         }
         catch (...)
         {
@@ -900,7 +718,148 @@ namespace winrt::TerminalApp::implementation
                 errorMessage = L"Connection failed with an exception";
             }
         }
+        co_await wil::resume_foreground(dispatcher);
+        if (!ok)
+        {
+            progressRing().IsActive(false);
+            progressRing().Visibility(Visibility::Collapsed);
+            _connecting = false;
+            connectActionButton().IsEnabled(true);
+            _showError(errorMessage.empty() ? L"Failed to connect" : errorMessage);
+            _setStatus(L"Connection failed");
+            co_return;
+        }
 
+        // Phase 2: verify the server's host key against known_hosts. A
+        // fingerprint is always shown for a brand-new host so the user can
+        // visually confirm it. A key that changed since it was last trusted is
+        // a hard stop (possible MITM); we refuse to extract the connection.
+        const auto fingerprint{ _client.HostKeyFingerprint() };
+        HostKeyStatus hostKeyStatus{ HostKeyStatus::NotFound };
+        auto hostKeyError{ std::wstring{} };
+        const auto knownHostsFile{ _knownHostsFile() };
+        co_await resume_background();
+        try
+        {
+            hostKeyStatus = _client.CheckKnownHost(knownHostsFile, hostKeyError);
+        }
+        catch (...)
+        {
+            hostKeyStatus = HostKeyStatus::Mismatch;
+            if (hostKeyError.empty())
+            {
+                hostKeyError = L"Failed to check the host key";
+            }
+        }
+        co_await wil::resume_foreground(dispatcher);
+
+        if (hostKeyStatus == HostKeyStatus::Mismatch)
+        {
+            // Key rotation without user intervention is exactly what a
+            // man-in-the-middle looks like. Disconnect and let the user decide.
+            const auto message{ hostKeyError.empty() ? L"The server's host key changed. This can indicate a man-in-the-middle attack." : hostKeyError };
+            auto dialog{ ContentDialog{} };
+            dialog.Title(winrt::box_value(winrt::hstring{ L"Host key verification failed" }));
+            dialog.Content(winrt::box_value(winrt::hstring{
+                message + L"\n\nHost fingerprint:\n" + fingerprint +
+                L"\n\nIf you did not recently replace the server's key, do not connect." }));
+            dialog.CloseButtonText(L"Cancel");
+            dialog.DefaultButton(ContentDialogButton::Close);
+            dialog.XamlRoot(XamlRoot());
+            try
+            {
+                co_await dialog.ShowAsync(ContentDialogPlacement::Popup);
+            }
+            catch (...)
+            {
+                // A dialog that fails to show must not take the whole terminal
+                // down with an unhandled XAML exception.
+            }
+
+            progressRing().IsActive(false);
+            progressRing().Visibility(Visibility::Collapsed);
+            _connecting = false;
+            connectActionButton().IsEnabled(true);
+            _setStatus(L"Connection failed");
+            co_await resume_background();
+            _client.Disconnect();
+            co_await wil::resume_foreground(dispatcher);
+            co_return;
+        }
+
+        if (hostKeyStatus == HostKeyStatus::NotFound)
+        {
+            // First time we have seen this host. Ask the user to confirm the
+            // fingerprint instead of silently trusting it.
+            auto dialog{ ContentDialog{} };
+            dialog.Title(winrt::box_value(winrt::hstring{ L"Verify host key" }));
+            dialog.Content(winrt::box_value(winrt::hstring{
+                L"The authenticity of host '" + winrt::hstring{ host } + L"' can't be established.\n\n" +
+                L"Host fingerprint:\n" + winrt::hstring{ fingerprint } +
+                L"\n\nCompare it with the server's out-of-band fingerprint before continuing." }));
+            dialog.PrimaryButtonText(L"Trust and connect");
+            dialog.CloseButtonText(L"Cancel");
+            dialog.DefaultButton(ContentDialogButton::Primary);
+            dialog.XamlRoot(XamlRoot());
+            ContentDialogResult trustResult{ ContentDialogResult::None };
+            try
+            {
+                trustResult = co_await dialog.ShowAsync(ContentDialogPlacement::Popup);
+            }
+            catch (...)
+            {
+                trustResult = ContentDialogResult::None;
+            }
+            if (trustResult != ContentDialogResult::Primary)
+            {
+                progressRing().IsActive(false);
+                progressRing().Visibility(Visibility::Collapsed);
+                _connecting = false;
+                connectActionButton().IsEnabled(true);
+                _setStatus(L"Connection cancelled");
+                co_await resume_background();
+                _client.Disconnect();
+                co_await wil::resume_foreground(dispatcher);
+                co_return;
+            }
+
+            // Record the trust decision (best effort; a failure to persist is
+            // reported but not fatal during the first connection).
+            co_await resume_background();
+            auto trustOk{ true };
+            auto trustError{ std::wstring{} };
+            try
+            {
+                trustOk = _client.TrustHost(knownHostsFile, trustError);
+            }
+            catch (...)
+            {
+                trustOk = false;
+                trustError = L"Failed to save the trusted host key";
+            }
+            co_await wil::resume_foreground(dispatcher);
+            if (!trustOk)
+            {
+                _showError(trustError);
+            }
+        }
+
+        // Phase 3: send credentials and bring up the SFTP subsystem.
+        ok = false;
+        errorMessage.clear();
+        co_await resume_background();
+        try
+        {
+            ok = _client.Authenticate(std::wstring{ username }, std::wstring{ password }, std::wstring{ privateKeyPath }, errorMessage);
+        }
+        catch (...)
+        {
+            ok = false;
+            if (errorMessage.empty())
+            {
+                errorMessage = L"Authentication failed with an exception";
+            }
+        }
         co_await wil::resume_foreground(dispatcher);
 
         progressRing().IsActive(false);
@@ -912,6 +871,9 @@ namespace winrt::TerminalApp::implementation
             connectActionButton().IsEnabled(true);
             _showError(errorMessage.empty() ? L"Failed to connect" : errorMessage);
             _setStatus(L"Connection failed");
+            co_await resume_background();
+            _client.Disconnect();
+            co_await wil::resume_foreground(dispatcher);
             co_return;
         }
 
@@ -1504,6 +1466,7 @@ namespace winrt::TerminalApp::implementation
 
         _inputDialogResult.reset();
         _inputDialogDone = false;
+        _inputDialogCancelled = false;
         inputTitleText().Text(title);
         inputValueBox().PlaceholderText(placeholder);
         inputValueBox().Text(initial);
@@ -1531,6 +1494,7 @@ namespace winrt::TerminalApp::implementation
 
     void SftpBrowserContent::_inputCancelClick(const IInspectable&, const RoutedEventArgs&)
     {
+        _inputDialogCancelled = true;
         _inputDialogDone = true;
     }
 
@@ -1931,6 +1895,10 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto name{ std::wstring{ co_await _promptForInputAsync(L"Save connection profile", L"Profile name", host) } };
+            if (_inputDialogCancelled)
+            {
+                co_return;
+            }
             if (name.empty())
             {
                 name = std::wstring{ host };
@@ -1979,6 +1947,109 @@ namespace winrt::TerminalApp::implementation
             _profiles.erase(_profiles.begin() + idx);
             _saveProfiles();
             _refreshProfilesList();
+        }
+    }
+
+    fire_and_forget SftpBrowserContent::_updateProfileClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        try
+        {
+            const auto idx{ profilesListView().SelectedIndex() };
+            if (idx < 0 || idx >= static_cast<int32_t>(_profiles.size()))
+            {
+                _showError(L"Select a profile to update first.");
+                co_return;
+            }
+
+            const auto name{ co_await _promptForInputAsync(L"Update profile", L"Profile name", winrt::hstring{ _profiles[idx].name }) };
+            if (_inputDialogCancelled)
+            {
+                co_return;
+            }
+            if (name.empty())
+            {
+                _showError(L"Profile name cannot be empty.");
+                co_return;
+            }
+
+            const auto host{ hostBox().Text() };
+            if (host.empty())
+            {
+                _showError(L"Enter a host first.");
+                co_return;
+            }
+
+            SftpConnectionProfile profile;
+            profile.name = std::wstring{ name };
+            profile.host = std::wstring{ host };
+            try
+            {
+                profile.port = static_cast<uint32_t>(std::stoul(std::wstring{ portBox().Text() }, nullptr, 10));
+            }
+            catch (...)
+            {
+                profile.port = 22;
+            }
+            profile.username = std::wstring{ userBox().Text() };
+            profile.password = std::wstring{ passBox().Password() };
+            profile.keyPath = std::wstring{ keyBox().Text() };
+
+            _profiles[idx] = profile;
+
+            _saveProfiles();
+            _refreshProfilesList();
+            profilesListView().SelectedIndex(idx);
+        }
+        catch (...)
+        {
+            _showError(L"Failed to update the profile.");
+        }
+    }
+
+    void SftpBrowserContent::_openConfigClick(const IInspectable&, const RoutedEventArgs&)
+    {
+        const auto path{ _profilesFile() };
+        if (path.empty())
+        {
+            _showError(L"Could not determine the profiles file location.");
+            return;
+        }
+
+        const auto pathString{ path.wstring() };
+
+        // Prefer VS Code to open the file. Resolve the real Code.exe so we
+        // don't trigger the .cmd shim's console window.
+        std::wstring codeExePath{};
+        wchar_t codeShim[MAX_PATH]{};
+        if (SearchPathW(nullptr, L"code.exe", nullptr, MAX_PATH, codeShim, nullptr) != 0)
+        {
+            codeExePath = codeShim;
+        }
+        else if (SearchPathW(nullptr, L"code.cmd", nullptr, MAX_PATH, codeShim, nullptr) != 0)
+        {
+            const auto exe{ std::filesystem::path{ codeShim }.parent_path().parent_path() / L"Code.exe" };
+            if (std::filesystem::exists(exe))
+            {
+                codeExePath = exe.wstring();
+            }
+        }
+
+        if (!codeExePath.empty())
+        {
+            const auto codeArgs{ L"\"" + pathString + L"\"" };
+            auto result{ reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", codeExePath.c_str(), codeArgs.c_str(), nullptr, SW_SHOWNORMAL)) };
+            if (result <= 32)
+            {
+                _showError(L"Could not open the profiles file.");
+            }
+        }
+        else
+        {
+            auto result{ reinterpret_cast<INT_PTR>(ShellExecuteW(nullptr, L"open", pathString.c_str(), nullptr, nullptr, SW_SHOWNORMAL)) };
+            if (result <= 32)
+            {
+                _showError(L"Could not open the profiles file.");
+            }
         }
     }
 
@@ -2036,6 +2107,19 @@ namespace winrt::TerminalApp::implementation
         return std::filesystem::path{ localAppData } / L"Microsoft" / L"Windows Terminal" / L"sftp-profiles.json";
     }
 
+    // Sidecar for the OpenSSH-format known_hosts store, kept next to the
+    // profiles file under the user's LOCALAPPDATA.
+    std::filesystem::path SftpBrowserContent::_knownHostsFile() const
+    {
+        wchar_t localAppData[MAX_PATH]{};
+        const auto len{ GetEnvironmentVariableW(L"LOCALAPPDATA", localAppData, MAX_PATH) };
+        if (len == 0 || len >= MAX_PATH)
+        {
+            return {};
+        }
+        return std::filesystem::path{ localAppData } / L"Microsoft" / L"Windows Terminal" / L"known_hosts";
+    }
+
     void SftpBrowserContent::_loadProfiles()
     {
         _profiles.clear();
@@ -2046,13 +2130,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        // One-time migration from the legacy underscore-named file. Load its
-        // contents, save them under the new name (which encrypts any legacy
-        // plaintext passwords) and delete the old file.
-        const auto legacyPath{ path.parent_path() / L"sftp_profiles.json" };
-        const auto useLegacy{ std::filesystem::exists(legacyPath) };
-
-        std::ifstream is{ useLegacy ? legacyPath : path, std::ios::binary | std::ios::in };
+        std::ifstream is{ path, std::ios::binary | std::ios::in };
         if (!is)
         {
             return;
@@ -2067,120 +2145,10 @@ namespace winrt::TerminalApp::implementation
         const auto* wide{ reinterpret_cast<const wchar_t*>(bytes.data()) };
         const std::wstring text{ wide, bytes.size() / sizeof(wchar_t) };
 
-        size_t pos{ 0 };
-        while (pos < text.size())
+        std::vector<SftpProfileStore::SftpConnectionProfile> profiles;
+        if (SftpProfileStore::DeserializeProfiles(text, profiles))
         {
-            const auto openBrace{ text.find(L'{', pos) };
-            if (openBrace == std::wstring::npos)
-            {
-                break;
-            }
-            pos = openBrace + 1;
-
-            SftpConnectionProfile profile;
-            while (pos < text.size())
-            {
-                const auto openQuote{ text.find(L'"', pos) };
-                if (openQuote == std::wstring::npos)
-                {
-                    break;
-                }
-                const auto closeQuote{ FindJsonStringEnd(text, openQuote) };
-                if (closeQuote == std::wstring::npos)
-                {
-                    break;
-                }
-                const auto key{ JsonUnescape(text.substr(openQuote + 1, closeQuote - openQuote - 1)) };
-                pos = closeQuote + 1;
-
-                const auto colon{ text.find(L':', pos) };
-                if (colon == std::wstring::npos)
-                {
-                    break;
-                }
-                pos = colon + 1;
-
-                while (pos < text.size() && iswspace(text[pos]))
-                {
-                    ++pos;
-                }
-
-                if (pos < text.size() && text[pos] == L'"')
-                {
-                    const auto valueEnd{ FindJsonStringEnd(text, pos) };
-                    if (valueEnd == std::wstring::npos)
-                    {
-                        break;
-                    }
-                    auto value{ JsonUnescape(text.substr(pos + 1, valueEnd - pos - 1)) };
-                    pos = valueEnd + 1;
-
-                    if (key == L"name")
-                    {
-                        profile.name = std::move(value);
-                    }
-                    else if (key == L"host")
-                    {
-                        profile.host = std::move(value);
-                    }
-                    else if (key == L"username")
-                    {
-                        profile.username = std::move(value);
-                    }
-else if (key == L"password")
-{
-    profile.password = DecryptPassword(value);
-}
-                    else if (key == L"keyPath")
-                    {
-                        profile.keyPath = std::move(value);
-                    }
-                }
-                else
-                {
-                    const auto numStart{ pos };
-                    while (pos < text.size() && (iswdigit(text[pos]) || text[pos] == L'-'))
-                    {
-                        ++pos;
-                    }
-                    if (key == L"port")
-                    {
-                        try
-                        {
-                            profile.port = static_cast<uint32_t>(std::stoul(text.substr(numStart, pos - numStart), nullptr, 10));
-                        }
-                        catch (...)
-                        {
-                            profile.port = 22;
-                        }
-                    }
-                }
-
-                while (pos < text.size() && text[pos] != L',' && text[pos] != L'}')
-                {
-                    ++pos;
-                }
-                if (pos < text.size() && text[pos] == L'}')
-                {
-                    ++pos;
-                    break;
-                }
-                ++pos;
-            }
-
-            if (!profile.name.empty() || !profile.host.empty())
-            {
-                _profiles.push_back(std::move(profile));
-            }
-        }
-
-        if (useLegacy)
-        {
-            // Hand the profiles to the new file (re-encrypting the stored
-            // passwords in the process) and drop the legacy file.
-            _saveProfiles();
-            std::error_code ec;
-            std::filesystem::remove(legacyPath, ec);
+            _profiles = std::move(profiles);
         }
 
         _refreshProfilesList();
@@ -2197,27 +2165,28 @@ else if (key == L"password")
         std::error_code ec;
         std::filesystem::create_directories(path.parent_path(), ec);
 
-        std::wstring json{ L"[\n" };
-        for (size_t i = 0; i < _profiles.size(); ++i)
-        {
-            const auto& profile{ _profiles[i] };
-            json += L"  {\n";
-            json += L"    \"name\": \"" + JsonEscape(profile.name) + L"\",\n";
-            json += L"    \"host\": \"" + JsonEscape(profile.host) + L"\",\n";
-            json += L"    \"port\": " + std::to_wstring(profile.port) + L",\n";
-            json += L"    \"username\": \"" + JsonEscape(profile.username) + L"\",\n";
-            json += L"    \"password\": \"" + JsonEscape(EncryptPassword(profile.password)) + L"\",\n";
-            json += L"    \"keyPath\": \"" + JsonEscape(profile.keyPath) + L"\"\n";
-            json += (i + 1 == _profiles.size()) ? L"  }\n" : L"  },\n";
-        }
-        json += L"]\n";
+        const auto json{ SftpProfileStore::SerializeProfiles(_profiles) };
 
-        std::ofstream os{ path, std::ios::binary | std::ios::out | std::ios::trunc };
-        if (!os)
+        // Write to a temp file in the same directory and atomically move it
+        // over the target. If the process dies mid-write, the original config
+        // stays intact instead of being truncated to garbage.
+        auto tempPath{ path };
+        tempPath += L".tmp";
+
         {
-            return;
+            std::ofstream os{ tempPath, std::ios::binary | std::ios::out | std::ios::trunc };
+            if (!os)
+            {
+                return;
+            }
+            os.write(reinterpret_cast<const char*>(json.data()), static_cast<std::streamsize>(json.size() * sizeof(wchar_t)));
         }
-        os.write(reinterpret_cast<const char*>(json.data()), static_cast<std::streamsize>(json.size() * sizeof(wchar_t)));
+
+        if (!MoveFileExW(tempPath.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+        {
+            std::error_code removeEc;
+            std::filesystem::remove(tempPath, removeEc);
+        }
     }
 
     void SftpBrowserContent::_updateBreadcrumbBar()

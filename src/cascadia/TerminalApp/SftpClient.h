@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <filesystem>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -50,22 +51,60 @@ namespace winrt::TerminalApp::implementation
         std::wstring accessTimeText;
     };
 
+    // Result of comparing the server's host key against the local known_hosts
+    // file. Mismatch means the key changed since it was last trusted, which is
+    // treated as a possible man-in-the-middle and always refuses to connect.
+    enum class HostKeyStatus
+    {
+        Match,
+        Mismatch,
+        NotFound,
+    };
+
     // Thin, blocking wrapper around libssh2's SFTP subsystem. All public
     // methods are serialized through a mutex so that the UI layer can safely
     // call them from a background thread while another operation is still in
     // flight. Connect/Disconnect/close are safe to call from the UI thread.
+    //
+    // Connection is deliberately split into two phases:
+    //   StartConnect (TCP + SSH handshake) -> HostKeyFingerprint / CheckKnownHost
+    //   -> (optional TrustHost) -> Authenticate (userauth + SFTP session)
+    // so the UI can confirm an unknown host key before authentication proceeds.
     class SftpClient
     {
     public:
         SftpClient();
         ~SftpClient();
 
-        bool Connect(const std::wstring& host,
-                     unsigned int port,
-                     const std::wstring& username,
-                     const std::wstring& password,
-                     const std::wstring& privateKeyPath,
-                     std::wstring& errorMessage);
+        // Resolves the host, opens the TCP socket and performs the SSH
+        // handshake. Does not authenticate. Returns false on any network or
+        // protocol failure and leaves errorMessage set.
+        bool StartConnect(const std::wstring& host,
+                          unsigned int port,
+                          std::wstring& errorMessage);
+
+        // Performs user authentication and initializes the SFTP subsystem.
+        // Must be preceded by a successful StartConnect.
+        bool Authenticate(const std::wstring& username,
+                          const std::wstring& password,
+                          const std::wstring& privateKeyPath,
+                          std::wstring& errorMessage);
+
+        // Human-readable host key fingerprint of the established session, e.g.
+        // "ED25519 SHA256:..." or "RSA SHA256:...". Empty if no handshake yet.
+        std::wstring HostKeyFingerprint() const;
+
+        // Compares the server's host key against the known_hosts file at
+        // `knownHostsFile` (OpenSSH format). Must follow a successful
+        // StartConnect. Returns Match, Mismatch (host key changed, refuse to
+        // connect) or NotFound (key not previously trusted).
+        HostKeyStatus CheckKnownHost(const std::filesystem::path& knownHostsFile,
+                                     std::wstring& errorMessage) const;
+
+        // Records the current server's host key into known_hostsFile,
+        // preserving any existing entries. Returns false on I/O failure.
+        bool TrustHost(const std::filesystem::path& knownHostsFile,
+                       std::wstring& errorMessage);
 
         void Disconnect();
 

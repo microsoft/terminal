@@ -189,6 +189,8 @@
       <DependentUpon>SftpBrowserContent.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SftpClient.h" />
+    <ClInclude Include="SftpPassword.h" />
+    <ClInclude Include="SftpProfileStore.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -309,6 +311,12 @@
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="SftpClient.cpp" />
+    <ClCompile Include="SftpPassword.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="SftpProfileStore.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
 
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->

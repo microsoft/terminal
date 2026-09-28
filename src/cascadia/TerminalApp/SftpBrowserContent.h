@@ -8,6 +8,7 @@
 #include "SftpProfileItem.g.h"
 #include "BasicPaneEvents.h"
 #include "SftpClient.h"
+#include "SftpProfileStore.h"
 
 #include <atomic>
 #include <filesystem>
@@ -83,15 +84,7 @@ namespace winrt::TerminalApp::implementation
     struct SftpBrowserContent : SftpBrowserContentT<SftpBrowserContent>, BasicPaneEvents
     {
     public:
-        struct SftpConnectionProfile
-        {
-            std::wstring name{};
-            std::wstring host{};
-            uint32_t port{ 22 };
-            std::wstring username{};
-            std::wstring password{};
-            std::wstring keyPath{};
-        };
+        using SftpConnectionProfile = SftpProfileStore::SftpConnectionProfile;
 
         SftpBrowserContent();
         SftpBrowserContent(const SftpBrowserContent&) = delete;
@@ -172,7 +165,10 @@ namespace winrt::TerminalApp::implementation
         // don't receive keypresses in XAML Islands, so name/path input is
         // handled by an overlay attached to this UserControl instead.
         std::optional<winrt::hstring> _inputDialogResult;
+
         bool _inputDialogDone{ false };
+
+        bool _inputDialogCancelled{ false };
 
         void _setConnectedUi(bool connected);
         void _refreshList();
@@ -216,8 +212,10 @@ namespace winrt::TerminalApp::implementation
 
         void _saveProfileClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         winrt::fire_and_forget _saveProfileAsync();
+        winrt::fire_and_forget _updateProfileClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _deleteProfileClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _newProfileClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+        void _openConfigClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _profilesListSelectionChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs& e);
 
         void _loadProfiles();
@@ -225,6 +223,7 @@ namespace winrt::TerminalApp::implementation
         void _refreshProfilesList();
         void _applyProfile(const SftpConnectionProfile& profile);
         std::filesystem::path _profilesFile() const;
+        std::filesystem::path _knownHostsFile() const;
 
         void _updateBreadcrumbBar();
         void _inputOkClick(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);

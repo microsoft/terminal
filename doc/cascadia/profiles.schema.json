@@ -418,6 +418,7 @@
         "duplicateTab",
         "expandSelectionToWord",
         "experimental.colorSelection",
+        "experimental.openSftpBrowser",
         "exportBuffer",
         "find",
         "findMatch",

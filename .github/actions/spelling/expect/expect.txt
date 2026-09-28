@@ -465,6 +465,7 @@ DLOOK
 doc'd
 DONTCARE
 doskey
+dpapi
 DPG
 DPIAPI
 DPICHANGE
@@ -502,6 +503,7 @@ dxsm
 dxttbmp
 Dyreen
 EASTEUROPE
+ecdsa
 ECH
 echokey
 ecount
@@ -571,6 +573,8 @@ FINDDLG
 FINDDOWN
 FINDREGEX
 FINDSTRINGEXACT
+fingerprint
+fingerprints
 FITZPATRICK
 FIXEDFILEINFO
 Flg
@@ -736,6 +740,8 @@ hmodule
 hmon
 homoglyph
 hostable
+hostkey
+hostkeys
 hostlib
 HPA
 hpcon
@@ -834,6 +840,7 @@ Kazu
 kazum
 kernelbase
 kernelbasestaging
+kex
 KEYBDINPUT
 keychord
 keydowns
@@ -852,6 +859,7 @@ KLF
 klid
 KLLF
 KLMNO
+knownhost
 KOK
 KPRIORITY
 kyouhaishaheiku
@@ -873,6 +881,8 @@ LCTRL
 lcx
 LEFTALIGN
 libsancov
+libssh
+libssh2
 libtickit
 LIMITTEXT
 LINEDOWN
@@ -1528,6 +1538,7 @@ SFGAOF
 sfi
 SFINAE
 SFolder
+sftp
 SFUI
 sgr
 SHCo
@@ -1589,6 +1600,9 @@ SRGS
 srvinit
 srvpipe
 ssa
+ssh
+sshdss
+sshrsa
 startdir
 STARTF
 STARTUPINFO
@@ -1878,6 +1892,7 @@ winconptydll
 winconptylib
 wincontypes
 WINCORE
+wincrypt
 windbg
 WINDEF
 windir

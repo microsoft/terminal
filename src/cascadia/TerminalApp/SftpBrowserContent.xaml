@@ -189,6 +189,19 @@
                     <!--  Refresh  -->
                 </Button>
 
+                <Button x:Name="openConfigButton"
+                        Margin="2,0"
+                        Padding="6,4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="_openConfigClick"
+                        ToolTipService.ToolTip="Open sftp-profiles.json">
+                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                              FontSize="14"
+                              Glyph="&#xE713;" />
+                    <!--  Settings  -->
+                </Button>
+
                 <Button x:Name="closeButton"
                         Margin="2,0"
                         Padding="6,4"
@@ -406,8 +419,14 @@
                 <Button Margin="2,2"
                         Padding="10,3"
                         Click="_saveProfileClick"
-                        ToolTipService.ToolTip="Save the current connection as a profile">
+                        ToolTipService.ToolTip="Save the current connection as a new profile">
                     <TextBlock Text="Save" />
+                </Button>
+                <Button Margin="2,2"
+                        Padding="10,3"
+                        Click="_updateProfileClick"
+                        ToolTipService.ToolTip="Update the selected profile with the current connection form">
+                    <TextBlock Text="Update" />
                 </Button>
                 <Button Margin="2,2"
                         Padding="10,3"

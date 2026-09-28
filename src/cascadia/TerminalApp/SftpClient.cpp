@@ -7,6 +7,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <ws2tcpip.h>
+#include <wincrypt.h>
 #include <libssh2.h>
 #include <libssh2_sftp.h>
 
@@ -133,6 +134,72 @@ namespace
         }
         return L"\uE8A5"; // Document
     }
+
+    // Base64-encodes raw bytes into a wide string (no CRLF); used to render
+    // the SHA-256 host key fingerprint in the standard OpenSSH "SHA256:...".
+    [[nodiscard]] std::wstring _base64Encode(const unsigned char* data, DWORD length)
+    {
+        DWORD needed{ 0 };
+        if (!CryptBinaryToStringW(data, length, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, nullptr, &needed))
+        {
+            return {};
+        }
+        std::wstring encoded(needed - 1, L'\0');
+        if (!CryptBinaryToStringW(data, length, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, encoded.data(), &needed))
+        {
+            return {};
+        }
+        if (!encoded.empty() && encoded.back() == L'\0')
+        {
+            encoded.pop_back();
+        }
+        return encoded;
+    }
+
+    // Maps a LIBSSH2_HOSTKEY_TYPE_* value to the equivalent
+    // LIBSSH2_KNOWNHOST_KEY_* bitmask for known_hosts bookkeeping.
+    [[nodiscard]] int _hostKeyTypeToKnownHostMask(int hostKeyType)
+    {
+        switch (hostKeyType)
+        {
+        case LIBSSH2_HOSTKEY_TYPE_RSA:
+            return LIBSSH2_KNOWNHOST_KEY_SSHRSA;
+        case LIBSSH2_HOSTKEY_TYPE_DSS:
+            return LIBSSH2_KNOWNHOST_KEY_SSHDSS;
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_256:
+            return LIBSSH2_KNOWNHOST_KEY_ECDSA_256;
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_384:
+            return LIBSSH2_KNOWNHOST_KEY_ECDSA_384;
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_521:
+            return LIBSSH2_KNOWNHOST_KEY_ECDSA_521;
+        case LIBSSH2_HOSTKEY_TYPE_ED25519:
+            return LIBSSH2_KNOWNHOST_KEY_ED25519;
+        default:
+            return 0;
+        }
+    }
+
+    // Short human-readable algorithm name for display in the trust dialog.
+    [[nodiscard]] std::wstring _hostKeyTypeName(int hostKeyType)
+    {
+        switch (hostKeyType)
+        {
+        case LIBSSH2_HOSTKEY_TYPE_RSA:
+            return L"RSA";
+        case LIBSSH2_HOSTKEY_TYPE_DSS:
+            return L"DSS";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_256:
+            return L"ECDSA P-256";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_384:
+            return L"ECDSA P-384";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_521:
+            return L"ECDSA P-521";
+        case LIBSSH2_HOSTKEY_TYPE_ED25519:
+            return L"ED25519";
+        default:
+            return L"unknown";
+        }
+    }
 }
 
 namespace winrt::TerminalApp::implementation
@@ -144,15 +211,14 @@ namespace winrt::TerminalApp::implementation
             Close();
         }
 
-        bool Connect(const std::wstring& host,
-                     unsigned int port,
-                     const std::wstring& username,
-                     const std::wstring& password,
-                     const std::wstring& privateKeyPath,
-                     std::wstring& errorMessage)
+        bool StartConnectLocked(const std::wstring& host,
+                                unsigned int port,
+                                std::wstring& errorMessage)
         {
-            std::lock_guard guard{ mutex };
-            CloseLocked();
+            // Remember which host+port the session belongs to; the known_hosts
+            // lookups and the [host]:port keying depend on it.
+            this->host = host;
+            this->port = port;
 
             WSADATA wsadata{};
             if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
@@ -221,7 +287,56 @@ namespace winrt::TerminalApp::implementation
             if (rc != 0)
             {
                 errorMessage = fmt::format(L"SSH handshake failed (error {})", rc);
-                CloseLocked();
+                return false;
+            }
+
+            return true;
+        }
+
+        // Returns the raw host key the server presented, or nullptr if there
+        // is no established session. `outType` receives a LIBSSH2_HOSTKEY_TYPE_*
+        // value describing the key algorithm.
+        const char* HostKeyRaw(size_t& keyLen, int& outType) const
+        {
+            if (!session)
+            {
+                return nullptr;
+            }
+            return libssh2_session_hostkey(session, &keyLen, &outType);
+        }
+
+        // Renders the SHA-256 hash of the server's host key in OpenSSH form,
+        // e.g. "ED25519 SHA256:YLn1ridv2h6mT62DbzRaDR53gLu6faRWn3dWaM1bl6s".
+        // Empty if there is no session or the hash is unavailable.
+        std::wstring HostKeyFingerprintLocked() const
+        {
+            if (!session)
+            {
+                return {};
+            }
+
+            const auto* digest = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA256);
+            if (!digest)
+            {
+                return {};
+            }
+
+            size_t keyLen{ 0 };
+            int type{ LIBSSH2_HOSTKEY_TYPE_UNKNOWN };
+            HostKeyRaw(keyLen, type);
+
+            const auto encoded{ _base64Encode(reinterpret_cast<const unsigned char*>(digest), 32) };
+            return _hostKeyTypeName(type) + L" SHA256:" + encoded;
+        }
+
+        bool AuthenticateLocked(const std::wstring& username,
+                                const std::wstring& password,
+                                const std::wstring& privateKeyPath,
+                                std::wstring& errorMessage)
+        {
+            if (!session)
+            {
+                errorMessage = L"Not connected";
                 return false;
             }
 
@@ -243,7 +358,6 @@ namespace winrt::TerminalApp::implementation
             if (authResult != 0)
             {
                 errorMessage = L"Authentication failed. Check your username, password or private key.";
-                CloseLocked();
                 return false;
             }
 
@@ -251,10 +365,156 @@ namespace winrt::TerminalApp::implementation
             if (!sftp)
             {
                 errorMessage = L"SFTP subsystem is not available on the remote server";
-                CloseLocked();
                 return false;
             }
 
+            return true;
+        }
+
+        HostKeyStatus CheckKnownHostLocked(const std::filesystem::path& knownHostsFile,
+                                           std::wstring& errorMessage) const
+        {
+            size_t keyLen{ 0 };
+            int hostKeyType{ LIBSSH2_HOSTKEY_TYPE_UNKNOWN };
+            const char* rawKey{ HostKeyRaw(keyLen, hostKeyType) };
+            if (!rawKey)
+            {
+                errorMessage = L"Not connected";
+                return HostKeyStatus::NotFound;
+            }
+
+            const auto typemask{ _hostKeyTypeToKnownHostMask(hostKeyType) };
+            if (typemask == 0)
+            {
+                errorMessage = L"Server presented an unsupported host key type";
+                return HostKeyStatus::Mismatch;
+            }
+
+            LIBSSH2_KNOWNHOSTS* hosts{ libssh2_knownhost_init(session) };
+            if (!hosts)
+            {
+                errorMessage = L"Failed to initialize the known-hosts store";
+                return HostKeyStatus::Mismatch;
+            }
+
+            if (!knownHostsFile.empty())
+            {
+                // A missing/corrupt file is treated as "no known keys";
+                // negative return values are fine here.
+                libssh2_knownhost_readfile(hosts,
+                                           til::u16u8(knownHostsFile.wstring()).c_str(),
+                                           LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+            }
+
+            const auto checkMask{ typemask | LIBSSH2_KNOWNHOST_KEYENC_RAW | LIBSSH2_KNOWNHOST_TYPE_PLAIN };
+            struct libssh2_knownhost* known{ nullptr };
+            const auto checkResult{ libssh2_knownhost_checkp(hosts,
+                                                             til::u16u8(host).c_str(),
+                                                             static_cast<int>(port),
+                                                             rawKey,
+                                                             keyLen,
+                                                             checkMask,
+                                                             &known) };
+
+            libssh2_knownhost_free(hosts);
+
+            switch (checkResult)
+            {
+            case LIBSSH2_KNOWNHOST_CHECK_MATCH:
+                return HostKeyStatus::Match;
+            case LIBSSH2_KNOWNHOST_CHECK_MISMATCH:
+                errorMessage = L"The server's host key changed. This can indicate a man-in-the-middle attack.";
+                return HostKeyStatus::Mismatch;
+            case LIBSSH2_KNOWNHOST_CHECK_FAILURE:
+                errorMessage = L"Failed to check the host key";
+                return HostKeyStatus::Mismatch;
+            default:
+                return HostKeyStatus::NotFound;
+            }
+        }
+
+        bool TrustHostLocked(const std::filesystem::path& knownHostsFile,
+                             std::wstring& errorMessage)
+        {
+            size_t keyLen{ 0 };
+            int hostKeyType{ LIBSSH2_HOSTKEY_TYPE_UNKNOWN };
+            const char* rawKey{ HostKeyRaw(keyLen, hostKeyType) };
+            if (!rawKey)
+            {
+                errorMessage = L"Not connected";
+                return false;
+            }
+
+            const auto typemask{ _hostKeyTypeToKnownHostMask(hostKeyType) };
+            if (typemask == 0)
+            {
+                errorMessage = L"Server presented an unsupported host key type";
+                return false;
+            }
+
+            LIBSSH2_KNOWNHOSTS* hosts{ libssh2_knownhost_init(session) };
+            if (!hosts)
+            {
+                errorMessage = L"Failed to initialize the known-hosts store";
+                return false;
+            }
+
+            if (!knownHostsFile.empty() && !knownHostsFile.parent_path().empty())
+            {
+                std::error_code ec;
+                std::filesystem::create_directories(knownHostsFile.parent_path(), ec);
+            }
+
+            // Preserve any previously known hosts before adding the new entry.
+            int stored{ 0 };
+            if (!knownHostsFile.empty())
+            {
+                stored = libssh2_knownhost_readfile(hosts,
+                                                    til::u16u8(knownHostsFile.wstring()).c_str(),
+                                                    LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+            }
+
+            // Key the entry as "[host]:port" for non-default ports so it stays
+            // valid for OpenSSH clients too; port 22 uses the plain host name.
+            std::string entryName{ til::u16u8(host) };
+            if (port != 22)
+            {
+                entryName = "[" + entryName + "]:" + std::to_string(port);
+            }
+
+            const auto addMask{ typemask | LIBSSH2_KNOWNHOST_KEYENC_RAW | LIBSSH2_KNOWNHOST_TYPE_PLAIN };
+            const auto addResult{ libssh2_knownhost_addc(hosts,
+                                                         entryName.c_str(),
+                                                         nullptr,
+                                                         rawKey,
+                                                         keyLen,
+                                                         "windows-terminal-sftp",
+                                                         ~size_t{ 0 },
+                                                         addMask,
+                                                         nullptr) };
+
+            if (addResult != 0)
+            {
+                libssh2_knownhost_free(hosts);
+                errorMessage = L"Failed to record the trusted host key";
+                return false;
+            }
+
+            auto written{ stored };
+            if (!knownHostsFile.empty())
+            {
+                written = libssh2_knownhost_writefile(hosts,
+                                                      til::u16u8(knownHostsFile.wstring()).c_str(),
+                                                      LIBSSH2_KNOWNHOST_FILE_OPENSSH);
+            }
+
+            libssh2_knownhost_free(hosts);
+
+            if (written < 0)
+            {
+                errorMessage = L"Failed to save the trusted host keys";
+                return false;
+            }
             return true;
         }
 
@@ -281,6 +541,8 @@ namespace winrt::TerminalApp::implementation
                 WSACleanup();
                 wsaInitialized = false;
             }
+            host.clear();
+            port = 22;
         }
 
         bool ListedDirectory(const std::wstring& path,
@@ -388,8 +650,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const auto flags = upload ? (LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC)
-                                      : LIBSSH2_FXF_READ;
+            const auto flags = upload ? (LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC) : LIBSSH2_FXF_READ;
             LIBSSH2_SFTP_HANDLE* remoteHandle = libssh2_sftp_open(sftp, til::u16u8(remotePath).c_str(), flags, LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR | LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IROTH);
             if (!remoteHandle)
             {
@@ -484,6 +745,11 @@ namespace winrt::TerminalApp::implementation
         LIBSSH2_SESSION* session{ nullptr };
         LIBSSH2_SFTP* sftp{ nullptr };
 
+        // Host+port the current session belongs to; used for host key
+        // bookkeeping and the "[host]:port" keying for non-default ports.
+        std::wstring host{};
+        unsigned int port{ 22 };
+
         void Close()
         {
             std::lock_guard guard{ mutex };
@@ -498,14 +764,42 @@ namespace winrt::TerminalApp::implementation
 
     SftpClient::~SftpClient() = default;
 
-    bool SftpClient::Connect(const std::wstring& host,
-                             unsigned int port,
-                             const std::wstring& username,
-                             const std::wstring& password,
-                             const std::wstring& privateKeyPath,
-                             std::wstring& errorMessage)
+    bool SftpClient::StartConnect(const std::wstring& host,
+                                  unsigned int port,
+                                  std::wstring& errorMessage)
     {
-        return _impl->Connect(host, port, username, password, privateKeyPath, errorMessage);
+        std::lock_guard guard{ _impl->mutex };
+        _impl->CloseLocked();
+        return _impl->StartConnectLocked(host, port, errorMessage);
+    }
+
+    bool SftpClient::Authenticate(const std::wstring& username,
+                                  const std::wstring& password,
+                                  const std::wstring& privateKeyPath,
+                                  std::wstring& errorMessage)
+    {
+        std::lock_guard guard{ _impl->mutex };
+        return _impl->AuthenticateLocked(username, password, privateKeyPath, errorMessage);
+    }
+
+    std::wstring SftpClient::HostKeyFingerprint() const
+    {
+        std::lock_guard guard{ _impl->mutex };
+        return _impl->HostKeyFingerprintLocked();
+    }
+
+    HostKeyStatus SftpClient::CheckKnownHost(const std::filesystem::path& knownHostsFile,
+                                             std::wstring& errorMessage) const
+    {
+        std::lock_guard guard{ _impl->mutex };
+        return _impl->CheckKnownHostLocked(knownHostsFile, errorMessage);
+    }
+
+    bool SftpClient::TrustHost(const std::filesystem::path& knownHostsFile,
+                               std::wstring& errorMessage)
+    {
+        std::lock_guard guard{ _impl->mutex };
+        return _impl->TrustHostLocked(knownHostsFile, errorMessage);
     }
 
     void SftpClient::Disconnect()
@@ -547,7 +841,7 @@ namespace winrt::TerminalApp::implementation
         return _impl->TransferFile(remotePath, localPath, false, cancel, progress, errorMessage);
     }
 
-bool SftpClient::UploadFile(const std::wstring& localPath,
+    bool SftpClient::UploadFile(const std::wstring& localPath,
                                 const std::wstring& remotePath,
                                 const std::atomic<bool>& cancel,
                                 SftpTransferProgress& progress,
