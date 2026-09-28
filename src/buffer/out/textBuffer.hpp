@@ -198,9 +198,8 @@ public:
 
     struct CopyRequest
     {
-        // beg and end coordinates are inclusive
-        til::point beg;
-        til::point end;
+        til::point beg; // inclusive
+        til::point end; // exclusive
 
         til::CoordType minX;
         til::CoordType maxX;
