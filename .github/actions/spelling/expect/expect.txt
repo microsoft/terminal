@@ -453,6 +453,7 @@ DELAYLOAD
 DELETEONRELEASE
 depersist
 deprioritized
+DESTROYCLIPBOARD
 devicecode
 Dext
 DFactory
