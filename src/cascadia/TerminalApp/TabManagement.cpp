@@ -176,6 +176,13 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabIcon(*newTabImpl);
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
+        // GH#6661: the OS drag/drop service is unavailable in an elevated session, so the native
+        // TabView reorder is disabled there. Hook PointerMoved to drive reorder ourselves only in
+        // that case (the left-button PointerPressed is consumed by TabViewItem for selection).
+        if (!CanDragDrop())
+        {
+            tabViewItem.PointerMoved({ this, &TerminalPage::_OnTabElevatedPointerMoved });
+        }
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -1087,6 +1094,227 @@ namespace winrt::TerminalApp::implementation
         {
             _HandleCloseTabRequested(tab);
         }
+    }
+
+    // GH#6661: drives custom tab reorder for elevated sessions; only hooked when CanDragDrop() is
+    // false. TabViewItem consumes the left-button PointerPressed for selection, so tracking begins
+    // on the first left-button PointerMoved instead.
+    void TerminalPage::_OnTabElevatedPointerMoved(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        const auto item = sender.try_as<MUX::Controls::TabViewItem>();
+        if (!item)
+        {
+            return;
+        }
+
+        // While a drag is in flight, ignore any other pointer (e.g. a stray touch contact
+        // during a mouse drag) so it can't restart tracking and commit the reorder early.
+        if (_pointerReorder.dragging && e.Pointer().PointerId() != _pointerReorder.pointerId)
+        {
+            return;
+        }
+
+        if (!e.GetCurrentPoint(item).Properties().IsLeftButtonPressed())
+        {
+            if (_pointerReorder.item)
+            {
+                _EndElevatedPointerReorder();
+            }
+            return;
+        }
+
+        if (_pointerReorder.item != item)
+        {
+            _BeginElevatedPointerReorder(item, e);
+        }
+
+        _UpdateElevatedPointerReorder(e);
+    }
+
+    void TerminalPage::_BeginElevatedPointerReorder(const MUX::Controls::TabViewItem& item,
+                                                    const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        // Reset any stale tracking from a previous interaction.
+        _EndElevatedPointerReorder();
+
+        uint32_t index{};
+        if (!_tabView.TabItems().IndexOf(item, index))
+        {
+            return;
+        }
+
+        _pointerReorder.item = item;
+        _pointerReorder.pointerId = e.Pointer().PointerId();
+        _pointerReorder.originalIndex = index;
+        _pointerReorder.targetIndex = index;
+        _pointerReorder.anchorX = e.GetCurrentPoint(_tabView).Position().X;
+        _pointerReorder.dragging = false;
+
+        // Once we capture the pointer on threshold, releasing it raises PointerCaptureLost; use that to tear down.
+        _pointerReorder.pointerCaptureLost = item.PointerCaptureLost(winrt::auto_revoke,
+                                                                     [weakThis{ get_weak() }](auto&&, auto&&) {
+                                                                         if (const auto page = weakThis.get())
+                                                                         {
+                                                                             page->_EndElevatedPointerReorder();
+                                                                         }
+                                                                     });
+    }
+
+    void TerminalPage::_UpdateElevatedPointerReorder(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (!_pointerReorder.item)
+        {
+            return;
+        }
+        if (e.Pointer().PointerId() != _pointerReorder.pointerId)
+        {
+            return;
+        }
+
+        const auto pointInTabView = e.GetCurrentPoint(_tabView).Position();
+
+        if (!_pointerReorder.dragging)
+        {
+            static constexpr double pointerReorderThresholdPx{ 8.0 };
+            if (std::abs(pointInTabView.X - _pointerReorder.anchorX) < pointerReorderThresholdPx)
+            {
+                return;
+            }
+            // Cross the threshold: commit to a drag. Capture the pointer so we keep receiving
+            // events as it travels over sibling tabs.
+            if (!_pointerReorder.item.CapturePointer(e.Pointer()))
+            {
+                _EndElevatedPointerReorder();
+                return;
+            }
+            _pointerReorder.dragging = true;
+
+            // Snapshot each tab's natural slot. We don't mutate the collection during the drag,
+            // so these positions stay valid and the dragged tab follows the pointer smoothly.
+            const auto& snapshot = _tabView.TabItems();
+            const auto snapshotCount = snapshot.Size();
+
+            // Re-resolve the dragged tab's index against this snapshot so it can't be stale or
+            // index past the geometry we're about to capture (e.g. if a tab closed mid-press).
+            uint32_t originalIndex{};
+            if (!snapshot.IndexOf(_pointerReorder.item, originalIndex))
+            {
+                _EndElevatedPointerReorder();
+                return;
+            }
+            _pointerReorder.originalIndex = originalIndex;
+
+            _pointerReorder.naturalLefts.clear();
+            _pointerReorder.naturalWidths.clear();
+            for (uint32_t j = 0; j < snapshotCount; ++j)
+            {
+                const auto t = snapshot.GetAt(j).try_as<MUX::Controls::TabViewItem>();
+                _pointerReorder.naturalLefts.push_back(t ? t.TransformToVisual(_tabView).TransformPoint({ 0.0f, 0.0f }).X : 0.0f);
+                _pointerReorder.naturalWidths.push_back(t ? static_cast<float>(t.ActualWidth()) : 0.0f);
+            }
+            _pointerReorder.naturalLeft = _pointerReorder.naturalLefts[originalIndex];
+            _pointerReorder.draggedWidth = _pointerReorder.naturalWidths[originalIndex];
+            _pointerReorder.grabOffsetX = pointInTabView.X - _pointerReorder.naturalLeft;
+
+            _pointerReorder.dragTransform = Windows::UI::Xaml::Media::TranslateTransform{};
+            _pointerReorder.item.RenderTransform(_pointerReorder.dragTransform);
+            Controls::Canvas::SetZIndex(_pointerReorder.item, 1);
+        }
+
+        // Glue the grabbed point under the pointer, clamped so the tab can't slide past the
+        // first slot's left edge or the last slot's right edge.
+        const double minLeft = _pointerReorder.naturalLefts.front();
+        const double maxLeft = (static_cast<double>(_pointerReorder.naturalLefts.back()) + _pointerReorder.naturalWidths.back()) - _pointerReorder.draggedWidth;
+        const double desiredLeft = pointInTabView.X - _pointerReorder.grabOffsetX;
+        const double clampedLeft = std::clamp(desiredLeft, minLeft, std::max(minLeft, maxLeft));
+        _pointerReorder.dragTransform.X(clampedLeft - _pointerReorder.naturalLeft);
+
+        // The insert index is the number of siblings whose midpoint sits left of the pointer.
+        const auto count = gsl::narrow_cast<uint32_t>(_pointerReorder.naturalLefts.size());
+        uint32_t target = 0;
+        for (uint32_t j = 0; j < count; ++j)
+        {
+            if (j == _pointerReorder.originalIndex)
+            {
+                continue;
+            }
+            const auto midpoint = _pointerReorder.naturalLefts[j] + _pointerReorder.naturalWidths[j] * 0.5f;
+            if (pointInTabView.X > midpoint)
+            {
+                ++target;
+            }
+        }
+        _pointerReorder.targetIndex = target;
+
+        // Slide siblings aside to open a gap at the target slot.
+        const auto& live = _tabView.TabItems();
+        for (uint32_t j = 0; j < count && j < live.Size(); ++j)
+        {
+            if (j == _pointerReorder.originalIndex)
+            {
+                continue;
+            }
+            const auto t = live.GetAt(j).try_as<MUX::Controls::TabViewItem>();
+            if (!t)
+            {
+                continue;
+            }
+            double shift = 0.0;
+            if (target > _pointerReorder.originalIndex && j > _pointerReorder.originalIndex && j <= target)
+            {
+                shift = -_pointerReorder.draggedWidth;
+            }
+            else if (target < _pointerReorder.originalIndex && j >= target && j < _pointerReorder.originalIndex)
+            {
+                shift = _pointerReorder.draggedWidth;
+            }
+            auto transform = t.RenderTransform().try_as<Windows::UI::Xaml::Media::TranslateTransform>();
+            if (!transform)
+            {
+                transform = Windows::UI::Xaml::Media::TranslateTransform{};
+                t.RenderTransform(transform);
+            }
+            transform.X(shift);
+        }
+
+        e.Handled(true);
+    }
+
+    void TerminalPage::_EndElevatedPointerReorder()
+    {
+        // Revoke before mutating anything: committing the move below can drop the pointer
+        // capture, and the PointerCaptureLost handler would re-enter us mid-teardown.
+        _pointerReorder.pointerCaptureLost.revoke();
+
+        // Transforms and z-index are only ever applied once a drag actually starts, so there's
+        // nothing to undo unless we were dragging.
+        if (_pointerReorder.dragging)
+        {
+            const auto& items = _tabView.TabItems();
+
+            // The tab list can change mid-drag (e.g. a tab's process exits and closes it), so
+            // re-resolve the dragged tab's index rather than trusting the one from drag-start;
+            // _TryMoveTab indexes _tabs directly with whatever we hand it.
+            uint32_t currentIndex{};
+            if (items.IndexOf(_pointerReorder.item, currentIndex) &&
+                _pointerReorder.targetIndex != currentIndex)
+            {
+                _TryMoveTab(currentIndex, gsl::narrow_cast<int32_t>(_pointerReorder.targetIndex));
+            }
+
+            // Drop every drag transform in the same tick as the commit so the final layout
+            // renders clean (no intermediate frame with stale offsets).
+            for (uint32_t j = 0; j < items.Size(); ++j)
+            {
+                if (const auto t = items.GetAt(j).try_as<MUX::Controls::TabViewItem>())
+                {
+                    t.RenderTransform(nullptr);
+                    Controls::Canvas::SetZIndex(t, 0);
+                }
+            }
+        }
+
+        _pointerReorder.reset();
     }
 
     void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::Tab& tab)
