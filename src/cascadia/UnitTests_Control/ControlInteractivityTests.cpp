@@ -42,6 +42,7 @@ namespace ControlUnitTests
 
         TEST_METHOD(GetMouseEventsInTest);
         TEST_METHOD(AltBufferClampMouse);
+        TEST_METHOD(TestMiddleClick);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1069,5 +1070,33 @@ namespace ControlUnitTests
                                       modifiers,
                                       cursorPosition1.to_core_point());
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Validate we drained all the expected output");
+    }
+
+    void ControlInteractivityTests::TestMiddleClick()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        const auto modifiers = ControlKeyStates();
+        const auto midMouseDown{ Control::MouseButtonState::IsMiddleButtonDown };
+
+        bool pasteRequested = false;
+        interactivity->PasteFromClipboard([&](auto&&, auto&&) {
+            pasteRequested = true;
+        });
+
+        settings->MiddleClickAction(Control::MiddleClickAction::Paste);
+
+        interactivity->PointerPressed(0,
+                                      midMouseDown,
+                                      WM_MBUTTONDOWN,
+                                      0,
+                                      modifiers,
+                                      Core::Point{ 0, 0 });
+
+        VERIFY_IS_TRUE(pasteRequested);
     }
 }
