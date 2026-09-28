@@ -438,40 +438,40 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         struct Revokers
         {
-            Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
-            Control::ControlCore::WarningBell_revoker WarningBell;
-            Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
-            Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
-            Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;
-            Control::ControlCore::TransparencyChanged_revoker TransparencyChanged;
-            Control::ControlCore::RaiseNotice_revoker RaiseNotice;
-            Control::ControlCore::HoveredHyperlinkChanged_revoker HoveredHyperlinkChanged;
-            Control::ControlCore::OutputIdle_revoker OutputIdle;
-            Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
-            Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
-            Control::ControlCore::TitleChanged_revoker TitleChanged;
-            Control::ControlCore::WriteToClipboard_revoker WriteToClipboard;
-            Control::ControlCore::TabColorChanged_revoker TabColorChanged;
-            Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
-            Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;
-            Control::ControlCore::ShowWindowChanged_revoker ShowWindowChanged;
-            Control::ControlCore::CloseTerminalRequested_revoker CloseTerminalRequested;
-            Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
-            Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
-            Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
-            Control::ControlCore::ShowNotification_revoker ShowNotification;
-            Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
-            Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
+            til::event_revoker coreScrollPositionChanged;
+            til::event_revoker WarningBell;
+            til::event_revoker RendererEnteredErrorState;
+            til::event_revoker BackgroundColorChanged;
+            til::event_revoker FontSizeChanged;
+            til::event_revoker TransparencyChanged;
+            til::event_revoker RaiseNotice;
+            til::event_revoker HoveredHyperlinkChanged;
+            til::event_revoker OutputIdle;
+            til::event_revoker UpdateSelectionMarkers;
+            til::event_revoker coreOpenHyperlink;
+            til::event_revoker TitleChanged;
+            til::event_revoker WriteToClipboard;
+            til::event_revoker TabColorChanged;
+            til::event_revoker TaskbarProgressChanged;
+            til::event_revoker ConnectionStateChanged;
+            til::event_revoker ShowWindowChanged;
+            til::event_revoker CloseTerminalRequested;
+            til::event_revoker CompletionsChanged;
+            til::event_revoker RestartTerminalRequested;
+            til::event_revoker SearchMissingCommand;
+            til::event_revoker ShowNotification;
+            til::event_revoker RefreshQuickFixUI;
+            til::event_revoker WindowSizeChanged;
 
             // These are set up in _InitializeTerminal
-            Control::ControlCore::RendererWarning_revoker RendererWarning;
-            Control::ControlCore::SwapChainChanged_revoker SwapChainChanged;
+            til::event_revoker RendererWarning;
+            til::event_revoker SwapChainChanged;
             Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
 
-            Control::ControlInteractivity::OpenHyperlink_revoker interactivityOpenHyperlink;
-            Control::ControlInteractivity::ScrollPositionChanged_revoker interactivityScrollPositionChanged;
-            Control::ControlInteractivity::PasteFromClipboard_revoker PasteFromClipboard;
-            Control::ControlInteractivity::ContextMenuRequested_revoker ContextMenuRequested;
+            til::event_revoker interactivityOpenHyperlink;
+            til::event_revoker interactivityScrollPositionChanged;
+            til::event_revoker PasteFromClipboard;
+            til::event_revoker ContextMenuRequested;
         } _revokers{};
     };
 }
