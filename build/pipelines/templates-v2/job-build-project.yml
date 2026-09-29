@@ -196,12 +196,12 @@ jobs:
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
     - publish: $(Build.SourcesDirectory)/msbuild.binlog
-      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}-$(System.JobAttempt)
       condition: always()
       displayName: Publish Build Log
     - ${{ if eq(parameters.enableCaching, true) }}:
       - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
-        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}-$(System.JobAttempt)
         condition: always()
         displayName: Publish MSBuildCache Logs
   - ${{ else }}:

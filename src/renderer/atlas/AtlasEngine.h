@@ -25,8 +25,8 @@ namespace Microsoft::Console::Render::Atlas
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
-        void WaitUntilCanRender() noexcept override;
-        [[nodiscard]] HRESULT Present() noexcept override;
+        [[nodiscard]] bool WaitUntilCanRender(HANDLE shutdownEvent) noexcept override;
+        [[nodiscard]] HRESULT Present(HANDLE shutdownEvent) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept override;
@@ -102,12 +102,12 @@ namespace Microsoft::Console::Render::Atlas
         // AtlasEngine.r.cpp
         ATLAS_ATTR_COLD void _recreateAdapter();
         ATLAS_ATTR_COLD void _recreateBackend();
-        ATLAS_ATTR_COLD void _handleSwapChainUpdate();
-        void _createSwapChain();
+        [[nodiscard]] ATLAS_ATTR_COLD bool _handleSwapChainUpdate(HANDLE shutdownEvent);
+        [[nodiscard]] bool _createSwapChain(HANDLE shutdownEvent);
         void _destroySwapChain();
         void _resizeBuffers();
         void _updateMatrixTransform();
-        void _waitUntilCanRender() noexcept;
+        [[nodiscard]] bool _waitUntilCanRender(HANDLE shutdownEvent) noexcept;
         void _present();
 
         static constexpr u16 u16min = 0x0000;

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "GlobalAppSettings.h"
+#include <DefaultSettings.h>
 #include "../../types/inc/Utils.hpp"
 #include "JsonUtils.h"
 #include "KeyChordSerialization.h"
@@ -25,7 +26,6 @@ static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreferen
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
-static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
@@ -165,7 +165,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode) || _fixupsAppliedDuringLoad;
 
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
     // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
@@ -191,11 +190,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // otherwise we could end up setting defaults that get persisted
     if (this->HasInitialCols())
     {
-        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
+        this->InitialCols(std::clamp(this->InitialCols(), MINIMUM_VISIBLE_CELLS, 999));
     }
     if (this->HasInitialRows())
     {
-        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
+        this->InitialRows(std::clamp(this->InitialRows(), MINIMUM_VISIBLE_CELLS, 999));
     }
     LayerActionsFrom(json, origin, true);
 

@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>載入使用者設定時發生錯誤</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" 未在您的電腦上執行。這可能會讓終端機無法接收鍵盤輸入。</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>確定</value>
   </data>
@@ -742,6 +738,10 @@
   <data name="UnnamedWindowName" xml:space="preserve">
     <value>未命名的視窗</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>新視窗</value>
+    <comment>Menu item to open a new terminal window.</comment>
   </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>命名此視窗...</value>

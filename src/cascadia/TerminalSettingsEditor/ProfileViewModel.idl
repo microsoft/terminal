@@ -33,10 +33,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Base = 0,
         Appearance = 1,
         Terminal = 2,
-        Advanced = 3
+        Advanced = 3,
+        UnfocusedAppearance = 4
     };
 
-    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, IInheritableViewModel
     {
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
@@ -45,6 +46,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetAcrylicOpacityPercentageValue(Double value);
 
         String BellStylePreview { get; };
+        String BellStyleAccessibleName { get; };
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
@@ -52,6 +54,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
         String BellSoundPreview { get; };
+        String BellSoundAccessibleName { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
         void RequestAddBellSound(String path);
         void RequestDeleteBellSound(BellSoundViewModel vm);
@@ -69,6 +72,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Double TopPadding { get; set; };
         Double RightPadding { get; set; };
         Double BottomPadding { get; set; };
+        String PaddingAccessibleName { get; };
 
         IInspectable CurrentPathTranslationStyle;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> PathTranslationStyleList { get; };
@@ -85,6 +89,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean HasUnfocusedAppearance { get; };
         Boolean EditableUnfocusedAppearance { get; };
         Boolean ShowUnfocusedAppearance { get; };
+        String UnfocusedAppearanceCardValue { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
 
         Boolean ShowMarksAvailable { get; };
@@ -94,18 +99,20 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
+        String IconAccessibleName { get; };
         String IconPath;
         Boolean UsingNoIcon { get; };
 
-        String TabTitlePreview { get; };
-        String AnswerbackMessagePreview { get; };
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };
+        String TabColorAccessibleName { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
         Boolean Orphaned { get; };
+        String AccessibleStateDescription { get; };
+        Boolean ShowHiddenBadge { get; };
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
