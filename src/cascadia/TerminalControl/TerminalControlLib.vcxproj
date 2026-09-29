@@ -30,12 +30,8 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ControlCore.h">
-      <DependentUpon>ControlCore.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ControlInteractivity.h">
-      <DependentUpon>ControlInteractivity.idl</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="ControlCore.h" />
+    <ClInclude Include="ControlInteractivity.h" />
     <ClInclude Include="ScrollBarVisualStateManager.h">
       <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
     </ClInclude>
@@ -64,12 +60,8 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="ControlCore.cpp">
-      <DependentUpon>ControlCore.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ControlInteractivity.cpp">
-      <DependentUpon>ControlInteractivity.idl</DependentUpon>
-    </ClCompile>
+    <ClCompile Include="ControlCore.cpp" />
+    <ClCompile Include="ControlInteractivity.cpp" />
     <ClCompile Include="ScrollBarVisualStateManager.cpp">
       <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
     </ClCompile>
@@ -97,8 +89,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ControlCore.idl" />
-    <Midl Include="ControlInteractivity.idl" />
+    <Midl Include="CoreTypes.idl" />
     <Midl Include="ScrollBarVisualStateManager.idl" />
     <Midl Include="ICoreState.idl" />
     <Midl Include="KeyChord.idl" />
