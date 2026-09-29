@@ -586,7 +586,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             newTabAction.Action(ShortcutAction::NewTab);
-            newTabAction.Args(NewTabArgs{ newContentArgs });
+            newTabAction.Args(NewTabArgs{ newContentArgs, _TabViewIndex });
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
         }
