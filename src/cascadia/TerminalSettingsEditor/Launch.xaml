@@ -109,11 +109,11 @@
                                   x:Uid="Globals_StartOnUserLogin_Checkbox"
                                   IsChecked="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                                   IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}" />
-                        <TextBlock Margin="28,-8,0,0"
-                                   FontSize="{ThemeResource SettingsCardDescriptionFontSize}"
+                        <TextBlock FontSize="{ThemeResource SettingsCardDescriptionFontSize}"
                                    Style="{ThemeResource SecondaryTextBlockStyle}"
                                    Text="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
-                                   TextWrapping="Wrap" />
+                                   TextWrapping="Wrap"
+                                   Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ViewModel.StartOnUserLoginStatefulHelpText), Mode=OneWay}" />
                     </StackPanel>
                 </local:SettingsCard>
             </local:SettingsExpander.Items>
