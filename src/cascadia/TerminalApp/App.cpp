@@ -35,6 +35,19 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcherQueue = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!dispatcherQueue)
         {
+            // GH#18784: This may show a CoreWindow on the taskbar ("DesktopWindowXamlSource")
+            // until WindowEmperor hides it after the first window was created. Park it right away instead.
+            const wil::unique_hwineventhook hook{ SetWinEventHook(
+                EVENT_OBJECT_SHOW, EVENT_OBJECT_SHOW, wil::GetModuleInstanceHandle(), [](HWINEVENTHOOK, DWORD, HWND hwnd, LONG idObject, LONG, DWORD, DWORD) {
+                    wchar_t name[32];
+                    if (idObject == OBJID_WINDOW && GetClassNameW(hwnd, &name[0], ARRAYSIZE(name)) && wcscmp(&name[0], L"Windows.UI.Core.CoreWindow") == 0)
+                    {
+                        SetParent(hwnd, HWND_MESSAGE);
+                    }
+                },
+                GetCurrentProcessId(),
+                GetCurrentThreadId(),
+                WINEVENT_INCONTEXT) };
             _windowsXamlManager = xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
         }
         else
