@@ -1346,7 +1346,7 @@ class CodepointWidthDetectorTests
         };
 
         const std::array tests{
-            // Spacing marks with Grapheme_Extend=Y are zero-width just like non-spacing marks. Otherwise a vowel sign
+            // Spacing marks with Grapheme_Extend=Y are zero-width just like non-spacing marks. Otherwise, a vowel sign
             // and its canonical decomposition, which differ only in whether such a mark is spelled out, would measure
             // differently. Each of the following pairs is canonically equivalent and must have the same width.
             Test{ L"\u0B95\u0BCA", { 2 }, { 2 } },
@@ -1367,7 +1367,7 @@ class CodepointWidthDetectorTests
             Test{ L"\u1B05\u1B35", { 2 }, { 1 } },
             Test{ L"\U0001D15E", { 2 }, { 1 } },
             Test{ L"\U0001D157\U0001D165", { 4 }, { 1 } },
-            // Every other spacing mark keeps its width, and so do the halfwidth katakana sound marks (gc=Lm).
+            // Every other spacing mark keeps its width, and so do the half-width katakana sound marks (gc=Lm).
             Test{ L"\u0B95\u0BBE", { 2 }, { 1 } },
             Test{ L"\u0B95\u0BBF", { 2 }, { 2 } },
             Test{ L"\u0915\u093F", { 2 }, { 2 } },
