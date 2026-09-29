@@ -18,7 +18,6 @@
 #include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../../types/inc/utils.hpp"
 
-#include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -304,8 +303,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _raiseFontSizeChanged();
 
         // The renderer will be re-enabled in Initialize
-
-        Attached.raise(*this, nullptr);
     }
 
     TerminalConnection::ITerminalConnection ControlCore::Connection()

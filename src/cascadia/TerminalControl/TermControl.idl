@@ -4,10 +4,9 @@
 import "IKeyBindings.idl";
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
-import "ControlInteractivity.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
-import "ControlCore.idl";
+import "CoreTypes.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -25,19 +24,29 @@ namespace Microsoft.Terminal.Control
         Shown
     };
 
+    interface IContentHandle
+    {
+        UInt64 Id { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
+    }
+
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
                                                    IDirectKeyListener,
                                                    IMouseWheelListener,
                                                    ICoreState,
                                                    Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        TermControl(ControlInteractivity content);
+        static IContentHandle CreateContent(IControlSettings settings,
+                                            IControlAppearance unfocusedAppearance,
+                                            Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
+        TermControl(IContentHandle content);
 
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static TermControl NewControlByAttachingContent(ControlInteractivity content);
+        static TermControl NewControlByAttachingContent(IContentHandle content);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,

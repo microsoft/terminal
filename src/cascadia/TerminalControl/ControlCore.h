@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
@@ -78,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     };
 
-    struct ControlCore : ControlCoreT<ControlCore>
+    struct ControlCore : winrt::implements<ControlCore, winrt::Windows::Foundation::IInspectable, ICoreState>
     {
     public:
         ControlCore(Control::IControlSettings settings,
@@ -307,8 +306,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
-        til::typed_event<> Attached;
         // clang-format on
 
     private:
@@ -480,6 +477,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    BASIC_FACTORY(ControlCore);
     BASIC_FACTORY(SelectionColor);
 }
