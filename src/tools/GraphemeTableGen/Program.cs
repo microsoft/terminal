@@ -228,6 +228,7 @@ static Ucd ExtractValuesFromUcd(string path)
         var groupIndicConjunctBreak = group.Attribute("InCB")?.Value;
         var groupExtendedPictographic = group.Attribute("ExtPict")?.Value;
         var groupEastAsian = group.Attribute("ea")?.Value;
+        var groupGraphemeExtend = group.Attribute("Gr_Ext")?.Value;
 
         foreach (var ch in group.Elements())
         {
@@ -250,6 +251,7 @@ static Ucd ExtractValuesFromUcd(string path)
             var indicConjunctBreak = ch.Attribute("InCB")?.Value ?? groupIndicConjunctBreak ?? "";
             var extendedPictographic = ch.Attribute("ExtPict")?.Value ?? groupExtendedPictographic ?? "";
             var eastAsian = ch.Attribute("ea")?.Value ?? groupEastAsian ?? "";
+            var graphemeExtend = ch.Attribute("Gr_Ext")?.Value ?? groupGraphemeExtend ?? "";
 
             var cb = graphemeClusterBreak switch
             {
@@ -304,6 +306,10 @@ static Ucd ExtractValuesFromUcd(string path)
             //   Me: Mark, enclosing
             //   Mn: Mark, non-spacing
             //   Cf: Control, format
+            //   Mc: Mark, spacing combining, but only if Grapheme_Extend=Y. Unicode gives that property to the few
+            //       spacing marks that need to behave like non-spacing ones, such as the second halves of two-part
+            //       vowel signs and spacing viramas. Any other width would make a composed vowel sign and its
+            //       canonical decomposition measure differently.
             switch (generalCategory)
             {
                 case "Cf" when cb == ClusterBreak.Control:
@@ -315,6 +321,9 @@ static Ucd ExtractValuesFromUcd(string path)
                     width = CharacterWidth.ZeroWidth;
                     break;
                 case "Me" or "Mn" or "Cf":
+                    width = CharacterWidth.ZeroWidth;
+                    break;
+                case "Mc" when graphemeExtend == "Y":
                     width = CharacterWidth.ZeroWidth;
                     break;
             }

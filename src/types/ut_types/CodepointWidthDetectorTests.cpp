@@ -1336,7 +1336,7 @@ class CodepointWidthDetectorTests
         }
     }
 
-    TEST_METHOD(ClusterWidthIsWidestMember)
+    TEST_METHOD(GraphemeExtendSpacingMarks)
     {
         struct Test
         {
@@ -1346,44 +1346,50 @@ class CodepointWidthDetectorTests
         };
 
         const std::array tests{
-            // A grapheme cluster is drawn as a single glyph, so it must claim as many cells
-            // as its widest member. These clusters each contain two characters that are wide
-            // on their own, yet the font draws them as one glyph inside one cell.
-            Test{ L"\u0915\u093F", { 2 }, { 1 } },
-            Test{ L"\u0915\u093E", { 2 }, { 1 } },
-            Test{ L"\u0915\u094D\u0915", { 3 }, { 1 } },
-            Test{ L"\u0995\u09BF", { 2 }, { 1 } },
-            Test{ L"\u0A15\u0A3F", { 2 }, { 1 } },
-            Test{ L"\u0A95\u0ABF", { 2 }, { 1 } },
-            Test{ L"\u0B15\u0B3F", { 2 }, { 1 } },
+            // Spacing marks with Grapheme_Extend=Y are zero-width just like non-spacing marks. Otherwise a vowel sign
+            // and its canonical decomposition, which differ only in whether such a mark is spelled out, would measure
+            // differently. Each of the following pairs is canonically equivalent and must have the same width.
+            Test{ L"\u0B95\u0BCA", { 2 }, { 2 } },
+            Test{ L"\u0B95\u0BC6\u0BBE", { 3 }, { 2 } },
+            Test{ L"\u0B95\u0BCC", { 2 }, { 2 } },
+            Test{ L"\u0B95\u0BC6\u0BD7", { 3 }, { 2 } },
+            Test{ L"\u0B94", { 1 }, { 1 } },
+            Test{ L"\u0B92\u0BD7", { 2 }, { 1 } },
+            Test{ L"\u0995\u09CB", { 2 }, { 2 } },
+            Test{ L"\u0995\u09C7\u09BE", { 3 }, { 2 } },
+            Test{ L"\u0D15\u0D4A", { 2 }, { 2 } },
+            Test{ L"\u0D15\u0D46\u0D3E", { 3 }, { 2 } },
+            Test{ L"\u0C95\u0CCB", { 2 }, { 1 } },
+            Test{ L"\u0C95\u0CC6\u0CC2\u0CD5", { 4 }, { 1 } },
+            Test{ L"\u0D9A\u0DDC", { 2 }, { 2 } },
+            Test{ L"\u0D9A\u0DD9\u0DCF", { 3 }, { 2 } },
+            Test{ L"\u1B06", { 1 }, { 1 } },
+            Test{ L"\u1B05\u1B35", { 2 }, { 1 } },
+            Test{ L"\U0001D15E", { 2 }, { 1 } },
+            Test{ L"\U0001D157\U0001D165", { 4 }, { 1 } },
+            // Every other spacing mark keeps its width, and so do the halfwidth katakana sound marks (gc=Lm).
             Test{ L"\u0B95\u0BBE", { 2 }, { 1 } },
-            Test{ L"\u0B95\u0BBF", { 2 }, { 1 } },
-            Test{ L"\u0BA8\u0BC1", { 2 }, { 1 } },
-            Test{ L"\u0BA4\u0BBE\u0BAE\u0BBF\u0BB4\u0BCD", { 2, 2, 2 }, { 1, 1, 1 } },
-            Test{ L"\u0B95\u0BBE\u0B95\u0BBE", { 2, 2 }, { 1, 1 } },
-            Test{ L"\u0C15\u0C3F", { 2 }, { 1 } },
-            Test{ L"\u0C95\u0CBF", { 2 }, { 1 } },
-            Test{ L"\u0D15\u0D3F", { 2 }, { 1 } },
-            Test{ L"\u179A\u17B6", { 2 }, { 1 } },
-            // A zero-width prepend must not swallow the cell of the character after it.
-            Test{ L"\u0600\u0627", { 2 }, { 1 } },
-            // These must all keep their existing two-cell width.
-            Test{ L"\U0001F1EE\U0001F1F3", { 4 }, { 2 } },
-            Test{ L"\U0001F1EE\U0001F1F3\U0001F1E8\U0001F1F3", { 4, 4 }, { 2, 2 } },
-            Test{ L"\U0001F468\u200D\U0001F469", { 5 }, { 2 } },
-            Test{ L"\U0001F44D\U0001F3FD", { 4 }, { 2 } },
-            Test{ L"\u2764\uFE0F", { 2 }, { 2 } },
-            Test{ L"\u0023\uFE0F\u20E3", { 3 }, { 2 } },
-            Test{ L"\uFF21\u0301", { 2 }, { 2 } },
-            Test{ L"\uAC00", { 1 }, { 2 } },
+            Test{ L"\u0B95\u0BBF", { 2 }, { 2 } },
+            Test{ L"\u0915\u093F", { 2 }, { 2 } },
+            Test{ L"\u0E19\u0E49\u0E33", { 3 }, { 2 } },
+            Test{ L"\uFF76\uFF9E", { 2 }, { 2 } },
+            Test{ L"\u0BAA\u0BBE\u0B9F\u0BAE\u0BCD", { 2, 1, 2 }, { 1, 1, 1 } },
+            Test{ L"\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD", { 1, 2, 2 }, { 1, 2, 1 } },
+            // On their own they behave like a lone non-spacing mark.
+            Test{ L"\u0BBE", { 1 }, { 0 } },
+            Test{ L"\u0301", { 1 }, { 0 } },
         };
 
-        auto& cwd = CodepointWidthDetector::Singleton();
+        CodepointWidthDetector cwd;
+        cwd.Reset(TextMeasurementMode::Graphemes);
+
+        std::vector<int> actualAdvances;
+        std::vector<int> actualWidths;
 
         for (const auto& test : tests)
         {
-            std::vector<int> actualAdvances;
-            std::vector<int> actualWidths;
+            actualAdvances.clear();
+            actualWidths.clear();
 
             for (GraphemeState state;;)
             {
@@ -1420,7 +1426,6 @@ class CodepointWidthDetectorTests
             VERIFY_ARE_EQUAL(test.widths, actualWidths, test.text.data());
         }
     }
-
     TEST_METHOD(AmbiguousWidthPolicy)
     {
         const auto measureWidth = [](CodepointWidthDetector& cwd, const std::wstring_view text) {
