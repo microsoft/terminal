@@ -2615,27 +2615,6 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
     _api.SetWindowTitle(title);
 }
 
-// OSC 7 - Set Current Working Directory
-// While ConEmu's OSC 9;9 works well for native Windows paths,
-// OSC 7 uses file URIs, which may not always work.
-void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
-{
-    // Ensure that the URI has a null terminator.
-    std::wstring path{ uri };
-
-    // PathCreateFromUrlW supports writing to the input pointer,
-    // and the resulting path can never be longer than the URI.
-    const auto ptr = path.data();
-    auto len = gsl::narrow<DWORD>(path.size());
-    THROW_IF_FAILED(PathCreateFromUrlW(ptr, ptr, &len, 0));
-    path.resize(len);
-
-    if (til::is_legal_path(path))
-    {
-        _api.SetWorkingDirectory(path);
-    }
-}
-
 //Routine Description:
 // HTS - sets a VT tab stop in the cursor's current column.
 //Arguments:

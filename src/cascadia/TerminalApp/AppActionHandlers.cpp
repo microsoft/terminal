@@ -1446,7 +1446,7 @@ namespace winrt::TerminalApp::implementation
                                       WI_IsAnyFlagSet(source, SuggestionsSource::CommandHistory | SuggestionsSource::QuickFixes);
         if (const auto& control{ _GetActiveControl() })
         {
-            currentWorkingDirectory = control.WorkingDirectory();
+            currentWorkingDirectory = control.CurrentWorkingDirectory();
 
             if (shouldGetContext)
             {

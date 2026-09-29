@@ -83,7 +83,6 @@ public:
     virtual void BackIndex() = 0; // DECBI
     virtual void ForwardIndex() = 0; // DECFI
     virtual void SetWindowTitle(std::wstring_view title) = 0; // DECSWT, OscWindowTitle
-    virtual void SetCurrentWorkingDirectory(const std::wstring_view uri) = 0; // OSC 7
     virtual void HorizontalTabSet() = 0; // HTS
     virtual void ForwardTab(const VTInt numTabs) = 0; // CHT, HT
     virtual void BackwardsTab(const VTInt numTabs) = 0; // CBT
@@ -158,9 +157,13 @@ public:
     virtual void EndHyperlink() = 0;
 
     virtual void DoConEmuAction(const std::wstring_view string) = 0;
+
     virtual void DoITerm2Action(const std::wstring_view string) = 0;
+
     virtual void DoFinalTermAction(const std::wstring_view string) = 0;
+
     virtual void DoVsCodeAction(const std::wstring_view string) = 0;
+
     virtual void DoWTAction(const std::wstring_view string) = 0;
 
     virtual void DoUrxvtAction(const std::wstring_view string) = 0;

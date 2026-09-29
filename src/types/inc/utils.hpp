@@ -128,8 +128,6 @@ namespace Microsoft::Console::Utils
 
     const wchar_t* FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept;
 
-    bool IsValidDirectory(const wchar_t* path) noexcept;
-
     // Same deal, but in TerminalPage::_evaluatePathForCwd
     std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
 
