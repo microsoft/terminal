@@ -27,6 +27,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SetColorTableEntry);
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
+        TEST_METHOD(CursorShapePreservedOnFocusWithUnfocusedAppearance);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
         // This test ensures that Terminal::_WriteBuffer doesn't get stuck when
@@ -390,4 +391,53 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
 
     stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
+}
+
+void TerminalApiTest::CursorShapePreservedOnFocusWithUnfocusedAppearance()
+{
+    Terminal term{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &term };
+    term.Create({ 100, 100 }, 0, renderer);
+
+    auto focusedSettings = winrt::make_self<MockTermSettings>(100, 100, 100);
+    focusedSettings->CursorShape(CursorStyle::Bar);
+    (void)term.FocusChanged(true);
+    term.UpdateAppearance(*focusedSettings);
+
+    VERIFY_ARE_EQUAL(CursorType::VerticalBar, term._mainBuffer->GetCursor().GetType());
+
+    // Application running in terminal sets cursor to Underscore via DECSCUSR (ESC [ 4 q)
+    auto& stateMachine = *(term._stateMachine);
+    stateMachine.ProcessString(L"\x1b[4 q");
+    VERIFY_ARE_EQUAL(CursorType::Underscore, term._mainBuffer->GetCursor().GetType());
+
+    // Window loses focus; appearance updated without cursor override (matches default)
+    (void)term.FocusChanged(false);
+    term.UpdateAppearance(*focusedSettings);
+
+    // Dynamic cursor shape should still be preserved
+    VERIFY_ARE_EQUAL(CursorType::Underscore, term._mainBuffer->GetCursor().GetType());
+
+    // Window regains focus
+    (void)term.FocusChanged(true);
+    term.UpdateAppearance(*focusedSettings);
+
+    // GH#18174: Cursor shape must NOT reset to VerticalBar when regaining focus
+    VERIFY_ARE_EQUAL(CursorType::Underscore, term._mainBuffer->GetCursor().GetType());
+
+    // Now test with an explicit unfocused appearance override (e.g. EmptyBox)
+    auto unfocusedSettings = winrt::make_self<MockTermSettings>(100, 100, 100);
+    unfocusedSettings->CursorShape(CursorStyle::EmptyBox);
+    (void)term.FocusChanged(false);
+    term.UpdateAppearance(*unfocusedSettings);
+
+    // Unfocused override applied
+    VERIFY_ARE_EQUAL(CursorType::EmptyBox, term._mainBuffer->GetCursor().GetType());
+
+    // Window regains focus; returns to focusedSettings (Bar default)
+    (void)term.FocusChanged(true);
+    term.UpdateAppearance(*focusedSettings);
+
+    // Cursor shape should be restored to Underscore (the dynamic shape before unfocus), NOT VerticalBar
+    VERIFY_ARE_EQUAL(CursorType::Underscore, term._mainBuffer->GetCursor().GetType());
 }

@@ -362,7 +362,8 @@ private:
     mutable std::vector<til::point_span> _lastSelectionSpans;
     mutable til::generation_t _lastSelectionGeneration{};
 
-    CursorType _defaultCursorShape = CursorType::Legacy;
+    std::optional<CursorType> _defaultCursorShape;
+    std::optional<CursorType> _savedCursorShapeBeforeUnfocus;
     std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
