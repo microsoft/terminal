@@ -68,6 +68,8 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
+        Windows.UI.Color BackgroundColor { get; };
+
         // MIDL 3 does not support setter-only properties.
         void KeyBindings(Microsoft.Terminal.Control.IKeyBindings KeyBindings);
 

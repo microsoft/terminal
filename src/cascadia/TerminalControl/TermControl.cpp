@@ -3239,6 +3239,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->TabColor();
     }
 
+    winrt::Windows::UI::Color TermControl::BackgroundColor() noexcept
+    {
+        return _core->BackgroundColor();
+    }
+
     // Method Description:
     // - Gets the internal taskbar state value
     // Return Value:
