@@ -761,6 +761,7 @@ HTTOPRIGHT
 hungapp
 HVP
 hwheel
+hwineventhook
 hwnd
 HWNDPARENT
 iccex
