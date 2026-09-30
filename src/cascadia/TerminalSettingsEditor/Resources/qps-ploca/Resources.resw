@@ -510,10 +510,6 @@
     <value>Ĺãΰņ¢ħ åτ ŀοģīⁿ !!! !</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>∆џţθmåţìсάļłý ļäυŉсħ Тэгмįņàŀ щĥёи γŏû ℓŏġ ιп ŧó Windows. !!! !!! !!! !!! !!! !!</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Ćêŋťєŕеδ !!</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
@@ -2721,11 +2717,11 @@
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Åΰťόмåтίĉ śţдѓтΰρ ћăş ьěёή δіѕªъľēð ïй ťĥ℮ Ŝťǻřťúφ Āρφŝ ѕěĉŧϊōη бƒ Windows ŝεтţīŋĝś. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>Ţĥîŝ όρтįοñ íş мαпªģéð ъý ĕŋτéřрŗĭšз рôľĩсу алð çąňηōт ье ċħâήğèď ћēяē. !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>Ãčŧινε ∑хťėŋѕιόйš !!! !!</value>
