@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsExpander::_HeaderIconProperty{ nullptr };
     DependencyProperty SettingsExpander::_ContentProperty{ nullptr };
     DependencyProperty SettingsExpander::_IsExpandedProperty{ nullptr };
+    DependencyProperty SettingsExpander::_IsExperimentalProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemsHeaderProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemsFooterProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemsProperty{ nullptr };
@@ -81,6 +82,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 xaml_typename<bool>(),
                 xaml_typename<Editor::SettingsExpander>(),
                 PropertyMetadata{ box_value(false), PropertyChangedCallback{ &SettingsExpander::_OnIsExpandedChanged } });
+        }
+        if (!_IsExperimentalProperty)
+        {
+            _IsExperimentalProperty = DependencyProperty::Register(
+                L"IsExperimental",
+                xaml_typename<bool>(),
+                xaml_typename<Editor::SettingsExpander>(),
+                PropertyMetadata{ box_value(false) });
         }
         if (!_ItemsHeaderProperty)
         {

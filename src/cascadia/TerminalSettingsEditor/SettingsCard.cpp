@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsCard::_ActionIconToolTipProperty{ nullptr };
     DependencyProperty SettingsCard::_IsClickEnabledProperty{ nullptr };
     DependencyProperty SettingsCard::_IsActionIconVisibleProperty{ nullptr };
+    DependencyProperty SettingsCard::_IsExperimentalProperty{ nullptr };
     DependencyProperty SettingsCard::_ContentAlignmentProperty{ nullptr };
 
     static constexpr std::wstring_view NormalState{ L"Normal" };
@@ -48,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view HeaderPresenter{ L"PART_HeaderPresenter" };
     static constexpr std::wstring_view DescriptionPresenter{ L"PART_DescriptionPresenter" };
     static constexpr std::wstring_view HeaderIconPresenterHolder{ L"PART_HeaderIconPresenterHolder" };
+    static constexpr std::wstring_view ExperimentalBadgePart{ L"PART_ExperimentalBadge" };
     static constexpr std::wstring_view ContentPresenterPart{ L"PART_ContentPresenter" };
     static constexpr std::wstring_view RootGridPart{ L"PART_RootGrid" };
 
@@ -134,6 +136,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 xaml_typename<Editor::SettingsCard>(),
                 PropertyMetadata{ box_value(true), PropertyChangedCallback{ &SettingsCard::_OnIsActionIconVisibleChanged } });
         }
+        if (!_IsExperimentalProperty)
+        {
+            _IsExperimentalProperty = DependencyProperty::Register(
+                L"IsExperimental",
+                xaml_typename<bool>(),
+                xaml_typename<Editor::SettingsCard>(),
+                PropertyMetadata{ box_value(false) });
+        }
         if (!_ContentAlignmentProperty)
         {
             _ContentAlignmentProperty = DependencyProperty::Register(
@@ -202,6 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateHeaderVisibility();
         _UpdateDescriptionVisibility();
         _UpdateHeaderIconVisibility();
+        _UpdateExperimentalBadgeVisibility();
         _UpdateContentVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
@@ -495,6 +506,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto element{ Content().try_as<UIElement>() }; element && !element.try_as<Panel>())
         {
             AutomationProperties::SetFullDescription(element, text);
+        }
+    }
+
+    void SettingsCard::_UpdateExperimentalBadgeVisibility()
+    {
+        if (const auto child{ GetTemplateChild(hstring{ ExperimentalBadgePart }) })
+        {
+            if (const auto frameworkChild{ child.try_as<FrameworkElement>() })
+            {
+                frameworkChild.Visibility(IsExperimental() ? Visibility::Visible : Visibility::Collapsed);
+            }
         }
     }
 
