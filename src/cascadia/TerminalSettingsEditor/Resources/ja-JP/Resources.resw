@@ -510,10 +510,6 @@
     <value>ログイン時に起動する</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>Windows にログインすると、ターミナルが自動的に起動します。</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>中央揃え</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
@@ -2717,11 +2713,11 @@
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Windows 設定の [スタートアップ アプリ] セクションで、自動スタートアップが無効になっています。</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>このオプションはエンタープライズ ポリシーによって管理されているため、ここで変更することはできません。</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>アクティブな拡張機能</value>
