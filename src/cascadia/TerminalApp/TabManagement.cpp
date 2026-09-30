@@ -102,11 +102,13 @@ namespace winrt::TerminalApp::implementation
     {
         newTabImpl->Initialize();
 
+#ifdef CODE_DISABLED_PER_WINDOW_SETTINGS // See GH#20749.
         // Push the current settings into the tab on when it's initialized.
         // _RefreshUIForSettingsReload will also do this when settings are hot
         // reloaded, but we need this here to make sure we pass our current
         // window settings to the tab too.
         newTabImpl->UpdateSettings(_settings, _currentWindowSettings());
+#endif
 
         // If insert position is not passed, calculate it
         if (insertPosition == -1)
