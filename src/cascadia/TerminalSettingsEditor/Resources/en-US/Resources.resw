@@ -2774,6 +2774,10 @@
     <value>EXPERIMENTAL</value>
     <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
   </data>
+  <data name="SettingsCard_ExperimentalHelpText" xml:space="preserve">
+    <value>Experimental setting</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
+  </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>Learn more about regular expressions</value>
   </data>

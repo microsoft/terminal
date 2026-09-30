@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateHeaderVisibility();
         _UpdateDescriptionVisibility();
         _UpdateHeaderIconVisibility();
-        _UpdateExperimentalBadgeVisibility();
+        _UpdateExperimentalState();
         _UpdateContentVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
@@ -226,6 +226,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 strongThis->_SetAccessibleContentName();
                 strongThis->_UpdateContentVisibility();
                 strongThis->_UpdateFullDescription();
+                strongThis->_UpdateExperimentalState();
             }
         });
 
@@ -509,14 +510,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void SettingsCard::_UpdateExperimentalBadgeVisibility()
+    void SettingsCard::_UpdateExperimentalState()
     {
+        const auto isExperimental = IsExperimental();
+
         if (const auto child{ GetTemplateChild(hstring{ ExperimentalBadgePart }) })
         {
             if (const auto frameworkChild{ child.try_as<FrameworkElement>() })
             {
-                frameworkChild.Visibility(IsExperimental() ? Visibility::Visible : Visibility::Collapsed);
+                frameworkChild.Visibility(isExperimental ? Visibility::Visible : Visibility::Collapsed);
             }
+        }
+
+        if (!isExperimental)
+        {
+            return;
+        }
+
+        // The badge itself has AccessibilityView=Raw, so announce the "experimental" trait via HelpText
+        const auto helpText = RS_(L"SettingsCard_ExperimentalHelpText");
+        AutomationProperties::SetHelpText(*this, helpText);
+
+        // Same Panel treatment as _UpdateFullDescription
+        if (const auto element{ Content().try_as<UIElement>() }; element && !element.try_as<Panel>())
+        {
+            AutomationProperties::SetHelpText(element, helpText);
         }
     }
 
