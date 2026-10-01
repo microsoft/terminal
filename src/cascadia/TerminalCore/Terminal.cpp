@@ -215,10 +215,47 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // one buffer exists and _activeBuffer() will work
     if (_mainBuffer)
     {
-        _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
+        if (!_defaultCursorShape.has_value())
+        {
+            // Initial appearance update: set the buffer cursor to the configured cursor shape.
+            _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
+            _defaultCursorShape = cursorShape;
+        }
+        else if (cursorShape != *_defaultCursorShape)
+        {
+            if (_focused)
+            {
+                // The focused/profile appearance changed its default cursor shape.
+                _defaultCursorShape = cursorShape;
+                _savedCursorShapeBeforeUnfocus.reset();
+                _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
+            }
+            else
+            {
+                // Unfocused appearance has an explicit cursor shape override.
+                if (!_savedCursorShapeBeforeUnfocus.has_value())
+                {
+                    _savedCursorShapeBeforeUnfocus = _activeBuffer().GetCursor().GetType();
+                }
+                _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
+            }
+        }
+        else if (_savedCursorShapeBeforeUnfocus.has_value())
+        {
+            // Returning to default cursor shape from an appearance that had an override.
+            // Restore the cursor shape that was active before the override.
+            const auto restoredShape = _savedCursorShapeBeforeUnfocus.value();
+            _savedCursorShapeBeforeUnfocus.reset();
+            _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), restoredShape);
+        }
+        // If cursorShape == *_defaultCursorShape and no override was active, do NOT touch
+        // _activeBuffer().GetCursor().SetStyle so we preserve any dynamic cursor shape
+        // set by running applications (e.g. Neovim / Vim via DECSCUSR) when window focus changes.
     }
-
-    _defaultCursorShape = cursorShape;
+    else
+    {
+        _defaultCursorShape = cursorShape;
+    }
 
     UpdateColorScheme(appearance);
 }
