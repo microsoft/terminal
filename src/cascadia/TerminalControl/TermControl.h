@@ -46,11 +46,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(Control::ControlInteractivity content);
+        static IContentHandle CreateContent(IControlSettings settings,
+                                            Control::IControlAppearance unfocusedAppearance,
+                                            TerminalConnection::ITerminalConnection connection);
+
+        static Control::TermControl NewControlByAttachingContent(const IContentHandle& content);
+
+        TermControl(winrt::com_ptr<ControlInteractivity> interactivity);
+        TermControl(const IContentHandle& content);
 
         TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
-
-        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content);
 
         void UpdateControlSettings(Control::IControlSettings settings);
         void UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
@@ -92,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
+        winrt::Windows::UI::Color BackgroundColor() noexcept;
         hstring WorkingDirectory() const;
 
         TerminalConnection::ConnectionState ConnectionState() const;
