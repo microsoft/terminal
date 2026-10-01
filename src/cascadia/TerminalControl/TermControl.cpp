@@ -398,6 +398,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
 
+        static constexpr auto ShiftTrackerInterval = std::chrono::milliseconds(30);
+        _shiftTrackerTimer.Interval(ShiftTrackerInterval);
+        _shiftTrackerTimer.Tick({ get_weak(), &TermControl::_ShiftTrackerTimerTick });
+
         _ApplyUISettings();
 
         _originalPrimaryElements = winrt::single_threaded_observable_vector<Controls::ICommandBarElement>();
@@ -1540,6 +1544,66 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _KeyHandler(gsl::narrow_cast<WORD>(vkey), gsl::narrow_cast<WORD>(scanCode), modifiers, down);
     }
 
+    static bool _isVkDown(int vk) noexcept
+    {
+        return ((::GetKeyState(vk) & 0x8000) != 0) && ((::GetAsyncKeyState(vk) & 0x8000) != 0);
+    }
+
+    void TermControl::_ShiftTrackerTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
+    {
+        if (_IsClosing())
+        {
+            _shiftTrackerTimer.Stop();
+            return;
+        }
+        _CheckAndReleaseStuckShiftKeys(_GetPressedModifierKeys());
+    }
+
+    void TermControl::_CheckAndReleaseStuckShiftKeys(ControlKeyStates modifiers)
+    {
+        if (!_dualShiftActive)
+        {
+            return;
+        }
+
+        const bool leftPhysicallyDown = _isVkDown(VK_LSHIFT);
+        const bool rightPhysicallyDown = _isVkDown(VK_RSHIFT);
+
+        if (_leftShiftDown && !leftPhysicallyDown)
+        {
+            _leftShiftDown = false;
+            if (!rightPhysicallyDown)
+            {
+                modifiers = ControlKeyStates{ modifiers.Value() & ~ControlKeyStates::ShiftPressed.v };
+            }
+            else
+            {
+                modifiers |= ControlKeyStates::ShiftPressed;
+            }
+            _TrySendKeyEvent(VK_SHIFT, 0x2A, modifiers, false);
+        }
+
+        if (_rightShiftDown && !rightPhysicallyDown)
+        {
+            _rightShiftDown = false;
+            if (!leftPhysicallyDown)
+            {
+                modifiers = ControlKeyStates{ modifiers.Value() & ~ControlKeyStates::ShiftPressed.v };
+            }
+            else
+            {
+                modifiers |= ControlKeyStates::ShiftPressed;
+            }
+            _TrySendKeyEvent(VK_SHIFT, 0x36, modifiers, false);
+        }
+
+        if (!_leftShiftDown && !_rightShiftDown)
+        {
+            _dualShiftActive = false;
+            _shiftTrackerTimer.Stop();
+        }
+    }
+
     void TermControl::_KeyDownHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                       const Input::KeyRoutedEventArgs& e)
     {
@@ -1604,6 +1668,55 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_core.IsInReadOnlyMode())
         {
             return !keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers);
+        }
+
+        // GH#18223: When dual shift keys are used, release stuck shift keys before handling any non-shift key
+        if (_dualShiftActive && vkey != VK_SHIFT)
+        {
+            _CheckAndReleaseStuckShiftKeys(modifiers);
+            modifiers = _GetPressedModifierKeys();
+        }
+
+        if (vkey == VK_SHIFT)
+        {
+            const bool isRightShift = (scanCode == 0x36);
+            if (keyDown)
+            {
+                if (isRightShift)
+                {
+                    _rightShiftDown = true;
+                }
+                else
+                {
+                    _leftShiftDown = true;
+                }
+
+                if (_leftShiftDown && _rightShiftDown)
+                {
+                    _dualShiftActive = true;
+                    if (!_shiftTrackerTimer.IsEnabled())
+                    {
+                        _shiftTrackerTimer.Start();
+                    }
+                }
+            }
+            else
+            {
+                if (isRightShift)
+                {
+                    _rightShiftDown = false;
+                }
+                else
+                {
+                    _leftShiftDown = false;
+                }
+
+                const bool companionDown = isRightShift ? _isVkDown(VK_LSHIFT) : _isVkDown(VK_RSHIFT);
+                if (!companionDown)
+                {
+                    modifiers = ControlKeyStates{ modifiers.Value() & ~ControlKeyStates::ShiftPressed.v };
+                }
+            }
         }
 
         // Our custom TSF input control doesn't receive Alt+Numpad inputs,
@@ -1811,7 +1924,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
+        const auto sent = _TrySendKeyEvent(vkey, scanCode, modifiers, keyDown);
+
+        if (_dualShiftActive && vkey == VK_SHIFT && !keyDown)
+        {
+            _CheckAndReleaseStuckShiftKeys(modifiers);
+        }
+
+        if (sent)
         {
             return true;
         }
@@ -2303,6 +2423,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _focused = false;
 
+        if (_dualShiftActive || _leftShiftDown || _rightShiftDown)
+        {
+            auto modifiers = _GetPressedModifierKeys();
+            modifiers = ControlKeyStates{ modifiers.Value() & ~ControlKeyStates::ShiftPressed.v };
+            if (_leftShiftDown)
+            {
+                _leftShiftDown = false;
+                _TrySendKeyEvent(VK_SHIFT, 0x2A, modifiers, false);
+            }
+            if (_rightShiftDown)
+            {
+                _rightShiftDown = false;
+                _TrySendKeyEvent(VK_SHIFT, 0x36, modifiers, false);
+            }
+            _dualShiftActive = false;
+            _shiftTrackerTimer.Stop();
+        }
+
         // This will disable the accessibility notifications, because the
         // UiaEngine lives in ControlInteractivity
         if (_interactivity)
@@ -2586,6 +2724,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // In turn, we leak TermControl instances. This results in constant HWND messages
             // while the thread is supposed to be idle. Stop these timers avoids this.
             _bellLightTimer.Stop();
+            _shiftTrackerTimer.Stop();
 
             // This is absolutely crucial, as the TSF code tries to hold a strong reference to _tsfDataProvider,
             // but right now _tsfDataProvider implements IUnknown as a no-op. This ensures that TSF stops referencing us.
