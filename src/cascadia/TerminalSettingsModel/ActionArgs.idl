@@ -214,7 +214,9 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass NewTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NewTabArgs(INewContentArgs contentArgs);
+        NewTabArgs(INewContentArgs contentArgs, Windows.Foundation.IReference<UInt32> tabIndex);
         INewContentArgs ContentArgs { get; };
+        Windows.Foundation.IReference<UInt32> TabIndex;
     };
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs, IActionArgsDescriptorAccess
