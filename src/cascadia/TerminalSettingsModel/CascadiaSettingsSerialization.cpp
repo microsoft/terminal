@@ -396,14 +396,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     try
     {
         const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
-        if (auto catalog2{ catalog.try_as<IAppExtensionCatalog2>() })
-        {
-            extensions = catalog2.FindAll();
-        }
-        else
-        {
-            extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
-        }
+        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
     }
     CATCH_LOG();
 
@@ -425,37 +418,20 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
             continue;
         }
 
-        winrt::hstring publicFolderPath;
-        if (auto ext3{ ext.try_as<IAppExtension3>() })
+        // Likewise, getting the public folder from an extension is an async operation.
+        auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
+        if (!foundFolder)
         {
-            // Windows 11 24H2 and above support a much faster, much less
-            // Windows.Storage-y API.
-            publicFolderPath = ext3.GetPublicPath();
-            if (publicFolderPath.empty())
-            {
-                // No point in falling through to GetPublicFolderAsync;
-                // it won't work.
-                continue;
-            }
-        }
-        else
-        {
-            // Likewise, getting the public folder from an extension is an async operation.
-            auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
-            if (!foundFolder)
-            {
-                continue;
-            }
-
-            // the StorageFolder class has its own methods for obtaining the files within the folder
-            // however, all those methods are Async methods
-            // you may have noticed that we need to resort to clunky implementations for async operations
-            // (they are in extractValueFromTaskWithoutMainThreadAwait)
-            // so for now we will just take the folder path and access the files that way
-            publicFolderPath = foundFolder.Path();
+            continue;
         }
 
-        const auto path = buildPath(publicFolderPath, FragmentsSubDirectory);
+        // the StorageFolder class has its own methods for obtaining the files within the folder
+        // however, all those methods are Async methods
+        // you may have noticed that we need to resort to clunky implementations for async operations
+        // (they are in extractValueFromTaskWithoutMainThreadAwait)
+        // so for now we will just take the folder path and access the files that way
+        const auto path = buildPath(foundFolder.Path(), FragmentsSubDirectory);
+
         if (std::filesystem::is_directory(path))
         {
             // MSIX does not support machine-wide scope
