@@ -19,10 +19,12 @@
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
+#include "../../types/inc/utils.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
