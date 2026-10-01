@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateHeaderVisibility();
         _UpdateDescriptionVisibility();
         _UpdateHeaderIconVisibility();
-        _UpdateExperimentalState();
+        _UpdateExperimentalBadgeVisibility();
         _UpdateContentVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
@@ -226,7 +226,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 strongThis->_SetAccessibleContentName();
                 strongThis->_UpdateContentVisibility();
                 strongThis->_UpdateFullDescription();
-                strongThis->_UpdateExperimentalState();
             }
         });
 
@@ -345,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Don't override ButtonBase content (would clobber its own name) or plain text blocks.
                 if (!element.try_as<ButtonBase>() && !element.try_as<TextBlock>())
                 {
-                    Automation::AutomationProperties::SetName(element, headerString);
+                    Automation::AutomationProperties::SetName(element, BuildAccessibleName(headerString, IsExperimental()));
                 }
             }
         }
@@ -510,31 +509,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void SettingsCard::_UpdateExperimentalState()
+    void SettingsCard::_UpdateExperimentalBadgeVisibility()
     {
-        const auto isExperimental = IsExperimental();
-
         if (const auto child{ GetTemplateChild(hstring{ ExperimentalBadgePart }) })
         {
             if (const auto frameworkChild{ child.try_as<FrameworkElement>() })
             {
-                frameworkChild.Visibility(isExperimental ? Visibility::Visible : Visibility::Collapsed);
+                frameworkChild.Visibility(IsExperimental() ? Visibility::Visible : Visibility::Collapsed);
             }
-        }
-
-        if (!isExperimental)
-        {
-            return;
-        }
-
-        // The badge itself has AccessibilityView=Raw, so announce the "experimental" trait via HelpText
-        const auto helpText = RS_(L"SettingsCard_ExperimentalHelpText");
-        AutomationProperties::SetHelpText(*this, helpText);
-
-        // Same Panel treatment as _UpdateFullDescription
-        if (const auto element{ Content().try_as<UIElement>() }; element && !element.try_as<Panel>())
-        {
-            AutomationProperties::SetHelpText(element, helpText);
         }
     }
 
@@ -714,11 +696,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto manualName{ AutomationProperties::GetName(card) }; !manualName.empty())
                 {
-                    return manualName;
+                    return BuildAccessibleName(manualName, card.IsExperimental());
                 }
                 if (const auto headerString{ unbox_value_or<hstring>(card.Header(), hstring{}) }; !headerString.empty())
                 {
-                    return headerString;
+                    return BuildAccessibleName(headerString, card.IsExperimental());
                 }
             }
             // Not clickable, or no header text: fall back to AutomationProperties.Name (matching

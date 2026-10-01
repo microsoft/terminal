@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         if (const auto headerString{ unbox_value_or<hstring>(Header(), hstring{}) }; !headerString.empty())
         {
-            AutomationProperties::SetName(*this, headerString);
+            AutomationProperties::SetName(*this, BuildAccessibleName(headerString, IsExperimental()));
         }
     }
 

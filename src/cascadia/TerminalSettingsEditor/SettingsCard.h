@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateDescriptionVisibility();
         void _UpdateFullDescription();
         void _UpdateHeaderIconVisibility();
-        void _UpdateExperimentalState();
+        void _UpdateExperimentalBadgeVisibility();
         void _UpdateContentVisibility();
         void _UpdateContentAlignmentState();
         void _CheckInitialVisualState();

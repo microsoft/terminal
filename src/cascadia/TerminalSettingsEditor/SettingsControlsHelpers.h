@@ -25,6 +25,8 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    hstring BuildAccessibleName(const hstring& baseName, bool isExperimental);
+
     struct ControlSizeTrigger : ControlSizeTriggerT<ControlSizeTrigger>
     {
     public:
