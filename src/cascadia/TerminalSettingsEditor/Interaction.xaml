@@ -115,7 +115,8 @@
 
         <!--  Enable Color Selection  -->
         <local:SettingsCard x:Name="EnableColorSelection"
-                            x:Uid="Globals_EnableColorSelection">
+                            x:Uid="Globals_EnableColorSelection"
+                            IsExperimental="True">
             <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xF683;" />
             </local:SettingsCard.HeaderIcon>

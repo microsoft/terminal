@@ -23,6 +23,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean IsExpanded;
         static Windows.UI.Xaml.DependencyProperty IsExpandedProperty { get; };
 
+        Boolean IsExperimental;
+        static Windows.UI.Xaml.DependencyProperty IsExperimentalProperty { get; };
+
         Windows.UI.Xaml.UIElement ItemsHeader;
         static Windows.UI.Xaml.DependencyProperty ItemsHeaderProperty { get; };
 

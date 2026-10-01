@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::Controls::IconElement, HeaderIcon);
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Content);
         DEPENDENCY_PROPERTY(bool, IsExpanded);
+        DEPENDENCY_PROPERTY(bool, IsExperimental);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::UIElement, ItemsHeader);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::UIElement, ItemsFooter);
         DEPENDENCY_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, Items);
