@@ -10,8 +10,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
 
-#include "InteractivityAutomationPeer.h"
-
 #include "ControlInteractivity.g.cpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -831,23 +829,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - None
     // Return Value:
     // - The automation peer for our control
-    Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
+    void ControlInteractivity::SetUiaEventDispatcher(IUiaEventDispatcher* uiaEventDispatcher)
     try
     {
-        const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
         if (_uiaEngine)
         {
             _core->DetachUiaEngine(_uiaEngine.get());
         }
-        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(uiaEventDispatcher);
         _core->AttachUiaEngine(_uiaEngine.get());
-        return *autoPeer;
     }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        return nullptr;
-    }
+    CATCH_LOG()
 
     ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetRenderData() const
     {
