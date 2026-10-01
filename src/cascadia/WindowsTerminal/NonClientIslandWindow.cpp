@@ -370,6 +370,9 @@ void NonClientIslandWindow::Initialize()
     _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
+    _contextMenu = winrt::TerminalApp::WindowContextMenu{ reinterpret_cast<uint64_t>(GetHandle()) };
+    _contextMenu.TargetElement(_rootGrid);
+
     _callbacks.dragBarSizeChanged = _dragBar.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
     _callbacks.rootGridSizeChanged = _rootGrid.SizeChanged(winrt::auto_revoke, { this, &NonClientIslandWindow::_OnDragBarSizeChanged });
 
