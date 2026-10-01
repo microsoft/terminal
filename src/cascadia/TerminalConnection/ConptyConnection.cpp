@@ -629,6 +629,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::Reset()
+    {
+        // If we haven't connected yet, there's no state to reset.
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyResetPseudoConsole(_hPC.get()));
+        }
+    }
+
     void ConptyConnection::ShowHide(const bool show)
     {
         // If we haven't connected yet, then stash for when we do connect.

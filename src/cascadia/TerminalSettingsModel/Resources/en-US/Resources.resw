@@ -750,6 +750,9 @@
   <data name="WorkspacesCommandKey" xml:space="preserve">
     <value>Workspaces...</value>
   </data>
+  <data name="ResetTerminalStateCommandKey" xml:space="preserve">
+    <value>Reset terminal state</value>
+  </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Close tab</value>
   </data>
