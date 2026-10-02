@@ -153,6 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ControlCore::TimerHandle _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
+        bool _hyperlinkPressConsumed{ false };
 
         void _tryStartAutoScroll(const uint32_t id, const Core::Point& point, const double scrollVelocity);
         void _tryStopAutoScroll(const uint32_t pointerId);
