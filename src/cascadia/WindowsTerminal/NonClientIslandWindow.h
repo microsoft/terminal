@@ -88,6 +88,7 @@ private:
 
     void _SetIsBorderless(const bool borderlessEnabled) override;
     void _SetIsFullscreen(const bool fullscreenEnabled) override;
+    void _SetNonRudeHWND(const bool nonRude) noexcept;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
