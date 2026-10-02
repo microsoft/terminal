@@ -672,6 +672,7 @@ catch (...)
 [[msvc::forceinline]] void ROW::WriteHelper::_replaceTextUnicode(size_t ch, std::wstring_view::const_iterator it) noexcept
 {
     auto& cwd = CodepointWidthDetector::Singleton();
+    bool colHasStartOffset = false;
 
     // Check if the new text joins with the existing contents of the row to form a single grapheme cluster.
     if (it == chars.begin())
@@ -693,7 +694,7 @@ catch (...)
             colBegDirty = colPrev;
             colEnd = colPrev;
 
-            const auto width = std::max(1, state.width);
+            const auto width = state.width;
             const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
             if (colEndNew > colLimit)
             {
@@ -702,14 +703,22 @@ catch (...)
                 return;
             }
 
-            // Fill our char-offset buffer with 1 entry containing the mapping from the
-            // current column (colEnd) to the start of the glyph in the string (ch)...
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev);
-            // ...followed by 0-N entries containing an indication that the
-            // columns are just a wide-glyph extension of the preceding one.
-            while (colEnd < colEndNew)
+            if (width > 0)
             {
-                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev | CharOffsetsTrailer);
+                // Fill our char-offset buffer with 1 entry containing the mapping from the
+                // current column (colEnd) to the start of the glyph in the string (ch)...
+                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev);
+                // ...followed by 0-N entries containing an indication that the
+                // columns are just a wide-glyph extension of the preceding one.
+                while (colEnd < colEndNew)
+                {
+                    til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(chPrev | CharOffsetsTrailer);
+                }
+            }
+            else
+            {
+                til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(chPrev);
+                colHasStartOffset = true;
             }
 
             ch += state.len;
@@ -734,7 +743,7 @@ catch (...)
         {
             cwd.GraphemeNext(state, chars);
 
-            const auto width = std::max(1, state.width);
+            const auto width = state.width;
             const auto colEndNew = gsl::narrow_cast<uint16_t>(colEnd + width);
             if (colEndNew > colLimit)
             {
@@ -743,14 +752,30 @@ catch (...)
                 return;
             }
 
-            // Fill our char-offset buffer with 1 entry containing the mapping from the
-            // current column (colEnd) to the start of the glyph in the string (ch)...
-            til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch);
-            // ...followed by 0-N entries containing an indication that the
-            // columns are just a wide-glyph extension of the preceding one.
-            while (colEnd < colEndNew)
+            if (width > 0)
             {
-                til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+                if (!colHasStartOffset)
+                {
+                    // Fill our char-offset buffer with 1 entry containing the mapping from the
+                    // current column (colEnd) to the start of the glyph in the string (ch)...
+                    til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
+                }
+                colEnd++;
+                // ...followed by 0-N entries containing an indication that the
+                // columns are just a wide-glyph extension of the preceding one.
+                while (colEnd < colEndNew)
+                {
+                    til::at(row._charOffsets, colEnd++) = gsl::narrow_cast<uint16_t>(ch | CharOffsetsTrailer);
+                }
+                colHasStartOffset = false;
+            }
+            else
+            {
+                if (!colHasStartOffset)
+                {
+                    til::at(row._charOffsets, colEnd) = gsl::narrow_cast<uint16_t>(ch);
+                    colHasStartOffset = true;
+                }
             }
 
             ch += state.len;
@@ -758,7 +783,7 @@ catch (...)
         } while (it != end);
     }
 
-    colEndDirty = colEnd;
+    colEndDirty = colEnd + (colHasStartOffset ? 1 : 0);
     charsConsumed = ch - chBeg;
 }
 
