@@ -4,6 +4,9 @@
 #include "precomp.h"
 #include "AccessibilityNotifier.h"
 
+#include "resource.h"
+#include "utils.hpp"
+
 #include "../types/inc/convert.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -182,6 +185,69 @@ void AccessibilityNotifier::SelectionChanged() noexcept
         _timerSet();
     }
 }
+
+// Announces the state of the Find dialog's search results to screen readers.
+// `index` is the 0-based index of the current match and `count` is the total number of matches.
+//
+// Unlike the other members of this class, this is emitted synchronously and isn't batched.
+void AccessibilityNotifier::AnnounceSearchResults(ptrdiff_t index, size_t count) noexcept
+try
+{
+    const auto provider = _uiaProvider.load(std::memory_order_relaxed);
+    if (!provider)
+    {
+        return;
+    }
+
+    std::wstring format;
+    std::wstring announcement;
+
+    if (count == 0)
+    {
+        // No results found
+        _LoadString(ID_CONSOLE_MSGFINDNORESULT, announcement);
+    }
+    else
+    {
+        // Results found, announce as 1-based index of total ("2 of 5")
+        _LoadString(ID_CONSOLE_MSGFINDRESULT, format);
+
+        const auto position = std::clamp<size_t>(gsl::narrow_cast<size_t>(std::max<ptrdiff_t>(index, 0)) + 1, 1, count);
+
+        // The resource uses positional inserts (%1, %2) so that translations can reorder them
+        const DWORD_PTR args[]{
+            gsl::narrow_cast<DWORD_PTR>(position),
+            gsl::narrow_cast<DWORD_PTR>(count),
+        };
+        wil::unique_hlocal_string formatted;
+        const auto length = FormatMessageW(
+            FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+            format.c_str(),
+            0,
+            0,
+            reinterpret_cast<LPWSTR>(formatted.addressof()),
+            0,
+            reinterpret_cast<va_list*>(const_cast<DWORD_PTR*>(&args[0])));
+        if (length == 0)
+        {
+            LOG_LAST_ERROR();
+            return;
+        }
+        announcement.assign(formatted.get(), length);
+    }
+
+    if (announcement.empty())
+    {
+        return;
+    }
+
+    if (const auto bstrAnnouncement = wil::make_bstr_nothrow(announcement.c_str()))
+    {
+        static const auto bstrActivityId = wil::make_bstr_nothrow(L"ConhostSearchResultAnnouncement");
+        LOG_IF_FAILED(UiaRaiseNotificationEvent(provider, NotificationKind_ActionCompleted, NotificationProcessing_ImportantMostRecent, bstrAnnouncement.get(), bstrActivityId.get()));
+    }
+}
+CATCH_LOG()
 
 bool AccessibilityNotifier::WantsRegionChangedEvents() const noexcept
 {
