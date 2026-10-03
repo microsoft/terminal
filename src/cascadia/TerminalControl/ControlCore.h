@@ -125,8 +125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
-        void SendInput(std::wstring_view wstr);
-        void PasteText(const winrt::hstring& hstr);
+        void WriteInputString(const std::wstring_view& str, WriteInputStringType type);
         bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const CopyFormat formats);
         void SelectAll();
         void ClearSelection();
@@ -331,6 +330,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _handleControlC();
         void _sendInputToConnection(std::wstring_view wstr);
+        void _sendInput(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
         void _terminalWarningBell();
