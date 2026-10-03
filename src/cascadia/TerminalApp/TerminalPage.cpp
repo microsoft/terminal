@@ -719,9 +719,11 @@ namespace winrt::TerminalApp::implementation
     // - cwd: If not empty, we should try switching to this provided directory
     //   while processing these actions. This will allow something like `wt -w 0
     //   nt -d .` from inside another directory to work as expected.
+    // - background: If true (`wt --background`), new tabs aren't selected and
+    //   the focus isn't moved.
     // Return Value:
     // - <none>
-    safe_void_coroutine TerminalPage::ProcessStartupActions(std::vector<ActionAndArgs> actions, const winrt::hstring cwd, const winrt::hstring env)
+    safe_void_coroutine TerminalPage::ProcessStartupActions(std::vector<ActionAndArgs> actions, const winrt::hstring cwd, const winrt::hstring env, const bool background)
     {
         const auto strong = get_strong();
 
@@ -769,6 +771,10 @@ namespace winrt::TerminalApp::implementation
                 co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
             }
 
+            // Only for the duration of this action: other actions (like the user
+            // opening a tab) can run while we're suspended above.
+            _backgroundActions = background;
+            const auto resetBackground = wil::scope_exit([&]() { _backgroundActions = false; });
             _actionDispatch->DoAction(actions[i]);
             suspend = true;
         }
@@ -776,7 +782,8 @@ namespace winrt::TerminalApp::implementation
         // GH#6586: now that we're done processing all startup commands,
         // focus the active control. This will work as expected for both
         // commandline invocations and for `wt` action invocations.
-        if (const auto& tabImpl{ _GetFocusedTabImpl() })
+        // Background commandlines leave the focus where it is.
+        if (const auto& tabImpl{ _GetFocusedTabImpl() }; tabImpl && !background)
         {
             if (const auto& content{ tabImpl->GetActiveContent() })
             {
@@ -2061,7 +2068,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
+        term.ShowWindowChanged([weakThis = get_weak(), weakTerm = winrt::make_weak(term)](auto&&, auto&& args) {
+            if (const auto page = weakThis.get())
+            {
+                page->_ShowWindowChangedHandler(weakTerm, args);
+            }
+        });
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
         term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
 
@@ -3508,12 +3520,30 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Send an event (which will be caught by AppHost) to change the show window state of the entire hosting window
+    // - Only terminals in the selected tab may do this. Otherwise a program
+    //   starting in a background tab could restore a minimized window.
+    // - This is raised on the connection's thread.
     // Arguments:
-    // - sender (not used)
+    // - weakTerm: the terminal that requested the change
     // - args: the arguments specifying how to set the display status to ShowWindow for our window handle
-    void TerminalPage::_ShowWindowChangedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::ShowWindowArgs args)
+    safe_void_coroutine TerminalPage::_ShowWindowChangedHandler(const winrt::weak_ref<TermControl> weakTerm, const Microsoft::Terminal::Control::ShowWindowArgs args)
     {
-        ShowWindowChanged.raise(*this, args);
+        const auto strong = get_strong();
+        co_await wil::resume_foreground(Dispatcher());
+
+        if (const auto control = weakTerm.get(); control && _isInFocusedTab(control))
+        {
+            ShowWindowChanged.raise(*this, args);
+        }
+    }
+
+    bool TerminalPage::_isInFocusedTab(const TermControl& control) const
+    {
+        const auto tab{ _GetFocusedTabImpl() };
+        const auto rootPane{ tab ? tab->GetRootPane() : nullptr };
+        return rootPane && rootPane->WalkTree([&](const auto& pane) {
+            return pane->GetTerminalControl() == control;
+        });
     }
 
     Windows::Foundation::IAsyncOperation<IVectorView<MatchResult>> TerminalPage::_FindPackageAsync(hstring query)

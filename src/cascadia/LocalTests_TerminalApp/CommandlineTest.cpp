@@ -73,6 +73,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestMultipleSplitPaneSizes);
 
+        TEST_METHOD(TestBackground);
+
     private:
         void _buildCommandlinesHelper(AppCommandlineArgs& appArgs,
                                       const size_t expectedSubcommands,
@@ -1927,6 +1929,49 @@ namespace TerminalAppLocalTests
                 auto terminalArgs{ myArgs.ContentArgs().try_as<NewTerminalArgs>() };
                 VERIFY_IS_NOT_NULL(terminalArgs);
             }
+        }
+    }
+
+    void CommandlineTest::TestBackground()
+    {
+        const auto parse = [](AppCommandlineArgs& appArgs, std::vector<winrt::hstring> args) {
+            const auto result = appArgs.ParseArgs(winrt::array_view<const winrt::hstring>{ args });
+            Log::Comment(NoThrowString().Format(L"Exit Message:\n%hs", appArgs._exitMessage.c_str()));
+            return result;
+        };
+        {
+            AppCommandlineArgs appArgs{};
+            VERIFY_ARE_EQUAL(0, parse(appArgs, { L"wt.exe", L"new-tab" }));
+            VERIFY_IS_FALSE(appArgs.GetBackground());
+        }
+        {
+            // No subcommand is an implicit new-tab.
+            AppCommandlineArgs appArgs{};
+            VERIFY_ARE_EQUAL(0, parse(appArgs, { L"wt.exe", L"-w", L"0", L"--background" }));
+            VERIFY_IS_TRUE(appArgs.GetBackground());
+            VERIFY_IS_TRUE(appArgs.GetTargetWindow() == "0");
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            VERIFY_ARE_EQUAL(0, parse(appArgs, { L"wt.exe", L"--background", L"new-tab", L"--title", L"one", L";", L"nt", L"cmd" }));
+            VERIFY_IS_TRUE(appArgs.GetBackground());
+            VERIFY_ARE_EQUAL(2u, appArgs._startupActions.size());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(1).Action());
+        }
+        {
+            // Other commands act on the selected tab, so they can't run in the background.
+            AppCommandlineArgs appArgs{};
+            VERIFY_ARE_NOT_EQUAL(0, parse(appArgs, { L"wt.exe", L"--background", L"split-pane" }));
+            VERIFY_IS_TRUE(appArgs.ShouldExitEarly());
+            VERIFY_IS_TRUE(appArgs._exitMessage.find("--background") != std::string::npos);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            VERIFY_ARE_NOT_EQUAL(0, parse(appArgs, { L"wt.exe", L"--background", L"new-tab", L";", L"focus-tab", L"-t", L"0" }));
+            VERIFY_IS_TRUE(appArgs.ShouldExitEarly());
         }
     }
 }
