@@ -1190,6 +1190,11 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    bool TerminalWindow::HostsSession(const winrt::guid& sessionId) const
+    {
+        return _root && _root->HostsSession(sessionId);
+    }
+
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
