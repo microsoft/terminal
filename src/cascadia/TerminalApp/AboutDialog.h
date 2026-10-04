@@ -25,6 +25,7 @@ namespace winrt::TerminalApp::implementation
         std::chrono::system_clock::time_point _lastUpdateCheck{};
 
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _ReleaseNotesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _SendFeedbackOnClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
         safe_void_coroutine _queueUpdateCheck();
     };

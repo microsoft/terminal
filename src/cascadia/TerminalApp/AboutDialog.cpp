@@ -57,6 +57,21 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    void AboutDialog::_ReleaseNotesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        std::wstring url{ L"https://github.com/microsoft/terminal/releases/tag/v" };
+        const auto version{ ApplicationVersion() };
+        if (!version.empty())
+        {
+            url += version.c_str();
+        }
+        else
+        {
+            url = L"https://github.com/microsoft/terminal/releases";
+        }
+        ShellExecute(nullptr, nullptr, url.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
     safe_void_coroutine AboutDialog::_queueUpdateCheck()
     {
         auto strongThis = get_strong();
