@@ -64,6 +64,19 @@ Openconsole has three configuration types:
 
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
 
+## Metadata generation
+
+C++/WinRT builds prioritize the resolved `Windows.Foundation.FoundationContract`
+and `Windows.Foundation.UniversalApiContract` directories when `mdmerge` resolves
+referenced types. Searching these frequently used contracts first avoids repeated
+probes of unrelated metadata directories. All original directories, SDK contract
+versions, and metadata validation are retained; this does not change IDL, generated
+APIs, compiler settings, or DLL boundaries.
+
+For a comparison or to restore the original search order, rebuild with
+`/p:TerminalOptimizeMetadataSearch=false`. The optimization is enabled by default
+and applies in both Visual Studio and command-line builds.
+
 ## Link-only C++/WinRT wrappers
 
 `/p:TerminalLeanDllWrappers=true` skips unused platform, reference, and component

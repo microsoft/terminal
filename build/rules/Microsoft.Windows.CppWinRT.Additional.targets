@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- mdmerge searches these directories in order for every referenced type.
+       Search the two most commonly used SDK contracts first, keeping the same
+       contract versions and all other directories in their original order. -->
+  <Target Name="TerminalOptimizeMetadataSearch"
+          AfterTargets="GetCppWinRTMdMergeInputs"
+          Condition="'$(TerminalOptimizeMetadataSearch)'!='false'">
+    <ItemGroup>
+      <_TerminalMetadataDirectories Include="@(CppWinRTMdMergeMetadataDirectories)" />
+      <_TerminalCommonMetadataReferences Include="@(CppWinRTPlatformWinMDReferences)"
+          Condition="'%(Filename)'=='Windows.Foundation.FoundationContract' or '%(Filename)'=='Windows.Foundation.UniversalApiContract'" />
+      <CppWinRTMdMergeMetadataDirectories Remove="@(CppWinRTMdMergeMetadataDirectories)" />
+      <CppWinRTMdMergeMetadataDirectories Include="@(_TerminalCommonMetadataReferences->'%(RelativeDir)'->Distinct())" />
+      <CppWinRTMdMergeMetadataDirectories Include="@(_TerminalMetadataDirectories)"
+          Exclude="@(CppWinRTMdMergeMetadataDirectories)" />
+    </ItemGroup>
+  </Target>
+</Project>
