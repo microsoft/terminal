@@ -88,13 +88,15 @@ Function Get-GraphQlProjectNumberGivenName($Organization, $Name) {
             }
         }' -Variables @{ organization = $Organization; after = $cursor }
 
-        If($false -eq $o.organization.projectsV2.pageInfo.hasNextPage) {
-            Break
-        }
-
+        # Search the current page before deciding whether to keep paging;
+        # otherwise a match on the last (or only) page is never found.
         $pl = $o.organization.projectsV2.nodes | Where-Object title -Like $Name
         If($null -ne $pl) {
             $projectNumber = $pl.number
+            Break
+        }
+
+        If($false -eq $o.organization.projectsV2.pageInfo.hasNextPage) {
             Break
         }
 
