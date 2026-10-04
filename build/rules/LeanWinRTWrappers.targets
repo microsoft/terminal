@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- These link-only DLL shells use the activation module already compiled into their static library. -->
+  <PropertyGroup Condition="'$(ProjectName)'=='Microsoft.Terminal.Settings.Model' or '$(ProjectName)'=='Microsoft.Terminal.Control' or '$(ProjectName)'=='TerminalApp'">
+    <_TerminalLeanWrapper>true</_TerminalLeanWrapper>
+    <CppWinRTEnablePlatformProjection>false</CppWinRTEnablePlatformProjection>
+    <CppWinRTEnableReferenceProjection>false</CppWinRTEnableReferenceProjection>
+    <CppWinRTEnableComponentProjection>false</CppWinRTEnableComponentProjection>
+  </PropertyGroup>
+
+  <Target Name="TerminalValidateLeanWrapper"
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(_TerminalLeanWrapper)'=='true'">
+    <ItemGroup>
+      <_TerminalUnexpectedWrapperSource Include="@(ClCompile)"
+          Condition="'%(ClCompile.Filename)%(ClCompile.Extension)'!='pch.cpp'" />
+    </ItemGroup>
+    <Error Condition="'@(Midl)'!='' or '@(Page)'!='' or '@(ApplicationDefinition)'!='' or '@(_TerminalUnexpectedWrapperSource)'!=''"
+        Text="TerminalLeanDllWrappers only supports link-only DLL wrappers with an optional empty pch.cpp. This wrapper now authors code or metadata; disable the experiment." />
+  </Target>
+</Project>

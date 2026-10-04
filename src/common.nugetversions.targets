@@ -99,4 +99,7 @@
 
   </Target>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\build\rules\LeanWinRTWrappers.targets"
+          Condition="'$(TerminalLeanDllWrappers)'=='true'" />
+
 </Project>

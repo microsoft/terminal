@@ -64,6 +64,18 @@ Openconsole has three configuration types:
 
 AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
 
+## Link-only C++/WinRT wrappers
+
+`/p:TerminalLeanDllWrappers=true` skips unused platform, reference, and component
+projection generation in the Model, Control, and App DLL wrappers. Their static
+libraries already compile the implementation and activation module. Metadata
+merging, resources, and DLL linking remain unchanged.
+
+This optimization is opt-in. A guard rejects wrappers that author IDL, XAML, or
+C++ sources other than the optional `pch.cpp`; those sources belong in the
+implementation library. Omit the property or set it to `false` to retain the
+original generation steps.
+
 ## Updating Nuget package references - Globally versioned
 Most Nuget package references in this project are centralized in a single configuration so that there is a single canonical version for everything.  This canonical version is restored before builds by the build pipeline, environment initialization scripts, or Visual Studio (as appropriate).
 
