@@ -542,6 +542,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8_EXTENDED_MODE = DECPrivateMode(1005),
         SGR_EXTENDED_MODE = DECPrivateMode(1006),
         ALTERNATE_SCROLL = DECPrivateMode(1007),
+        SGR_PIXEL_MODE = DECPrivateMode(1016),
         ASB_AlternateScreenBuffer = DECPrivateMode(1049),
         XTERM_BracketedPasteMode = DECPrivateMode(2004),
         SO_SynchronizedOutput = DECPrivateMode(2026),
