@@ -1370,6 +1370,15 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return S_FALSE;
 }
 
+[[nodiscard]] HRESULT Window::SignalUiaAnnouncement(const std::wstring_view text)
+{
+    if (_pUiaProvider != nullptr)
+    {
+        return _pUiaProvider->SignalAnnouncement(text);
+    }
+    return S_FALSE;
+}
+
 [[nodiscard]] HRESULT Window::UiaSetTextAreaFocus()
 {
     if (_pUiaProvider != nullptr)

@@ -37,5 +37,7 @@ namespace Microsoft::Console::Interactivity
         virtual void NotifyConsoleLayoutEvent() = 0;
         virtual void NotifyConsoleStartApplicationEvent(_In_ DWORD processId) = 0;
         virtual void NotifyConsoleEndApplicationEvent(_In_ DWORD processId) = 0;
+        
+        virtual void AnnounceSearchResults(_In_ ptrdiff_t index, _In_ size_t count) = 0;
     };
 }

@@ -31,5 +31,7 @@ namespace Microsoft::Console::Interactivity::OneCore
         void NotifyConsoleLayoutEvent() noexcept override;
         void NotifyConsoleStartApplicationEvent(_In_ DWORD processId) noexcept override;
         void NotifyConsoleEndApplicationEvent(_In_ DWORD processId) noexcept override;
+        
+        void AnnounceSearchResults(_In_ ptrdiff_t index, _In_ size_t count) noexcept override;
     };
 }

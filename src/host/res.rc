@@ -61,6 +61,11 @@ BEGIN
 
     ID_CONSOLE_FMT_WINDOWTITLE, "%s%s"
 
+/* Find dialog screen reader announcements. %1 is the 1-based index of the current
+   match, %2 is the total number of matches. */
+    ID_CONSOLE_MSGFINDRESULT,   "%1!d! of %2!d!"
+    ID_CONSOLE_MSGFINDNORESULT, "No results"
+
 /* Menu items that replace the standard ones. These don't have the accelerators */
     SC_CLOSE,       "&Close"
 
