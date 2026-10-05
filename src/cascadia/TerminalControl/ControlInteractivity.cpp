@@ -248,6 +248,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PasteFromClipboard.raise(*this, std::move(args));
     }
 
+    std::wstring ControlInteractivity::_getHyperLinkForPointerPress(
+        const Control::MouseButtonState buttonState,
+        const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+        const til::point terminalPosition) const
+    {
+        if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) && modifiers.IsCtrlPressed())
+        {
+            return _core->GetHyperlink(terminalPosition.to_core_point());
+        }
+        return {};
+    }
+
     void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
@@ -259,13 +271,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
-        const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
         // GH#9396: we prioritize hyper-link over VT mouse events
-        auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
-        if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
-            ctrlEnabled &&
-            !hyperlink.empty())
+        if (const auto hyperlink = _getHyperLinkForPointerPress(buttonState, modifiers, terminalPosition); !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
@@ -475,7 +483,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            if (const auto hyperlink = _getHyperLinkForPointerPress(buttonState, modifiers, terminalPosition); !hyperlink.empty())
+            {
+                // GH#20630: Avoid emitting hyperlink clicks as VT mouse releases.
+                // We handled the hyperlink click in PointerPressed after all.
+            }
+            else
+            {
+                _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            }
             return;
         }
 
