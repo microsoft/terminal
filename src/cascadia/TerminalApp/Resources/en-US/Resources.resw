@@ -399,6 +399,9 @@
   <data name="CmdMaximizedDesc" xml:space="preserve">
     <value>Launch the window maximized</value>
   </data>
+  <data name="CmdMinimizedDesc" xml:space="preserve">
+    <value>Launch the window minimized</value>
+  </data>
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>

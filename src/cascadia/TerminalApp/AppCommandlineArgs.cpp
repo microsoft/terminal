@@ -180,8 +180,12 @@ void AppCommandlineArgs::_buildParser()
     auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
     auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
     auto focus = _app.add_flag_function("-f,--focus", focusCallback, RS_A(L"CmdFocusDesc"));
+    auto minimized = _app.add_flag("-m,--minimized", _minimized, RS_A(L"CmdMinimizedDesc"));
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
+    minimized->excludes(maximized);
+    minimized->excludes(fullscreen);
+    minimized->excludes(focus);
 
     auto positionCallback = [this](std::string string) {
         _position = LaunchPositionFromString(string);
@@ -1038,6 +1042,11 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppComman
     return _launchMode;
 }
 
+bool AppCommandlineArgs::GetMinimized() const noexcept
+{
+    return _minimized;
+}
+
 std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCommandlineArgs::GetPosition() const noexcept
 {
     return _position;
@@ -1169,6 +1178,7 @@ void AppCommandlineArgs::FullResetState()
 
     _currentCommandline = nullptr;
     _launchMode = std::nullopt;
+    _minimized = false;
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;

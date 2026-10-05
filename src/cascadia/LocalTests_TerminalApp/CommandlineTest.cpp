@@ -70,6 +70,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestInvalidExecuteCommandlineAction);
         TEST_METHOD(TestLaunchMode);
         TEST_METHOD(TestLaunchModeWithNoCommand);
+        TEST_METHOD(TestMinimizedLaunch);
+        TEST_METHOD(TestMinimizedLaunchConflicts);
 
         TEST_METHOD(TestMultipleSplitPaneSizes);
 
@@ -1806,6 +1808,44 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(terminalArgs.ProfileIndex() == nullptr);
             VERIFY_IS_TRUE(terminalArgs.Profile().empty());
             VERIFY_ARE_EQUAL(L"powershell.exe", terminalArgs.Commandline());
+        }
+    }
+
+    void CommandlineTest::TestMinimizedLaunch()
+    {
+        for (const auto flag : { L"--minimized", L"-m" })
+        {
+            AppCommandlineArgs appArgs{};
+            VERIFY_IS_FALSE(appArgs.GetMinimized());
+
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", flag };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+            VERIFY_IS_TRUE(appArgs.GetMinimized());
+            VERIFY_IS_FALSE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(1u, appArgs.GetStartupActions().size());
+
+            appArgs.FullResetState();
+            VERIFY_IS_FALSE(appArgs.GetMinimized());
+
+            rawCommands = { L"wt.exe", flag, L"new-tab", L";", L"split-pane" };
+            _buildCommandlinesHelper(appArgs, 2u, rawCommands);
+            VERIFY_IS_TRUE(appArgs.GetMinimized());
+            VERIFY_ARE_EQUAL(2u, appArgs.GetStartupActions().size());
+
+            appArgs.FullResetState();
+            rawCommands = { L"wt.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+            VERIFY_IS_FALSE(appArgs.GetMinimized());
+        }
+    }
+
+    void CommandlineTest::TestMinimizedLaunchConflicts()
+    {
+        for (const auto flag : { L"--maximized", L"--fullscreen", L"--focus" })
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--minimized", flag };
+            _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
         }
     }
 

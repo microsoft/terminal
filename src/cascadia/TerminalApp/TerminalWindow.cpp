@@ -720,6 +720,11 @@ namespace winrt::TerminalApp::implementation
                    valueFromSettings;
     }
 
+    bool TerminalWindow::StartMinimized()
+    {
+        return _appArgs && _appArgs->ParsedArgs().GetMinimized();
+    }
+
     // Method Description:
     // - Get the user defined initial position from Json settings file.
     //   This position represents the top left corner of the Terminal window.

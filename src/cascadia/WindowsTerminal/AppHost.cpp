@@ -226,7 +226,10 @@ void AppHost::Initialize()
     // application layer.
     _windowCallbacks.DragRegionClicked = _window->DragRegionClicked([this]() { _windowLogic.TitlebarClicked(); });
 
-    _windowCallbacks.WindowVisibilityChanged = _window->WindowVisibilityChanged([this](bool showOrHide) { _windowLogic.WindowVisibilityChanged(showOrHide); });
+    _windowCallbacks.WindowVisibilityChanged = _window->WindowVisibilityChanged([this](bool showOrHide) {
+        ++_windowVisibilityGeneration;
+        _windowLogic.WindowVisibilityChanged(showOrHide);
+    });
 
     _revokers.Initialized = _windowLogic.Initialized(winrt::auto_revoke, { this, &AppHost::_WindowInitializedHandler });
     _revokers.RequestedThemeChanged = _windowLogic.RequestedThemeChanged(winrt::auto_revoke, { this, &AppHost::_UpdateTheme });
@@ -290,14 +293,17 @@ void AppHost::Initialize()
     // the PTY requesting a change to the window state and the Terminal
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFunc<bool>>(
+    _showHideWindowThrottler = std::make_shared<ThrottledFunc<bool, uint64_t>>(
         winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
         til::throttled_func_options{
             .delay = std::chrono::milliseconds{ 200 },
             .trailing = true,
         },
-        [this](const bool show) {
-            _window->ShowWindowChanged(show);
+        [this](const bool show, const uint64_t generation) {
+            if (generation == _windowVisibilityGeneration)
+            {
+                _window->ShowWindowChanged(show);
+            }
         });
 
     _window->UpdateTitle(_windowLogic.Title());
@@ -1046,7 +1052,7 @@ void AppHost::_ShowWindowChanged(const winrt::Windows::Foundation::IInspectable&
     // should prevent scenarios where the Terminal window state and PTY window
     // state get de-sync'd, and cause the window to minimize/restore constantly
     // in a loop.
-    _showHideWindowThrottler->Run(args.ShowOrHide());
+    _showHideWindowThrottler->Run(args.ShowOrHide(), _windowVisibilityGeneration);
 }
 
 void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -1178,34 +1184,43 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
     // wShowCmd passed into the original process.
     auto nCmdShow = _launchShowWindowCommand;
 
-    if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
+    // Check if we were asked to start minimized (e.g. startOnLoginMode:minimized,
+    // or wt --minimized).
+    const bool shouldMinimize = nCmdShow == SW_SHOWMINIMIZED ||
+                                nCmdShow == SW_SHOWMINNOACTIVE ||
+                                nCmdShow == SW_FORCEMINIMIZE ||
+                                _windowLogic.StartMinimized();
+
+    if (!shouldMinimize && WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
     }
 
     // Delay ShowWindow() until after XAML's initial layout pass is complete.
     auto weakThis{ weak_from_this() };
-    co_await wil::resume_foreground(_windowLogic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
+    auto dispatcher = _windowLogic.GetRoot().Dispatcher();
+    co_await wil::resume_foreground(dispatcher, winrt::Windows::UI::Core::CoreDispatcherPriority::Low);
     const auto strongThis = weakThis.lock();
     if (!strongThis || _window == nullptr)
     {
         co_return;
     }
 
-    ShowWindow(_window->GetHandle(), nCmdShow);
-
-    // If we didn't start the window hidden (in one way or another), then try to
-    // pull ourselves to the foreground. Don't necessarily do a whole "summon",
-    // we don't really want to STEAL foreground if someone rightfully took it
-
-    const bool noForeground = nCmdShow == SW_SHOWMINIMIZED ||
-                              nCmdShow == SW_SHOWNOACTIVATE ||
-                              nCmdShow == SW_SHOWMINNOACTIVE ||
-                              nCmdShow == SW_SHOWNA ||
-                              nCmdShow == SW_FORCEMINIMIZE;
-    if (!noForeground)
+    if (shouldMinimize)
     {
-        SetForegroundWindow(_window->GetHandle());
+        ShowWindow(_window->GetHandle(), SW_SHOWMINNOACTIVE);
+    }
+    else
+    {
+        ShowWindow(_window->GetHandle(), nCmdShow);
+
+        // Try to pull ourselves to the foreground.
+        const bool noForeground = nCmdShow == SW_SHOWNOACTIVATE ||
+                                  nCmdShow == SW_SHOWNA;
+        if (!noForeground)
+        {
+            SetForegroundWindow(_window->GetHandle());
+        }
     }
 
     // Don't set our state to Initialized until after the call to ShowWindow.

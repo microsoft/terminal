@@ -452,6 +452,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
         {
             auto mode = winrt::unbox_value<Model::StartOnLoginMode>(ee.EnumValue());
+            if (_Settings.GlobalSettings().StartOnLoginMode() == mode)
+            {
+                namespace WAM = winrt::Windows::ApplicationModel;
+                const auto state = _startOnUserLoginTask ? _startOnUserLoginTask.State() : WAM::StartupTaskState::Disabled;
+                const auto enabled = state == WAM::StartupTaskState::Enabled || state == WAM::StartupTaskState::EnabledByPolicy;
+                if (!_startOnUserLoginTask || enabled == (mode != Model::StartOnLoginMode::Disabled))
+                {
+                    co_return;
+                }
+            }
 
             // Update the settings model
             _Settings.GlobalSettings().StartOnLoginMode(mode);

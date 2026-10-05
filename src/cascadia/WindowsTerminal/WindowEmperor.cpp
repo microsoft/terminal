@@ -444,10 +444,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         // Restore persisted windows.
         const auto state = ApplicationState::SharedInstance();
         const auto layouts = state.PersistedWindowLayouts();
-        if (layouts && layouts.Size() > 0)
+        _needsPersistenceCleanup = layouts && layouts.Size() > 0;
+        if (_needsPersistenceCleanup && _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
         {
-            _needsPersistenceCleanup = true;
-
             // I wanted minimized startup mode to restore the windows as
             // minimized. However, this didn't seem to work. It would restore
             // them, but leave them in a weird state where they couldn't be

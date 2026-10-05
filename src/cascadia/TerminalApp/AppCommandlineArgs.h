@@ -40,6 +40,7 @@ public:
 
     std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
+    bool GetMinimized() const noexcept;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> GetPosition() const noexcept;
     std::optional<til::size> GetSize() const noexcept;
 
@@ -129,6 +130,7 @@ private:
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
+    bool _minimized{ false };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> _position{ std::nullopt };
     std::optional<til::size> _size{ std::nullopt };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
