@@ -21,12 +21,10 @@ Author(s):
 
 #pragma once
 
-#include "Native/Profile.h"
+#include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    using NativeProfile = ::Microsoft::Terminal::Settings::Model::Native::Profile;
-
     class IDynamicProfileGenerator
     {
     public:
@@ -34,6 +32,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         virtual std::wstring_view GetNamespace() const noexcept = 0;
         virtual std::wstring_view GetDisplayName() const noexcept = 0;
         virtual std::wstring_view GetIcon() const noexcept = 0;
-        virtual void GenerateProfiles(std::vector<winrt::com_ptr<NativeProfile>>& profiles) const = 0;
+        virtual void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const = 0;
     };
 };

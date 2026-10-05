@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return til::hstring_format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value);
     }
 
-    AppearanceViewModel::AppearanceViewModel(const winrt::com_ptr<NativeModel::AppearanceConfig>& appearance) :
+    AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
         // Add a property changed handler to our own property changed event.
@@ -267,18 +267,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring AppearanceViewModel::FontFace() const
     {
-        return _appearance->SourceProfile()->FontInfo()->FontFace();
+        return _appearance.SourceProfile().FontInfo().FontFace();
     }
 
     void AppearanceViewModel::FontFace(const winrt::hstring& value)
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        if (fontInfo->FontFace() == value)
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        if (fontInfo.FontFace() == value)
         {
             return;
         }
 
-        fontInfo->FontFace(value);
+        fontInfo.FontFace(value);
         _invalidateFontFaceDependents();
 
         _NotifyChanges(L"HasFontFace", L"FontFace");
@@ -286,14 +286,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::HasFontFace() const
     {
-        return _appearance->SourceProfile()->FontInfo()->HasFontFace();
+        return _appearance.SourceProfile().FontInfo().HasFontFace();
     }
 
     void AppearanceViewModel::ClearFontFace()
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
 
-        fontInfo->ClearFontFace();
+        fontInfo.ClearFontFace();
         _invalidateFontFaceDependents();
 
         _NotifyChanges(L"HasFontFace", L"FontFace");
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::FontConfig AppearanceViewModel::FontFaceOverrideSource() const
     {
-        return ModelAdapters::ToProjected(_appearance->SourceProfile()->FontInfo()->FontFaceOverrideSource());
+        return _appearance.SourceProfile().FontInfo().FontFaceOverrideSource();
     }
 
     void AppearanceViewModel::_refreshFontFaceDependents()
@@ -388,8 +388,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::array<std::vector<Editor::FontKeyValuePair>, 2> fontSettingsUsed;
         const std::array fontSettingsUser{
-            _appearance->SourceProfile()->FontInfo()->FontAxes(),
-            _appearance->SourceProfile()->FontInfo()->FontFeatures(),
+            _appearance.SourceProfile().FontInfo().FontAxes(),
+            _appearance.SourceProfile().FontInfo().FontFeatures(),
         };
 
         // Find all axes and features that are in the user settings, and move them to the used list.
@@ -621,13 +621,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     double AppearanceViewModel::LineHeight() const
     {
-        const auto cellHeight = _appearance->SourceProfile()->FontInfo()->CellHeight();
+        const auto cellHeight = _appearance.SourceProfile().FontInfo().CellHeight();
         return _parseCellSizeValue(cellHeight);
     }
 
     double AppearanceViewModel::CellWidth() const
     {
-        const auto cellWidth = _appearance->SourceProfile()->FontInfo()->CellWidth();
+        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellWidth();
         return _parseCellSizeValue(cellWidth);
     }
 
@@ -639,17 +639,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         str = fmt::format(FMT_COMPILE(L"{:.6g}"), value);          \
     }                                                              \
                                                                    \
-    const auto fontInfo = _appearance->SourceProfile()->FontInfo();  \
+    const auto fontInfo = _appearance.SourceProfile().FontInfo();  \
                                                                    \
-    if (fontInfo->modelName() != str)                               \
+    if (fontInfo.modelName() != str)                               \
     {                                                              \
         if (str.empty())                                           \
         {                                                          \
-            fontInfo->Clear##modelName();                           \
+            fontInfo.Clear##modelName();                           \
         }                                                          \
         else                                                       \
         {                                                          \
-            fontInfo->modelName(winrt::hstring{ str });              \
+            fontInfo.modelName(str);                               \
         }                                                          \
         _NotifyChanges(L"Has" #viewModelName, L## #viewModelName); \
     }
@@ -666,14 +666,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::HasLineHeight() const
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        return fontInfo->HasCellHeight();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellHeight();
     }
 
     bool AppearanceViewModel::HasCellWidth() const
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        return fontInfo->HasCellWidth();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellWidth();
     }
 
     void AppearanceViewModel::ClearLineHeight()
@@ -688,14 +688,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        return ModelAdapters::ToProjected(fontInfo->CellHeightOverrideSource());
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellHeightOverrideSource();
     }
 
     Model::FontConfig AppearanceViewModel::CellWidthOverrideSource() const
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        return ModelAdapters::ToProjected(fontInfo->CellWidthOverrideSource());
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellWidthOverrideSource();
     }
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
@@ -734,7 +734,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::HasFontAxes() const
     {
-        return _appearance->SourceProfile()->FontInfo()->HasFontAxes();
+        return _appearance.SourceProfile().FontInfo().HasFontAxes();
     }
 
     void AppearanceViewModel::ClearFontAxes()
@@ -744,7 +744,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::FontConfig AppearanceViewModel::FontAxesOverrideSource() const
     {
-        return ModelAdapters::ToProjected(_appearance->SourceProfile()->FontInfo()->FontAxesOverrideSource());
+        return _appearance.SourceProfile().FontInfo().FontAxesOverrideSource();
     }
 
     IObservableVector<Editor::FontKeyValuePair> AppearanceViewModel::FontFeatures()
@@ -754,7 +754,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::HasFontFeatures() const
     {
-        return _appearance->SourceProfile()->FontInfo()->HasFontFeatures();
+        return _appearance.SourceProfile().FontInfo().HasFontFeatures();
     }
 
     void AppearanceViewModel::ClearFontFeatures()
@@ -764,7 +764,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Model::FontConfig AppearanceViewModel::FontFeaturesOverrideSource() const
     {
-        return ModelAdapters::ToProjected(_appearance->SourceProfile()->FontInfo()->FontFeaturesOverrideSource());
+        return _appearance.SourceProfile().FontInfo().FontFeaturesOverrideSource();
     }
 
     void AppearanceViewModel::AddFontKeyValuePair(const IInspectable& sender, const Editor::FontKeyValuePair& kv)
@@ -814,8 +814,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto& d = *_fontFaceDependents;
         auto& used = d.fontSettingsUsed[fontSettingsIndex];
 
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        auto fontSettingsUser = kvImpl->IsFontFeature() ? fontInfo->FontFeatures() : fontInfo->FontAxes();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        auto fontSettingsUser = kvImpl->IsFontFeature() ? fontInfo.FontFeatures() : fontInfo.FontAxes();
         if (!fontSettingsUser)
         {
             return;
@@ -837,14 +837,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::_deleteAllFontKeyValuePairs(FontSettingIndex fontSettingsIndex)
     {
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
         if (fontSettingsIndex == FontFeaturesIndex)
         {
-            fontInfo->ClearFontFeatures();
+            fontInfo.ClearFontFeatures();
         }
         else
         {
-            fontInfo->ClearFontAxes();
+            fontInfo.ClearFontAxes();
         }
 
         if (!_fontFaceDependents)
@@ -889,19 +889,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto tag = kvImpl->Key();
         const auto value = kvImpl->Value();
         const auto tagString = tagToString(tag);
-        const auto fontInfo = _appearance->SourceProfile()->FontInfo();
-        auto fontSettingsUser = kvImpl->IsFontFeature() ? fontInfo->FontFeatures() : fontInfo->FontAxes();
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        auto fontSettingsUser = kvImpl->IsFontFeature() ? fontInfo.FontFeatures() : fontInfo.FontAxes();
 
         if (!fontSettingsUser)
         {
             fontSettingsUser = winrt::single_threaded_map<hstring, float>();
             if (kvImpl->IsFontFeature())
             {
-                fontInfo->FontFeatures(fontSettingsUser);
+                fontInfo.FontFeatures(fontSettingsUser);
             }
             else
             {
-                fontInfo->FontAxes(fontSettingsUser);
+                fontInfo.FontAxes(fontSettingsUser);
             }
         }
 
@@ -918,7 +918,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
-        _appearance->BackgroundImagePath(NativeModel::MediaResource::FromString(path));
+        _appearance.BackgroundImagePath(Model::MediaResourceHelper::FromString(path));
         _NotifyChanges(L"BackgroundImagePath");
     }
 
@@ -1127,22 +1127,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color AppearanceViewModel::ForegroundPreview() const
     {
-        return _getColorPreview(Foreground(), CurrentColorScheme().ForegroundColor().Color());
+        return _getColorPreview(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::BackgroundPreview() const
     {
-        return _getColorPreview(Background(), CurrentColorScheme().BackgroundColor().Color());
+        return _getColorPreview(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::SelectionBackgroundPreview() const
     {
-        return _getColorPreview(SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
+        return _getColorPreview(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
     }
 
     Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
     {
-        return _getColorPreview(CursorColor(), CurrentColorScheme().CursorColor().Color());
+        return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
     }
 
     hstring AppearanceViewModel::ForegroundAccessibleName() const

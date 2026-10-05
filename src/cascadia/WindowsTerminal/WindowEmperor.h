@@ -17,10 +17,6 @@ Abstract:
 
 #pragma once
 
-#include "SummonWindowBehavior.h"
-#include "../TerminalApp/Native/CommandlineArgs.h"
-#include "../TerminalApp/Native/WindowRequestedArgs.h"
-
 class AppHost;
 
 class WindowEmperor
@@ -48,7 +44,7 @@ public:
     AppHost* GetWindowById(uint64_t id) const noexcept;
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
     // CreateNewWindow is used for creating a new window from existing Content
-    void CreateNewWindow(::TerminalApp::Native::WindowRequestedArgsRef args);
+    void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
     // OpenWindow is used for opening a new window or summoning an existing window by name.
@@ -60,21 +56,19 @@ private:
         uint64_t WindowID = 0;
         std::wstring_view WindowName;
         bool OnCurrentDesktop = false;
-        ::Microsoft::Terminal::Windowing::SummonWindowBehaviorRef SummonBehavior{
-            winrt::make_self<::Microsoft::Terminal::Windowing::SummonWindowBehavior>()
-        };
+        winrt::TerminalApp::SummonWindowBehavior SummonBehavior;
     };
 
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
     AppHost* _mostRecentWindow() const noexcept;
-    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, ::TerminalApp::Native::CommandlineArgsRef args);
+    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args);
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;
-    void _dispatchCommandline(::TerminalApp::Native::CommandlineArgsRef args);
+    void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
     void _dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand);
-    safe_void_coroutine _dispatchCommandlineCurrentDesktop(::TerminalApp::Native::CommandlineArgsRef args);
+    safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
     void _postQuitMessageIfNeeded() const;

@@ -129,12 +129,8 @@
   </ItemGroup>
 
   <ItemDefinitionGroup>
-    <ClCompile>
-      <PreprocessorDefinitions>TSM_NATIVE_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
     <Link>
-      <!-- Native export directives need explicit object roots, not just archive membership. -->
-      <AdditionalDependencies>%(AdditionalDependencies);user32.lib;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.MediaResource.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.MediaResourceList.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.Profile.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.FontConfig.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.AppearanceConfig.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Native.MediaResourceResolver.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\MediaResourceSupport.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\MediaResourceListAdapter.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Profile.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\FontConfig.obj;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\AppearanceConfig.obj</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);user32.lib;$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res</AdditionalDependencies>
       <!-- TSM Lib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>

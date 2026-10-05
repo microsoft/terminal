@@ -3,43 +3,35 @@
 
 #pragma once
 
-#include "Native/CommandlineArgs.h"
-#include "Native/WindowRequestedArgs.h"
+#include "AppCommandlineArgs.h"
 #include "CommandlineArgs.g.h"
 #include "RequestReceiveContentArgs.g.h"
+#include "SummonWindowBehavior.g.h"
 #include "WindowRequestedArgs.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
     struct CommandlineArgs : public CommandlineArgsT<CommandlineArgs>
     {
-        CommandlineArgs() = default;
-        explicit CommandlineArgs(::TerminalApp::Native::CommandlineArgsRef value) :
-            _native{ std::move(value) }
-        {
-        }
-
-        ::TerminalApp::Native::CommandlineArgsRef NativeArgs() const noexcept { return _native; }
         ::TerminalApp::AppCommandlineArgs& ParsedArgs() noexcept;
         winrt::com_array<winrt::hstring>& CommandlineRef() noexcept;
 
+        // These bits are exposed via WinRT:
         int32_t ExitCode() const noexcept;
         winrt::hstring ExitMessage() const;
         winrt::hstring TargetWindow() const;
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection Connection() const;
-        void Connection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& value);
+        til::property<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection> Connection;
         void Commandline(const winrt::array_view<const winrt::hstring>& value);
         winrt::com_array<winrt::hstring> Commandline();
-        winrt::hstring CurrentDirectory() const;
-        void CurrentDirectory(const winrt::hstring& value);
-        winrt::hstring CurrentEnvironment() const;
-        void CurrentEnvironment(const winrt::hstring& value);
-        uint32_t ShowWindowCommand() const noexcept;
-        void ShowWindowCommand(uint32_t value) noexcept;
+        til::property<winrt::hstring> CurrentDirectory;
+        til::property<winrt::hstring> CurrentEnvironment;
+        til::property<uint32_t> ShowWindowCommand{ static_cast<uint32_t>(SW_NORMAL) }; // SW_NORMAL is 1, 0 is SW_HIDE
 
     private:
-        ::TerminalApp::Native::CommandlineArgsRef _native{ ::TerminalApp::Native::CommandlineArgs::Create() };
+        ::TerminalApp::AppCommandlineArgs _parsed;
+        int32_t _parseResult = 0;
+        winrt::com_array<winrt::hstring> _args;
     };
 
     struct RequestReceiveContentArgs : RequestReceiveContentArgsT<RequestReceiveContentArgs>
@@ -55,36 +47,52 @@ namespace winrt::TerminalApp::implementation
             _TabIndex{ tabIndex } {};
     };
 
+    struct SummonWindowBehavior : public SummonWindowBehaviorT<SummonWindowBehavior>
+    {
+    public:
+        SummonWindowBehavior() = default;
+        WINRT_PROPERTY(bool, MoveToCurrentDesktop, true);
+        WINRT_PROPERTY(bool, ToggleVisibility, true);
+        WINRT_PROPERTY(uint32_t, DropdownDuration, 0);
+        WINRT_PROPERTY(MonitorBehavior, ToMonitor, MonitorBehavior::ToCurrent);
+
+    public:
+        SummonWindowBehavior(const SummonWindowBehavior& other) :
+            _MoveToCurrentDesktop{ other.MoveToCurrentDesktop() },
+            _ToMonitor{ other.ToMonitor() },
+            _DropdownDuration{ other.DropdownDuration() },
+            _ToggleVisibility{ other.ToggleVisibility() } {};
+    };
+
     struct WindowRequestedArgs : public WindowRequestedArgsT<WindowRequestedArgs>
     {
     public:
-        WindowRequestedArgs(uint64_t id, const winrt::TerminalApp::CommandlineArgs& command);
-        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds);
-        explicit WindowRequestedArgs(::TerminalApp::Native::WindowRequestedArgsRef value) :
-            _native{ std::move(value) }
+        WindowRequestedArgs(uint64_t id, const winrt::TerminalApp::CommandlineArgs& command) :
+            _Id{ id },
+            _Command{ std::move(command) }
         {
         }
 
-        ::TerminalApp::Native::WindowRequestedArgsRef NativeArgs() const noexcept { return _native; }
-        uint64_t Id() const noexcept;
-        void Id(uint64_t value) noexcept;
-        winrt::hstring WindowName() const;
-        void WindowName(const winrt::hstring& value);
-        TerminalApp::CommandlineArgs Command() const;
-        winrt::hstring Content() const;
-        Windows::Foundation::IReference<Windows::Foundation::Rect> InitialBounds() const;
-        winrt::Microsoft::Terminal::Settings::Model::WindowLayout PersistedLayout() const;
-        void PersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& value);
-        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> StartupActions() const;
-        void StartupActions(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& value);
+        WindowRequestedArgs(const winrt::hstring& window, const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& bounds) :
+            _WindowName{ window },
+            _Content{ content },
+            _InitialBounds{ bounds }
+        {
+        }
 
-    private:
-        ::TerminalApp::Native::WindowRequestedArgsRef _native;
+        WINRT_PROPERTY(uint64_t, Id);
+        WINRT_PROPERTY(winrt::hstring, WindowName);
+        WINRT_PROPERTY(TerminalApp::CommandlineArgs, Command, nullptr);
+        WINRT_PROPERTY(winrt::hstring, Content);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Windows::Foundation::Rect>, InitialBounds);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::WindowLayout, PersistedLayout, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, StartupActions, nullptr);
     };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
+    BASIC_FACTORY(SummonWindowBehavior);
     BASIC_FACTORY(CommandlineArgs);
     BASIC_FACTORY(RequestReceiveContentArgs);
     BASIC_FACTORY(WindowRequestedArgs);

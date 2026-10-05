@@ -88,7 +88,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             // Profiles are basically a directed acyclic graph. Cloning it without creating duplicated nodes,
             // requires us to "intern" visited profiles. Thus the "visited" map contains a cache of
             // previously cloned profiles/sub-graphs. It maps from source-profile-pointer to cloned-profile.
-            Profile::CopyMap visited;
+            std::unordered_map<const Profile*, winrt::com_ptr<Profile>> visited;
             // I'm just gonna estimate that each profile has 3 parents at most on average:
             // * base layer
             // * fragment

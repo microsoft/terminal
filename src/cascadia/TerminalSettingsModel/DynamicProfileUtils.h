@@ -14,7 +14,7 @@ Author(s):
 -- */
 #pragma once
 
-#include "Native/Profile.h"
+#include "Profile.h"
 
 // !!! LOAD-BEARING
 // If you change or delete this GUID, all dynamic profiles
@@ -23,4 +23,4 @@ Author(s):
 // uuidv5 properties: name format is UTF-16LE bytes
 inline constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
-winrt::com_ptr<Microsoft::Terminal::Settings::Model::Native::Profile> CreateDynamicProfile(const std::wstring_view& name);
+winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile> CreateDynamicProfile(const std::wstring_view& name);

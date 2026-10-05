@@ -43,10 +43,6 @@
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
-#ifdef TERMINAL_PRECOMPILE_OWN_PROJECTION
-#include <winrt/Microsoft.Terminal.Settings.Model.h>
-#endif
-
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

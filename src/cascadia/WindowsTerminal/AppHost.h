@@ -5,8 +5,6 @@
 
 #include "pch.h"
 #include "NonClientIslandWindow.h"
-#include "../TerminalApp/Native/CommandlineArgs.h"
-#include "../TerminalApp/Native/WindowRequestedArgs.h"
 #include <ThrottledFunc.h>
 
 class WindowEmperor;
@@ -14,7 +12,7 @@ class WindowEmperor;
 class AppHost : public std::enable_shared_from_this<AppHost>
 {
 public:
-    AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, ::TerminalApp::Native::WindowRequestedArgsRef args) noexcept;
+    AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, winrt::TerminalApp::WindowRequestedArgs args) noexcept;
 
     void Initialize();
     void Close();
@@ -26,8 +24,8 @@ public:
 
     bool OnDirectKeyEvent(uint32_t vkey, uint8_t scanCode, bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
-    safe_void_coroutine HandleSummon(::Microsoft::Terminal::Windowing::SummonWindowBehaviorRef args) const;
-    void DispatchCommandline(::TerminalApp::Native::CommandlineArgsRef args);
+    safe_void_coroutine HandleSummon(winrt::TerminalApp::SummonWindowBehavior args) const;
+    void DispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
 
 private:
     enum class WindowInitializedState : uint32_t
@@ -52,7 +50,7 @@ private:
 
     void _revokeWindowCallbacks();
 
-    void _HandleCommandlineArgs(const ::TerminalApp::Native::WindowRequestedArgsRef& args);
+    void _HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedArgs& args);
 
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 

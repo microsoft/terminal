@@ -56,10 +56,6 @@
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
 
-#ifdef TERMINAL_PRECOMPILE_OWN_PROJECTION
-#include <winrt/Microsoft.Terminal.Settings.Editor.h>
-#endif
-
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

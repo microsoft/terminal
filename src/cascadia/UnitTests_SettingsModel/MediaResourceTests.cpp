@@ -5,7 +5,6 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
-#include "../TerminalSettingsModel/MediaResourceAdapter.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 
@@ -75,10 +74,6 @@ namespace SettingsModelUnitTests
         TEST_CLASS_CLEANUP(RestoreFSRedirection);
 
         TEST_METHOD_CLEANUP(ResetMediaHook);
-
-        TEST_METHOD(NativeAdapterIdentity);
-        TEST_METHOD(NativeListAdapterIdentity);
-        TEST_METHOD(ImportedListPreservesAliases);
 
         // BASIC OPERATION
         TEST_METHOD(ValidateResolverCalledForInbox);
@@ -194,11 +189,11 @@ namespace SettingsModelUnitTests
         {
             implementation::SettingsLoader loader{ userJSON, staticDefaultSettings };
             const winrt::hstring baseUserSettingsPath{ LR"(C:\Windows)" };
-            loader.userSettings.baseLayerProfile->SourceBasePath(baseUserSettingsPath);
+            loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
             loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
             for (auto&& userProfile : loader.userSettings.profiles)
             {
-                userProfile->SourceBasePath(baseUserSettingsPath);
+                userProfile->SourceBasePath = baseUserSettingsPath;
             }
 
             loader.MergeInboxIntoUserSettings();
@@ -218,79 +213,6 @@ namespace SettingsModelUnitTests
             return createSettingsWithFragments(userJSON, {});
         }
     };
-
-    void MediaResourceTests::NativeAdapterIdentity()
-    {
-        namespace Adapters = ::Microsoft::Terminal::Settings::Model::Adapters;
-        namespace Native = ::Microsoft::Terminal::Settings::Model::Native;
-
-        const auto resource = Native::MediaResource::FromString(L"image.png");
-        auto first = Adapters::ToProjected(resource);
-        auto second = Adapters::ToProjected(resource);
-        const auto weak = winrt::make_weak(first);
-        VERIFY_IS_TRUE(first == second);
-        VERIFY_IS_TRUE(Adapters::ToNative(first).get() == resource.get());
-
-        first.Resolve(L"resolved.png");
-        VERIFY_ARE_EQUAL(L"resolved.png", resource->Resolved());
-        VERIFY_ARE_EQUAL(L"resolved.png", second.Resolved());
-        resource->Reject();
-        VERIFY_IS_FALSE(first.Ok());
-        VERIFY_IS_TRUE(second.Resolved().empty());
-
-        first = nullptr;
-        second = nullptr;
-        VERIFY_IS_TRUE(weak.get() == nullptr);
-
-        const auto recreated = Adapters::ToProjected(resource);
-        VERIFY_IS_TRUE(Adapters::ToNative(recreated).get() == resource.get());
-        VERIFY_IS_FALSE(recreated.Ok());
-        const auto empty = MediaResourceHelper::Empty();
-        VERIFY_IS_TRUE(empty == MediaResourceHelper::Empty());
-    }
-
-    void MediaResourceTests::NativeListAdapterIdentity()
-    {
-        namespace Adapters = ::Microsoft::Terminal::Settings::Model::Adapters;
-        namespace Native = ::Microsoft::Terminal::Settings::Model::Native;
-
-        const auto first = Native::MediaResource::FromString(L"first.wav");
-        const auto list = Native::MakeMediaResourceList({ first });
-        const auto projected = Adapters::ToProjected(list);
-        VERIFY_IS_TRUE(projected == Adapters::ToProjected(list));
-        VERIFY_IS_TRUE(Adapters::ToNative(projected).get() == list.get());
-        VERIFY_IS_TRUE(projected.GetAt(0) == Adapters::ToProjected(first));
-
-        const auto iterator = projected.First();
-        list->Append(Native::MediaResource::FromString(L"second.wav"));
-        VERIFY_ARE_EQUAL(2u, projected.Size());
-        VERIFY_THROWS(static_cast<void>(iterator.HasCurrent()), winrt::hresult_changed_state);
-        projected.RemoveAtEnd();
-        VERIFY_ARE_EQUAL(1u, list->Size());
-    }
-
-    void MediaResourceTests::ImportedListPreservesAliases()
-    {
-        namespace Adapters = ::Microsoft::Terminal::Settings::Model::Adapters;
-        namespace Native = ::Microsoft::Terminal::Settings::Model::Native;
-
-        const auto original = winrt::single_threaded_vector<IMediaResource>({ MediaResourceHelper::FromString(L"first.wav") });
-        const auto native = Adapters::ToNative(original);
-        VERIFY_IS_TRUE(Adapters::ToProjected(native) == original);
-        VERIFY_IS_TRUE(native.get() == Adapters::ToNative(original).get());
-
-        original.Append(MediaResourceHelper::FromString(L"second.wav"));
-        VERIFY_ARE_EQUAL(2u, native->Size());
-        native->RemoveAtEnd();
-        VERIFY_ARE_EQUAL(1u, original.Size());
-        native->Append(Native::MediaResource::FromString(L"native.wav"));
-        VERIFY_ARE_EQUAL(L"native.wav", original.GetAt(1).Path());
-
-        const auto iterator = native->First();
-        original.Clear();
-        VERIFY_ARE_EQUAL(0u, native->Size());
-        VERIFY_THROWS(iterator->HasCurrent(), winrt::hresult_changed_state);
-    }
 
     bool MediaResourceTests::DisableFSRedirection()
     {

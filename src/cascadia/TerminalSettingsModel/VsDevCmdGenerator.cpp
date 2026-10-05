@@ -2,13 +2,12 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../../types/inc/utils.hpp"
 #include "DynamicProfileUtils.h"
 #include "VsDevCmdGenerator.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-void VsDevCmdGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<NativeProfile>>& profiles) const
+void VsDevCmdGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     try
     {
@@ -19,7 +18,7 @@ void VsDevCmdGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInst
 
         const auto seed = GetProfileGuidSeed(instance);
         const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ seed })) };
-        auto profile = NativeProfile::Create(profileGuid);
+        auto profile = winrt::make_self<implementation::Profile>(profileGuid);
         profile->Name(winrt::hstring{ GetProfileName(instance) });
         profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });
         profile->StartingDirectory(winrt::hstring{ instance.GetInstallationPath() });

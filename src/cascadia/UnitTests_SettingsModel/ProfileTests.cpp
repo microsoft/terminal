@@ -35,9 +35,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(SettingInheritanceFallback);
         TEST_METHOD(ClearSettingRestoresInheritance);
         TEST_METHOD(HasSettingAtSpecificLayer);
-        TEST_METHOD(NullableSettingPreservesOverrideIdentity);
-        TEST_METHOD(CopyPreservesCollectionOwnership);
-        TEST_METHOD(SourceProfileIsWeak);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -664,86 +661,5 @@ namespace SettingsModelUnitTests
         // ProfileDefaults: historySize is set
         VERIFY_IS_TRUE(settings->ProfileDefaults().HasHistorySize());
         VERIFY_ARE_EQUAL(5000, settings->ProfileDefaults().HistorySize());
-    }
-
-    void ProfileTests::NullableSettingPreservesOverrideIdentity()
-    {
-        const auto parent = implementation::Profile::FromJson(VerifyParseSucceeded(R"({
-            "name": "parent",
-            "tabColor": "#123456"
-        })"));
-        const auto child = parent->CreateChild();
-        const auto grandchild = child->CreateChild();
-        const Profile projectedParent{ *parent };
-        const Profile projectedChild{ *child };
-
-        VERIFY_IS_FALSE(child->HasTabColor());
-        VERIFY_IS_TRUE(child->TabColor() != nullptr);
-        VERIFY_IS_TRUE(child->TabColorOverrideSource() == projectedParent);
-        VERIFY_IS_TRUE(grandchild->TabColorOverrideSource() == projectedParent);
-
-        child->TabColor(nullptr);
-        VERIFY_IS_TRUE(child->HasTabColor());
-        VERIFY_IS_TRUE(child->TabColor() == nullptr);
-        VERIFY_IS_TRUE(grandchild->TabColor() == nullptr);
-        VERIFY_IS_TRUE(grandchild->TabColorOverrideSource() == projectedChild);
-        VERIFY_IS_TRUE(child->ToJson()["tabColor"].isNull());
-
-        child->ClearTabColor();
-        VERIFY_IS_FALSE(child->HasTabColor());
-        VERIFY_IS_TRUE(child->TabColor() != nullptr);
-        VERIFY_IS_TRUE(grandchild->TabColorOverrideSource() == projectedParent);
-        VERIFY_IS_FALSE(child->ToJson().isMember("tabColor"));
-    }
-
-    void ProfileTests::CopyPreservesCollectionOwnership()
-    {
-        const auto profile = implementation::Profile::FromJson(VerifyParseSucceeded(R"({
-            "name": "source",
-            "bellSound": [ "one.wav", "two.wav" ],
-            "environment": { "NATIVE_CONTRACT_TEST": "original" },
-            "font": {
-                "axes": { "wght": 400 },
-                "features": { "cv01": 1 }
-            }
-        })"));
-        const auto copy = profile->CopySettings();
-
-        VERIFY_IS_FALSE(copy->BellSound() == profile->BellSound());
-        VERIFY_IS_TRUE(copy->BellSound().GetAt(0) == profile->BellSound().GetAt(0));
-        copy->BellSound().RemoveAtEnd();
-        VERIFY_ARE_EQUAL(2u, profile->BellSound().Size());
-        VERIFY_ARE_EQUAL(1u, copy->BellSound().Size());
-        copy->BellSound().GetAt(0).Resolve(L"resolved.wav");
-        VERIFY_ARE_EQUAL(L"resolved.wav", profile->BellSound().GetAt(0).Resolved());
-
-        VERIFY_IS_FALSE(copy->FontInfo().FontAxes() == profile->FontInfo().FontAxes());
-        VERIFY_IS_FALSE(copy->FontInfo().FontFeatures() == profile->FontInfo().FontFeatures());
-        copy->FontInfo().FontAxes().Insert(L"wght", 700.0f);
-        copy->FontInfo().FontFeatures().Insert(L"cv01", 0.0f);
-        VERIFY_ARE_EQUAL(400.0f, profile->FontInfo().FontAxes().Lookup(L"wght"));
-        VERIFY_ARE_EQUAL(1.0f, profile->FontInfo().FontFeatures().Lookup(L"cv01"));
-
-        // Environment maps currently alias across CopySettings, unlike font maps.
-        VERIFY_IS_TRUE(copy->EnvironmentVariables() == profile->EnvironmentVariables());
-        copy->EnvironmentVariables().Insert(L"NATIVE_CONTRACT_TEST", L"changed");
-        VERIFY_ARE_EQUAL(L"changed", profile->EnvironmentVariables().Lookup(L"NATIVE_CONTRACT_TEST"));
-    }
-
-    void ProfileTests::SourceProfileIsWeak()
-    {
-        auto profile = winrt::make_self<implementation::Profile>();
-        const auto appearance = profile->DefaultAppearance();
-        const auto font = profile->FontInfo();
-        const auto weakProfile = profile->get_weak();
-
-        VERIFY_IS_TRUE(appearance.SourceProfile() == Profile{ *profile });
-        VERIFY_IS_TRUE(font.SourceProfile() == Profile{ *profile });
-
-        profile = nullptr;
-
-        VERIFY_IS_TRUE(weakProfile.get() == nullptr);
-        VERIFY_IS_TRUE(appearance.SourceProfile() == nullptr);
-        VERIFY_IS_TRUE(font.SourceProfile() == nullptr);
     }
 }

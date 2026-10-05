@@ -3,7 +3,6 @@
 
 #pragma once
 #include "BaseWindow.h"
-#include "SummonWindowBehavior.h"
 
 struct SystemMenuItemInfo
 {
@@ -56,7 +55,7 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    void SummonWindow(::Microsoft::Terminal::Windowing::SummonWindowBehaviorRef args);
+    void SummonWindow(winrt::TerminalApp::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
@@ -128,16 +127,16 @@ protected:
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
 
     void _globalActivateWindow(const uint32_t dropdownDuration,
-                               const ::Microsoft::Terminal::Windowing::MonitorBehavior toMonitor);
+                               const winrt::TerminalApp::MonitorBehavior toMonitor);
     void _dropdownWindow(const uint32_t dropdownDuration,
-                         const ::Microsoft::Terminal::Windowing::MonitorBehavior toMonitor);
+                         const winrt::TerminalApp::MonitorBehavior toMonitor);
     void _slideUpWindow(const uint32_t dropdownDuration);
     void _doSlideAnimation(const uint32_t dropdownDuration, const bool down);
     void _globalDismissWindow(const uint32_t dropdownDuration);
 
     static MONITORINFO _getMonitorForCursor();
     static MONITORINFO _getMonitorForWindow(HWND foregroundWindow);
-    void _moveToMonitor(HWND foregroundWindow, const ::Microsoft::Terminal::Windowing::MonitorBehavior toMonitor);
+    void _moveToMonitor(HWND foregroundWindow, const winrt::TerminalApp::MonitorBehavior toMonitor);
     void _moveToMonitorOfMouse();
     void _moveToMonitorOf(HWND foregroundWindow);
     void _moveToMonitor(const MONITORINFO activeMonitor);

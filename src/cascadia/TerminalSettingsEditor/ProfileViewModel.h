@@ -14,16 +14,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
-        BellSoundViewModel(const winrt::com_ptr<NativeModel::MediaResource>& resource);
+        BellSoundViewModel(const Model::IMediaResource& resource);
 
-        hstring Path() const { return _resource->Path(); }
-        bool FileExists() const { return _resource->Ok(); }
+        hstring Path() const { return _resource.Path(); }
+        bool FileExists() const { return _resource.Ok(); }
         hstring DisplayPath() const;
         hstring SubText() const;
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, ShowDirectory);
 
     private:
-        winrt::com_ptr<NativeModel::MediaResource> _resource;
+        Model::IMediaResource _resource;
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        ProfileViewModel(const winrt::com_ptr<NativeModel::Profile>& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
         Control::IControlSettings TermSettingsUnfocused() const;
         void DeleteProfile();
@@ -72,12 +72,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring EvaluatedIcon() const
         {
-            return _profile->Icon()->Resolved();
+            return _profile.Icon().Resolved();
         }
         Windows::UI::Xaml::Controls::IconElement IconPreview() const;
         winrt::hstring LocalizedIcon() const;
         winrt::hstring IconAccessibleName() const;
-        winrt::hstring IconPath() const { return _profile->Icon()->Path(); }
+        winrt::hstring IconPath() const { return _profile.Icon().Path(); }
         void IconPath(const winrt::hstring& path)
         {
             Icon(Model::MediaResourceHelper::FromString(path));
@@ -124,9 +124,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::BellSoundViewModel>, CurrentBellSounds);
 
-        PERMANENT_OBSERVABLE_NATIVE_SETTING(_profile, Guid);
-        PERMANENT_OBSERVABLE_NATIVE_SETTING(_profile, ConnectionType);
-        OBSERVABLE_NATIVE_SETTING(_profile, Source);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Source);
 
 // Settings that expose a reset button.
 // Wired into both the property accessors and the reset dispatch automatically.
@@ -143,8 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, Commandline)                    \
     X(_profile, StartingDirectory)              \
     X(_profile, AntialiasingMode)               \
-    X(_profile->DefaultAppearance(), Opacity)    \
-    X(_profile->DefaultAppearance(), UseAcrylic) \
+    X(_profile.DefaultAppearance(), Opacity)    \
+    X(_profile.DefaultAppearance(), UseAcrylic) \
     X(_profile, HistorySize)                    \
     X(_profile, SnapOnInput)                    \
     X(_profile, AltGrAliasing)                  \
@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, DragDropDelimiter)
 
         // Generate the projected property accessors from the list above.
-#define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_NATIVE_SETTING(target, name);
+#define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
         PROFILE_INHERITABLE_SETTINGS(PROFILE_GEN_PROJECTED)
 #undef PROFILE_GEN_PROJECTED
 
@@ -179,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(PathTranslationStyle, Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle);
 
     private:
-        winrt::com_ptr<NativeModel::Profile> _profile;
+        Model::Profile _profile;
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;

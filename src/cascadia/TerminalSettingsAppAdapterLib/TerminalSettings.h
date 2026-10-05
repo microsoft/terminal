@@ -17,8 +17,6 @@ Author(s):
 #include <../inc/ControlProperties.h>
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
-#include "../TerminalSettingsModel/Native/Profile.h"
-#include "../TerminalSettingsModel/Native/AppearanceConfig.h"
 
 #define SIMPLE_OVERRIDABLE_SETTING(type, name, ...)   \
 private:                                              \
@@ -48,7 +46,6 @@ namespace SettingsModelUnitTests
 
 namespace winrt::Microsoft::Terminal::Settings
 {
-    namespace NativeModel = ::Microsoft::Terminal::Settings::Model::Native;
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IEnvironmentVariableMapView = winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring>;
@@ -63,22 +60,13 @@ namespace winrt::Microsoft::Terminal::Settings
         static winrt::com_ptr<TerminalSettings> CreateForPreview(const Model::CascadiaSettings& appSettings,
                                                                  const Model::WindowSettings& windowSettings,
                                                                  const Model::Profile& profile);
-        static winrt::com_ptr<TerminalSettings> CreateForPreview(const Model::CascadiaSettings& appSettings,
-                                                                 const Model::WindowSettings& windowSettings,
-                                                                 const winrt::com_ptr<NativeModel::Profile>& profile);
         static winrt::com_ptr<TerminalSettings> CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings,
                                                                           const Model::WindowSettings& windowSettings,
                                                                           const Model::Profile& profile);
-        static winrt::com_ptr<TerminalSettings> CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings,
-                                                                          const Model::WindowSettings& windowSettings,
-                                                                          const winrt::com_ptr<NativeModel::Profile>& profile);
 
         static TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
                                                               const Model::WindowSettings& windowSettings,
                                                               const Model::Profile& profile);
-        static TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
-                                                              const Model::WindowSettings& windowSettings,
-                                                              const winrt::com_ptr<NativeModel::Profile>& profile);
 
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
                                                                       const Model::WindowSettings& windowSettings,
@@ -121,11 +109,11 @@ namespace winrt::Microsoft::Terminal::Settings
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         std::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
 
-        static winrt::com_ptr<TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const winrt::com_ptr<NativeModel::Profile>& profile);
-        void _ApplyProfileSettings(const winrt::com_ptr<NativeModel::Profile>& profile);
+        static winrt::com_ptr<TerminalSettings> _CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile);
+        void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept;
-        void _ApplyAppearanceSettings(const winrt::com_ptr<NativeModel::AppearanceConfig>& appearance,
+        void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 

@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             std::array<std::vector<Windows::UI::Xaml::Controls::MenuFlyoutItemBase>, 2> fontSettingsUnused;
         };
 
-        AppearanceViewModel(const winrt::com_ptr<NativeModel::AppearanceConfig>& appearance);
+        AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
         // IInheritableViewModel
         bool HasSetting(const hstring& name);
@@ -162,12 +162,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 // scheme names) and so is intentionally not listed here.
 #define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)                 \
     CUSTOM(FontFace)                                                       \
-    PROJECTED(_appearance->SourceProfile()->FontInfo(), FontSize)            \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)            \
     CUSTOM(LineHeight)                                                     \
     CUSTOM(CellWidth)                                                      \
-    PROJECTED(_appearance->SourceProfile()->FontInfo(), FontWeight)          \
-    PROJECTED(_appearance->SourceProfile()->FontInfo(), EnableBuiltinGlyphs) \
-    PROJECTED(_appearance->SourceProfile()->FontInfo(), EnableColorGlyphs)   \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)          \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs) \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs)   \
     CUSTOM(FontAxes)                                                       \
     CUSTOM(FontFeatures)                                                   \
     PROJECTED(_appearance, RetroTerminalEffect)                            \
@@ -186,7 +186,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     PROJECTED(_appearance, SelectionBackground)                            \
     PROJECTED(_appearance, CursorColor)
 
-#define APPEARANCE_GEN_PROJECTED(target, name) OBSERVABLE_NATIVE_SETTING(target, name);
+#define APPEARANCE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
 #define APPEARANCE_GEN_CUSTOM(name)
         APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_GEN_PROJECTED, APPEARANCE_GEN_CUSTOM)
 #undef APPEARANCE_GEN_PROJECTED
@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         double _parseCellSizeValue(const hstring& val) const;
 
-        winrt::com_ptr<NativeModel::AppearanceConfig> _appearance;
+        Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
         std::optional<FontFaceDependentsData> _fontFaceDependents;
     };

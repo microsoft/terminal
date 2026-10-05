@@ -21,21 +21,6 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="AdapterCache.h" />
-    <ClInclude Include="MediaResourceAdapter.h" />
-    <ClInclude Include="ProfileAdapter.h" />
-    <ClInclude Include="Native\Api.h" />
-    <ClInclude Include="Native\MediaResource.h" />
-    <ClInclude Include="Native\MediaResourceList.h" />
-    <ClInclude Include="Native\Profile.h" />
-    <ClInclude Include="Native\FontConfig.h" />
-    <ClInclude Include="Native\AppearanceConfig.h" />
-    <ClInclude Include="Native\MediaResourceResolver.h" />
-    <ClInclude Include="Native\SettingsTypes.h" />
-    <ClInclude Include="Native\ProfileSettings.h" />
-    <ClInclude Include="Native\PropertyDeclarations.h" />
-    <ClInclude Include="Native\PropertyDefinitions.h" />
-    <ClInclude Include="NativeSerialization.h" />
     <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="NewTabMenuEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
@@ -135,31 +120,6 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="Native\MediaResource.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.MediaResource.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="Native\MediaResourceList.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.MediaResourceList.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="MediaResourceListAdapter.cpp" />
-    <ClCompile Include="Native\Profile.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.Profile.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="Native\FontConfig.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.FontConfig.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="Native\AppearanceConfig.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.AppearanceConfig.obj</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="Native\MediaResourceResolver.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ObjectFileName>$(IntDir)Native.MediaResourceResolver.obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="VisualStudioGenerator.cpp" />
     <ClCompile Include="DefaultTerminal.cpp">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
@@ -350,7 +310,6 @@
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>TSM_NATIVE_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->

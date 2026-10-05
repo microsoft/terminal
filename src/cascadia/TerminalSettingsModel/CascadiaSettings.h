@@ -69,9 +69,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ParsedSettings
     {
         winrt::com_ptr<implementation::GlobalAppSettings> globals;
-        winrt::com_ptr<Native::Profile> baseLayerProfile;
-        std::vector<winrt::com_ptr<Native::Profile>> profiles;
-        std::unordered_map<winrt::guid, winrt::com_ptr<Native::Profile>> profilesByGuid;
+        winrt::com_ptr<implementation::Profile> baseLayerProfile;
+        std::vector<winrt::com_ptr<implementation::Profile>> profiles;
+        std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
         std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
         std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
         bool fixupsAppliedDuringLoad{ false };
@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void FinalizeLayering();
         bool DisableDeletedProfiles();
         bool AddDynamicProfileFolders();
-        bool RemapColorSchemeForProfile(const winrt::com_ptr<Native::Profile>& profile);
+        bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);
         bool FixupUserSettings();
 
         ParsedSettings inboxSettings;
@@ -124,15 +124,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
-        std::span<const winrt::com_ptr<Native::Profile>> _getNonUserOriginProfiles() const;
+        std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _parseFragment(const winrt::hstring& source, const winrt::hstring& sourceBasePath, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
         static JsonSettings _parseJson(const std::string_view& content);
-        static winrt::com_ptr<Native::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
-        void _appendProfile(winrt::com_ptr<Native::Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
-        void _addUserProfileParent(const winrt::com_ptr<Native::Profile>& profile);
+        static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
+        void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
+        void _addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile);
         bool _addOrMergeUserColorScheme(const winrt::com_ptr<implementation::ColorScheme>& colorScheme);
-        static void _executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<Native::Profile>>& profilesList);
+        static void _executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList);
         winrt::com_ptr<implementation::ExtensionPackage> _registerFragment(const winrt::Microsoft::Terminal::Settings::Model::FragmentSettings& fragment, FragmentScope scope);
         Json::StreamWriterBuilder _getJsonStyledWriter();
 
