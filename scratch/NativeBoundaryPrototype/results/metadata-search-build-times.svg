@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="400" viewBox="0 0 1040 400">
+<rect width="1040" height="400" fill="#fafafa"/>
+<g font-family="Segoe UI, sans-serif" fill="#222">
+<text x="30" y="36" font-size="22" font-weight="600">Real Windows Terminal source rebuild</text>
+<text x="30" y="63" font-size="14">Debug x64; full WindowsTerminal solution-target Rebuild, /m:4 and /MP4</text><text x="30" y="143" font-size="16">baseline</text>
+<rect x="170" y="115" width="553.6356148575813" height="45" fill="#536dfe"/>
+<text x="733.6356148575813" y="143" font-size="16">823.09 s median</text><circle cx="712.0538384108148" cy="168" r="4" fill="#222"/><circle cx="735.2173913043479" cy="168" r="4" fill="#222"/><text x="30" y="238" font-size="16">metadata-first</text>
+<rect x="170" y="210" width="500.8089027550917" height="45" fill="#e68100"/>
+<text x="680.8089027550917" y="238" font-size="16">744.55 s median</text><circle cx="666.9126073314826" cy="263" r="4" fill="#222"/><circle cx="674.7051981787009" cy="263" r="4" fill="#222"/><text x="30" y="335" font-size="16">9.5% lower median, baseline to metadata-first; dots = individual runs</text>
+<text x="30" y="365" font-size="13">Same code, projections, compiler settings and metadata validation; only SDK search-directory order changes.</text></g></svg>

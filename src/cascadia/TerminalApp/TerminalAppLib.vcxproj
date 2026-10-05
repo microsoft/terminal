@@ -136,6 +136,12 @@
     <ClInclude Include="Pane.h" />
     <ClInclude Include="../fzf/fzf.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Native\Api.h" />
+    <ClInclude Include="Native\CommandlineArgs.h" />
+    <ClInclude Include="Native\WindowRequestedArgs.h" />
+    <ClInclude Include="NativeCommandlineArgsState.h" />
+    <ClInclude Include="NativeWindowRequestedArgsState.h" />
+    <ClInclude Include="RemotingInterop.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClInclude>
@@ -197,6 +203,20 @@
     </ClCompile>
     <ClCompile Include="Remoting.cpp">
       <DependentUpon>Remoting.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Native\CommandlineArgs.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ObjectFileName>$(IntDir)Native.CommandlineArgs.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Native\CommandlineArgsInterop.cpp">
+      <ObjectFileName>$(IntDir)Native.CommandlineArgsInterop.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Native\WindowRequestedArgs.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ObjectFileName>$(IntDir)Native.WindowRequestedArgs.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Native\WindowRequestedArgsInterop.cpp">
+      <ObjectFileName>$(IntDir)Native.WindowRequestedArgsInterop.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="PaletteItemTemplateSelector.cpp">
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
@@ -486,6 +506,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>APP_NATIVE_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>

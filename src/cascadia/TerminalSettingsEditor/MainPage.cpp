@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, windowSettings, dispatcher);
+        return winrt::make<implementation::ProfileViewModel>(ModelAdapters::ToNative(profile), appSettings, windowSettings, dispatcher);
     }
 
     static ProfileSubPage ProfileSubPageFromBreadcrumb(BreadcrumbSubPage subPage, const Editor::ProfileViewModel& profile)

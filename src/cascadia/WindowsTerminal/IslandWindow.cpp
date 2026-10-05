@@ -22,6 +22,7 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+namespace Windowing = ::Microsoft::Terminal::Windowing;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 #define IDM_SYSTEM_MENU_BEGIN 0x1000
@@ -1245,11 +1246,11 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - toggleVisibility: controls how we should behave when already in the foreground.
 // Return Value:
 // - <none>
-void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
+void IslandWindow::SummonWindow(Windowing::SummonWindowBehaviorRef args)
 {
-    const auto toggleVisibility = args ? args.ToggleVisibility() : false;
-    const auto toMonitor = args ? args.ToMonitor() : winrt::TerminalApp::MonitorBehavior::InPlace;
-    auto dropdownDuration = args ? args.DropdownDuration() : 0;
+    const auto toggleVisibility = args ? args->ToggleVisibility() : false;
+    const auto toMonitor = args ? args->ToMonitor() : Windowing::MonitorBehavior::InPlace;
+    auto dropdownDuration = args ? args->DropdownDuration() : 0;
 
     // If the user requested an animation, let's check if animations are enabled in the OS.
     if (dropdownDuration > 0)
@@ -1284,7 +1285,7 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
         // They want to toggle the window when it is the FG window, and we are
         // the FG window. However, if we're on a different monitor than the
         // mouse, then we should move to that monitor instead of dismissing.
-        if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToMouse)
+        if (toMonitor == Windowing::MonitorBehavior::ToMouse)
         {
             const til::rect cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
             const til::rect currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
@@ -1361,7 +1362,7 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
 }
 
 void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
-                                   const winrt::TerminalApp::MonitorBehavior toMonitor)
+                                   const Windowing::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1418,7 +1419,7 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 // Return Value:
 // - <none>
 void IslandWindow::_globalActivateWindow(const uint32_t dropdownDuration,
-                                         const winrt::TerminalApp::MonitorBehavior toMonitor)
+                                         const Windowing::MonitorBehavior toMonitor)
 {
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
@@ -1550,13 +1551,13 @@ MONITORINFO IslandWindow::_getMonitorForWindow(HWND foregroundWindow)
 // - toMonitor: Controls which monitor we should move to.
 // Return Value:
 // - <none>
-void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, winrt::TerminalApp::MonitorBehavior toMonitor)
+void IslandWindow::_moveToMonitor(HWND oldForegroundWindow, Windowing::MonitorBehavior toMonitor)
 {
-    if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToCurrent)
+    if (toMonitor == Windowing::MonitorBehavior::ToCurrent)
     {
         _moveToMonitorOf(oldForegroundWindow);
     }
-    else if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToMouse)
+    else if (toMonitor == Windowing::MonitorBehavior::ToMouse)
     {
         _moveToMonitorOfMouse();
     }

@@ -45,6 +45,7 @@ Author(s):
 #pragma once
 
 #include "Profile.g.h"
+#include "ProfileAdapter.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
 
@@ -76,38 +77,50 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct Profile : ProfileT<Profile, IMediaResourceContainer>, IInheritable<Profile>
+    struct Profile : ProfileT<Profile, IMediaResourceContainer>
     {
     public:
-        Profile() noexcept = default;
-        Profile(guid guid) noexcept;
+        using CopyMap = std::unordered_map<const Native::Profile*, winrt::com_ptr<Native::Profile>>;
 
-        void CreateUnfocusedAppearance();
-        void DeleteUnfocusedAppearance();
+        Profile() noexcept;
+        Profile(guid guid) noexcept;
+        explicit Profile(winrt::com_ptr<Native::Profile> native);
+        ~Profile();
+
+        static winrt::com_ptr<Profile> FromNative(const winrt::com_ptr<Native::Profile>& native);
+        const winrt::com_ptr<Native::Profile>& NativeModel() const noexcept { return _native; }
+
+        void CreateUnfocusedAppearance() { _native->CreateUnfocusedAppearance(); }
+        void DeleteUnfocusedAppearance() { _native->DeleteUnfocusedAppearance(); }
 
         hstring ToString()
         {
             return Name();
         }
 
-        static void CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
-        winrt::com_ptr<Profile>& CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
-        winrt::com_ptr<Profile> CopySettings() const;
+        static void CopyInheritanceGraphs(CopyMap& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
+        winrt::com_ptr<Profile> CopyInheritanceGraph(CopyMap& visited) const;
+        winrt::com_ptr<Profile> CopySettings() const { return FromNative(_native->CopySettings()); }
+        winrt::com_ptr<Profile> CreateChild() const { return FromNative(_native->CreateChild()); }
+        void ClearParents() { _native->ClearParents(); }
+        void AddLeastImportantParent(const winrt::com_ptr<Profile>& parent) { _native->AddLeastImportantParent(parent->_native); }
+        void AddMostImportantParent(const winrt::com_ptr<Profile>& parent) { _native->AddMostImportantParent(parent->_native); }
+        std::vector<winrt::com_ptr<Profile>> Parents() const;
 
         static com_ptr<Profile> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        hstring EvaluatedStartingDirectory() const;
+        hstring EvaluatedStartingDirectory() const { return _native->EvaluatedStartingDirectory(); }
 
-        Model::IAppearanceConfig DefaultAppearance();
-        Model::FontConfig FontInfo();
+        Model::IAppearanceConfig DefaultAppearance() const { return Adapters::ToProjected(_native->DefaultAppearance()); }
+        Model::FontConfig FontInfo() const { return Adapters::ToProjected(_native->FontInfo()); }
 
-        static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
+        static std::wstring NormalizeCommandLine(LPCWSTR commandLine) { return Native::Profile::NormalizeCommandLine(commandLine); }
 
-        void _FinalizeInheritance() override;
+        void _FinalizeInheritance() { _native->FinalizeInheritance(); }
 
-        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const { _native->LogSettingChanges(changes, context); }
 
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
@@ -117,42 +130,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Icon(MediaResource::FromString(path));
         }
 
-        WINRT_PROPERTY(bool, Deleted, false);
-        WINRT_PROPERTY(bool, Orphaned, false);
-        WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
-        WINRT_PROPERTY(guid, Updates);
+        bool Deleted() const noexcept { return _native->Deleted(); }
+        void Deleted(bool value) noexcept { _native->Deleted(value); }
+        bool Orphaned() const noexcept { return _native->Orphaned(); }
+        void Orphaned(bool value) noexcept { _native->Orphaned(value); }
+        OriginTag Origin() const noexcept { return Adapters::ToProjected(_native->Origin()); }
+        void Origin(OriginTag value) noexcept { _native->Origin(Adapters::ToNative(value)); }
+        guid Updates() const noexcept { return _native->Updates(); }
+        void Updates(guid value) noexcept { _native->Updates(value); }
 
-        // Nullable/optional settings
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+        TSM_ADAPTER_PROPERTY(std::optional<Native::Color>, TabColor);
+        TSM_ADAPTER_PROPERTY(winrt::com_ptr<Native::AppearanceConfig>, UnfocusedAppearance);
 
-        // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
-        INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
-        INHERITABLE_SETTING(Model::Profile, hstring, Source);
-        INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
-        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+        TSM_ADAPTER_PROPERTY(winrt::hstring, Name);
+        TSM_ADAPTER_PROPERTY(winrt::hstring, Source);
+        TSM_ADAPTER_PROPERTY(bool, Hidden);
+        TSM_ADAPTER_PROPERTY(winrt::guid, Guid);
+        TSM_ADAPTER_PROPERTY(winrt::hstring, Padding);
 
-        winrt::hstring SourceBasePath;
+        winrt::hstring SourceBasePath() const { return _native->SourceBasePath(); }
+        void SourceBasePath(const winrt::hstring& value) { _native->SourceBasePath(value); }
 
     public:
-#define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) TSM_ADAPTER_PROPERTY(type, name);
+        NATIVE_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
     private:
-        Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
-        Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
-
-        std::set<std::string> _changeLog;
-
-        static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
-
-        static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
-
-        void _logSettingSet(const std::string_view& setting);
-        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+        winrt::com_ptr<Native::Profile> _native;
 
         friend class SettingsModelUnitTests::DeserializationTests;
         friend class SettingsModelUnitTests::ProfileTests;

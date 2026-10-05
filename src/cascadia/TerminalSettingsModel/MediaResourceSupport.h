@@ -6,6 +6,7 @@ Licensed under the MIT license.
 #pragma once
 
 #include "MediaResourceHelper.g.h"
+#include "Native/MediaResource.h"
 #include "../types/inc/utils.hpp"
 
 struct
@@ -24,25 +25,6 @@ struct
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct EmptyMediaResource : winrt::implements<EmptyMediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::no_weak_ref, winrt::no_module_lock>
-    {
-        // Micro-optimization: having one empty resource that contains no actual paths saves us a few bytes per object
-        winrt::hstring Path() { return {}; };
-        winrt::hstring Resolved() { return {}; }
-
-        bool Ok() const { return false; }
-
-        void Resolve(const winrt::hstring&)
-        {
-            assert(false); // Somebody tried to resolve the empty media resource
-        }
-
-        void Reject()
-        {
-            assert(false); // Somebody tried to resolve the empty media resource
-        }
-    };
-
     /* MEDIA RESOURCES
      *
      * A media resource is a container for two strings: one pre-validation path and one post-validation path.
@@ -58,46 +40,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
      * path--this is intended to aid its use in places where the risk of using an unresolved media path
      * is fine.
      */
-    struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::no_weak_ref, winrt::no_module_lock>
+    struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource>
     {
-        MediaResource() {}
-        MediaResource(const winrt::hstring& p) :
-            value{ p } {}
+        using NativeResource = ::Microsoft::Terminal::Settings::Model::Native::MediaResource;
 
-        winrt::hstring Path() { return value; };
-        winrt::hstring Resolved() { return resolved ? resolvedValue : value; }
+        explicit MediaResource(winrt::com_ptr<NativeResource> resource);
+        ~MediaResource();
 
-        bool Ok() const { return ok; }
+        winrt::hstring Path() const { return _resource->Path(); }
+        winrt::hstring Resolved() const { return _resource->Resolved(); }
+        bool Ok() const { return _resource->Ok(); }
+        void Resolve(const winrt::hstring& path) { _resource->Resolve(path); }
+        void Reject() { _resource->Reject(); }
 
-        void Resolve(const winrt::hstring& newPath)
-        {
-            resolvedValue = newPath;
-            ok = true;
-            resolved = true;
-        }
+        const winrt::com_ptr<NativeResource>& Native() const noexcept { return _resource; }
 
-        void Reject()
-        {
-            resolvedValue = {};
-            ok = false;
-            resolved = true;
-        }
+        static IMediaResource Empty();
+        static IMediaResource FromString(const winrt::hstring& string);
 
-        winrt::hstring value{};
-        winrt::hstring resolvedValue{};
-        bool ok{ false }; // Path() was transformed into a final and valid Resolved path
-        bool resolved{ false }; // This resource has been visited by a resolver, regardless of the outcome.
-
-        static IMediaResource Empty()
-        {
-            static IMediaResource emptyResource{ winrt::make<EmptyMediaResource>() };
-            return emptyResource;
-        }
-
-        static IMediaResource FromString(const winrt::hstring& string)
-        {
-            return winrt::make<MediaResource>(string);
-        }
+    private:
+        winrt::com_ptr<NativeResource> _resource;
     };
 
     _TIL_INLINEPREFIX void ResolveMediaResource(const winrt::Microsoft::Terminal::Settings::Model::OriginTag origin, const winrt::hstring& basePath, const Model::IMediaResource& resource, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver)

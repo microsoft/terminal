@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "Native/AppearanceConfig.h"
 
 #include "AzureCloudShellGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
@@ -37,14 +38,14 @@ std::wstring_view AzureCloudShellGenerator::GetIcon() const noexcept
 // - <none>
 // Return Value:
 // - a vector with the Azure Cloud Shell connection profile, if available.
-void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<NativeProfile>>& profiles) const
 {
     if (AzureConnection::IsAzureConnectionAvailable())
     {
         auto azureCloudShellProfile{ CreateDynamicProfile(L"Azure Cloud Shell") };
         azureCloudShellProfile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
-        azureCloudShellProfile->DefaultAppearance().DarkColorSchemeName(L"Vintage");
-        azureCloudShellProfile->DefaultAppearance().LightColorSchemeName(L"Vintage");
+        azureCloudShellProfile->DefaultAppearance()->DarkColorSchemeName(L"Vintage");
+        azureCloudShellProfile->DefaultAppearance()->LightColorSchemeName(L"Vintage");
         azureCloudShellProfile->ConnectionType(AzureConnection::ConnectionType());
         profiles.emplace_back(std::move(azureCloudShellProfile));
     }

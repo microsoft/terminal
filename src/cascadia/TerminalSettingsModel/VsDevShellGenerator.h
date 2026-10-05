@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     class VsDevShellGenerator final : public VisualStudioGenerator::IVisualStudioProfileGenerator
     {
     public:
-        void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
+        void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<NativeProfile>>& profiles) const override;
 
     private:
         bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance& instance) const

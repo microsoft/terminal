@@ -92,6 +92,12 @@
     </Link>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(TerminalPrecompileOwnProjection)'=='true' and ('$(MSBuildProjectName)'=='Microsoft.Terminal.Settings.ModelLib' or '$(MSBuildProjectName)'=='Microsoft.Terminal.Settings.Editor' or '$(MSBuildProjectName)'=='TerminalAppLib')">
+    <ClCompile>
+      <PreprocessorDefinitions>TERMINAL_PRECOMPILE_OWN_PROJECTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- DLLs -->
   <ItemDefinitionGroup Condition="'$(ConfigurationType)'=='DynamicLibrary'">
     <ClCompile>

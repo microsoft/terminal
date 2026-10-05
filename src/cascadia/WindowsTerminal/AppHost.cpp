@@ -10,6 +10,7 @@
 
 #include "VirtualDesktopUtils.h"
 #include "WindowEmperor.h"
+#include "../TerminalApp/RemotingInterop.h"
 #include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;
@@ -21,6 +22,8 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
+namespace Windowing = ::Microsoft::Terminal::Windowing;
+namespace NativeApp = ::TerminalApp::Native;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
@@ -44,7 +47,7 @@ winrt::com_ptr<IVirtualDesktopManager> getDesktopManager()
     return *guard;
 }
 
-AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, winrt::TerminalApp::WindowRequestedArgs args) noexcept :
+AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, NativeApp::WindowRequestedArgsRef args) noexcept :
     _appLogic{ logic },
     _windowManager{ manager }
 {
@@ -126,36 +129,15 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedArgs& windowArgs)
+void AppHost::_HandleCommandlineArgs(const NativeApp::WindowRequestedArgsRef& windowArgs)
 {
     // We did want to make a window, so let's instantiate it here.
     // We don't have XAML yet, but we do have other stuff.
     //
     // Pass the WindowName along to CreateNewWindow, so that the AppLogic can
     // pick up per-window startupActions (rather than just the defaults).
-    _windowLogic = _appLogic.CreateNewWindow(windowArgs.WindowName());
-
-    if (const auto layout = windowArgs.PersistedLayout())
-    {
-        _windowLogic.SetPersistedLayout(layout);
-        _launchShowWindowCommand = SW_NORMAL;
-    }
-    else if (const auto content = windowArgs.Content(); !content.empty())
-    {
-        _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
-        _launchShowWindowCommand = SW_NORMAL;
-    }
-    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
-    {
-        _windowLogic.SetStartupActions(actions);
-        _launchShowWindowCommand = SW_NORMAL;
-    }
-    else
-    {
-        const auto args = windowArgs.Command();
-        _windowLogic.SetStartupCommandline(args);
-        _launchShowWindowCommand = args.ShowWindowCommand();
-    }
+    _windowLogic = _appLogic.CreateNewWindow(windowArgs->WindowName());
+    _launchShowWindowCommand = NativeApp::WindowRequestedArgsInterop::ApplyStartup(windowArgs, _windowLogic);
 
     // This is a fix for GH#12190 and hopefully GH#12169.
     //
@@ -170,8 +152,8 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
         return;
     }
 
-    _windowLogic.WindowName(windowArgs.WindowName());
-    _windowLogic.WindowId(windowArgs.Id());
+    _windowLogic.WindowName(windowArgs->WindowName());
+    _windowLogic.WindowId(windowArgs->Id());
 }
 
 // Method Description:
@@ -469,7 +451,7 @@ void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspe
 {
     if (_windowManager && args)
     {
-        _windowManager->CreateNewWindow(args);
+        _windowManager->CreateNewWindow(NativeApp::WindowRequestedArgsInterop::FromProjected(args));
     }
 }
 
@@ -859,17 +841,17 @@ void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord,
 // - args: the bundle of a commandline and working directory to use for this invocation.
 // Return Value:
 // - <none>
-void AppHost::DispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
+void AppHost::DispatchCommandline(NativeApp::CommandlineArgsRef args)
 {
-    winrt::TerminalApp::SummonWindowBehavior summonArgs{};
-    summonArgs.MoveToCurrentDesktop(false);
-    summonArgs.DropdownDuration(0);
-    summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+    auto summonArgs = winrt::make_self<Windowing::SummonWindowBehavior>();
+    summonArgs->MoveToCurrentDesktop(false);
+    summonArgs->DropdownDuration(0);
+    summonArgs->ToMonitor(Windowing::MonitorBehavior::InPlace);
+    summonArgs->ToggleVisibility(false); // Do not toggle, just make visible.
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     HandleSummon(std::move(summonArgs));
-    _windowLogic.ExecuteCommandline(std::move(args));
+    _windowLogic.ExecuteCommandline(NativeApp::CommandlineArgsInterop::ToProjected(args));
 }
 
 void AppHost::_WindowActivated(bool activated)
@@ -883,11 +865,11 @@ void AppHost::_WindowActivated(bool activated)
     }
 }
 
-safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindowBehavior args) const
+safe_void_coroutine AppHost::HandleSummon(const Windowing::SummonWindowBehaviorRef args) const
 {
     _window->SummonWindow(args);
 
-    if (!args || !args.MoveToCurrentDesktop())
+    if (!args || !args->MoveToCurrentDesktop())
     {
         co_return;
     }
@@ -1120,11 +1102,11 @@ void AppHost::_WindowSizeChanged(const winrt::Windows::Foundation::IInspectable&
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable&,
                                      const winrt::Windows::Foundation::IInspectable&)
 {
-    winrt::TerminalApp::SummonWindowBehavior summonArgs;
-    summonArgs.MoveToCurrentDesktop(false);
-    summonArgs.DropdownDuration(0);
-    summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+    auto summonArgs = winrt::make_self<Windowing::SummonWindowBehavior>();
+    summonArgs->MoveToCurrentDesktop(false);
+    summonArgs->DropdownDuration(0);
+    summonArgs->ToMonitor(Windowing::MonitorBehavior::InPlace);
+    summonArgs->ToggleVisibility(false); // Do not toggle, just make visible.
     HandleSummon(std::move(summonArgs));
 }
 
@@ -1136,11 +1118,11 @@ void AppHost::_SummonWindowByIdRequested(const winrt::Windows::Foundation::IInsp
     const auto targetId = args.WindowId();
     if (auto* targetWindow = _windowManager->GetWindowById(targetId))
     {
-        winrt::TerminalApp::SummonWindowBehavior summonBehavior;
-        summonBehavior.MoveToCurrentDesktop(false);
-        summonBehavior.DropdownDuration(0);
-        summonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-        summonBehavior.ToggleVisibility(false); // Do not toggle, just make visible.
+        auto summonBehavior = winrt::make_self<Windowing::SummonWindowBehavior>();
+        summonBehavior->MoveToCurrentDesktop(false);
+        summonBehavior->DropdownDuration(0);
+        summonBehavior->ToMonitor(Windowing::MonitorBehavior::InPlace);
+        summonBehavior->ToggleVisibility(false); // Do not toggle, just make visible.
         targetWindow->HandleSummon(std::move(summonBehavior));
     }
 }
@@ -1405,7 +1387,7 @@ void AppHost::_handleMoveContent(const winrt::Windows::Foundation::IInspectable&
     }
     else
     {
-        _windowManager->CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ sanitizedWindowName, args.Content(), windowBoundsReference });
+        _windowManager->CreateNewWindow(NativeApp::WindowRequestedArgsInterop::FromContent(sanitizedWindowName, args.Content(), windowBoundsReference));
     }
 }
 

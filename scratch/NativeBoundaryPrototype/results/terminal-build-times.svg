@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="400" viewBox="0 0 1040 400">
+<rect width="1040" height="400" fill="#fafafa"/>
+<g font-family="Segoe UI, sans-serif" fill="#222">
+<text x="30" y="36" font-size="22" font-weight="600">Real Windows Terminal source rebuild</text>
+<text x="30" y="63" font-size="14">Debug x64; full WindowsTerminal solution-target Rebuild, /m:4 and /MP4</text><text x="30" y="143" font-size="16">baseline</text>
+<rect x="170" y="115" width="508.6403358735909" height="45" fill="#536dfe"/>
+<text x="688.6403358735909" y="143" font-size="16">823.12 s median</text><circle cx="687.3088383167925" cy="168" r="4" fill="#222"/><circle cx="669.9718334303892" cy="168" r="4" fill="#222"/><text x="30" y="238" font-size="16">own-pch</text>
+<rect x="170" y="210" width="562.5173846774169" height="45" fill="#e68100"/>
+<text x="742.5173846774169" y="238" font-size="16">910.30 s median</text><circle cx="735.2173913043479" cy="263" r="4" fill="#222"/><circle cx="729.817378050486" cy="263" r="4" fill="#222"/><text x="30" y="335" font-size="16">10.6% higher median, baseline to own-pch; dots = individual runs</text>
+<text x="30" y="365" font-size="13">Native interfaces are not substituted: only own-component projected headers are added to production PCHs.</text></g></svg>

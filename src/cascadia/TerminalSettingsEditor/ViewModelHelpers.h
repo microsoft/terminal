@@ -3,6 +3,14 @@
 
 #pragma once
 
+#include "../TerminalSettingsModel/ProfileAdapter.h"
+
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
+{
+    namespace NativeModel = ::Microsoft::Terminal::Settings::Model::Native;
+    namespace ModelAdapters = ::Microsoft::Terminal::Settings::Model::Adapters;
+}
+
 template<typename T>
 struct ViewModelHelper
 {
@@ -83,6 +91,45 @@ public:                                                   \
 // setting, but which cannot be erased.
 #define PERMANENT_OBSERVABLE_PROJECTED_SETTING(target, name) \
     _BASE_OBSERVABLE_PROJECTED_SETTING(target, name)
+
+#define _BASE_OBSERVABLE_NATIVE_SETTING(target, name)                                      \
+public:                                                                                   \
+    auto name() const                                                                     \
+    {                                                                                     \
+        return ::Microsoft::Terminal::Settings::Model::Adapters::ToProjected((target)->name()); \
+    }                                                                                     \
+    template<typename T>                                                                  \
+    void name(const T& value)                                                             \
+    {                                                                                     \
+        using ProjectedType = decltype(name());                                            \
+        const ProjectedType projectedValue{ value };                                     \
+        if (name() != projectedValue)                                                     \
+        {                                                                                 \
+            (target)->name(::Microsoft::Terminal::Settings::Model::Adapters::ToNative(projectedValue)); \
+            _NotifyChanges(L"Has" #name, L## #name);                                       \
+        }                                                                                 \
+    }                                                                                     \
+    bool Has##name() const { return (target)->Has##name(); }
+
+#define OBSERVABLE_NATIVE_SETTING(target, name)                                            \
+    _BASE_OBSERVABLE_NATIVE_SETTING(target, name)                                           \
+    void Clear##name()                                                                    \
+    {                                                                                     \
+        const auto setting = (target);                                                    \
+        const auto hadValue = setting->Has##name();                                       \
+        setting->Clear##name();                                                           \
+        if (hadValue)                                                                     \
+        {                                                                                 \
+            _NotifyChanges(L"Has" #name, L## #name);                                       \
+        }                                                                                 \
+    }                                                                                     \
+    auto name##OverrideSource() const                                                     \
+    {                                                                                     \
+        return ::Microsoft::Terminal::Settings::Model::Adapters::ToProjected((target)->name##OverrideSource()); \
+    }
+
+#define PERMANENT_OBSERVABLE_NATIVE_SETTING(target, name) \
+    _BASE_OBSERVABLE_NATIVE_SETTING(target, name)
 
 // Defines a basic observable property that uses the _NotifyChanges
 // system from ViewModelHelper. This is very similar to WINRT_OBSERVABLE_PROPERTY

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "../../types/inc/utils.hpp"
 #include "DynamicProfileUtils.h"
 #include "VsDevShellGenerator.h"
 #include "VsSetupConfiguration.h"
@@ -18,7 +19,7 @@ static bool _IsPwshAvailable()
     return SearchPathW(nullptr, pwshExeName, nullptr, MAX_PATH, pwshPath, nullptr);
 }
 
-void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<NativeProfile>>& profiles) const
 {
     try
     {
@@ -29,7 +30,7 @@ void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupIn
 
         const auto seed = GetProfileGuidSeed(instance);
         const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ seed })) };
-        auto profile = winrt::make_self<implementation::Profile>(profileGuid);
+        auto profile = NativeProfile::Create(profileGuid);
         profile->Name(winrt::hstring{ GetProfileName(instance) });
         auto isPwsh = _IsPwshAvailable();
         profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance, isPwsh) });

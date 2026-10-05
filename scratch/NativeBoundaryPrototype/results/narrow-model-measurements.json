@@ -1,0 +1,104 @@
+{
+  "scope": "Actual Model implementation-library Rebuild; prebuilt dependencies excluded",
+  "variants": [
+    "baseline",
+    "narrow-xaml"
+  ],
+  "title": "Settings Model library: narrower PCH",
+  "subtitle": "Debug x64, /MP4; metadata-search optimization enabled in both variants",
+  "footer": "Two samples per variant; not a clean full-Terminal build. Dots show observed run-to-run variation.",
+  "phaseNames": [
+    "compile"
+  ],
+  "phasesTitle": "Model compiler task time",
+  "phasesSubtitle": "CL task sums include PCH creation and source compilation",
+  "phasesNote": "Library dependencies, packaging and subsequent binlog analysis are excluded.",
+  "configuration": "VS 18 Insiders, MSVC 14.51.36231, SDK 10.0.26100.0, Debug x64, /MP4",
+  "commit": "ce8c741395ef8ba04faa826210036839eed9c942",
+  "records": [
+    {
+      "variant": "baseline",
+      "sample": "current-baseline",
+      "buildSeconds": 133.5167258,
+      "phases": [
+        {
+          "phase": "compile",
+          "seconds": 22.501568199999998
+        },
+        {
+          "phase": "compile",
+          "seconds": 83.98124399999999
+        }
+      ],
+      "pchBytes": 1415643112,
+      "pchSourceSha256": "D9FF7A326182193E44C76BC9CA70477E512554DC8C71DCD371F5DD0D73C243AB",
+      "metadata": {
+        "metadataBytes": 144732,
+        "sha256": "0CB03E859EB18A8A283333EC7543B635D2752B59A8FB3B2D8A41F5FF0CA24665"
+      }
+    },
+    {
+      "variant": "narrow-xaml",
+      "sample": "narrow-xaml",
+      "buildSeconds": 117.8277278,
+      "phases": [
+        {
+          "phase": "compile",
+          "seconds": 16.4690251
+        },
+        {
+          "phase": "compile",
+          "seconds": 78.6043234
+        }
+      ],
+      "pchBytes": 1181941760,
+      "pchSourceSha256": "BA431FE8C4E5C24FDB8D767D01E2F833BB3846EE82309FC55EA307ED62275566",
+      "metadata": {
+        "metadataBytes": 144732,
+        "sha256": "0CB03E859EB18A8A283333EC7543B635D2752B59A8FB3B2D8A41F5FF0CA24665"
+      }
+    },
+    {
+      "variant": "narrow-xaml",
+      "sample": "narrow-xaml-confirmation",
+      "buildSeconds": 110.5847593,
+      "phases": [
+        {
+          "phase": "compile",
+          "seconds": 15.363587599999999
+        },
+        {
+          "phase": "compile",
+          "seconds": 74.9430445
+        }
+      ],
+      "pchBytes": 1181941760,
+      "pchSourceSha256": "BA431FE8C4E5C24FDB8D767D01E2F833BB3846EE82309FC55EA307ED62275566",
+      "metadata": {
+        "metadataBytes": 144732,
+        "sha256": "0CB03E859EB18A8A283333EC7543B635D2752B59A8FB3B2D8A41F5FF0CA24665"
+      }
+    },
+    {
+      "variant": "baseline",
+      "sample": "baseline-confirmation",
+      "buildSeconds": 123.2228072,
+      "phases": [
+        {
+          "phase": "compile",
+          "seconds": 20.679950899999998
+        },
+        {
+          "phase": "compile",
+          "seconds": 81.57190109999999
+        }
+      ],
+      "pchBytes": 1415643112,
+      "pchSourceSha256": "D9FF7A326182193E44C76BC9CA70477E512554DC8C71DCD371F5DD0D73C243AB",
+      "metadata": {
+        "metadataBytes": 144732,
+        "sha256": "0CB03E859EB18A8A283333EC7543B635D2752B59A8FB3B2D8A41F5FF0CA24665"
+      }
+    }
+  ]
+}

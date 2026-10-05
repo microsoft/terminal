@@ -233,7 +233,7 @@ void SettingsLoader::GenerateProfiles()
 void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
 {
     auto generateExtensionPackages = [&](const IDynamicProfileGenerator& generator) {
-        std::vector<winrt::com_ptr<implementation::Profile>> profilesList;
+        std::vector<winrt::com_ptr<Native::Profile>> profilesList;
         _executeGenerator(generator, profilesList);
 
         // These are needed for the FragmentSettings object
@@ -507,19 +507,19 @@ void SettingsLoader::FinalizeLayering()
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
     userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
-    userSettings.baseLayerProfile->_FinalizeInheritance();
+    userSettings.baseLayerProfile->FinalizeInheritance();
     // Layer user profile defaults -> user profiles
     for (const auto& profile : userSettings.profiles)
     {
         profile->AddMostImportantParent(userSettings.baseLayerProfile);
 
         // This completes the parenting process that was started in _addUserProfileParent().
-        profile->_FinalizeInheritance();
-        if (profile->Origin() == OriginTag::None)
+        profile->FinalizeInheritance();
+        if (profile->Origin() == Native::OriginTag::None)
         {
             // If you add more fields here, make sure to do the same in
             // implementation::CreateChild().
-            profile->Origin(OriginTag::User);
+            profile->Origin(Native::OriginTag::User);
             profile->Name(profile->Name());
             profile->Hidden(profile->Hidden());
         }
@@ -590,11 +590,11 @@ bool SettingsLoader::AddDynamicProfileFolders()
     return false;
 }
 
-bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
+bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<Native::Profile>& profile)
 {
     bool modified{ false };
 
-    const IAppearanceConfig appearances[] = {
+    const winrt::com_ptr<Native::AppearanceConfig> appearances[] = {
         profile->DefaultAppearance(),
         profile->UnfocusedAppearance()
     };
@@ -603,20 +603,20 @@ bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader
     {
         if (appearance)
         {
-            if (auto schemeName{ appearance.LightColorSchemeName() }; !schemeName.empty())
+            if (auto schemeName{ appearance->LightColorSchemeName() }; !schemeName.empty())
             {
                 if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
                 {
-                    appearance.LightColorSchemeName(found->second);
+                    appearance->LightColorSchemeName(found->second);
                     modified = true;
                 }
             }
 
-            if (auto schemeName{ appearance.DarkColorSchemeName() }; !schemeName.empty())
+            if (auto schemeName{ appearance->DarkColorSchemeName() }; !schemeName.empty())
             {
                 if (auto found{ userSettings.colorSchemeRemappings.find(schemeName) }; found != userSettings.colorSchemeRemappings.end())
                 {
-                    appearance.DarkColorSchemeName(found->second);
+                    appearance->DarkColorSchemeName(found->second);
                     modified = true;
                 }
             }
@@ -683,7 +683,7 @@ bool SettingsLoader::FixupUserSettings()
         {
             for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                if (profile->Icon().Path() == icon)
+                if (profile->Icon()->Path() == icon)
                 {
                     profile->ClearIcon();
                     fixedUp = true;
@@ -816,7 +816,7 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
 // The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
 // In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
 // std::span{ userSettings.profiles }.subspan(_userProfileCount) gets us the latter range.
-std::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+std::span<const winrt::com_ptr<Native::Profile>> SettingsLoader::_getNonUserOriginProfiles() const
 {
     return std::span{ userSettings.profiles }.subspan(_userProfileCount);
 }
@@ -870,7 +870,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
-        settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
+        settings.baseLayerProfile = Native::Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
         // Also remove name, source, and commandline; those are not valid for the profiles defaults object.
@@ -878,7 +878,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         settings.baseLayerProfile->ClearName();
         settings.baseLayerProfile->ClearSource();
         settings.baseLayerProfile->ClearCommandline();
-        settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
+        settings.baseLayerProfile->Origin(Native::OriginTag::ProfilesDefaults);
     }
 
     {
@@ -979,7 +979,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const winrt::h
                 auto destinationSet = profile->HasGuid() ? &newProfiles : &modifiedProfiles;
                 if (guid != winrt::guid{})
                 {
-                    profile->SourceBasePath = sourceBasePath;
+                    profile->SourceBasePath(sourceBasePath);
                     if (buildFragmentSettings)
                     {
                         destinationSet->emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
@@ -1046,10 +1046,10 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
 
 // Just a common helper function between _parse and _parseFragment.
 // Parses a profile and ensures it has a Guid if possible.
-winrt::com_ptr<Profile> SettingsLoader::_parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson)
+winrt::com_ptr<Native::Profile> SettingsLoader::_parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson)
 {
-    auto profile = Profile::FromJson(profileJson);
-    profile->Origin(origin);
+    auto profile = Native::Profile::FromJson(profileJson);
+    profile->Origin(Adapters::ToNative(origin));
 
     // The Guid() generation below depends on the value of Source().
     // --> Provide one if we got one.
@@ -1071,11 +1071,11 @@ winrt::com_ptr<Profile> SettingsLoader::_parseProfile(const OriginTag origin, co
 
 // Adds a profile to the ParsedSettings instance. Takes ownership of the profile.
 // It ensures no duplicate GUIDs are added to the ParsedSettings instance.
-void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings)
+void SettingsLoader::_appendProfile(winrt::com_ptr<Native::Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings)
 {
     // FYI: The static_cast ensures we don't move the profile into
     // `profilesByGuid`, even though we still need it later for `profiles`.
-    if (settings.profilesByGuid.emplace(guid, static_cast<const winrt::com_ptr<Profile>&>(profile)).second)
+    if (settings.profilesByGuid.emplace(guid, static_cast<const winrt::com_ptr<Native::Profile>&>(profile)).second)
     {
         settings.profiles.emplace_back(profile);
     }
@@ -1087,7 +1087,7 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
 
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
 // the profile is added as a parent. Otherwise, a new child profile is created.
-void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
+void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<Native::Profile>& profile)
 {
     if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)
     {
@@ -1114,7 +1114,7 @@ void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::
         //
         // If you add more fields here, make sure to do the same in
         // implementation::CreateChild().
-        auto child = winrt::make_self<Profile>();
+        auto child = Native::Profile::Create();
         child->AddLeastImportantParent(profile);
         child->Guid(profile->Guid());
 
@@ -1167,7 +1167,7 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
 
 // As the name implies it executes a generator.
 // Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
-void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<implementation::Profile>>& profilesList)
+void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator, std::vector<winrt::com_ptr<Native::Profile>>& profilesList)
 {
     const auto generatorNamespace = generator.GetNamespace();
     const auto previousSize = profilesList.size();
@@ -1185,7 +1185,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
 
         for (const auto& profile : std::span(profilesList).subspan(previousSize))
         {
-            profile->Origin(OriginTag::Generated);
+            profile->Origin(Native::OriginTag::Generated);
             profile->Source(source);
         }
     }
@@ -1269,11 +1269,11 @@ try
     SettingsLoader loader{ settingsStringView, LoadStringResource(IDR_DEFAULTS) };
 
     winrt::hstring baseUserSettingsPath{ GetBaseSettingsPath().native() };
-    loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.baseLayerProfile->SourceBasePath(baseUserSettingsPath);
     loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
     for (auto&& userProfile : loader.userSettings.profiles)
     {
-        userProfile->SourceBasePath = baseUserSettingsPath;
+        userProfile->SourceBasePath(baseUserSettingsPath);
     }
 
     // Generate dynamic profiles and add them as parents of user profiles.
@@ -1475,10 +1475,11 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
             }
         }
 
-        allProfiles.emplace_back(*profile);
+        const auto projectedProfile = Adapters::ToProjected(profile);
+        allProfiles.emplace_back(projectedProfile);
         if (!profile->Hidden() && !profile->Orphaned())
         {
-            activeProfiles.emplace_back(*profile);
+            activeProfiles.emplace_back(projectedProfile);
         }
     }
 
@@ -1497,7 +1498,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     }
 
     _globals = loader.userSettings.globals;
-    _baseLayerProfile = loader.userSettings.baseLayerProfile;
+    _baseLayerProfile = Profile::FromNative(loader.userSettings.baseLayerProfile);
     _allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
     _activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
     _warnings = winrt::single_threaded_vector(std::move(warnings));

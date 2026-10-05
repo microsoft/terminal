@@ -1,0 +1,79 @@
+{
+  "scope": "Real WindowsTerminal incremental Build; no-op and a timestamp-only touch of Profile.idl",
+  "caveat": "The IDL touch exercises metadata invalidation without changing declarations; not a semantic API edit.",
+  "sourceSha256": "7EF9EE96DA38648A4C4195EECA8FE38228612E44E66608C5C730B7EEA2BFE500",
+  "records": [
+    {
+      "variant": "baseline",
+      "scenario": "no-op",
+      "round": 1,
+      "buildSeconds": 26.0961912,
+      "metadataMergeSeconds": 0.0,
+      "metadataMergeCount": 0,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "baseline",
+      "scenario": "profile-idl-timestamp",
+      "round": 1,
+      "buildSeconds": 136.2225461,
+      "metadataMergeSeconds": 46.9643772,
+      "metadataMergeCount": 5,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "metadata-first",
+      "scenario": "no-op",
+      "round": 1,
+      "buildSeconds": 27.3866645,
+      "metadataMergeSeconds": 0.0,
+      "metadataMergeCount": 0,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "metadata-first",
+      "scenario": "profile-idl-timestamp",
+      "round": 1,
+      "buildSeconds": 98.9788444,
+      "metadataMergeSeconds": 2.7191753000000003,
+      "metadataMergeCount": 5,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "metadata-first",
+      "scenario": "no-op",
+      "round": 2,
+      "buildSeconds": 26.1681937,
+      "metadataMergeSeconds": 0.0,
+      "metadataMergeCount": 0,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "metadata-first",
+      "scenario": "profile-idl-timestamp",
+      "round": 2,
+      "buildSeconds": 95.6033479,
+      "metadataMergeSeconds": 2.5367333999999997,
+      "metadataMergeCount": 5,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "baseline",
+      "scenario": "no-op",
+      "round": 2,
+      "buildSeconds": 25.2180743,
+      "metadataMergeSeconds": 0.0,
+      "metadataMergeCount": 0,
+      "compilerTaskCount": 69
+    },
+    {
+      "variant": "baseline",
+      "scenario": "profile-idl-timestamp",
+      "round": 2,
+      "buildSeconds": 145.603247,
+      "metadataMergeSeconds": 47.81459819999999,
+      "metadataMergeCount": 5,
+      "compilerTaskCount": 69
+    }
+  ]
+}

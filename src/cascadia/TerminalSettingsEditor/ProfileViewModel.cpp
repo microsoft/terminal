@@ -28,10 +28,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+    ProfileViewModel::ProfileViewModel(const winrt::com_ptr<NativeModel::Profile>& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
-        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
-        _originalProfileGuid{ profile.Guid() },
+        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile->DefaultAppearance()) },
+        _originalProfileGuid{ profile->Guid() },
         _appSettings{ appSettings },
         _windowSettings{ windowSettings },
         _unfocusedAppearanceViewModel{ nullptr },
@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Padding")
             {
-                _parsedPadding = StringToXamlThickness(_profile.Padding());
+                _parsedPadding = StringToXamlThickness(_profile->Padding());
                 _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding", L"PaddingAccessibleName");
             }
             else if (viewModelProperty == L"TabColor" || viewModelProperty == L"TabThemeColorPreview")
@@ -150,12 +150,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             UpdateFontList();
         }
 
-        if (profile.HasUnfocusedAppearance())
+        if (profile->HasUnfocusedAppearance())
         {
-            _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+            _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile->UnfocusedAppearance());
         }
 
-        _parsedPadding = StringToXamlThickness(_profile.Padding());
+        _parsedPadding = StringToXamlThickness(_profile->Padding());
         _defaultAppearanceViewModel.IsDefault(true);
     }
 
@@ -360,7 +360,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::Orphaned() const
     {
-        return _profile.Orphaned();
+        return _profile->Orphaned();
     }
 
     hstring ProfileViewModel::AccessibleStateDescription() const
@@ -448,9 +448,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {
-        if (const auto modelVal = _profile.TabColor())
+        if (const auto modelVal = _profile->TabColor())
         {
-            const auto color = modelVal.Value();
+            const auto color = *modelVal;
             // user defined an override value
             return Windows::UI::Color{
                 .A = 255,
@@ -536,7 +536,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::HasUnfocusedAppearance()
     {
-        return _profile.HasUnfocusedAppearance();
+        return _profile->HasUnfocusedAppearance();
     }
 
     bool ProfileViewModel::EditableUnfocusedAppearance() const noexcept
@@ -556,7 +556,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::CreateUnfocusedAppearance()
     {
-        if (_profile.HasUnfocusedAppearance())
+        if (_profile->HasUnfocusedAppearance())
         {
             // Profile already has an unfocused appearance. Don't create a new one.
             return;
@@ -572,9 +572,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        _profile.CreateUnfocusedAppearance();
+        _profile->CreateUnfocusedAppearance();
 
-        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile->UnfocusedAppearance());
         _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
 
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance", L"UnfocusedAppearanceCardValue");
@@ -582,7 +582,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::DeleteUnfocusedAppearance()
     {
-        _profile.DeleteUnfocusedAppearance();
+        _profile->DeleteUnfocusedAppearance();
 
         _unfocusedAppearanceViewModel = nullptr;
 
@@ -773,11 +773,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ProfileViewModel::_InitializeCurrentBellSounds()
     {
         _CurrentBellSounds = winrt::single_threaded_observable_vector<Editor::BellSoundViewModel>();
-        if (const auto soundList = _profile.BellSound())
+        if (const auto soundList = _profile->BellSound())
         {
-            for (const auto&& bellSound : soundList)
+            for (auto iterator = soundList->First(); iterator->HasCurrent(); iterator->MoveNext())
             {
-                _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(bellSound));
+                _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(iterator->Current()));
             }
         }
         _MarkDuplicateBellSoundDirectories();
@@ -790,16 +790,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     //   so that we can then apply modifications to it
     void ProfileViewModel::_PrepareModelForBellSoundModification()
     {
-        if (!_profile.HasBellSound())
+        if (!_profile->HasBellSound())
         {
-            std::vector<IMediaResource> newSounds;
-            if (const auto inheritedSounds = _profile.BellSound())
+            std::vector<winrt::com_ptr<NativeModel::MediaResource>> newSounds;
+            if (const auto inheritedSounds = _profile->BellSound())
             {
-                newSounds = wil::to_vector(inheritedSounds);
+                newSounds.resize(inheritedSounds->Size());
+                inheritedSounds->GetMany(0, newSounds);
             }
             // if we didn't inherit any bell sounds,
             // we should still set the bell sound to an empty list (instead of null)
-            _profile.BellSound(winrt::single_threaded_vector(std::move(newSounds)));
+            _profile->BellSound(NativeModel::MakeMediaResourceList(std::move(newSounds)));
         }
     }
 
@@ -823,10 +824,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    BellSoundViewModel::BellSoundViewModel(const Model::IMediaResource& resource) :
+    BellSoundViewModel::BellSoundViewModel(const winrt::com_ptr<NativeModel::MediaResource>& resource) :
         _resource{ resource }
     {
-        if (_resource.Ok() && _resource.Path() != _resource.Resolved())
+        if (_resource->Ok() && _resource->Path() != _resource->Resolved())
         {
             // If the resource was resolved to something other than its path, show the path!
             _ShowDirectory = true;
@@ -835,22 +836,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring BellSoundViewModel::DisplayPath() const
     {
-        if (_resource.Ok())
+        if (_resource->Ok())
         {
             // filename; start from the resolved path to show where it actually landed
-            auto resolvedPath{ _resource.Resolved() };
+            auto resolvedPath{ _resource->Resolved() };
             const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
             return hstring{ filePath.filename().wstring() };
         }
-        return _resource.Path();
+        return _resource->Path();
     }
 
     hstring BellSoundViewModel::SubText() const
     {
-        if (_resource.Ok())
+        if (_resource->Ok())
         {
             // Directory
-            auto resolvedPath{ _resource.Resolved() };
+            auto resolvedPath{ _resource->Resolved() };
             const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
             return hstring{ filePath.parent_path().wstring() };
         }
@@ -888,10 +889,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // copy it over to the current layer and apply modifications
         _PrepareModelForBellSoundModification();
 
-        auto bellResource{ MediaResourceHelper::FromString(path) };
-        bellResource.Resolve(path); // No need to check if the file exists. We came from the FilePicker. That's good enough.
+        auto bellResource{ NativeModel::MediaResource::FromString(path) };
+        bellResource->Resolve(path); // No need to check if the file exists. We came from the FilePicker. That's good enough.
         _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(bellResource));
-        _profile.BellSound().Append(bellResource);
+        _profile->BellSound()->Append(bellResource);
         _NotifyChanges(L"CurrentBellSounds");
     }
 
@@ -905,7 +906,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PrepareModelForBellSoundModification();
 
             _CurrentBellSounds.RemoveAt(index);
-            _profile.BellSound().RemoveAt(index);
+            _profile->BellSound()->RemoveAt(index);
             _NotifyChanges(L"CurrentBellSounds");
         }
     }

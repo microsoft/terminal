@@ -173,7 +173,7 @@ namespace winrt::TerminalApp::implementation
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
-        wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
+        ::TerminalApp::Native::CommandlineArgsRef _appArgs{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         bool _hasCommandLineArguments{ false };
         bool _gotSettingsStartupActions{ false };

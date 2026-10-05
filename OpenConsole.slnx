@@ -664,6 +664,15 @@
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
+    <Project Path="src/cascadia/UnitTests_NativeContracts/NativeContracts.UnitTests.vcxproj" Id="48ab3593-bae7-4bfb-8f21-4797fe0f1964">
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
     <Project Path="src/cascadia/UnitTests_SettingsModel/SettingsModel.UnitTests.vcxproj" Id="ca5cad1a-9b68-456a-b13e-c8218070dc42">
       <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
       <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />

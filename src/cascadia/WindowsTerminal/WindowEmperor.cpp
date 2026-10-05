@@ -17,6 +17,7 @@
 #include "AppHost.h"
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
+#include "../TerminalApp/RemotingInterop.h"
 #include "../../types/inc/User32Utils.hpp"
 #include "../../types/inc/utils.hpp"
 
@@ -27,6 +28,8 @@ using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 using namespace std::chrono_literals;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+namespace Windowing = ::Microsoft::Terminal::Windowing;
+namespace NativeApp = ::TerminalApp::Native;
 
 #ifdef _WIN64
 static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERMINAL'
@@ -246,11 +249,11 @@ AppHost* WindowEmperor::GetWindowByName(std::wstring_view name) const noexcept
     return nullptr;
 }
 
-void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args)
+void WindowEmperor::CreateNewWindow(NativeApp::WindowRequestedArgsRef args)
 {
     _assertIsMainThread();
 
-    uint64_t id = args.Id();
+    uint64_t id = args->Id();
     bool needsNewId = id == 0;
     uint64_t newId = 0;
 
@@ -263,7 +266,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     if (needsNewId)
     {
-        args.Id(newId + 1);
+        args->Id(newId + 1);
     }
 
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
@@ -314,11 +317,11 @@ void WindowEmperor::OpenWindow(const winrt::hstring& name)
     // what the old `wt -w <name>` ShellExecute path effectively triggered).
     if (const auto window = GetWindowByName(name))
     {
-        winrt::TerminalApp::SummonWindowBehavior summon{};
-        summon.MoveToCurrentDesktop(false);
-        summon.DropdownDuration(0);
-        summon.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-        summon.ToggleVisibility(false);
+        auto summon = winrt::make_self<Windowing::SummonWindowBehavior>();
+        summon->MoveToCurrentDesktop(false);
+        summon->DropdownDuration(0);
+        summon->ToMonitor(Windowing::MonitorBehavior::InPlace);
+        summon->ToggleVisibility(false);
         window->HandleSummon(std::move(summon));
         return;
     }
@@ -327,23 +330,23 @@ void WindowEmperor::OpenWindow(const winrt::hstring& name)
     // CommandlineArgs is supplied as the launch fallback for the case where
     // no persisted workspace exists; AppHost ignores it when PersistedLayout
     // is set.
-    _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
+    _createWindowMaybeRestoringWorkspace(0, name, NativeApp::CommandlineArgs::Create());
 }
 
 // Shared tail used by both the commandline dispatch path and OpenWindow():
 // build a WindowRequestedArgs for a new window and, if the request carries a
 // name, atomically claim any persisted workspace stored under that name so
 // it's restored here and no subsequent caller can pick up the same entry.
-void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, NativeApp::CommandlineArgsRef args)
 {
-    winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
-    request.WindowName(windowName);
+    auto request = NativeApp::WindowRequestedArgs::Create(windowId, args);
+    request->WindowName(windowName);
 
     if (!windowName.empty())
     {
         if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(windowName))
         {
-            request.PersistedLayout(layout);
+            NativeApp::WindowRequestedArgsInterop::PersistedLayout(request, layout);
         }
     }
 
@@ -563,7 +566,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     // When the settings change, we'll want to update our global hotkeys
     // and our notification icon based on the new settings.
-    _app.Logic().SettingsChanged([this](auto&&, const TerminalApp::SettingsLoadEventArgs& args) {
+    _app.Logic().SettingsChanged([this](auto&&, const winrt::TerminalApp::SettingsLoadEventArgs& args) {
         if (SUCCEEDED(args.Result()))
         {
             _assertIsMainThread();
@@ -629,9 +632,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     {
         TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
-            TerminalApp::CommandlineArgs args;
-            args.ShowWindowCommand(conn.ShowWindow());
-            args.Connection(std::move(conn));
+            auto args = NativeApp::CommandlineArgs::Create();
+            args->ShowWindowCommand(conn.ShowWindow());
+            NativeApp::CommandlineArgsInterop::Connection(args, conn);
             _dispatchCommandline(std::move(args));
             _summonWindow(SummonWindowSelectionArgs{
                 .SummonBehavior = nullptr,
@@ -785,13 +788,13 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
     window->OnDirectKeyEvent(vkey, scanCode, keyDown);
 }
 
-void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
+void WindowEmperor::_dispatchCommandline(NativeApp::CommandlineArgsRef args)
 {
     _assertIsMainThread();
 
-    const auto exitCode = args.ExitCode();
+    const auto exitCode = args->ExitCode();
 
-    if (const auto msg = args.ExitMessage(); !msg.empty())
+    if (const auto msg = args->ExitMessage(); !msg.empty())
     {
         _showMessageBox(msg, exitCode != 0);
         return;
@@ -802,7 +805,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         return;
     }
 
-    const auto parsedTarget = args.TargetWindow();
+    const auto parsedTarget = args->TargetWindow();
     WindowingMode windowingBehavior = WindowingMode::UseNew;
     uint64_t windowId = 0;
     winrt::hstring windowName;
@@ -873,16 +876,16 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
 
 void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand)
 {
-    winrt::TerminalApp::CommandlineArgs c;
-    c.Commandline(args);
-    c.CurrentDirectory(currentDirectory);
-    c.CurrentEnvironment(envString);
-    c.ShowWindowCommand(showWindowCommand);
+    auto c = NativeApp::CommandlineArgs::Create();
+    c->Commandline(args);
+    c->CurrentDirectory(winrt::hstring{ currentDirectory.data(), gsl::narrow_cast<uint32_t>(currentDirectory.size()) });
+    c->CurrentEnvironment(winrt::hstring{ envString.data(), gsl::narrow_cast<uint32_t>(envString.size()) });
+    c->ShowWindowCommand(showWindowCommand);
     _dispatchCommandline(std::move(c));
 }
 
 // This is an implementation-detail of _dispatchCommandline().
-safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args)
+safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(NativeApp::CommandlineArgsRef args)
 {
     std::shared_ptr<AppHost> mostRecent;
     AppHost* window = nullptr;
@@ -918,7 +921,7 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
     }
     else
     {
-        CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, std::move(args) });
+        CreateNewWindow(NativeApp::WindowRequestedArgs::Create(0, args));
     }
 }
 
@@ -972,11 +975,11 @@ void WindowEmperor::FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) cons
     {
         if (w->Logic().FocusTab(tab))
         {
-            winrt::TerminalApp::SummonWindowBehavior summonArgs;
-            summonArgs.MoveToCurrentDesktop(false);
-            summonArgs.DropdownDuration(0);
-            summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-            summonArgs.ToggleVisibility(false);
+            auto summonArgs = winrt::make_self<Windowing::SummonWindowBehavior>();
+            summonArgs->MoveToCurrentDesktop(false);
+            summonArgs->DropdownDuration(0);
+            summonArgs->ToMonitor(Windowing::MonitorBehavior::InPlace);
+            summonArgs->ToggleVisibility(false);
             w->HandleSummon(std::move(summonArgs));
             return;
         }
@@ -987,8 +990,8 @@ void WindowEmperor::_summonAllWindows() const
 {
     _assertIsMainThread();
 
-    TerminalApp::SummonWindowBehavior args;
-    args.ToggleVisibility(false);
+    auto args = winrt::make_self<Windowing::SummonWindowBehavior>();
+    args->ToggleVisibility(false);
 
     for (const auto& window : _windows)
     {
@@ -1217,9 +1220,9 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             case NIN_KEYSELECT:
             {
                 SummonWindowSelectionArgs args;
-                args.SummonBehavior.MoveToCurrentDesktop(false);
-                args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-                args.SummonBehavior.ToggleVisibility(false);
+                args.SummonBehavior->MoveToCurrentDesktop(false);
+                args.SummonBehavior->ToMonitor(Windowing::MonitorBehavior::InPlace);
+                args.SummonBehavior->ToggleVisibility(false);
                 std::ignore = _summonWindow(std::move(args));
                 break;
             }
@@ -1554,9 +1557,9 @@ void WindowEmperor::_notificationAreaMenuClicked(const WPARAM wParam, const LPAR
     // This works well for us because valid window IDs are always >0.
     SummonWindowSelectionArgs args;
     args.WindowID = windowId;
-    args.SummonBehavior.ToggleVisibility(false);
-    args.SummonBehavior.MoveToCurrentDesktop(false);
-    args.SummonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+    args.SummonBehavior->ToggleVisibility(false);
+    args.SummonBehavior->MoveToCurrentDesktop(false);
+    args.SummonBehavior->ToMonitor(Windowing::MonitorBehavior::InPlace);
     std::ignore = _summonWindow(std::move(args));
 }
 
@@ -1578,20 +1581,20 @@ void WindowEmperor::_hotkeyPressed(const long hotkeyIndex)
     SummonWindowSelectionArgs args;
     args.WindowName = summonArgs.Name();
     args.OnCurrentDesktop = summonArgs.Desktop() == DesktopBehavior::OnCurrent;
-    args.SummonBehavior.MoveToCurrentDesktop(summonArgs.Desktop() == DesktopBehavior::ToCurrent);
-    args.SummonBehavior.ToggleVisibility(summonArgs.ToggleVisibility());
-    args.SummonBehavior.DropdownDuration(summonArgs.DropdownDuration());
+    args.SummonBehavior->MoveToCurrentDesktop(summonArgs.Desktop() == DesktopBehavior::ToCurrent);
+    args.SummonBehavior->ToggleVisibility(summonArgs.ToggleVisibility());
+    args.SummonBehavior->DropdownDuration(summonArgs.DropdownDuration());
 
     switch (summonArgs.Monitor())
     {
     case MonitorBehavior::Any:
-        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::InPlace);
+        args.SummonBehavior->ToMonitor(Windowing::MonitorBehavior::InPlace);
         break;
     case MonitorBehavior::ToCurrent:
-        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::ToCurrent);
+        args.SummonBehavior->ToMonitor(Windowing::MonitorBehavior::ToCurrent);
         break;
     case MonitorBehavior::ToMouse:
-        args.SummonBehavior.ToMonitor(TerminalApp::MonitorBehavior::ToMouse);
+        args.SummonBehavior->ToMonitor(Windowing::MonitorBehavior::ToMouse);
         break;
     }
 

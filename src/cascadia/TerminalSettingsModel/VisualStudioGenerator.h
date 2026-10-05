@@ -30,12 +30,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         std::wstring_view GetNamespace() const noexcept override;
         std::wstring_view GetDisplayName() const noexcept override;
         std::wstring_view GetIcon() const noexcept override;
-        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
+        void GenerateProfiles(std::vector<winrt::com_ptr<NativeProfile>>& profiles) const override;
 
         class IVisualStudioProfileGenerator
         {
         public:
-            virtual void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const = 0;
+            virtual void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<NativeProfile>>& profiles) const = 0;
         };
     };
 };

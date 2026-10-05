@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "../TerminalSettingsModel/ProfileAdapter.h"
 #include "winrt/Windows.UI.ViewManagement.h"
 #include "../../types/inc/colorTable.hpp"
 
@@ -50,19 +51,24 @@ namespace winrt::Microsoft::Terminal::Settings
         return { horizAlign, vertAlign };
     }
 
-    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
+    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const winrt::com_ptr<NativeModel::Profile>& profile)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyWindowSettings(windowSettings);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
+        settings->_ApplyAppearanceSettings(profile->DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
     }
 
     winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
+    {
+        return CreateForPreview(appSettings, windowSettings, ::Microsoft::Terminal::Settings::Model::Adapters::ToNative(profile));
+    }
+
+    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const winrt::com_ptr<NativeModel::Profile>& profile)
     {
         const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
         settings->_UseBackgroundImageForWindow = false;
@@ -75,9 +81,14 @@ namespace winrt::Microsoft::Terminal::Settings
     //   has no unfocused appearance, this behaves like CreateForPreview (the focused appearance).
     winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
+        return CreateForPreviewUnfocused(appSettings, windowSettings, ::Microsoft::Terminal::Settings::Model::Adapters::ToNative(profile));
+    }
+
+    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const winrt::com_ptr<NativeModel::Profile>& profile)
+    {
         const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
         settings->_UseBackgroundImageForWindow = false;
-        if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
+        if (const auto& unfocusedAppearance{ profile->UnfocusedAppearance() })
         {
             const auto globals = appSettings.GlobalSettings();
             settings->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
@@ -98,10 +109,15 @@ namespace winrt::Microsoft::Terminal::Settings
     //   one for when the terminal is focused and the other for when the terminal is unfocused
     TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
+        return CreateWithProfile(appSettings, windowSettings, ::Microsoft::Terminal::Settings::Model::Adapters::ToNative(profile));
+    }
+
+    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const winrt::com_ptr<NativeModel::Profile>& profile)
+    {
         const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
 
         winrt::com_ptr<TerminalSettings> child{ nullptr };
-        if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
+        if (const auto& unfocusedAppearance{ profile->UnfocusedAppearance() })
         {
             const auto globals = appSettings.GlobalSettings();
             child = winrt::make_self<TerminalSettings>();
@@ -213,12 +229,13 @@ namespace winrt::Microsoft::Terminal::Settings
         return settingsPair;
     }
 
-    void TerminalSettings::_ApplyAppearanceSettings(const Model::IAppearanceConfig& appearance,
+    void TerminalSettings::_ApplyAppearanceSettings(const winrt::com_ptr<NativeModel::AppearanceConfig>& appearance,
                                                     const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes,
                                                     const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
     {
-        _CursorShape = appearance.CursorShape();
-        _CursorHeight = appearance.CursorHeight();
+        namespace Adapters = ::Microsoft::Terminal::Settings::Model::Adapters;
+        _CursorShape = Adapters::ToProjected(appearance->CursorShape());
+        _CursorHeight = appearance->CursorHeight();
 
         auto requestedTheme = currentTheme.RequestedTheme();
         if (requestedTheme == winrt::Windows::UI::Xaml::ElementTheme::Default)
@@ -231,13 +248,13 @@ namespace winrt::Microsoft::Terminal::Settings
         switch (requestedTheme)
         {
         case winrt::Windows::UI::Xaml::ElementTheme::Light:
-            if (const auto scheme = schemes.TryLookup(appearance.LightColorSchemeName()))
+            if (const auto scheme = schemes.TryLookup(appearance->LightColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
             break;
         case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-            if (const auto scheme = schemes.TryLookup(appearance.DarkColorSchemeName()))
+            if (const auto scheme = schemes.TryLookup(appearance->DarkColorSchemeName()))
             {
                 ApplyColorScheme(scheme);
             }
@@ -247,50 +264,50 @@ namespace winrt::Microsoft::Terminal::Settings
             break;
         }
 
-        if (appearance.Foreground())
+        if (const auto color = appearance->Foreground())
         {
-            _DefaultForeground = til::color{ appearance.Foreground().Value() };
+            _DefaultForeground = til::color{ Adapters::ToProjected(*color) };
         }
-        if (appearance.Background())
+        if (const auto color = appearance->Background())
         {
-            _DefaultBackground = til::color{ appearance.Background().Value() };
+            _DefaultBackground = til::color{ Adapters::ToProjected(*color) };
         }
-        if (appearance.SelectionBackground())
+        if (const auto color = appearance->SelectionBackground())
         {
-            _SelectionBackground = til::color{ appearance.SelectionBackground().Value() };
+            _SelectionBackground = til::color{ Adapters::ToProjected(*color) };
         }
-        if (appearance.CursorColor())
+        if (const auto color = appearance->CursorColor())
         {
-            _CursorColor = til::color{ appearance.CursorColor().Value() };
-        }
-
-        if (const auto backgroundImage{ appearance.BackgroundImagePath() })
-        {
-            _BackgroundImage = backgroundImage.Resolved();
+            _CursorColor = til::color{ Adapters::ToProjected(*color) };
         }
 
-        if (const auto pixelShader{ appearance.PixelShaderPath() })
+        if (const auto backgroundImage{ appearance->BackgroundImagePath() })
         {
-            _PixelShaderPath = pixelShader.Resolved();
+            _BackgroundImage = backgroundImage->Resolved();
         }
 
-        if (const auto pixelShaderImage{ appearance.PixelShaderImagePath() })
+        if (const auto pixelShader{ appearance->PixelShaderPath() })
         {
-            _PixelShaderImagePath = pixelShaderImage.Resolved();
+            _PixelShaderPath = pixelShader->Resolved();
         }
 
-        _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
-        _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
-        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
+        if (const auto pixelShaderImage{ appearance->PixelShaderImagePath() })
+        {
+            _PixelShaderImagePath = pixelShaderImage->Resolved();
+        }
 
-        _RetroTerminalEffect = appearance.RetroTerminalEffect();
+        _BackgroundImageOpacity = appearance->BackgroundImageOpacity();
+        _BackgroundImageStretchMode = Adapters::ToProjected(appearance->BackgroundImageStretchMode());
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(Adapters::ToProjected(appearance->BackgroundImageAlignment()));
 
-        _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
-        _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+        _RetroTerminalEffect = appearance->RetroTerminalEffect();
 
-        _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
-        _Opacity = appearance.Opacity();
-        _UseAcrylic = appearance.UseAcrylic();
+        _IntenseIsBold = WI_IsFlagSet(Adapters::ToProjected(appearance->IntenseTextStyle()), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+        _IntenseIsBright = WI_IsFlagSet(Adapters::ToProjected(appearance->IntenseTextStyle()), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+
+        _AdjustIndistinguishableColors = Adapters::ToProjected(appearance->AdjustIndistinguishableColors());
+        _Opacity = appearance->Opacity();
+        _UseAcrylic = appearance->UseAcrylic();
     }
 
     // Method Description:
@@ -300,50 +317,51 @@ namespace winrt::Microsoft::Terminal::Settings
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Model::Profile& profile)
+    void TerminalSettings::_ApplyProfileSettings(const winrt::com_ptr<NativeModel::Profile>& profile)
     {
+        namespace Adapters = ::Microsoft::Terminal::Settings::Model::Adapters;
         // Fill in the Terminal Setting's CoreSettings from the profile
-        _HistorySize = profile.HistorySize();
-        _SnapOnInput = profile.SnapOnInput();
-        _AltGrAliasing = profile.AltGrAliasing();
-        _AnswerbackMessage = profile.AnswerbackMessage();
+        _HistorySize = profile->HistorySize();
+        _SnapOnInput = profile->SnapOnInput();
+        _AltGrAliasing = profile->AltGrAliasing();
+        _AnswerbackMessage = profile->AnswerbackMessage();
 
-        const auto fontInfo = profile.FontInfo();
-        _FontFace = fontInfo.FontFace();
-        _FontSize = fontInfo.FontSize();
-        _FontWeight = fontInfo.FontWeight();
-        _FontFeatures = fontInfo.FontFeatures();
-        _FontAxes = fontInfo.FontAxes();
-        _EnableBuiltinGlyphs = fontInfo.EnableBuiltinGlyphs();
-        _EnableColorGlyphs = fontInfo.EnableColorGlyphs();
-        _CellWidth = fontInfo.CellWidth();
-        _CellHeight = fontInfo.CellHeight();
-        _Padding = profile.Padding();
+        const auto fontInfo = profile->FontInfo();
+        _FontFace = fontInfo->FontFace();
+        _FontSize = fontInfo->FontSize();
+        _FontWeight = fontInfo->FontWeight();
+        _FontFeatures = fontInfo->FontFeatures();
+        _FontAxes = fontInfo->FontAxes();
+        _EnableBuiltinGlyphs = fontInfo->EnableBuiltinGlyphs();
+        _EnableColorGlyphs = fontInfo->EnableColorGlyphs();
+        _CellWidth = fontInfo->CellWidth();
+        _CellHeight = fontInfo->CellHeight();
+        _Padding = profile->Padding();
 
-        _Commandline = profile.Commandline();
+        _Commandline = profile->Commandline();
 
-        _StartingDirectory = profile.EvaluatedStartingDirectory();
+        _StartingDirectory = profile->EvaluatedStartingDirectory();
 
         // GH#2373: Use the tabTitle as the starting title if it exists; otherwise,
         // use the profile name
-        _StartingTitle = !profile.TabTitle().empty() ? profile.TabTitle() : profile.Name();
+        _StartingTitle = !profile->TabTitle().empty() ? profile->TabTitle() : profile->Name();
 
-        if (profile.SuppressApplicationTitle())
+        if (profile->SuppressApplicationTitle())
         {
-            _SuppressApplicationTitle = profile.SuppressApplicationTitle();
+            _SuppressApplicationTitle = profile->SuppressApplicationTitle();
         }
 
-        _ScrollState = profile.ScrollState();
+        _ScrollState = Adapters::ToProjected(profile->ScrollState());
 
-        _AntialiasingMode = profile.AntialiasingMode();
+        _AntialiasingMode = Adapters::ToProjected(profile->AntialiasingMode());
 
-        if (profile.TabColor())
+        if (const auto color = profile->TabColor())
         {
-            const til::color colorRef{ profile.TabColor().Value() };
+            const til::color colorRef{ Adapters::ToProjected(*color) };
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
 
-        if (const auto profileEnvVars{ profile.EnvironmentVariables() })
+        if (const auto profileEnvVars{ profile->EnvironmentVariables() })
         {
             std::unordered_map<winrt::hstring, winrt::hstring> environmentVariables;
             for (const auto& [key, value] : profileEnvVars)
@@ -357,21 +375,21 @@ namespace winrt::Microsoft::Terminal::Settings
             _EnvironmentVariables = std::nullopt;
         }
 
-        _Elevate = profile.Elevate();
-        _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile.AutoMarkPrompts();
-        _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile.ShowMarks();
+        _Elevate = profile->Elevate();
+        _AutoMarkPrompts = Feature_ScrollbarMarks::IsEnabled() && profile->AutoMarkPrompts();
+        _ShowMarks = Feature_ScrollbarMarks::IsEnabled() && profile->ShowMarks();
 
-        _RightClickContextMenu = profile.RightClickContextMenu();
-        _RepositionCursorWithMouse = profile.RepositionCursorWithMouse();
-        _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
-        _RainbowSuggestions = profile.RainbowSuggestions();
-        _ForceVTInput = profile.ForceVTInput();
-        _AllowKittyKeyboardMode = profile.AllowKittyKeyboardMode();
-        _AllowVtChecksumReport = profile.AllowVtChecksumReport();
-        _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
-        _AllowOscNotifications = profile.AllowOscNotifications();
-        _PathTranslationStyle = profile.PathTranslationStyle();
-        _DragDropDelimiter = profile.DragDropDelimiter();
+        _RightClickContextMenu = profile->RightClickContextMenu();
+        _RepositionCursorWithMouse = profile->RepositionCursorWithMouse();
+        _ReloadEnvironmentVariables = profile->ReloadEnvironmentVariables();
+        _RainbowSuggestions = profile->RainbowSuggestions();
+        _ForceVTInput = profile->ForceVTInput();
+        _AllowKittyKeyboardMode = profile->AllowKittyKeyboardMode();
+        _AllowVtChecksumReport = profile->AllowVtChecksumReport();
+        _AllowVtClipboardWrite = profile->AllowVtClipboardWrite();
+        _AllowOscNotifications = profile->AllowOscNotifications();
+        _PathTranslationStyle = Adapters::ToProjected(profile->PathTranslationStyle());
+        _DragDropDelimiter = profile->DragDropDelimiter();
     }
 
     // Method Description:

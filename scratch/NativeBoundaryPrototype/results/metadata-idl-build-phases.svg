@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="400" viewBox="0 0 1040 400">
+<rect width="1040" height="400" fill="#fafafa"/>
+<g font-family="Segoe UI, sans-serif" fill="#222">
+<text x="30" y="36" font-size="22" font-weight="600">Aggregate incremental metadata merge time</text>
+<text x="30" y="63" font-size="14">Only merge tasks shown, not the complete build; parallel tasks can overlap</text><text x="30" y="143" font-size="16">baseline</text><rect x="170" y="115" width="636.3636363636364" height="45" fill="#536dfe"><title>metadata merge: 47.389 s</title></rect><text x="30" y="238" font-size="16">metadata-first</text><rect x="170" y="210" width="35.28914676078333" height="45" fill="#536dfe"><title>metadata merge: 2.628 s</title></rect><rect x="30" y="300" width="16" height="16" fill="#536dfe"/>
+<text x="54" y="313" font-size="13">metadata merge: 47.39 / 2.63 s</text><text x="30" y="365" font-size="13">The IDL file contents were unchanged and its original timestamp was restored.</text></g></svg>

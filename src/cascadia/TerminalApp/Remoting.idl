@@ -18,21 +18,6 @@ namespace TerminalApp
         String CurrentEnvironment;
     };
 
-    enum MonitorBehavior
-    {
-        InPlace,
-        ToCurrent,
-        ToMouse,
-    };
-
-    [default_interface] runtimeclass SummonWindowBehavior {
-        SummonWindowBehavior();
-        Boolean MoveToCurrentDesktop;
-        Boolean ToggleVisibility;
-        UInt32 DropdownDuration;
-        MonitorBehavior ToMonitor;
-    }
-
     [default_interface] runtimeclass RequestReceiveContentArgs {
         RequestReceiveContentArgs(UInt64 src, UInt64 tgt, UInt32 tabIndex);
 

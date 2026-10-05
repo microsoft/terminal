@@ -17,6 +17,7 @@ Author(s):
 #pragma once
 
 #include "AppearanceConfig.g.h"
+#include "ProfileAdapter.h"
 #include "JsonUtils.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
@@ -25,40 +26,40 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig, IMediaResourceContainer>, IInheritable<AppearanceConfig>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig, IMediaResourceContainer>
     {
     public:
-        AppearanceConfig(winrt::weak_ref<Profile> sourceProfile);
-        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile);
+        AppearanceConfig(winrt::weak_ref<Model::Profile> sourceProfile);
+        explicit AppearanceConfig(winrt::com_ptr<Native::AppearanceConfig> native);
+        ~AppearanceConfig();
+        static winrt::com_ptr<AppearanceConfig> FromNative(const winrt::com_ptr<Native::AppearanceConfig>& native);
+        const winrt::com_ptr<Native::AppearanceConfig>& NativeModel() const noexcept { return _native; }
+        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Model::Profile> sourceProfile);
+        void ClearParents() { _native->ClearParents(); }
+        void AddLeastImportantParent(const winrt::com_ptr<AppearanceConfig>& parent) { _native->AddLeastImportantParent(parent->_native); }
+        void AddMostImportantParent(const winrt::com_ptr<AppearanceConfig>& parent) { _native->AddMostImportantParent(parent->_native); }
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
-        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+        void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const { _native->LogSettingChanges(changes, context); }
 
-        Model::Profile SourceProfile();
+        Model::Profile SourceProfile() const { return Adapters::ToProjected(_native->SourceProfile()); }
 
         void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
-        INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, float, Opacity, 1.0f);
+        TSM_ADAPTER_PROPERTY(std::optional<Native::Color>, Foreground);
+        TSM_ADAPTER_PROPERTY(std::optional<Native::Color>, Background);
+        TSM_ADAPTER_PROPERTY(std::optional<Native::Color>, SelectionBackground);
+        TSM_ADAPTER_PROPERTY(std::optional<Native::Color>, CursorColor);
+        TSM_ADAPTER_PROPERTY(float, Opacity);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
+        TSM_ADAPTER_PROPERTY(winrt::hstring, DarkColorSchemeName);
+        TSM_ADAPTER_PROPERTY(winrt::hstring, LightColorSchemeName);
 
-#define APPEARANCE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
-    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-        MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
+#define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) TSM_ADAPTER_PROPERTY(type, name);
+        NATIVE_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
 #undef APPEARANCE_SETTINGS_INITIALIZE
 
     private:
-        winrt::weak_ref<Profile> _sourceProfile;
-        std::set<std::string> _changeLog;
-
-        void _logSettingSet(const std::string_view& setting);
-        void _logSettingIfSet(const std::string_view& setting, const bool isSet);
-
-        std::tuple<winrt::hstring, Model::OriginTag> _getSourceProfileBasePathAndOrigin() const;
+        winrt::com_ptr<Native::AppearanceConfig> _native;
     };
 }

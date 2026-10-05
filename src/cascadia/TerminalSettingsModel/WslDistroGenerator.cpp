@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "Native/AppearanceConfig.h"
 
 #include "WslDistroGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
@@ -59,7 +60,7 @@ std::wstring_view WslDistroGenerator::GetIcon() const noexcept
     return GeneratorIconPath;
 }
 
-static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
+static winrt::com_ptr<NativeProfile> makeProfile(const std::wstring& distName)
 {
     const auto WSLDistro{ CreateDynamicProfile(distName) };
     // GH#11096 - make sure the WSL path starts explicitly with
@@ -67,8 +68,8 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     std::wstring command{};
     THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
     WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
-    WSLDistro->DefaultAppearance().DarkColorSchemeName(L"Campbell");
-    WSLDistro->DefaultAppearance().LightColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance()->DarkColorSchemeName(L"Campbell");
+    WSLDistro->DefaultAppearance()->LightColorSchemeName(L"Campbell");
     if (isWslDashDashCdAvailableForLinuxPaths())
     {
         WSLDistro->StartingDirectory(winrt::hstring{ WslHomeDirectory });
@@ -78,7 +79,7 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
         WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     }
     WSLDistro->Icon(winrt::hstring{ IconPath });
-    WSLDistro->PathTranslationStyle(winrt::Microsoft::Terminal::Control::PathTranslationStyle::WSL);
+    WSLDistro->PathTranslationStyle(::Microsoft::Terminal::Settings::Model::Native::PathTranslationStyle::WSL);
     return WSLDistro;
 }
 
@@ -89,7 +90,7 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
 // - names: a list of distro names to turn into profiles
 // Return Value:
 // - the list of profiles we've generated.
-static void namesToProfiles(const std::vector<std::wstring>& names, std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
+static void namesToProfiles(const std::vector<std::wstring>& names, std::vector<winrt::com_ptr<NativeProfile>>& profiles)
 {
     for (const auto& distName : names)
     {
@@ -238,7 +239,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - <none>
 // Return Value:
 // - A list of WSL profiles.
-void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<NativeProfile>>& profiles) const
 {
     auto wslRootKey{ openWslRegKey() };
     if (wslRootKey)

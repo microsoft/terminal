@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="400" viewBox="0 0 1040 400">
+<rect width="1040" height="400" fill="#fafafa"/>
+<g font-family="Segoe UI, sans-serif" fill="#222">
+<text x="30" y="36" font-size="22" font-weight="600">Model compiler task time</text>
+<text x="30" y="63" font-size="14">CL task sums include PCH creation and source compilation</text><text x="30" y="143" font-size="16">baseline</text><rect x="170" y="115" width="636.3636363636363" height="45" fill="#536dfe"><title>compile: 104.367 s</title></rect><text x="30" y="238" font-size="16">narrow-xaml</text><rect x="170" y="210" width="565.1628540748928" height="45" fill="#536dfe"><title>compile: 92.690 s</title></rect><rect x="30" y="300" width="16" height="16" fill="#536dfe"/>
+<text x="54" y="313" font-size="13">compile: 104.37 / 92.69 s</text><text x="30" y="365" font-size="13">Library dependencies, packaging and subsequent binlog analysis are excluded.</text></g></svg>

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "Native/AppearanceConfig.h"
 
 #include "PowershellCoreProfileGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
@@ -311,7 +312,7 @@ std::wstring_view PowershellCoreProfileGenerator::GetIcon() const noexcept
 // - <none>
 // Return Value:
 // - a vector with the PowerShell Core profile, if available.
-void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
+void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr<NativeProfile>>& profiles) const
 {
     const auto psInstances = _collectPowerShellInstances();
     auto first = true;
@@ -330,8 +331,8 @@ void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr
         profile->Commandline(winrt::hstring{ quotedCommandline });
 
         profile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
-        profile->DefaultAppearance().DarkColorSchemeName(L"Campbell");
-        profile->DefaultAppearance().LightColorSchemeName(L"Campbell");
+        profile->DefaultAppearance()->DarkColorSchemeName(L"Campbell");
+        profile->DefaultAppearance()->LightColorSchemeName(L"Campbell");
         profile->Icon(winrt::hstring{ WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON });
 
         if (first)

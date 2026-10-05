@@ -5,6 +5,8 @@
 #include "TerminalWindow.h"
 
 #include "AppLogic.h"
+#include "AppCommandlineArgs.h"
+#include "RemotingInterop.h"
 
 #include <til/env.h>
 
@@ -1017,7 +1019,7 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::SetStartupCommandline(TerminalApp::CommandlineArgs args)
     {
-        _appArgs = winrt::get_self<CommandlineArgs>(args);
+        _appArgs = ::TerminalApp::Native::CommandlineArgsInterop::FromProjected(args);
         _startupConnection = args.Connection();
         auto& parsedArgs = _appArgs->ParsedArgs();
 
@@ -1091,7 +1093,7 @@ namespace winrt::TerminalApp::implementation
     //   or 0. (see TerminalWindow::_ParseArgs)
     int32_t TerminalWindow::ExecuteCommandline(TerminalApp::CommandlineArgs args)
     {
-        _appArgs = winrt::get_self<CommandlineArgs>(args);
+        _appArgs = ::TerminalApp::Native::CommandlineArgsInterop::FromProjected(args);
 
         if (_appArgs->ExitCode() == 0)
         {

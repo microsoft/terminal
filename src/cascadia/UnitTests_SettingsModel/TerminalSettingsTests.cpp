@@ -792,8 +792,9 @@ namespace SettingsModelUnitTests
 
         auto createTerminalSettings = [&](const auto& profile, const auto& schemes, const auto& Theme) {
             auto terminalSettings{ winrt::make_self<TerminalSettings>() };
-            terminalSettings->_ApplyProfileSettings(profile);
-            terminalSettings->_ApplyAppearanceSettings(profile.DefaultAppearance(), schemes, Theme);
+            const auto nativeProfile = ::Microsoft::Terminal::Settings::Model::Adapters::ToNative(profile);
+            terminalSettings->_ApplyProfileSettings(nativeProfile);
+            terminalSettings->_ApplyAppearanceSettings(nativeProfile->DefaultAppearance(), schemes, Theme);
             return terminalSettings;
         };
 
