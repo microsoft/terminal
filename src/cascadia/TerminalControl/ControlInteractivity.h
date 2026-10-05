@@ -176,6 +176,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
+        std::wstring _getHyperLinkForPointerPress(const Control::MouseButtonState buttonState, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,
