@@ -912,10 +912,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
+    std::wstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         const auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
+        return _terminal->GetHyperlinkAtViewportPosition(til::point{ pos });
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
