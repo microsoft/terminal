@@ -543,11 +543,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _pointerPressedInBounds = false;
 
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
-
-        // Only a left click release when copy on select is active should perform a copy.
-        // Right clicks and middle clicks should not need to do anything when released.
-        const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
-
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
@@ -562,6 +557,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             return;
         }
+
+        // Only a left click release when copy on select is active should perform a copy.
+        // Right clicks and middle clicks should not need to do anything when released.
+        const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
 
         if (_core->CopyOnSelect() &&
             isLeftMouseRelease &&
