@@ -57,17 +57,39 @@ namespace winrt::TerminalApp::implementation
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
+    // Returns true if the version looks like a GitHub release tag
+    // (e.g. "1.25.2733.0"). Unpackaged and Canary builds embed extra
+    // info like the branch name (e.g. "1.11.210830001-release1.11"),
+    // which has no matching release tag.
+    static bool _IsReleaseVersion(const winrt::hstring& version)
+    {
+        if (version.empty())
+        {
+            return false;
+        }
+        int dots{ 0 };
+        for (const auto c : version)
+        {
+            if (c == L'.')
+            {
+                ++dots;
+            }
+            else if (c < L'0' || c > L'9')
+            {
+                return false;
+            }
+        }
+        return dots == 3;
+    }
+
     void AboutDialog::_ReleaseNotesOnClick(const IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
-        std::wstring url{ L"https://github.com/microsoft/terminal/releases/tag/v" };
+        std::wstring url{ L"https://github.com/microsoft/terminal/releases" };
         const auto version{ ApplicationVersion() };
-        if (!version.empty())
+        if (_IsReleaseVersion(version))
         {
+            url += L"/tag/v";
             url += version.c_str();
-        }
-        else
-        {
-            url = L"https://github.com/microsoft/terminal/releases";
         }
         ShellExecute(nullptr, nullptr, url.c_str(), nullptr, nullptr, SW_SHOW);
     }
