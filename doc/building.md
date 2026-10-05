@@ -77,6 +77,19 @@ For a comparison or to restore the original search order, rebuild with
 `/p:TerminalOptimizeMetadataSearch=false`. The optimization is enabled by default
 and applies in both Visual Studio and command-line builds.
 
+Modern C++/WinRT IDL files are compiled in parallel when every input has a
+distinct WinMD output and disables the shared C/C++ header/proxy outputs.
+Classic MIDL and projects with shared outputs keep their original scheduler.
+The process limit follows an explicit `MultiProcMaxCount`, then `CL_MPCount`,
+then the processor count, and is shared across builds unless explicitly
+overridden. C++ compiler scheduling is unchanged.
+Projects that already opt into the MultiToolTask C++ scheduler keep their
+existing scheduling configuration.
+
+Use `/p:TerminalParallelWinrtMidl=false` to restore serial WinRT IDL compilation
+for comparison. This does not disable metadata validation or change generated
+APIs.
+
 ## Link-only C++/WinRT wrappers
 
 `/p:TerminalLeanDllWrappers=true` skips unused platform, reference, and component

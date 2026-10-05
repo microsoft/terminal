@@ -16,4 +16,26 @@
           Exclude="@(CppWinRTMdMergeMetadataDirectories)" />
     </ItemGroup>
   </Target>
+
+  <!-- Modern IDL emits a separate WinMD per input, with no shared proxy/header outputs.
+       Keep classic MIDL and any project with shared outputs on its original scheduler. -->
+  <Target Name="TerminalParallelWinrtMidl"
+          BeforeTargets="Midl"
+          Condition="'$(TerminalParallelWinrtMidl)'!='false' and '$(UseMultiToolTask)'!='true' and '$(MultiProcCL)'!='true'">
+    <ItemGroup>
+      <_TerminalSerialMidlInputs Include="@(Midl)"
+          Condition="'%(Midl.EnableWindowsRuntime)'!='true' or '%(Midl.NoMidl)'!='true' or '%(Midl.HeaderFileName)'!='nul' or '%(Midl.DllDataFileName)'!='nul' or '%(Midl.InterfaceIdentifierFileName)'!='nul' or '%(Midl.ProxyFileName)'!='nul'" />
+      <_TerminalMidlMetadataOutputs Include="@(Midl->'%(MetadataFileName)')" />
+      <_TerminalDistinctMidlMetadataOutputs Include="@(_TerminalMidlMetadataOutputs->'%(FullPath)'->Distinct())" />
+    </ItemGroup>
+    <PropertyGroup Condition="'@(Midl)'!='' and '@(_TerminalSerialMidlInputs)'=='' and '@(_TerminalMidlMetadataOutputs->Count())'=='@(Midl->Count())' and '@(_TerminalMidlMetadataOutputs->Count())'=='@(_TerminalDistinctMidlMetadataOutputs->Count())'">
+      <_TerminalEnableParallelMidl>true</_TerminalEnableParallelMidl>
+      <MultiProcMIDL>true</MultiProcMIDL>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(_TerminalEnableParallelMidl)'=='true' and '$(MultiProcMIDL)'=='true'">
+      <MultiProcMaxCount Condition="('$(MultiProcMaxCount)'=='' or '$(MultiProcMaxCount)'=='0') and '$(CL_MPCount)'!=''">$(CL_MPCount)</MultiProcMaxCount>
+      <MultiProcMaxCount Condition="'$(MultiProcMaxCount)'=='' or '$(MultiProcMaxCount)'=='0'">$(NUMBER_OF_PROCESSORS)</MultiProcMaxCount>
+      <EnforceProcessCountAcrossBuilds Condition="'$(EnforceProcessCountAcrossBuilds)'==''">true</EnforceProcessCountAcrossBuilds>
+    </PropertyGroup>
+  </Target>
 </Project>
