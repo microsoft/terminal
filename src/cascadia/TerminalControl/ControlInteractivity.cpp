@@ -292,19 +292,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // We'll need this later, for PointerMoved events.
         _pointerPressedInBounds = true;
 
-        if (pointerUpdateKind == WM_LBUTTONDOWN)
-        {
-            _hyperlinkPressConsumed = false;
-        }
-
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
         if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
             ctrlEnabled &&
             !hyperlink.empty())
         {
-            _hyperlinkPressConsumed = true;
-
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
             if (clickCount == 1)
@@ -546,17 +539,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Only a left click release when copy on select is active should perform a copy.
         // Right clicks and middle clicks should not need to do anything when released.
         const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
-        const auto suppressVtRelease = isLeftMouseRelease && _hyperlinkPressConsumed;
-
-        if (isLeftMouseRelease)
-        {
-            _hyperlinkPressConsumed = false;
-        }
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            if (!suppressVtRelease)
+            if (!(isLeftMouseRelease &&
+                  modifiers.IsCtrlPressed() &&
+                  !_core->GetHyperlink(terminalPosition.to_core_point()).empty()))
             {
                 _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
             }
