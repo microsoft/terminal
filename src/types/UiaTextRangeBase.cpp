@@ -637,9 +637,8 @@ try
     if (const auto hit = _searcher.GetCurrent())
     {
         hitBeg = hit->start;
+        // GH#20152: hit->end is already exclusive, so no conversion is needed here
         hitEnd = hit->end;
-        // we need to increment the position of end because it's exclusive
-        _pData->GetTextBuffer().GetSize().IncrementInBounds(hitEnd, true);
     }
 
     if (hitBeg >= _start && hitEnd <= _end)
