@@ -328,6 +328,34 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L""), process(input, false, VK_OEM_6, 0x0D, L'¨', SHIFT_PRESSED));
     }
 
+    TEST_METHOD(ScreenBufferStack)
+    {
+        TerminalInput input;
+        input.PushKittyFlags(D);
+        VERIFY_ARE_EQUAL(D, input.GetKittyFlags());
+        input.UseAlternateScreenBuffer();
+        VERIFY_ARE_EQUAL(0, input.GetKittyFlags());
+        input.UseMainScreenBuffer();
+        VERIFY_ARE_EQUAL(D, input.GetKittyFlags());
+
+        input.PushKittyFlags(E);
+        input.UseAlternateScreenBuffer();
+        input.PushKittyFlags(K);
+        VERIFY_ARE_EQUAL(K, input.GetKittyFlags());
+        input.PopKittyFlags(1);
+        VERIFY_ARE_EQUAL(0, input.GetKittyFlags());
+        input.PushKittyFlags(A);
+        input.UseMainScreenBuffer();
+        VERIFY_ARE_EQUAL(E, input.GetKittyFlags());
+
+        input.PopKittyFlags(1);
+        VERIFY_ARE_EQUAL(D, input.GetKittyFlags());
+        input.PopKittyFlags(1);
+        VERIFY_ARE_EQUAL(0, input.GetKittyFlags());
+        input.UseAlternateScreenBuffer();
+        VERIFY_ARE_EQUAL(0, input.GetKittyFlags());
+    }
+
     TEST_METHOD(USBaseKeys)
     {
         auto input = createInput(A | K);

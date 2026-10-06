@@ -42,20 +42,12 @@ void TerminalInput::UseMainScreenBuffer() noexcept
     }
 
     _inAlternateBuffer = false;
-    _kittyAltStack.clear();
-    _kittyFlags = _kittyMainStack.empty() ? 0 : _kittyMainStack.back();
+    _kittyAltStack.len = 0;
 }
 
 void TerminalInput::UseAlternateScreenBuffer() noexcept
 {
-    if (_inAlternateBuffer)
-    {
-        return;
-    }
-
     _inAlternateBuffer = true;
-    _kittyAltStack.clear();
-    _kittyFlags = 0;
 }
 
 void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
@@ -111,9 +103,7 @@ void TerminalInput::ForceDisableKittyKeyboardProtocol(const bool disable) noexce
     _forceDisableKittyKeyboardProtocol = disable;
     if (disable)
     {
-        _kittyFlags = 0;
-        _kittyMainStack.clear();
-        _kittyAltStack.clear();
+        ResetKittyKeyboardProtocols();
     }
 }
 
@@ -124,73 +114,79 @@ void TerminalInput::SetKittyKeyboardProtocol(uint8_t flags, const KittyKeyboardP
         return;
     }
 
+    auto& stack = _activeKittyStack();
+    if (stack.len == 0)
+    {
+        til::at(stack.flags, 0) = 0;
+        stack.len = 1;
+    }
+    auto& currentFlags = til::at(stack.flags, stack.len - 1);
+
     flags &= KittyKeyboardProtocolFlags::All;
 
     switch (mode)
     {
     case KittyKeyboardProtocolMode::Replace:
-        _kittyFlags = flags;
+        currentFlags = flags;
         break;
     case KittyKeyboardProtocolMode::Set:
-        _kittyFlags |= flags;
+        currentFlags |= flags;
         break;
     case KittyKeyboardProtocolMode::Reset:
-        _kittyFlags &= ~flags;
+        currentFlags &= ~flags;
         break;
     }
 }
 
 uint8_t TerminalInput::GetKittyFlags() const noexcept
 {
-    return _kittyFlags;
+    const auto& stack = _activeKittyStack();
+    return stack.len ? til::at(stack.flags, stack.len - 1) : 0;
 }
 
-void TerminalInput::PushKittyFlags(const uint8_t flags)
+TerminalInput::KittyStack& TerminalInput::_activeKittyStack() noexcept
+{
+    return _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
+}
+
+const TerminalInput::KittyStack& TerminalInput::_activeKittyStack() const noexcept
+{
+    return _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
+}
+
+void TerminalInput::PushKittyFlags(const uint8_t flags) noexcept
 {
     if (_forceDisableKittyKeyboardProtocol)
     {
         return;
     }
 
-    auto& stack = _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
+    auto& stack = _activeKittyStack();
+
     // KKP> If a push request is received and the stack is full,
     // KKP> the oldest entry from the stack must be evicted.
-    if (stack.size() >= KittyStackMaxSize)
+    if (stack.len >= KittyStackMaxSize)
     {
-        stack.erase(stack.begin());
+        // NOTE: This copies 1 byte beyond the end of the array, because that
+        // makes it a neat QWORD copy. This is safe due to the struct layout.
+        memmove(&til::at(stack.flags, 0), &til::at(stack.flags, 1), KittyStackMaxSize * sizeof(stack.flags[0]));
+        --stack.len;
     }
-    stack.push_back(_kittyFlags);
-    _kittyFlags = flags & KittyKeyboardProtocolFlags::All;
+
+    til::at(stack.flags, stack.len++) = flags & KittyKeyboardProtocolFlags::All;
 }
 
-void TerminalInput::PopKittyFlags(size_t count)
+void TerminalInput::PopKittyFlags(size_t count) noexcept
 {
-    // NOTE: It's not just an optimization to return early here.
-    if (count == 0)
-    {
-        return;
-    }
-
-    auto& stack = _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
-
-    if (count >= stack.size())
-    {
-        // KKP> If a pop request is received that empties the stack, all flags are reset.
-        _kittyFlags = 0;
-        stack.clear();
-    }
-    else
-    {
-        _kittyFlags = stack.at(stack.size() - count);
-        stack.erase(stack.end() - count, stack.end());
-    }
+    auto& stack = _activeKittyStack();
+    // KKP> If a pop request is received that empties the stack, all flags are reset.
+    stack.len -= std::min(count, stack.len);
 }
 
 void TerminalInput::ResetKittyKeyboardProtocols() noexcept
 {
-    _kittyFlags = 0;
-    _kittyMainStack.clear();
-    _kittyAltStack.clear();
+    _kittyMainStack.len = 0;
+    _kittyAltStack.len = 0;
 }
 
 TerminalInput::OutputType TerminalInput::MakeUnhandled() noexcept
@@ -225,12 +221,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         return MakeUnhandled();
     }
 
+    const auto kittyFlags = GetKittyFlags();
+
     // GH#4999 - If we're in win32-input mode, skip straight to doing that.
     // Since this mode handles all types of key events, do nothing else.
     //
     // ConPTY assumes that W32IM always remains enabled. We have to prefer
     // the kitty keyboard protocol, because otherwise it would never be used.
-    if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode && !_kittyFlags)
+    if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode && !kittyFlags)
     {
         return _makeWin32Output(event.Event.KeyEvent);
     }
@@ -321,7 +319,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // KKP> Additionally, with [ReportAllKeysAsEscapeCodes], events for pressing modifier keys are reported.
     //
     // Put differently, if the mode is reset, we can early-return on modifier key events.
-    if (WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
+    if (WI_IsFlagClear(kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
         ((key.virtualKey >= VK_SHIFT && key.virtualKey <= VK_MENU) ||
          (key.virtualKey >= VK_LSHIFT && key.virtualKey <= VK_RMENU)))
     {
@@ -343,7 +341,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         //
         // ...or put differently: If ReportEventTypes is disabled,
         // and this is a key-up, we can return early.
-        if (WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportEventTypes))
+        if (WI_IsFlagClear(kittyFlags, KittyKeyboardProtocolFlags::ReportEventTypes))
         {
             return _makeNoOutput();
         }
@@ -354,7 +352,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
         // KKP> events unless Report all keys as escape codes is also set [...].
         //
         // Note that we have to differentiate between regular Return and Numpad Return.
-        if (WI_IsFlagClear(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
+        if (WI_IsFlagClear(kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) &&
             ((key.virtualKey == VK_RETURN && WI_IsFlagClear(key.controlKeyState, ENHANCED_KEY)) ||
              key.virtualKey == VK_TAB ||
              key.virtualKey == VK_BACK))
@@ -406,7 +404,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     WI_SetFlagIf(enc.csiModifier, CSI_ALT, key.altPressed);
     WI_SetFlagIf(enc.csiModifier, CSI_SHIFT, key.shiftPressed);
 
-    if (_kittyFlags == 0 || !_encodeKitty(kbd, enc, key))
+    if (kittyFlags == 0 || !_encodeKitty(kbd, enc, key))
     {
         _encodeRegular(enc, key);
     }
@@ -586,9 +584,10 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         return fk > KittyKeyCodeLegacySentinel;
     };
 
+    const auto kittyFlags = GetKittyFlags();
     const auto functionalKeyCode = _getKittyFunctionalKeyCode(key.virtualKey, key.scanCode, WI_IsFlagSet(key.controlKeyState, ENHANCED_KEY));
 
-    if (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes))
+    if (WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes))
     {
         // KKP> Turning on [DisambiguateEscapeCodes] will cause the terminal to
         // KKP> report the Esc, alt+key, ctrl+key, ctrl+alt+key, shift+alt+key
@@ -622,7 +621,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         }
     }
 
-    if (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportEventTypes))
+    if (WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::ReportEventTypes))
     {
         // KKP> This [...] causes the terminal to report key repeat and key release events.
         if (!key.keyDown)
@@ -641,10 +640,10 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         // KKP> [...] with this mode, events for pressing modifier keys are reported.
         //
         // In other words: Get the functional key code if any; otherwise use the codepoint.
-        WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) ||
+        WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) ||
         // A continuation of DisambiguateEscapeCodes above: modifier + key = CSI u.
         // As documented above: All text keys (=0) with any modifier except for shift+key
-        (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes) && isTextKey(functionalKeyCode) && enc.csiModifier > CSI_SHIFT) ||
+        (WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes) && isTextKey(functionalKeyCode) && enc.csiModifier > CSI_SHIFT) ||
         // Enabling ReportEventTypes implies that `CSI u` is used for all key up events.
         enc.csiEventType == 3)
     {
@@ -664,7 +663,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
             }
         }
 
-        if (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAssociatedText))
+        if (WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::ReportAssociatedText))
         {
             // KKP> This [...] causes key events that generate text to be reported
             // KKP> as CSI u escape codes with the text embedded in the escape code.
@@ -681,7 +680,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         }
     }
 
-    if (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAlternateKeys))
+    if (WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::ReportAlternateKeys))
     {
         // KKP> This [...] causes the terminal to report alternate key values [...]
         //
@@ -730,7 +729,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
     // As per KKP: shift=1, alt=2, ctrl=4, super=8, hyper=16, meta=32, caps_lock=64, num_lock=128
     // KKP> Lock modifiers are not reported for text producing keys, [...].
     // KKP> To get lock modifiers for all keys use the Report all keys as escape codes enhancement.
-    if (isKittyFunctionalKey(enc.csiUnicodeKeyCode) || WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes))
+    if (isKittyFunctionalKey(enc.csiUnicodeKeyCode) || WI_IsFlagSet(kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes))
     {
         if (WI_IsFlagSet(key.controlKeyState, CAPSLOCK_ON))
         {
@@ -902,7 +901,7 @@ void TerminalInput::_encodeRegular(EncodingHelper& enc, const SanitizedKeyEvent&
     const auto modified = enc.csiModifier != 0;
     const auto enhanced = WI_IsFlagSet(key.controlKeyState, ENHANCED_KEY);
     const auto kitty = WI_IsAnyFlagSet(
-        _kittyFlags,
+        GetKittyFlags(),
         KittyKeyboardProtocolFlags::DisambiguateEscapeCodes |
             KittyKeyboardProtocolFlags::ReportEventTypes |
             KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes);
