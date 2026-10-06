@@ -327,4 +327,19 @@ class KittyKeyboardProtocolTests
         auto input = createInput(E);
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L""), process(input, false, VK_OEM_6, 0x0D, L'¨', SHIFT_PRESSED));
     }
+
+    TEST_METHOD(USBaseKeys)
+    {
+        auto input = createInput(A | K);
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97::113u"), process(input, true, 'A', 0x10, L'a', 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97::127u"), process(input, true, 'A', 0x0E, L'a', 0));
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97::57436u"), process(input, true, 'A', 0x10, L'a', ENHANCED_KEY));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97::57436u"), process(input, true, 'A', 0xE010, L'a', 0));
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x52, L'a', ENHANCED_KEY));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x80, L'a', 0));
+    }
 };
