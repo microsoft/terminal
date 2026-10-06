@@ -17,6 +17,15 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    hstring BuildAccessibleName(const hstring& baseName, bool isExperimental)
+    {
+        if (!isExperimental)
+        {
+            return baseName;
+        }
+        return baseName + L", " + RS_(L"SettingsCard_ExperimentalNameSuffix");
+    }
+
 #pragma region ControlSizeTrigger
 
     DependencyProperty ControlSizeTrigger::_CanTriggerProperty{ nullptr };
