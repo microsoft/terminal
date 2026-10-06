@@ -71,8 +71,8 @@ public:
     virtual void SetAnsiMode(const bool ansiMode) = 0; // DECANM
     virtual void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept = 0; // KKP
     virtual void QueryKittyKeyboardProtocol() = 0; // KKP
-    virtual void PushKittyKeyboardProtocol(const VTParameter flags) = 0; // KKP
-    virtual void PopKittyKeyboardProtocol(const VTParameter count) = 0; // KKP
+    virtual void PushKittyKeyboardProtocol(const VTParameter flags) noexcept = 0; // KKP
+    virtual void PopKittyKeyboardProtocol(const VTParameter count) noexcept = 0; // KKP
     virtual void SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual void SetLeftRightScrollingMargins(const VTInt leftMargin, const VTInt rightMargin) = 0; // DECSLRM
     virtual void EnquireAnswerback() = 0; // ENQ
