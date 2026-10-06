@@ -39,12 +39,20 @@ namespace winrt::TerminalApp::implementation
         WINRT_PROPERTY(uint64_t, SourceWindow);
         WINRT_PROPERTY(uint64_t, TargetWindow);
         WINRT_PROPERTY(uint32_t, TabIndex);
+        WINRT_PROPERTY(bool, AttachAsPane, false);
+        WINRT_PROPERTY(uint32_t, SplitDirection, 0);
 
     public:
-        RequestReceiveContentArgs(const uint64_t src, const uint64_t tgt, const uint32_t tabIndex) :
+        RequestReceiveContentArgs(const uint64_t src,
+                                  const uint64_t tgt,
+                                  const uint32_t tabIndex,
+                                  const bool attachAsPane,
+                                  const uint32_t splitDirection) :
             _SourceWindow{ src },
             _TargetWindow{ tgt },
-            _TabIndex{ tabIndex } {};
+            _TabIndex{ tabIndex },
+            _AttachAsPane{ attachAsPane },
+            _SplitDirection{ splitDirection } {};
     };
 
     struct SummonWindowBehavior : public SummonWindowBehaviorT<SummonWindowBehavior>
