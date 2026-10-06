@@ -48,7 +48,6 @@ namespace TerminalCoreUnitTests
     class TerminalBufferTests;
     class TerminalApiTest;
     class ScrollTest;
-    class InputTest;
 };
 #endif
 
@@ -492,6 +491,5 @@ private:
     friend class TerminalCoreUnitTests::TerminalBufferTests;
     friend class TerminalCoreUnitTests::TerminalApiTest;
     friend class TerminalCoreUnitTests::ScrollTest;
-    friend class TerminalCoreUnitTests::InputTest;
 #endif
 };
