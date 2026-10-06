@@ -215,7 +215,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_FALSE since we do nothing.
 
-[[nodiscard]] HRESULT WddmConEngine::Present() noexcept
+[[nodiscard]] HRESULT WddmConEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }

@@ -2552,7 +2552,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
                 realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       tabImpl->GetActiveTerminalControl().ViewHeight() :
+                                       tabImpl->GetActiveTerminalControl().ViewportSize().Height :
                                        _systemRowsToScroll;
             }
             else
@@ -2994,7 +2994,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& control{ _GetActiveControl() })
             {
-                const auto termHeight = control.ViewHeight();
+                const auto termHeight = control.ViewportSize().Height;
                 auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
                 tabImpl->Scroll(scrollDelta);
             }
@@ -3380,6 +3380,15 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
     {
+        // Calling all LLMs and NPCs who report that this code is vulnerable:
+        // file URIs pointing to remote locations are *always* considered unsafe.
+        // If you think you are clever and that pointing to a local
+        // hta, msi, scr, ocx, dll, or lnk file is a "vulnerability", consider
+        // that you need local access to produce such a file. If you have local
+        // access and can produce such a file, you would write it into the
+        // Startup directory, or the Desktop, or somewhere the user will
+        // not even have to interact with it. And then, well, the "missing"
+        // dialog is just style points on your already stupid vulnerability.
         const auto& schemeName = parsedUri.SchemeName();
 
         if (schemeName == L"http" || schemeName == L"https")
@@ -3615,8 +3624,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    safe_void_coroutine TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
     {
+        // This is our hook into SetCopyToClipboardCallback, which gets called by the VT parser thread.
+        // When this gets called, the console lock is being held. This is not a problem per-se, but there
+        // is just a teeny tiny problem... EmptyClipboard() sends WM_DESTROYCLIPBOARD to the previous owner.
+        // *We* may be the previous owner.
+        //
+        // So now we (VT thread, holding the lock) are waiting for us (UI thread, waiting for the lock)
+        // and immediately deadlock. *Tada* 5s app freeze.
+        //
+        // Solution: Just do it on the UI thread. Just like conhost.
+        co_await wil::resume_foreground(Dispatcher());
+
         if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
         {
             const auto plain = args.Plain();
@@ -4691,74 +4711,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
-    //   Service" is disabled.
-    void TerminalPage::ShowKeyboardServiceWarning() const
-    {
-        if (!_IsMessageDismissed(InfoBarMessage::KeyboardServiceWarning))
-        {
-            if (const auto keyboardServiceWarningInfoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
-            {
-                keyboardServiceWarningInfoBar.IsOpen(true);
-            }
-        }
-    }
-
-    // Function Description:
-    // - Helper function to get the OS-localized name for the "Touch Keyboard
-    //   and Handwriting Panel Service". If we can't open up the service for any
-    //   reason, then we'll just return the service's key, "TabletInputService".
-    // Return Value:
-    // - The OS-localized name for the TabletInputService
-    winrt::hstring _getTabletServiceName()
-    {
-        wil::unique_schandle hManager{ OpenSCManagerW(nullptr, nullptr, 0) };
-
-        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
-        {
-            return winrt::hstring{ TabletInputServiceKey };
-        }
-
-        DWORD cchBuffer = 0;
-        const auto ok = GetServiceDisplayNameW(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
-
-        // Windows 11 doesn't have a TabletInputService.
-        // (It was renamed to TextInputManagementService, because people kept thinking that a
-        // service called "tablet-something" is system-irrelevant on PCs and can be disabled.)
-        if (ok || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-        {
-            return winrt::hstring{ TabletInputServiceKey };
-        }
-
-        std::wstring buffer;
-        cchBuffer += 1; // Add space for a null
-        buffer.resize(cchBuffer);
-
-        if (LOG_LAST_ERROR_IF(!GetServiceDisplayNameW(hManager.get(),
-                                                      TabletInputServiceKey.data(),
-                                                      buffer.data(),
-                                                      &cchBuffer)))
-        {
-            return winrt::hstring{ TabletInputServiceKey };
-        }
-        return winrt::hstring{ buffer };
-    }
-
-    // Method Description:
-    // - Return the fully-formed warning message for the
-    //   "KeyboardServiceDisabled" InfoBar. This InfoBar is used to warn the user
-    //   if the keyboard service is disabled, and uses the OS localization for
-    //   the service's actual name. It's bound to the bar in XAML.
-    // Return Value:
-    // - The warning message, including the OS-localized service name.
-    winrt::hstring TerminalPage::KeyboardServiceDisabledText()
-    {
-        const auto serviceName{ _getTabletServiceName() };
-        const auto text{ RS_fmt(L"KeyboardServiceWarningText", serviceName) };
-        return winrt::hstring{ text };
-    }
-
-    // Method Description:
     // - Update the RequestedTheme of the specified FrameworkElement and all its
     //   Parent elements. We need to do this so that we can actually theme all
     //   of the elements of the TeachingTip. See GH#9717
@@ -5068,22 +5020,6 @@ namespace winrt::TerminalApp::implementation
     {
         _DismissMessage(InfoBarMessage::CloseOnExitInfo);
         if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
-        {
-            infoBar.IsOpen(false);
-        }
-    }
-
-    // Method Description:
-    // - Persists the user's choice not to show information bar warning about "Touch keyboard and Handwriting Panel Service" disabled
-    // Then hides this information buffer.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_KeyboardServiceWarningInfoDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
-    {
-        _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
-        if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
         {
             infoBar.IsOpen(false);
         }
@@ -5963,6 +5899,23 @@ namespace winrt::TerminalApp::implementation
                 _workspaceFlyout.Items().Append(item);
             }
         }
+
+        _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+
+        MenuFlyoutItem newWindowItem{};
+        newWindowItem.Text(RS_(L"NewWindowMenuItem"));
+
+        auto newWindowIcon = UI::IconPathConverter::IconWUX(L"\uE78B");
+        Automation::AutomationProperties::SetAccessibilityView(newWindowIcon, Automation::Peers::AccessibilityView::Raw);
+        newWindowItem.Icon(newWindowIcon);
+
+        newWindowItem.Click([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                page->_actionDispatch->DoAction(ActionAndArgs{ ShortcutAction::NewWindow, nullptr });
+            }
+        });
+        _workspaceFlyout.Items().Append(newWindowItem);
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this

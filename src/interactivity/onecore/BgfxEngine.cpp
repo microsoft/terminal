@@ -89,7 +89,7 @@ CATCH_RETURN()
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT BgfxEngine::Present() noexcept
+[[nodiscard]] HRESULT BgfxEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }

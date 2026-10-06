@@ -86,6 +86,7 @@ backstory
 Bazz
 bbccb
 bbwe
+bcde
 bcount
 bcx
 bcz
@@ -168,6 +169,7 @@ chshdng
 CHT
 CInput
 CLASSSTRING
+CLAUDE
 cleartype
 CLICKACTIVE
 clickdown
@@ -442,6 +444,7 @@ DELAYLOAD
 DELETEONRELEASE
 depersist
 deprioritized
+DESTROYCLIPBOARD
 devicecode
 Dext
 DFF

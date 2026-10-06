@@ -30,6 +30,7 @@ $ProhibitedUids = @(
     "Profile_AdvancedNavigator",
     "Profile_AppearanceNavigator",
     "Profile_DeleteProfile",
+    "Profile_DeleteUnfocusedAppearance",
     "Profile_MissingFontFaces",
     "Profile_ProportionalFontFaces",
     "Profile_ResetProfile",
@@ -69,11 +70,6 @@ $ClassMap = @{
         SubPage         = "BreadcrumbSubPage::None"
         SecondaryLabel  = "Nav_Profiles/Content"
     }
-    "Microsoft::Terminal::Settings::Editor::Rendering" = @{
-        ResourceName    = "Nav_Rendering/Content"
-        NavigationParam = "Rendering_Nav"
-        SubPage         = "BreadcrumbSubPage::None"
-    }
     "Microsoft::Terminal::Settings::Editor::Compatibility" = @{
         ResourceName    = "Nav_Compatibility/Content"
         NavigationParam = "Compatibility_Nav"
@@ -105,6 +101,11 @@ $ClassMap = @{
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::Profile_Appearance"
     }
+    "Microsoft::Terminal::Settings::Editor::Profiles_UnfocusedAppearance" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_UnfocusedAppearance"
+    }
     "Microsoft::Terminal::Settings::Editor::Profiles_Terminal" = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
         NavigationParam = "GlobalProfile_Nav"
@@ -125,6 +126,7 @@ $ClassMap = @{
 function IsProfileSubPage($pageClass)
 {
     return $pageClass -match "Editor::Profiles_Appearance" -or
+           $pageClass -match "Editor::Profiles_UnfocusedAppearance" -or
            $pageClass -match "Editor::Profiles_Terminal" -or
            $pageClass -match "Editor::Profiles_Advanced"
 }
@@ -195,24 +197,95 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
+    elseif ($filename -eq "AddProfile.xaml")
+    {
+        # "add new" button
+        $entries += [pscustomobject]@{
+            ResourceName    = "AddProfile_AddNewTextBlock/Text"
+            ParentPage      = $pageClass
+            NavigationParam = $ClassMap[$pageClass].NavigationParam
+            SubPage         = $ClassMap[$pageClass].SubPage
+            ElementName     = "AddNewButton"
+            File            = $filename
+        }
+    }
+    elseif ($filename -eq "Profiles_Base.xaml")
+    {
+        # The navigator cards below are special:
+        # - no UID because we want to reuse existing resources to reduce localization burden
+        # - when selected, we want to navigate to the subpage (not focus the navigator)
+        $navigators = @(
+            @{ Resource = "Profile_Appearance/Header";          SubPage = "BreadcrumbSubPage::Profile_Appearance" }
+            @{ Resource = "Profile_UnfocusedAppearanceTextBlock/Text"; SubPage = "BreadcrumbSubPage::Profile_UnfocusedAppearance" }
+            @{ Resource = "Profile_Terminal/Header";            SubPage = "BreadcrumbSubPage::Profile_Terminal" }
+            @{ Resource = "Profile_Advanced/Header";            SubPage = "BreadcrumbSubPage::Profile_Advanced" }
+        )
+        foreach ($nav in $navigators)
+        {
+            # Build-time entry: searchable from the profile defaults context
+            $entries += [pscustomobject]@{
+                ResourceName         = $nav.Resource
+                ParentPage           = $pageClass
+                NavigationParam      = $ClassMap[$pageClass].NavigationParam
+                SubPage              = $nav.SubPage
+                ElementName          = ""
+                SecondaryLabel       = "Nav_ProfileDefaults/Content"
+                File                 = $filename
+            }
+            # Partial entry: instantiated per profile at runtime (the navigation arg is the profile VM).
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $null
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                File            = $filename
+            }
+        }
+    }
 
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
-        # Extract Uid
-        if ($null -eq $settingContainer.Uid)
+        # Determine what to index for this container. A SettingContainer is indexable
+        # either via its own x:Uid (its label comes from the Header, resource suffix
+        # "/Header") OR, when it has none, via a content-labeled child control
+        # (CheckBox/ToggleSwitch/etc.) that carries its own x:Uid (its label comes from
+        # its Content, resource suffix "/Content"). The latter is wrapped in a SettingsCard
+        # that usually has no x:Uid of its own, so without this it would never be indexed.
+        $suffix = "Header"
+        $uid = $settingContainer.Uid
+        $name = $settingContainer.GetAttribute("x:Name")
+
+        if ([string]::IsNullOrEmpty($uid))
         {
-            Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander in file $filename. Skipping entry."
-            continue
+            # No x:Uid on the container itself, look for a child control.
+            $child = $settingContainer.SelectNodes("*") |
+                Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
+                Select-Object -First 1
+            if ($null -ne $child)
+            {
+                $suffix = "Content"
+                $uid = $child.GetAttribute("x:Uid")
+                # Prefer the control's own x:Name; otherwise fall back to the container's.
+                $childName = $child.GetAttribute("x:Name")
+                if (-not [string]::IsNullOrEmpty($childName))
+                {
+                    $name = $childName
+                }
+            }
+            else
+            {
+                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. Skipping entry."
+                continue
+            }
         }
-        elseif ($ProhibitedUids -contains $settingContainer.Uid)
+
+        if ([string]::IsNullOrEmpty($uid) -or ($ProhibitedUids -contains $uid))
         {
             continue
         }
 
-        # Extract Name via GetAttribute to avoid PowerShell's XML integration
-        # returning the element name (e.g. "local:SettingsCard") when x:Name is absent.
-        $name = $settingContainer.GetAttribute("x:Name")
         if ([string]::IsNullOrEmpty($name))
         {
             $name = ""
@@ -233,7 +306,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         $subPage = $ClassMap[$pageClass].SubPage ?? "BreadcrumbSubPage::None"
         if ($pageClass -match "Editor::NewTabMenu")
         {
-            if ($settingContainer.Uid -match "NewTabMenu_CurrentFolder")
+            if ($uid -match "NewTabMenu_CurrentFolder")
             {
                 $navigationParam = $null # VM param at runtime
                 $subPage = "BreadcrumbSubPage::NewTabMenu_Folder"
@@ -262,7 +335,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             # Profiles > Defaults results should show "Profiles" as secondary label
             $buildSecondaryLabel = $navigationParam -eq "GlobalProfile_Nav" ? "Nav_Profiles/Content" : $null
             $entries += [pscustomobject]@{
-                ResourceName      = "$($settingContainer.Uid)/Header"
+                ResourceName      = "$uid/$suffix"
                 ParentPage        = $pageClass
                 NavigationParam   = $navigationParam
                 SubPage           = $subPage
@@ -275,7 +348,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         if ($includeInPartialIndex)
         {
             $entries += [pscustomobject]@{
-                ResourceName      = "$($settingContainer.Uid)/Header"
+                ResourceName      = "$uid/$suffix"
                 ParentPage        = $pageClass
                 NavigationParam   = $null # VM param at runtime
                 SubPage           = $pageClass -match "Editor::NewTabMenu" ? "BreadcrumbSubPage::NewTabMenu_Folder" : $subPage

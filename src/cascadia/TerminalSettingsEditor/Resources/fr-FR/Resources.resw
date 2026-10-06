@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -132,7 +132,7 @@
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
   <data name="ColorScheme_SetAsDefault.Description" xml:space="preserve">
-    <value>Appliquer ce modèle de couleurs à tous vos profils, par défaut. Les profils individuels peuvent toujours sélectionner leurs propres jeux de couleurs.</value>
+    <value>Appliquez ce modèle de couleurs à tous vos profils, par défaut. Les profils individuels peuvent toujours sélectionner leurs propres modèles de couleurs.</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
   <data name="ColorScheme_Rename.Header" xml:space="preserve">
@@ -220,11 +220,11 @@
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
   <data name="Globals_Language.Header" xml:space="preserve">
-    <value>Langue (nécessite une relance)</value>
+    <value>Langue</value>
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
   <data name="Globals_Language.Description" xml:space="preserve">
-    <value>Sélectionne une langue d’affichage pour l’application. Cette opération remplace votre langue d’interface Windows par défaut.</value>
+    <value>Choisissez la langue d’affichage de l’application. Remplace la langue d’affichage de Windows et nécessite un redémarrage.</value>
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
@@ -236,7 +236,7 @@
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
   <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
-    <value>Indique à IME la langue à utiliser par défaut. Pour les langues qui s'appuient sur un IME et qui n'utilisent pas les caractères latins par défaut, ce paramètre peut être utilisé pour forcer la saisie de l'anglais au démarrage.</value>
+    <value>Choisissez la langue de saisie IME par défaut. Pour les langues basées sur IME, vous pouvez forcer l’entrée en anglais au démarrage.</value>
   </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
     <value>Par défaut</value>
@@ -244,20 +244,16 @@
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>Demi-largeur alphanumérique (anglais)</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Content" xml:space="preserve">
     <value>Toujours afficher les onglets</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>Si cette option est désactivée, la barre d’onglets s’affiche lors de la création d’un nouvel onglet. Nous n’avons pas pu désactiver si « Masquer la barre de titre » est activé.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position des onglets nouvellement créés</value>
     <comment>Header for a control to select position of newly created tabs.</comment>
   </data>
   <data name="Globals_NewTabPosition.Description" xml:space="preserve">
-    <value>Indique l'endroit où les nouveaux onglets apparaissent dans la ligne d'onglets.</value>
+    <value>Indique l'endroit où les nouveaux onglets apparaissent dans la rangée d'onglets.</value>
     <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
   <data name="Globals_NewTabPositionAfterLastTab.Content" xml:space="preserve">
@@ -268,8 +264,8 @@
     <value>Après l'onglet actuel</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
-  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
-    <value>Copier automatiquement la sélection dans le Presse-papiers</value>
+  <data name="Globals_CopyOnSelect.Content" xml:space="preserve">
+    <value>Copier automatiquement la sélection dans le presse-papiers</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
   </data>
   <data name="Globals_DetectURLs.Header" xml:space="preserve">
@@ -277,18 +273,18 @@
     <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
-    <value>URL par défaut à utiliser pour l’action « Rechercher sur le web »</value>
-    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+    <value>URL par défaut à utiliser pour le raccourci « Rechercher sur le web »</value>
+    <comment>Header for a control to set the query URL when using the "search web" shortcut.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>L’espace réservé "%s" sera remplacé par la requête de recherche.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+  <data name="Globals_TrimBlockSelection.Content" xml:space="preserve">
     <value>Supprimer l’espace blanc de fin dans la sélection rectangulaire</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
   </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+  <data name="Globals_TrimPaste.Content" xml:space="preserve">
     <value>Supprimer les espaces blancs de fin lors du collage</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
@@ -296,16 +292,12 @@
     <value>Profil par défaut</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>Profil qui s’ouvre lorsque vous cliquez sur l’icône « + » ou que vous utilisez le raccourci clavier « nouvel onglet ».</value>
-    <comment>A description for what the default profile is and when it's used.</comment>
-  </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
     <value>Application Terminal par défaut</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>L’application Terminal qui se lance lorsqu’une application de ligne de commande est exécutée sans session existante, par exemple à partir du menu Démarrer ou de la boîte de dialogue Exécuter.</value>
+    <value>Application de terminal utilisée lorsqu’une application de ligne de commande est lancée sans session existante.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
@@ -338,7 +330,7 @@
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
   <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>Lorsque cette option est activée, le terminal utilise un logiciel de tramage (WARP). Ce paramètre doit être désactivé dans presque toutes les circonstances.</value>
+    <value>Lorsqu’il est activé, le terminal utilise un rastériseur logiciel (WARP). Ce paramètre doit être laissé désactivé dans presque toutes les circonstances.</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
@@ -346,7 +338,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>Cela modifie la façon dont le texte entrant est regroupé en cellules. L'option « Clusters de graphèmes » est la méthode la plus moderne et la plus conforme à Unicode, tandis que « wcswidth » est une approche courante sous UNIX et la « Console Windows » reproduit la manière dont cela fonctionnait sous Windows. La modification de ce paramètre nécessite le redémarrage du Terminal Windows et ne s'applique qu'aux applications lancées à partir de celui-ci.</value>
+    <value>Choisissez la manière dont le texte est regroupé en cellules. « Clusters de graphèmes » fournit le comportement Unicode le plus moderne. Redémarrez le terminal pour appliquer les modifications. Affecte uniquement les applications lancées à partir du terminal.</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Clusters de graphèmes</value>
@@ -364,7 +356,7 @@
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
-    <value>Définit la largeur utilisée pour les caractères ambigus d’Asie de l’Est. « Narrow » (par défaut) privilégie la compatibilité, tandis que « Wide » favorise la lisibilité avec de nombreuses polices CJK. En mode « Wide », certaines applications peuvent ne pas fonctionner correctement et provoquer un déplacement erratique du curseur. La modification de ce paramètre nécessite le redémarrage du Terminal Windows et ne s’applique qu’aux applications lancées à partir de celui-ci.</value>
+    <value>Choisissez la largeur utilisée pour les caractères ambigus d’Asie de l’Est. « Narrow » améliore la compatibilité, tandis que « Wide » améliore la lisibilité avec de nombreuses polices CJK. Certaines applications peuvent ne pas fonctionner correctement en mode « Wide ». Redémarrez Terminal pour appliquer les modifications.</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>Étroites</value>
@@ -374,13 +366,13 @@
     <value>Larges</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_InitialCols.Header" xml:space="preserve">
-    <value>Colonnes</value>
-    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
+  <data name="Globals_InitialCols_Tooltip.Content" xml:space="preserve">
+    <value>Largeur de la fenêtre, en caractères.</value>
+    <comment>Tooltip shown next to the launch-size columns number box.</comment>
   </data>
-  <data name="Globals_InitialRows.Header" xml:space="preserve">
-    <value>Lignes</value>
-    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
+  <data name="Globals_InitialRows_Tooltip.Content" xml:space="preserve">
+    <value>Hauteur de la fenêtre, en caractères.</value>
+    <comment>Tooltip shown next to the launch-size rows number box.</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Colonnes initiales</value>
@@ -415,7 +407,7 @@
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Laisser Windows décider</value>
+    <value>Laisser le système définir la position de la fenêtre</value>
     <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -425,9 +417,6 @@
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
     <value>Au démarrage du terminal</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
-  </data>
-  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>Ce qui doit être affiché lors de la création du premier terminal.</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>Ouvrir un onglet avec le profil par défaut</value>
@@ -446,12 +435,12 @@
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
-    <value>Paramètres de lancement</value>
+    <value>Mode de lancement</value>
     <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value>Paramètres qui contrôlent le lancement du terminal</value>
-    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
+    <value>Choisissez comment le Terminal s’ouvre</value>
+    <comment>A description for the "launch mode" expander.</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>Mode de lancement</value>
@@ -489,25 +478,25 @@
     <value>Attacher à la dernière fenêtre utilisée sur ce bureau</value>
     <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
     <value>Masquer la barre de titre (redémarrage nécessaire)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
-    <value>Une fois désactivée, la barre de titre s’affiche au-dessus des onglets.</value>
-    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
+  <data name="Globals_TitlebarProperties.Header" xml:space="preserve">
+    <value>Propriétés de la barre de titre</value>
+    <comment>Header for a group of settings that control the appearance and behavior of the title bar.</comment>
   </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+  <data name="Globals_TitlebarProperties.Description" xml:space="preserve">
+    <value>Lorsque la barre de titre est masquée, les onglets se déplacent dans la barre de titre et sont toujours affichés.</value>
+    <comment>A description explaining what happens to the tabs when the title bar is hidden. "Title bar" refers to the bar at the top of the window.</comment>
+  </data>
+  <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Utiliser un matériau acrylique dans la ligne de l’onglet</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Content" xml:space="preserve">
     <value>Utilisez le titre du terminal actif comme titre de l’application</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>Une fois désactivée, la barre de titre est « Terminal ».</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Ajuster la dimension de la fenêtre à la grille de caractères</value>
@@ -517,21 +506,17 @@
     <value>Une fois désactivée, la fenêtre se redimensionne sans à-coups.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
-    <value>Lancement au démarrage de l’ordinateur</value>
-    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
-  </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>Lancez automatiquement Terminal lorsque vous vous connectez à Windows.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+  <data name="Globals_StartOnUserLogin_Checkbox.Content" xml:space="preserve">
+    <value>Lancer lors de la connexion</value>
+    <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centré</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
   </data>
-  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
+  <data name="Globals_CenterOnLaunch_Checkbox.Content" xml:space="preserve">
     <value>Centrer au lancement</value>
-    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
+    <comment>Label for a checkbox to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Toujours au premier plan</value>
@@ -557,7 +542,7 @@
     <value>Autoriser OSC 777 (Desktop Notification) à afficher des notifications toast</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>Lorsque cette option est activée, les applications peuvent envoyer la séquence d’échappement OSC 777 pour déclencher une notification de bureau avec un titre et un corps personnalisés.</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -574,11 +559,11 @@
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
   <data name="Profile_ForceVTInput.Description" xml:space="preserve">
-    <value>Certaines entrées de clavier dans certaines applications peuvent cesser de fonctionner correctement lorsque ce paramètre est activé.</value>
+    <value>Certaines entrées au clavier dans certaines applications peuvent cesser de fonctionner correctement lorsque ce paramètre est activé.</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>Cela permet aux actions telles que les actions en mode d’engagement global et de mode Dent de fonctionner même lorsqu’aucune fenêtre n’est ouverte.</value>
+    <value>Autorise Global Summon et le mode Quake à fonctionner lorsqu’aucune fenêtre n’est ouverte.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -634,12 +619,12 @@
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
   <data name="Globals_WordDelimiters.Description" xml:space="preserve">
-    <value>Ces symboles sont utilisés lorsque vous double-cliquez sur du texte dans le terminal ou activez le « mode Marque ».</value>
+    <value>Ces symboles seront utilisés lorsque vous double-cliquez sur du texte dans le terminal ou que vous activez le « mode Marquer ».</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
-    <value>Apparence</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+    <value>Personnalisation</value>
+    <comment>Header for the "personalization" menu item. This navigates to a page that lets you see and modify settings related to personalizing the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Jeux de couleurs</value>
@@ -678,12 +663,12 @@
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>Actions</value>
+    <value>Raccourcis</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>Modifier une action...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>Modifier le raccourci</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Extensions</value>
@@ -714,7 +699,7 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
-    <value>Par défaut, Windows traite Ctrl+Alt comme un alias pour AltGr. Ce paramètre remplace le comportement par défaut de Windows.</value>
+    <value>Par défaut, Windows traite Ctrl+Alt comme un alias pour AltGr. Ce paramètre remplacera le comportement par défaut de Windows.</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -745,6 +730,10 @@
     <value>Apparence</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>Aucune</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Chemin d'accès de l’image d’arrière-plan</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -758,7 +747,7 @@
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundImage.Description" xml:space="preserve">
-    <value>Emplacement du fichier de l’image utilisée en arrière-plan.</value>
+    <value>Emplacement de fichier de l’image utilisée en arrière-plan de la fenêtre.</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -809,7 +798,7 @@
     <value>En haut à droite</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -899,7 +888,7 @@
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
   <data name="Profile_ColorScheme.Description" xml:space="preserve">
-    <value>Développez pour remplacer l’arrière-plan, l’arrière-plan et l’arrière-plan de sélection.</value>
+    <value>Développez pour remplacer le premier plan, l’arrière-plan et l’arrière-plan de la sélection.</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -918,7 +907,7 @@
     <value>Exécutable de profil.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -927,7 +916,7 @@
     <comment>Header for a control to determine the height of the text cursor.</comment>
   </data>
   <data name="Profile_CursorHeight.Description" xml:space="preserve">
-    <value>Définit la hauteur en pourcentage du curseur en partant du bas. Fonctionne uniquement avec la forme de curseur.</value>
+    <value>Définit le pourcentage de hauteur du curseur en partant du bas. Fonctionne uniquement avec la forme de curseur vintage.</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
   </data>
   <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1022,7 +1011,7 @@
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
   <data name="Profile_CellWidth.Description" xml:space="preserve">
-    <value>Remplacez la largeur de cellule du terminal. Se mesure en tant que multiple de la taille de police. La valeur par défaut dépend de votre police et est généralement autour de 0,6.</value>
+    <value>Remplace la largeur des cellules du terminal. Mesuré sous la forme d’un multiple de la taille de la police. La valeur par défaut dépend de votre police et se situe généralement autour de 0,6.</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
@@ -1089,21 +1078,17 @@
     <value>La police sélectionnée n’a aucune fonctionnalité de police.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Masquez le profil de la liste déroulante</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>Si cette option est activée, le profil n’apparaît pas dans la liste des profils. Peut être utilisé pour masquer les profils par défaut et les profils générés dynamiquement, tout en les laissant dans votre fichier de paramètres.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
+  <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Masqué dans le menu déroulant</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
-    <value>Exécuter ce profil en tant qu’administrateur</value>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>Exécuter en tant qu’administrateur (utilise la fenêtre actuelle si elle est déjà élevée)</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>Si cette option est activée, le profil s’ouvre automatiquement dans une fenêtre de terminal Administration. Si la fenêtre active est déjà en cours d’exécution en tant qu’administrateur, elle s’ouvre dans cette fenêtre.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Taille de l’historique</value>
@@ -1137,7 +1122,7 @@
     <value>Emplacement de l’image ou emoji pour l’icône du profil.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1162,7 +1147,7 @@
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
   </data>
   <data name="Profile_AdjustIndistinguishableColors.Description" xml:space="preserve">
-    <value>Égaye automatiquement ou noircit le texte pour le rendre plus visible. Même si cette option est activée, cet ajustement se produit uniquement lorsqu’une combinaison de couleurs de premier plan et d’arrière-plan entraîne un contraste médiocre.</value>
+    <value>Éclaircit ou assombrit automatiquement le texte pour le rendre plus visible. Même lorsqu’il est activé, cet ajustement ne se produit que lorsqu’une combinaison de couleurs de premier plan et d’arrière-plan entraîne un contraste médiocre.</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
   <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -1194,18 +1179,14 @@
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
-    <value>Répertoire de démarrage</value>
+    <value>Répertoire de démarrage par défaut</value>
     <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Répertoire de démarrage</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>Répertoire dans lequel le shell démarre lorsqu’il est chargé.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1234,16 +1215,12 @@
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
   <data name="Profile_TabTitle.Description" xml:space="preserve">
-    <value>Remplace le titre du shell au démarrage.</value>
+    <value>Remplace le nom du profil en tant que titre à passer au shell au démarrage.</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>Apparence sans focus</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Créer une apparence</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Supprimer</value>
@@ -1283,7 +1260,43 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profils</value>
-    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+    <comment>Header for the "profiles" menu item. Navigates to a landing page that lists profile-related settings (defaults, color schemes, the list of terminal profiles, and the add-profile button).</comment>
+  </data>
+  <data name="Nav_Profiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Profils</value>
+    <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
+  </data>
+  <data name="Profiles_TerminalProfilesHeader.Header" xml:space="preserve">
+    <value>Profils de terminal</value>
+    <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Header" xml:space="preserve">
+    <value>Valeurs par défaut</value>
+    <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator.Description" xml:space="preserve">
+    <value>Les modifications apportées ici s’appliquent à tous les profils, sauf si un profil spécifique les remplace. Ces paramètres n’affectent pas l’apparence de Terminal Windows.</value>
+    <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
+    <value>Jeux de couleurs</value>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the color schemes page.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
+    <value>Ajoutez, modifiez ou supprimez les modèles de couleurs que vos profils peuvent utiliser.</value>
+    <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Ajouter un nouveau profil</value>
+    <comment>Tooltip (and accessible name) for the split button on the Profiles landing page whose primary "+" action creates a new empty profile and whose flyout lists existing profiles to duplicate.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton_DefaultLabel.Text" xml:space="preserve">
+    <value>Ajouter un nouveau profil</value>
+    <comment>Default label shown next to the "+" icon on the add-profile split button when no source profile has been selected from the flyout. Clicking the button in this state creates a brand-new empty profile.</comment>
+  </data>
+  <data name="Profiles_AddProfileMenu_NewEmptyProfile.Text" xml:space="preserve">
+    <value>Nouveau profil vide</value>
+    <comment>Label for the first item in the add-profile split button's flyout. Clicking this creates a new profile with default settings.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>Focus</value>
@@ -1330,7 +1343,7 @@
     <comment>This controls how a right-click behaves in the terminal</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Description" xml:space="preserve">
-    <value>Lorsque cette option est activée, le terminal affiche un menu en cliquant avec le bouton droit. Si cette option est désactivée, le fait de cliquer avec le bouton droit copie le texte sélectionné (ou le coller en l’absence de sélection).</value>
+    <value>Lorsqu’il est activé, le terminal affiche un menu en cliquant avec le bouton droit. Lorsque cette option est désactivée, le clic droit copie le texte sélectionné (ou le colle s’il n’y a pas de sélection).</value>
     <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
   </data>
   <data name="Profile_ShowMarks.Header" xml:space="preserve">
@@ -1338,7 +1351,7 @@
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
   <data name="Profile_ShowMarks.Description" xml:space="preserve">
-    <value>Quand cette option est activée, le terminal affiche les marques dans la barre de défilement lors de la recherche de texte ou lorsque l’intégration de l’interpréteur de commandes est activée.</value>
+    <value>Lorsqu’il est activé, le terminal affiche des marques dans la barre de défilement lors de la recherche de texte ou lorsque l’intégration de l’interpréteur de commandes est activée.</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
@@ -1346,7 +1359,7 @@
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
   <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
-    <value>Lorsque cette option est activée, le terminal ajoute automatiquement une marque indiquant la position de la fin de la commande lorsque vous appuyez sur Entrée.</value>
+    <value>Lorsque cette option est activée, le Terminal ajoute automatiquement une marque indiquant la fin de la commande lorsque vous appuyez sur Entrée.</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
@@ -1522,7 +1535,7 @@
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
   <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>Nombre de lignes et de colonnes affichées dans la fenêtre lors du premier chargement. Se mesure en caractères.</value>
+    <value>Taille initiale de la fenêtre, en caractères.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
@@ -1574,8 +1587,32 @@
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Profil</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>Valeurs par défaut du profil</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Nom</value>
-    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>Apparence de l’onglet</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
+  <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
+    <value>Personnalisez l’apparence visuelle du profil, notamment les couleurs, les polices et le style du texte.</value>
+    <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>Personnalisez l’apparence du profil lorsqu’il est inactif (sans focus).</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
+    <value>Configurer la façon dont le terminal gère les séquences de saisie et de contrôle au clavier</value>
+    <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparence</value>
@@ -1596,10 +1633,6 @@
   <data name="Profile_TextHeader.Text" xml:space="preserve">
     <value>Texte</value>
     <comment>Header for a group of settings that control the appearance of text in the app.</comment>
-  </data>
-  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
-    <value>Avertissements</value>
-    <comment>Header for a group of settings that control the warnings in the app.</comment>
   </data>
   <data name="Profile_WindowHeader.Text" xml:space="preserve">
     <value>Fenêtre</value>
@@ -1641,16 +1674,28 @@
     <value>Voulez-vous vraiment supprimer ce profil ?</value>
     <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
   </data>
+  <data name="Profile_DeleteProfile.Header" xml:space="preserve">
+    <value>Supprimer ce profil</value>
+    <comment>Header for a settings card that deletes the profile.</comment>
+  </data>
+  <data name="Profile_DeleteProfile.Description" xml:space="preserve">
+    <value>Supprime définitivement ce profil</value>
+    <comment>Description for the delete profile settings card.</comment>
+  </data>
+  <data name="Profile_DeleteProfileButton.Content" xml:space="preserve">
+    <value>Supprimer</value>
+    <comment>Button label to delete a profile.</comment>
+  </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Enregistrer tous les paramètres non enregistrés.</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
   </data>
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
-    <value>Style d’interface du sélecteur d’onglets</value>
+    <value>Style du sélecteur d’onglets</value>
     <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
   <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
-    <value>Sélectionne l’interface à utiliser lorsque vous changez d’onglet à l’aide du clavier.</value>
+    <value>Choisir l’interface affichée lors du changement d’onglet avec le clavier</value>
     <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
@@ -1693,15 +1738,15 @@
     <value>Ce nom de modèle de couleurs est déjà utilisé.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+  <data name="Globals_FocusFollowMouse.Content" xml:space="preserve">
     <value>Mise au point automatique du volet au survol de la souris</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+  <data name="Globals_ScrollToZoom.Content" xml:space="preserve">
     <value>Ajustez la taille de police du terminal en faisant défiler tout en maintenant la touche Ctrl enfoncée</value>
     <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+  <data name="Globals_ScrollToChangeOpacity.Content" xml:space="preserve">
     <value>Ajustez l’opacité du terminal en faisant défiler tout en maintenant les touches Ctrl et Maj enfoncées</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
@@ -1713,7 +1758,7 @@
     <value>Toujours afficher une icône dans la zone de notification</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Content" xml:space="preserve">
     <value>Masquer le terminal dans la zone de notification lorsqu’il est réduit</value>
     <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
@@ -1737,14 +1782,6 @@
     <value>Si cette option est activée, toutes les polices installées sont affichées dans la liste ci-dessus. Sinon, affiche uniquement la liste des polices à espacement fixe.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Créer une apparence</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Créez une apparence sans focus pour ce profil. Il s’agit de l’apparence du profil lorsqu’il est inactif.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
-  </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Supprimer une apparence</value>
     <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
@@ -1753,29 +1790,57 @@
     <value>Supprimez l’apparence sans focus pour ce profil.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>Supprimer cette apparence non active</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>Supprime l’apparence non focalisée afin que le profil utilise son apparence par défaut lorsqu’il est inactif</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
+  </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
-    <value>En savoir plus sur les actions</value>
+    <value>En savoir plus sur les raccourcis</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>
   <data name="Actions_DeleteButton2.Text" xml:space="preserve">
-    <value>Supprimer l’action</value>
+    <value>Supprimer le raccourci</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
   <data name="Actions_Name.Text" xml:space="preserve">
-    <value>Nom de l’action</value>
+    <value>Nom du raccourci</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
   <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
-    <value>Nom de l’action</value>
+    <value>Nom du raccourci</value>
     <comment>Placeholder text for the text box where the user can edit the action name.</comment>
   </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
-    <value>Type d’action</value>
+    <value>Type de raccourci</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
   <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Raccourcis clavier</value>
+    <value>Raccourcis</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>Affectations de touches</value>
+    <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>Nouvelle affectation de touche</value>
+    <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>Ajouter</value>
+    <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
+    <value>Personnalisations supplémentaires</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>Affectation de touche #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual keyboard shortcut on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Key binding #1").</comment>
   </data>
   <data name="Actions_CommandDetails.Text" xml:space="preserve">
     <value>Détails de la commande</value>
@@ -1786,11 +1851,11 @@
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
   </data>
   <data name="Actions_Keybindings.Text" xml:space="preserve">
-    <value>Raccourcis clavier</value>
+    <value>Raccourcis</value>
     <comment>Label for the list of editable keybindings for the current command.</comment>
   </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
-    <value>Ajouter un raccourci clavier</value>
+    <value>Ajouter un raccourci</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
   <data name="Actions_AdditionalKeyChords" xml:space="preserve">
@@ -1806,15 +1871,15 @@
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
-    <value>Oui, supprimer l’action</value>
+    <value>Oui, supprimer le raccourci</value>
     <comment>Button label that confirms deletion of an action.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>Voulez-vous vraiment supprimer cette action ?</value>
+    <value>Voulez-vous vraiment supprimer ce raccourci ?</value>
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>Corde de clé non valide. Veuillez entrer un segment de touche valide.</value>
+    <value>Raccourci non valide. Entrez un raccourci clavier valide.</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
@@ -1822,7 +1887,7 @@
     <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
-    <value>La corde de clé indiquée est déjà utilisée par l’action suivante :</value>
+    <value>La combinaison de touches fournie est déjà utilisée par le raccourci suivant :</value>
     <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
@@ -1849,8 +1914,12 @@
     <value>Modifier</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>Modifier {}</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>Ajouter nouveau</value>
+    <value>Ajouter un nouveau raccourci</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2125,7 +2194,7 @@
     <value>Aucune couleur</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
-  <data name="Actions_Browse.Content" xml:space="preserve">
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Parcourir...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2174,7 +2243,7 @@
     <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
   </data>
   <data name="Globals_AutoHideWindow.Description" xml:space="preserve">
-    <value>Si cette option est activée, le terminal est masqué dès que vous basculez vers une autre fenêtre.</value>
+    <value>Si cette option est activée, le terminal est masqué dès que vous passez à une autre fenêtre.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
@@ -2190,11 +2259,11 @@
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
   <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
-    <value>Avertir lors de la fermeture</value>
+    <value>Afficher une boîte de dialogue de confirmation avant de fermer les onglets ou les fenêtres</value>
     <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
   </data>
   <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
-    <value>Contrôle l’apparition d’une boîte de dialogue de confirmation avant la fermeture des onglets ou des fenêtres. « Toujours » affiche la boîte de dialogue lors de la fermeture de n’importe quel volet.</value>
+    <value>« Toujours » affiche la boîte de dialogue lors de la fermeture de n’importe quel volet.</value>
     <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
   </data>
   <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
@@ -2209,10 +2278,7 @@
     <value>Plusieurs onglets ou volets</value>
     <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
-  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
-    <value>Avertir lorsque le « service clavier tactile et volet d’écriture manuscrite » est désactivé</value>
-  </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+  <data name="Globals_WarnAboutLargePaste.Content" xml:space="preserve">
     <value>Avertir lors du collage de plus de 5 KiO</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
@@ -2223,7 +2289,7 @@
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
-    <value>Uniquement si le collage entre crochets est désactivé</value>
+    <value>Lorsque le « collage entre crochets » est désactivé</value>
     <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
@@ -2318,7 +2384,7 @@
     <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
   </data>
   <data name="Profile_CursorColor.Description" xml:space="preserve">
-    <value>Remplace la couleur du curseur du modèle de couleurs.</value>
+    <value>Remplace la couleur du curseur à partir du modèle de couleurs.</value>
     <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
   </data>
   <data name="Profile_Background.Description" xml:space="preserve">
@@ -2326,7 +2392,7 @@
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
   <data name="Profile_SelectionBackground.Description" xml:space="preserve">
-    <value>Remplace la couleur d’arrière-plan de la sélection du modèle de couleurs.</value>
+    <value>Remplace la couleur d’arrière-plan de la sélection à partir du modèle de couleurs.</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
@@ -2410,11 +2476,11 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.Description" xml:space="preserve">
-    <value>Ajouter un groupe de profils qui correspondent à au moins une des propriétés d’expression régulière définies</value>
+    <value>Ajouter un groupe de profils correspondant à au moins une des propriétés d’expression régulière définies</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
-    <value>Il ne peut y avoir qu’une seule entrée « Profils restants »</value>
+    <value>Il ne peut y avoir qu’une seule entrée « profils restants »</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
@@ -2494,7 +2560,7 @@
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
-    <value>Quand cette option est activée, si le dossier n’a qu’une seule entrée, l’entrée s’affiche directement et aucun dossier n’est affiché.</value>
+    <value>Lorsque cette option est activée, si le dossier n’a qu’une seule entrée, l’entrée s’affiche directement et aucun dossier n’est affiché.</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
@@ -2502,7 +2568,7 @@
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
-    <value>Quand cette option est activée, si le dossier n’a pas d’entrées, il est toujours affiché. Sinon, le dossier ne sera pas rendu.</value>
+    <value>Lorsque cette option est activée, si le dossier n’a pas d’entrées, il est toujours affiché. Sinon, le dossier n’est pas affiché.</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
   <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
@@ -2578,28 +2644,24 @@
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>Expérimental : ajouter des liaisons de touches au texte sélectionné en couleur</value>
+    <value>Ajouter des raccourcis clavier pour la sélection de texte coloré</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>Ces liaisons clés peuvent mettre en surbrillance le texte sélectionné ou toutes les instances du texte sélectionné avec une couleur spécifiée.</value>
+    <value>Expérimental. Mettre en surbrillance le texte sélectionné ou correspondant avec des couleurs personnalisées à l’aide de raccourcis clavier</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
-    <value>Autoriser les matériaux d’authentification dans les fenêtres sans focus</value>
+  <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
+    <value>Autoriser les matériaux acryliques dans les fenêtres sans focus</value>
     <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
   </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
-    <value>Afficher un bouclier dans la barre de titre lorsque Terminal Windows s’exécute en tant qu’administrateur</value>
+  <data name="Globals_ShowAdminShield.Content" xml:space="preserve">
+    <value>Afficher un bouclier dans la barre de titre lors de l’exécution en tant qu’administrateur</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Content" xml:space="preserve">
     <value>Afficher les onglets en mode plein écran</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>Lorsque cette option est activée, la barre d’onglets est visible lorsque l’application est en plein écran.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Traduction du chemin d’accès</value>
@@ -2637,7 +2699,11 @@
     <value>Le profil n’est plus détecté</value>
   </data>
   <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
-    <value>Ce profil détecté automatiquement semble avoir été désinstallé. Les modifications que vous lui avez apportées sont conservées, mais ne peuvent pas être utilisées tant qu’elle n’a pas été réinstallée.</value>
+    <value>Ce profil détecté automatiquement semble avoir été désinstallé. Les modifications que vous avez apportées sont conservées, mais il ne peut pas être utilisé tant qu’il n’a pas été réinstallé.</value>
+  </data>
+  <data name="Profile_OrphanedBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Le profil n’est plus détecté</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile's source software is no longer installed.</comment>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>Source d’origine</value>
@@ -2645,17 +2711,13 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>Indique le logiciel qui a créé ce profil à l’origine.</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>Aucun</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Le démarrage automatique a été désactivé dans la section Applications de démarrage de Windows paramètres.</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>Cette option est gérée par la stratégie d’entreprise et ne peut pas être modifiée ici.</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>Extensions actives</value>
@@ -2707,10 +2769,6 @@
     <value>Aucun</value>
     <comment>Text displayed when the background image path is not defined.</comment>
   </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>Aucun</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
-  </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>Revenir aux paramètres par défaut</value>
   </data>
@@ -2718,7 +2776,7 @@
     <value>Effacer le cache</value>
   </data>
   <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
-    <value>Le cache stocke les données relatives aux sessions enregistrées et aux profils générés automatiquement.</value>
+    <value>Stocke les données relatives aux sessions enregistrées et aux profils générés automatiquement.</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>Réinitialiser</value>
@@ -2727,7 +2785,8 @@
     <value>Dégagé</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
-    <value>Cette action est appliquée immédiatement et ne peut pas être annulée.</value>
+    <value>Tous les paramètres de toutes les pages seront réinitialisés à leurs valeurs par défaut.
+Cette action est appliquée immédiatement et ne peut pas être annulée.</value>
   </data>
   <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
     <value>Cette action est appliquée immédiatement et ne peut pas être annulée.</value>
@@ -2761,7 +2820,75 @@
     <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
   </data>
   <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
-    <value>Ce texte sera inséré entre les chemins d’accès de plusieurs fichiers déposés dans le terminal.</value>
+    <value>Ce texte sera inséré entre les chemins de plusieurs fichiers déposés dans le terminal.</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
+  <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
+    <value>Aucune</value>
+    <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>Apparence sans focus</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
+  </data>
+  <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
+    <value>Comportement au lancement</value>
+    <comment>Title of a section that groups settings that control how the terminal opens and behaves when launched.</comment>
+  </data>
+  <data name="Launch_Section_SystemInputDefaults.Text" xml:space="preserve">
+    <value>Paramètres par défaut du système et de l’entrée</value>
+    <comment>Title of a section that groups settings for default system and input behaviors.</comment>
+  </data>
+  <data name="Interaction_Section_Clipboard.Text" xml:space="preserve">
+    <value>Comportement du Presse-papiers</value>
+    <comment>Title of a section that groups settings related to selection, copying, and pasting.</comment>
+  </data>
+  <data name="Interaction_Section_TextSelection.Text" xml:space="preserve">
+    <value>Sélection et édition de texte</value>
+    <comment>Title of a section that groups settings related to text selection and editing.</comment>
+  </data>
+  <data name="Interaction_Section_WindowLayout.Text" xml:space="preserve">
+    <value>Comportement de la fenêtre et de la disposition</value>
+    <comment>Title of a section that groups settings related to window sizing, arrangement, and grouping.</comment>
+  </data>
+  <data name="Interaction_Section_MouseScrolling.Header" xml:space="preserve">
+    <value>Souris et défilement</value>
+    <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
+  </data>
+  <data name="Interaction_CopyBehavior.Header" xml:space="preserve">
+    <value>Comportement de copie</value>
+    <comment>Header for a group of settings related to copying text to the clipboard.</comment>
+  </data>
+  <data name="Interaction_PasteBehavior.Header" xml:space="preserve">
+    <value>Comportement de collage</value>
+    <comment>Header for a group of settings related to cleanup and confirmation behavior for incoming pastes.</comment>
+  </data>
+  <data name="Interaction_Section_UrlsExternal.Text" xml:space="preserve">
+    <value>URL &amp; actions externes</value>
+    <comment>Title of a section that groups settings related to URLs and external app actions.</comment>
+  </data>
+  <data name="Compatibility_Section_Rendering.Text" xml:space="preserve">
+    <value>Rendu</value>
+    <comment>Title of a section that groups rendering-related settings.</comment>
+  </data>
+  <data name="Compatibility_Section_Troubleshooting.Text" xml:space="preserve">
+    <value>Résolution des problèmes</value>
+    <comment>Title of a section that groups troubleshooting tools: clearing cached state, resetting to default settings, and enabling debug features.</comment>
+  </data>
+  <data name="Globals_Section_VisualStyle.Text" xml:space="preserve">
+    <value>Style visuel</value>
+    <comment>Title of a section that groups settings related to the terminal's visual appearance.</comment>
+  </data>
+  <data name="Globals_Section_TabsLayout.Text" xml:space="preserve">
+    <value>Onglets et barre de titre</value>
+    <comment>Title of a section that groups settings related to tabs and pane layout.</comment>
+  </data>
+  <data name="Globals_Section_WindowBehavior.Text" xml:space="preserve">
+    <value>Comportement de la fenêtre</value>
+    <comment>Title of a section that groups settings related to terminal window behavior.</comment>
+  </data>
+  <data name="Globals_Section_SystemIntegration.Text" xml:space="preserve">
+    <value>Intégration au système et notifications</value>
+    <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
 </root>

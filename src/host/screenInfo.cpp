@@ -702,8 +702,7 @@ void SCREEN_INFORMATION::SetViewportSize(const til::size* const pcoordSize)
     else
     {
         // Otherwise, just store the new position and go on.
-        _viewport = Viewport::FromInclusive(NewWindow);
-        Tracing::s_TraceWindowViewport(_viewport);
+        _CommitViewport(Viewport::FromInclusive(NewWindow));
     }
 
     // Update our internal virtual bottom tracker if requested. This helps keep
@@ -1115,8 +1114,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
         _virtualBottom = srNewViewport.bottom;
     }
 
-    _viewport = newViewport;
-    Tracing::s_TraceWindowViewport(_viewport);
+    _CommitViewport(newViewport);
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.HasPendingCookedRead())
@@ -1155,27 +1153,26 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
     const auto fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
-    const auto oldViewport = Viewport(_viewport);
-
     _InternalSetViewportSize(pcoordSize, fResizeFromTop, fResizeFromLeft);
+}
 
-    // MSFT 13194969, related to 12092729.
-    // If we're in virtual terminal mode, and the viewport dimensions change,
-    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
-    //      probably want the viewport resizes, not just the screen buffer
-    //      resizes. This does change the behavior of the API for v2 callers,
-    //      but only callers who've requested VT mode. In 12092729, we enabled
-    //      sending notifications from window resizes in cases where the buffer
-    //      didn't resize, so this applies the same expansion to resizes using
-    //      the window, not the API.
-    if (IsInVirtualTerminalInputMode())
+void SCREEN_INFORMATION::_CommitViewport(const Viewport& viewport)
+{
+    // VT TUI applications typically use SIGWINCH on UNIX and Windows has no equivalent
+    // for that. So, we just raise WINDOW_BUFFER_SIZE_EVENT as the closest alternative.
+    // With ASB or in ConPTY, viewport will match buffer size, and in that case we rely
+    // on InputBuffer to deduplicate events for us.
+    //
+    // Technically, this is a hack, and it resulted in regressions. Example: GH#281.
+    // But this was changed so long ago, that it's difficult to improve now.
+    // A more ideal solution may have been the introduction of a "VIEWPORT_EVENT".
+    if (IsActiveScreenBuffer() && IsInVirtualTerminalInputMode() && viewport.Dimensions() != _viewport.Dimensions())
     {
-        if ((_viewport.Width() != oldViewport.Width()) ||
-            (_viewport.Height() != oldViewport.Height()))
-        {
-            ScreenBufferSizeChange(GetBufferSize().Dimensions());
-        }
+        ScreenBufferSizeChange(GetBufferSize().Dimensions());
     }
+
+    _viewport = viewport;
+    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:
@@ -1926,11 +1923,6 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
-        // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
-        // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
-        // MainSB.bufferWidth (which can happen with wrap text disabled))
-        ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
-
         // Tell the VT MouseInput handler that we're in the Alt buffer now
         gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
@@ -1953,9 +1945,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
-
-        // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-        ScreenBufferSizeChange(psiMain->GetBufferSize().Dimensions());
 
         auto psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
@@ -2151,14 +2140,12 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
     const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
 
-    _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
+    _CommitViewport(Viewport::FromExclusive({ x, y, x + cx, y + cy }));
 
     if (updateBottom)
     {
         UpdateBottom();
     }
-
-    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:

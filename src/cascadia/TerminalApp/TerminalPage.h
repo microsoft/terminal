@@ -43,7 +43,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettingsCache;
 
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
-    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
     enum StartupState : int
     {
@@ -199,9 +198,6 @@ namespace winrt::TerminalApp::implementation
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
         winrt::TerminalApp::TaskbarState TaskbarState() const;
-
-        void ShowKeyboardServiceWarning() const;
-        winrt::hstring KeyboardServiceDisabledText();
 
         void IdentifyWindow();
         void ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
@@ -497,7 +493,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
-        void _copyToClipboard(IInspectable, Microsoft::Terminal::Control::WriteToClipboardEventArgs args) const;
+        safe_void_coroutine _copyToClipboard(IInspectable, Microsoft::Terminal::Control::WriteToClipboardEventArgs args) const;
         void _PasteText();
 
         safe_void_coroutine _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
@@ -595,7 +591,6 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
-        void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 

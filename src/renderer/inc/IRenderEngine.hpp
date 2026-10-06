@@ -59,11 +59,11 @@ namespace Microsoft::Console::Render
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
         virtual ~IRenderEngine() = default;
 
-        [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
+        [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0; // Returns S_FALSE, to skip EndPaint(), Present(), etc.
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
-        virtual void WaitUntilCanRender() noexcept = 0;
-        [[nodiscard]] virtual HRESULT Present() noexcept = 0;
+        [[nodiscard]] virtual bool WaitUntilCanRender(HANDLE shutdownEvent) noexcept = 0; // Returns false, if shutdownEvent is signaled
+        [[nodiscard]] virtual HRESULT Present(HANDLE shutdownEvent) noexcept = 0;
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
         [[nodiscard]] virtual HRESULT Invalidate(const til::rect* psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const til::rect* psrRegion) noexcept = 0;

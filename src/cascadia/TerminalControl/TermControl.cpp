@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "TermControl.h"
 
+#include <DefaultSettings.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
@@ -207,19 +208,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return {};
         }
 
+        // TSF wants screen coordinates, and localOrigin below is relative to the root of our visual tree,
+        // which sits at the origin of the owning window's client area. GH#20318: GetWindowRect() is not
+        // that origin. While the window is maximized the client area starts below the resize borders, so
+        // the rect ended up a resize handle height too high, which is enough for the IME candidate window
+        // to cover the text being composed.
         const auto hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-        RECT clientRect;
-        GetWindowRect(hwnd, &clientRect);
+        POINT windowOrigin{};
+        ClientToScreen(hwnd, &windowOrigin);
 
-        const auto scaleFactor = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        const auto scaleFactor = _termControl->SwapChainPanel().CompositionScaleX();
         const auto localOrigin = _termControl->TransformToVisual(nullptr).TransformPoint({});
         const auto padding = _termControl->GetPadding();
         const auto cursorPosition = core->CursorPosition();
         const auto fontSize = core->FontSize();
 
         // fontSize is not in DIPs, so we need to first multiply by scaleFactor and then do the rest.
-        const auto left = clientRect.left + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
-        const auto top = clientRect.top + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
+        const auto left = windowOrigin.x + (localOrigin.X + static_cast<float>(padding.Left)) * scaleFactor + cursorPosition.X * fontSize.Width;
+        const auto top = windowOrigin.y + (localOrigin.Y + static_cast<float>(padding.Top)) * scaleFactor + cursorPosition.Y * fontSize.Height;
         const auto right = left + fontSize.Width;
         const auto bottom = top + fontSize.Height;
 
@@ -272,9 +278,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControl::TermControl(Control::ControlInteractivity content) :
         _interactivity{ content },
         _isInternalScrollBarUpdate{ false },
-        _autoScrollVelocity{ 0 },
-        _autoScrollingPointerPoint{ std::nullopt },
-        _lastAutoScrollUpdateTime{ std::nullopt },
         _searchBox{ nullptr }
     {
         InitializeComponent();
@@ -394,10 +397,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
-
-        static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
-        _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ get_weak(), &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
 
@@ -1995,10 +1994,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Focus(FocusState::Pointer);
         }
 
-        // Mark that this pointer event actually started within our bounds.
-        // We'll need this later, for PointerMoved events.
-        _pointerPressedInBounds = true;
-
         if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             // NB: I don't think this is correct because the touch should be in the center of the rect.
@@ -2050,45 +2045,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
-                                                                       TermControl::GetPressedMouseButtons(point),
-                                                                       TermControl::GetPointerUpdateKind(point),
-                                                                       ControlKeyStates(args.KeyModifiers()),
-                                                                       pixelPosition);
-
-            // GH#9109 - Only start an auto-scroll when the drag actually
-            // started within our bounds. Otherwise, someone could start a drag
-            // outside the terminal control, drag into the padding, and trick us
-            // into starting to scroll.
-            if (!suppressFurtherHandling && _focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
-            {
-                // We want to find the distance relative to the bounds of the
-                // SwapChainPanel, not the entire control. If they drag out of
-                // the bounds of the text, into the padding, we still what that
-                // to auto-scroll
-                const auto cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
-                const auto cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
-
-                constexpr auto MinAutoScrollDist = 2.0; // Arbitrary value
-                auto newAutoScrollVelocity = 0.0;
-                if (cursorBelowBottomDist > MinAutoScrollDist)
-                {
-                    newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
-                }
-                else if (cursorAboveTopDist > MinAutoScrollDist)
-                {
-                    newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
-                }
-
-                if (newAutoScrollVelocity != 0)
-                {
-                    _TryStartAutoScroll(point, newAutoScrollVelocity);
-                }
-                else
-                {
-                    _TryStopAutoScroll(ptr.PointerId());
-                }
-            }
+            _interactivity.PointerMoved(point.PointerId(),
+                                        TermControl::GetPressedMouseButtons(point),
+                                        TermControl::GetPointerUpdateKind(point),
+                                        ControlKeyStates(args.KeyModifiers()),
+                                        pixelPosition);
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -2115,8 +2076,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _pointerPressedInBounds = false;
-
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
         const auto cursorPosition = point.Position();
@@ -2138,8 +2097,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _interactivity.TouchReleased();
         }
-
-        _TryStopAutoScroll(ptr.PointerId());
 
         args.Handled(true);
     }
@@ -2296,86 +2253,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Starts new pointer related auto scroll behavior, or continues existing one.
-    //      Does nothing when there is already auto scroll associated with another pointer.
-    // Arguments:
-    // - pointerPoint: info about pointer that causes auto scroll. Pointer's position
-    //      is later used to update selection.
-    // - scrollVelocity: target velocity of scrolling in characters / sec
-    void TermControl::_TryStartAutoScroll(const Windows::UI::Input::PointerPoint& pointerPoint, const double scrollVelocity)
-    {
-        // Allow only one pointer at the time
-        if (!_autoScrollingPointerPoint ||
-            _autoScrollingPointerPoint->PointerId() == pointerPoint.PointerId())
-        {
-            _autoScrollingPointerPoint = pointerPoint;
-            _autoScrollVelocity = scrollVelocity;
-
-            // If this is first time the auto scroll update is about to be called,
-            //      kick-start it by initializing its time delta as if it started now
-            if (!_lastAutoScrollUpdateTime)
-            {
-                _lastAutoScrollUpdateTime = std::chrono::high_resolution_clock::now();
-            }
-
-            // Apparently this check is not necessary but greatly improves performance
-            if (!_autoScrollTimer.IsEnabled())
-            {
-                _autoScrollTimer.Start();
-            }
-        }
-    }
-
-    // Method Description:
-    // - Stops auto scroll if it's active and is associated with supplied pointer id.
-    // Arguments:
-    // - pointerId: id of pointer for which to stop auto scroll
-    void TermControl::_TryStopAutoScroll(const uint32_t pointerId)
-    {
-        if (_autoScrollingPointerPoint &&
-            pointerId == _autoScrollingPointerPoint->PointerId())
-        {
-            _autoScrollingPointerPoint = std::nullopt;
-            _autoScrollVelocity = 0;
-            _lastAutoScrollUpdateTime = std::nullopt;
-
-            // Apparently this check is not necessary but greatly improves performance
-            if (_autoScrollTimer.IsEnabled())
-            {
-                _autoScrollTimer.Stop();
-            }
-        }
-    }
-
-    // Method Description:
-    // - Called continuously to gradually scroll viewport when user is mouse
-    //   selecting outside it (to 'follow' the cursor).
-    // Arguments:
-    // - none
-    void TermControl::_UpdateAutoScroll(const Windows::Foundation::IInspectable& /* sender */,
-                                        const Windows::Foundation::IInspectable& /* e */)
-    {
-        if (_autoScrollVelocity != 0)
-        {
-            const auto timeNow = std::chrono::high_resolution_clock::now();
-
-            if (_lastAutoScrollUpdateTime)
-            {
-                static constexpr auto microSecPerSec = 1000000.0;
-                const auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
-                ScrollBar().Value(ScrollBar().Value() + _autoScrollVelocity * deltaTime);
-
-                if (_autoScrollingPointerPoint)
-                {
-                    _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint->Position());
-                }
-            }
-
-            _lastAutoScrollUpdateTime = timeNow;
-        }
-    }
-
-    // Method Description:
     // - Event handler for the GotFocus event. This is used to...
     //   - enable accessibility notifications for this TermControl
     //   - start blinking the cursor when the window is focused
@@ -2466,12 +2343,63 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
+        if (newSize.Width <= 0 || newSize.Height <= 0)
+        {
+            return;
+        }
+
         _core.SizeChanged(newSize.Width, newSize.Height);
+        _ShowResizeOverlay();
 
         if (_automationPeer)
         {
             _automationPeer.UpdateControlBounds();
         }
+    }
+
+    // Shows an overlay with the current terminal dimensions (columns x rows).
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control.
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto size = coreImpl->ViewportSize();
+
+        // Sometimes _SwapChainSizeChanged is called despite no actual size change.
+        // This happens, e.g., when switching tabs. Ignore such "updates".
+        if (size == _lastResizeOverlaySize)
+        {
+            return;
+        }
+
+        const auto isInitialSize = _lastResizeOverlaySize == Core::Size{};
+        _lastResizeOverlaySize = size;
+        if (isInitialSize)
+        {
+            return;
+        }
+
+        ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
+        ResizeOverlay().Visibility(Visibility::Visible);
+
+        if (!_resizeOverlayTimer)
+        {
+            _resizeOverlayTimer.emplace();
+            _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+            _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto self = weakThis.get())
+                {
+                    self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                    self->_resizeOverlayTimer->Stop();
+                }
+            });
+        }
+
+        _resizeOverlayTimer->Start();
     }
 
     // Method Description:
@@ -2507,15 +2435,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scaleX = sender.CompositionScaleX();
 
         _core.ScaleChanged(scaleX);
-    }
-
-    // Method Description:
-    // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
-    // Arguments:
-    // - cursorPosition: in pixels, relative to the origin of the control
-    void TermControl::_SetEndSelectionPointAtCursor(const Windows::Foundation::Point& cursorPosition)
-    {
-        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
     }
 
     // Method Description:
@@ -2675,7 +2594,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // On Win10 we don't destroy window threads due to bugs in DesktopWindowXamlSource.
             // In turn, we leak TermControl instances. This results in constant HWND messages
             // while the thread is supposed to be idle. Stop these timers avoids this.
-            _autoScrollTimer.Stop();
             _bellLightTimer.Stop();
 
             // This is absolutely crucial, as the TSF code tries to hold a strong reference to _tsfDataProvider,
@@ -2715,13 +2633,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int TermControl::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size TermControl::ViewportSize() const
     {
-        return _core.ViewHeight();
+        return _core.ViewportSize();
     }
 
     int TermControl::BufferHeight() const
@@ -2750,16 +2665,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                         int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
+        // Floor at MINIMUM_VISIBLE_CELLS so wt --size 1,1 / initialCols:1 cannot
+        // open a 1-cell viewport (GH#19996).
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
         const auto cols = static_cast<float>(std::max(commandlineCols > 0 ?
                                                           commandlineCols :
                                                           settings.InitialCols(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
         const auto rows = static_cast<float>(std::max(commandlineRows > 0 ?
                                                           commandlineRows :
                                                           settings.InitialRows(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2851,8 +2768,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - a size containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const winrt::Windows::Foundation::Size& sizeInChars)
     {
-        const auto cols = ::base::saturated_cast<int32_t>(sizeInChars.Width);
-        const auto rows = ::base::saturated_cast<int32_t>(sizeInChars.Height);
+        const auto cols = std::max(::base::saturated_cast<int32_t>(sizeInChars.Width), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(::base::saturated_cast<int32_t>(sizeInChars.Height), MINIMUM_VISIBLE_CELLS);
         const auto fontSize = _core.FontSize();
         const auto scrollState = _core.Settings().ScrollState();
         const auto padding = _core.Settings().Padding();
@@ -2893,20 +2810,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the absolute minimum size that this control can be resized to and
-    //   still have 1x1 character visible. This includes the space needed for
+    //   still have 2x2 characters visible. This includes the space needed for
     //   the scrollbar and the padding.
+    //   2x2 is the VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell
+    //   viewport can hang TextBuffer::Reflow on a wide glyph (GH#19996).
     // Arguments:
     // - <none>
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
-    //   have a visible character.
+    //   have a usable character grid.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSizeInDips();
-            auto width = fontSize.Width;
-            auto height = fontSize.Height;
+            auto width = fontSize.Width * MINIMUM_VISIBLE_CELLS;
+            auto height = fontSize.Height * MINIMUM_VISIBLE_CELLS;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
@@ -3069,20 +2988,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             lroundf(relativeToMarginInDIPsX * scale),
             lroundf(relativeToMarginInDIPsY * scale),
         };
-    }
-
-    // Method Description:
-    // - Calculates speed of single axis of auto scrolling. It has to allow for both
-    //      fast and precise selection.
-    // Arguments:
-    // - cursorDistanceFromBorder: distance from viewport border to cursor, in pixels. Must be non-negative.
-    // Return Value:
-    // - positive speed in characters / sec
-    double TermControl::_GetAutoScrollSpeed(double cursorDistanceFromBorder) const
-    {
-        // The numbers below just feel well, feel free to change.
-        // TODO: Maybe account for space beyond border that user has available
-        return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
     }
 
     // Method Description:
@@ -3612,7 +3517,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
                 const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
                 const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
-                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewportSize().Height)
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
@@ -3683,6 +3588,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _searchScrollOffset = _calculateSearchScrollOffset();
+
+        // _ShowResizeOverlay is shown when the swap chain panel size changes.
+        // But changing the font size changes the viewport size as well.
+        // So, track that too.
+        _ShowResizeOverlay();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,

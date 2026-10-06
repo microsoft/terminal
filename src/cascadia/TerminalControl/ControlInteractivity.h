@@ -36,7 +36,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlInteractivity(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection);
+                             TerminalConnection::ITerminalConnection connection,
+                             Windows::System::DispatcherQueue dispatcher = nullptr);
 
         void GotFocus();
         void LostFocus();
@@ -143,7 +144,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static std::atomic<uint64_t> _nextId;
 
         bool _focused{ false };
+
+        // Auto scroll occurs when user, while selecting, drags cursor outside
+        // viewport. View is then scrolled to 'follow' the cursor.
+        double _autoScrollVelocity;
+        std::optional<uint32_t> _autoScrollingPointerId;
+        std::optional<Core::Point> _autoScrollingPointerPoint;
+        ControlCore::TimerHandle _autoScrollTimer;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
+
+        void _tryStartAutoScroll(const uint32_t id, const Core::Point& point, const double scrollVelocity);
+        void _tryStopAutoScroll(const uint32_t pointerId);
+        void _updateAutoScroll();
+        double _getAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        void _createInteractivityTimers();
+        void _destroyInteractivityTimers();
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
@@ -159,6 +176,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
+        std::wstring _getHyperLinkForPointerPress(const Control::MouseButtonState buttonState, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,

@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Se detectaron errores al cargar la configuración de usuario</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>El "{0}" no se está ejecutando en el equipo. Esto puede impedir que el terminal reciba entradas del teclado.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>Aceptar</value>
   </data>
@@ -742,6 +738,10 @@
   <data name="UnnamedWindowName" xml:space="preserve">
     <value>ventana sin nombre</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Nueva ventana</value>
+    <comment>Menu item to open a new terminal window.</comment>
   </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>Asigne un nombre a esta ventana...</value>

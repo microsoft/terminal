@@ -25,8 +25,8 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         TerminalOutput(const bool grEnabled = false) noexcept;
 
-        void SoftReset() noexcept;
-        void RestoreFrom(const TerminalOutput& savedState) noexcept;
+        void SoftReset();
+        void RestoreFrom(const TerminalOutput& savedState);
         void AssignUserPreferenceCharset(const VTID charset, const bool size96);
         VTID GetUserPreferenceCharsetId() const noexcept;
         size_t GetUserPreferenceCharsetSize() const noexcept;

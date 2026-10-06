@@ -67,9 +67,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
+                             TerminalConnection::ITerminalConnection connection,
+                             Windows::System::DispatcherQueue dispatcher) :
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
+        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _dispatcher{ dispatcher }
     {
         static const auto textMeasurementInit = [&]() {
             TextMeasurementMode mode = TextMeasurementMode::Graphemes;
@@ -182,16 +184,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_setupDispatcherAndCallbacks()
     {
-        // Get our dispatcher. If we're hosted in-proc with XAML, this will get
-        // us the same dispatcher as TermControl::Dispatcher(). If we're out of
-        // proc, this'll return null. We'll need to instead make a new
-        // DispatcherQueue (on a new thread), so we can use that for throttled
-        // functions.
-        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
         if (!_dispatcher)
         {
-            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
-            _dispatcher = controller.DispatcherQueue();
+            // Get our dispatcher. If we're hosted in-proc with XAML, this will get
+            // us the same dispatcher as TermControl::Dispatcher(). If we're out of
+            // proc, this'll return null. We'll need to instead make a new
+            // DispatcherQueue (on a new thread), so we can use that for throttled
+            // functions.
+            _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+            if (!_dispatcher)
+            {
+                auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+                _dispatcher = controller.DispatcherQueue();
+            }
         }
 
         const auto shared = _shared.lock();
@@ -295,9 +300,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AttachToNewControl()
     {
         _setupDispatcherAndCallbacks();
-        const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.
-        FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
+        _raiseFontSizeChanged();
 
         // The renderer will be re-enabled in Initialize
 
@@ -414,12 +418,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
-            const auto width = vp.Width();
-            const auto height = vp.Height();
+            const til::size viewportSize{ Utils::ClampToShortMax(vp.Width(), MINIMUM_VISIBLE_CELLS),
+                                          Utils::ClampToShortMax(vp.Height(), MINIMUM_VISIBLE_CELLS) };
 
             if (_connection)
             {
-                _connection.Resize(height, width);
+                _connection.Resize(viewportSize.height, viewportSize.width);
             }
 
             if (_owningHwnd != 0)
@@ -430,20 +434,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            // Override the default width and height to match the size of the swapChainPanel
-            const til::size viewportSize{ Utils::ClampToShortMax(width, 1),
-                                          Utils::ClampToShortMax(height, 1) };
-
             // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
             _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
             _terminal->UpdateSettings(_settings);
 
-            // Tell the render engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid
-            // unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](HANDLE handle) {
-                _renderEngineSwapChainChanged(handle);
-            });
+            if (SwapChainChanged)
+            {
+                // Tell the render engine to notify us when the swap chain changes.
+                // We do this after we initially set the swapchain so as to avoid
+                // unnecessary callbacks (and locking problems)
+                //
+                // We only do this if somebody is listening (and they have to have
+                // been listening from the start; see TermControl's constructor for
+                // an example). Otherwise, there is no reason for us to handle this
+                // callback, or copy the handle, or do anything else either.
+                _renderEngine->SetCallback([this](HANDLE handle) {
+                    _renderEngineSwapChainChanged(handle);
+                });
+            }
 
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -461,6 +469,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _initializedTerminal.store(true, std::memory_order_relaxed);
         } // scope for TerminalLock
 
+        _raiseFontSizeChanged();
         return true;
     }
 
@@ -569,19 +578,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudioSkipTimer)
         {
-            _midiAudioSkipTimer = _dispatcher.CreateTimer();
-            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
-            _midiAudioSkipTimer.IsRepeating(false);
-            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
-                if (const auto self = weakSelf.get())
-                {
-                    self->_midiAudio.EndSkip();
-                }
-            });
+            // Capturing a no-lifetime reference to `this' is acceptable,
+            // as we will cancel outstanding work and wait for completion
+            // in the destructor. `this' will always outlive the timer.
+            _midiAudioSkipTimer.reset(CreateThreadpoolTimer(
+                [](PTP_CALLBACK_INSTANCE, PVOID ctx, PTP_TIMER) {
+                    auto myThis = static_cast<ControlCore*>(ctx);
+                    myThis->_midiAudio.EndSkip();
+                },
+                this,
+                nullptr));
         }
 
         _midiAudio.BeginSkip();
-        _midiAudioSkipTimer.Start();
+
+        static constexpr FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
+        SetThreadpoolTimer(_midiAudioSkipTimer.get(), const_cast<PFILETIME>(&oneMsFileTime) /* safe; treated as const internally */, 0, 0);
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
@@ -900,10 +912,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
+    std::wstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         const auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
+        return _terminal->GetHyperlinkAtViewportPosition(til::point{ pos });
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -932,46 +944,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _hasUnfocusedAppearance = static_cast<bool>(newAppearance);
         _unfocusedAppearance = _hasUnfocusedAppearance ? newAppearance : settings;
 
-        const auto lock = _terminal->LockForWriting();
-
-        _builtinGlyphs = _settings.EnableBuiltinGlyphs();
-        _colorGlyphs = _settings.EnableColorGlyphs();
-        _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
-        _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
-        _runtimeOpacity = std::nullopt;
-        _runtimeFocusedOpacity = std::nullopt;
-
-        // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
-
-        const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
-
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
-
-        if (!_initializedTerminal.load(std::memory_order_relaxed))
         {
-            // If we haven't initialized, there's no point in continuing.
-            // Initialization will handle the renderer settings.
-            return;
+            const auto lock = _terminal->LockForWriting();
+
+            _builtinGlyphs = _settings.EnableBuiltinGlyphs();
+            _colorGlyphs = _settings.EnableColorGlyphs();
+            _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
+            _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
+            _runtimeOpacity = std::nullopt;
+            _runtimeFocusedOpacity = std::nullopt;
+
+            // Manually turn off acrylic if they turn off transparency.
+            _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
+
+            const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
+
+            // Update the terminal core with its new Core settings
+            _terminal->UpdateSettings(_settings);
+
+            if (_initializedTerminal.load(std::memory_order_relaxed))
+            {
+                _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
+                _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
+                _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+                // Inform the renderer of our opacity
+                _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+                _renderFailures = 0; // We may have changed the engine; reset the failure counter.
+
+                // Trigger a redraw to repaint the window background and tab colors.
+                _renderer->TriggerRedrawAll(true, true);
+
+                _updateAntiAliasingMode();
+
+                if (sizeChanged)
+                {
+                    _refreshSizeUnderLock();
+                }
+            }
         }
 
-        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
-        _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-        // Inform the renderer of our opacity
-        _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
-        _renderFailures = 0; // We may have changed the engine; reset the failure counter.
-
-        // Trigger a redraw to repaint the window background and tab colors.
-        _renderer->TriggerRedrawAll(true, true);
-
-        _updateAntiAliasingMode();
-
-        if (sizeChanged)
-        {
-            _refreshSizeUnderLock();
-        }
+        _raiseFontSizeChanged();
     }
 
     // Method Description:
@@ -1146,7 +1158,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
         }
+    }
 
+    void ControlCore::_raiseFontSizeChanged()
+    {
         const auto actualNewSize = _actualFont.GetSize();
         FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
@@ -1197,12 +1212,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _accumulatedFontSizeDelta += fontSizeDelta;
 
-        const auto lock = _terminal->LockForWriting();
-
-        if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
         {
-            _refreshSizeUnderLock();
+            const auto lock = _terminal->LockForWriting();
+
+            if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
+            {
+                _refreshSizeUnderLock();
+            }
         }
+
+        _raiseFontSizeChanged();
     }
 
     // Method Description:
@@ -1228,10 +1247,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto cx = gsl::narrow_cast<til::CoordType>(lrint(_panelWidth * _compositionScale));
         auto cy = gsl::narrow_cast<til::CoordType>(lrint(_panelHeight * _compositionScale));
 
-        // Don't actually resize so small that a single character wouldn't fit
-        // in either dimension. The buffer really doesn't like being size 0.
-        cx = std::max(cx, _actualFont.GetSize().width);
-        cy = std::max(cy, _actualFont.GetSize().height);
+        // Don't resize below the visible minimum. A 1-cell viewport can hang
+        // TextBuffer::Reflow on a wide glyph (GH#19996). The buffer also
+        // doesn't like being size 0.
+        const auto cell = _actualFont.GetSize();
+        cx = std::max(cx, cell.width * MINIMUM_VISIBLE_CELLS);
+        cy = std::max(cy, cell.height * MINIMUM_VISIBLE_CELLS);
 
         // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
@@ -1247,7 +1268,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
-        const auto hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        const auto cols = std::max(vp.Width(), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(vp.Height(), MINIMUM_VISIBLE_CELLS);
+        const auto hr = _terminal->UserResize({ cols, rows });
         if (FAILED(hr) || hr == S_FALSE)
         {
             return;
@@ -1255,7 +1278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_connection)
         {
-            _connection.Resize(vp.Height(), vp.Width());
+            _connection.Resize(rows, cols);
         }
 
         // TermControl will call Search() once the OutputIdle even fires after 100ms.
@@ -1299,13 +1322,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _panelHeight = height;
         _compositionScale = scale;
 
-        const auto lock = _terminal->LockForWriting();
+        {
+            const auto lock = _terminal->LockForWriting();
+            if (scaleChanged)
+            {
+                // _updateFont relies on the new _compositionScale set above
+                _updateFont();
+            }
+            _refreshSizeUnderLock();
+        }
+
         if (scaleChanged)
         {
-            // _updateFont relies on the new _compositionScale set above
-            _updateFont();
+            _raiseFontSizeChanged();
         }
-        _refreshSizeUnderLock();
     }
 
     void ControlCore::SetSelectionAnchor(const til::point position)
@@ -1589,15 +1619,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text. This is just the
-    //   height of the viewport.
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int ControlCore::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size ControlCore::ViewportSize() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetViewport().Height();
+        return _terminal->GetViewport().Dimensions().to_core_size();
     }
 
     // Function Description:
@@ -1719,7 +1745,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::OpenCWD()
     {
         const auto workingDirectory = WorkingDirectory();
-        ShellExecute(nullptr, nullptr, L"explorer", workingDirectory.c_str(), nullptr, SW_SHOW);
+        if (!Utils::IsValidDirectory(workingDirectory.c_str()))
+        {
+            return;
+        }
+        ShellExecute(nullptr, nullptr, workingDirectory.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     void ControlCore::ClearQuickFix()
@@ -2694,7 +2724,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
-        const auto viewHeight = ViewHeight();
+        const auto viewHeight = ViewportSize().Height;
         const auto bufferSize = BufferHeight();
 
         // UserScrollViewport, to update the Terminal about where the viewport should be
@@ -2968,5 +2998,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
+    }
+
+    ControlCore::TimerHandle ControlCore::RegisterRenderTimer(const char* name, std::function<void()> callback)
+    {
+        return _renderer->RegisterTimer(name, [cb = std::move(callback)](auto&&, auto&&) {
+            cb();
+        });
+    }
+
+    bool ControlCore::IsRenderTimerRunning(TimerHandle h)
+    {
+        return _renderer->IsTimerRunning(h);
+    }
+
+    void ControlCore::StartRepeatingRenderTimer(TimerHandle h, uint64_t micros)
+    {
+        _renderer->StartRepeatingTimer(h, std::chrono::microseconds(micros));
+    }
+
+    void ControlCore::StopRenderTimer(TimerHandle h)
+    {
+        _renderer->StopTimer(h);
     }
 }
