@@ -3,6 +3,8 @@
 
 #pragma once
 
+class KittyKeyboardProtocolTests;
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class TerminalInput final
@@ -125,10 +127,10 @@ namespace Microsoft::Console::VirtualTerminal
             uint32_t getUnmodifiedKeyboardKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt
             uint32_t getKittyBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift
             uint32_t getKittyShiftedKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt, with Shift
-            uint32_t getKittyUSBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift in US layout
+            static uint32_t getKittyUSBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift in US layout
 
         private:
-            uint32_t getKeyboardKey(UINT vkey, DWORD controlKeyState, HKL hkl) noexcept;
+            uint32_t getKeyboardKey(UINT vkey, DWORD controlKeyState) noexcept;
             uint32_t getKeyboardKeyHelper(const SanitizedKeyEvent& key, DWORD removeFlags, DWORD addFlags) noexcept;
             void init() noexcept;
             void initSlow() noexcept;
