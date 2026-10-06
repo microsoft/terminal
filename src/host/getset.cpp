@@ -1002,25 +1002,38 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             writer.BackupCursor();
 
-            if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
+            const til::point targetSourceDistance{ target - sourceViewport.Origin() };
+            const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
+
+            // To figure out what part of "source" we can copy to "target" without
+            // * reading outside the bufferSize
+            // * writing outside the clipViewport
+            // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
+            // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
+            const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
+            auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
+            if (!copySourceViewport.IsValid())
             {
-                const til::point targetSourceDistance{ target - sourceViewport.Origin() };
-                const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
+                copySourceViewport = Viewport::Empty();
+            }
 
-                // To figure out what part of "source" we can copy to "target" without
-                // * reading outside the bufferSize
-                // * writing outside the clipViewport
-                // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
-                // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
-                const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
-                auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
-                if (!copySourceViewport.IsValid())
-                {
-                    copySourceViewport = Viewport::Empty();
-                }
+            // Afterward we can undo the translation of clipAtSource to get the target rectangle.
+            const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
 
-                // Afterward we can undo the translation of clipAtSource to get the target rectangle.
-                const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
+            if (sourceViewport == bufferSize && clipViewport == bufferSize &&
+                targetSourceDistance.x == 0 && fillCharacter == UNICODE_SPACE &&
+                WI_AreAllFlagsClear(fillAttribute, ~(FG_ATTRS | BG_ATTRS)))
+            {
+                // Several applications scroll the entire screen vertically with a whitespace fill, to essentially replicate
+                // what SU/SD can do. Our VT application is faster and better, so let's use that whenever applicable.
+                std::wstring buf;
+                Microsoft::Console::VirtualTerminal::VtIo::FormatAttributes(buf, TextAttribute{ fillAttribute });
+                const auto distance = std::min(std::abs(targetSourceDistance.y), bufferSize.Height());
+                fmt::format_to(std::back_inserter(buf), FMT_COMPILE(L"\x1b[{}{}"), distance, targetSourceDistance.y < 0 ? L'S' : L'T');
+                WriteCharsVT(context, buf);
+            }
+            else if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
+            {
                 const auto fills = Viewport::Subtract(fillViewport, copyTargetViewport);
                 std::wstring buf;
 
@@ -1060,26 +1073,25 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             }
             else
             {
-                const auto w = std::max(0, sourceViewport.Width());
-                const auto h = std::max(0, sourceViewport.Height());
-                const auto a = static_cast<size_t>(w * h);
-                if (a == 0)
-                {
-                    return S_OK;
-                }
-
                 til::small_vector<CHAR_INFO, 1024> backup;
                 til::small_vector<CHAR_INFO, 1024> fill;
-
-                backup.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
-                fill.resize(a, CHAR_INFO{ fillCharacter, fillAttribute });
-
                 Viewport readViewport;
                 Viewport writtenViewport;
 
-                RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, sourceViewport, readViewport));
-                RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, fillViewport, writtenViewport));
-                RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
+                if (copySourceViewport.IsValid())
+                {
+                    backup.resize(static_cast<size_t>(copySourceViewport.Width()) * copySourceViewport.Height());
+                    RETURN_IF_FAILED(ReadConsoleOutputWImplHelper(context, backup, copySourceViewport, readViewport));
+                }
+                if (fillViewport.IsValid())
+                {
+                    fill.resize(static_cast<size_t>(fillViewport.Width()) * fillViewport.Height(), CHAR_INFO{ fillCharacter, fillAttribute });
+                    RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, fillViewport.Width(), fillViewport, writtenViewport));
+                }
+                if (copyTargetViewport.IsValid())
+                {
+                    RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, copySourceViewport.Width(), copyTargetViewport, writtenViewport));
+                }
             }
         }
         else

@@ -4,6 +4,8 @@
 #include "precomp.h"
 
 #include "CommonState.hpp"
+#include "../directio.h"
+#include "../../terminal/adapter/InteractDispatch.hpp"
 #include "../../terminal/parser/InputStateMachineEngine.hpp"
 
 using namespace WEX::Common;
@@ -111,6 +113,20 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         screenInfo = &gci.GetActiveOutputBuffer();
         return true;
+    }
+
+    TEST_METHOD(DeviceAttributes)
+    {
+        auto& io = *ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo();
+        const auto cleanup = wil::scope_exit([&] { io.SetDeviceAttributes({}); });
+
+        io.SetDeviceAttributes({});
+
+        StateMachine input{ std::make_unique<InputStateMachineEngine>(std::make_unique<InteractDispatch>()) };
+        input.ProcessString(L"\x1b[?61;4;28c");
+
+        VERIFY_IS_TRUE(io.GetDeviceAttributes().test(DeviceAttribute::Sixel));
+        VERIFY_IS_TRUE(io.GetDeviceAttributes().test(DeviceAttribute::RectangularAreaOperations));
     }
 
     TEST_METHOD(SetConsoleCursorPosition)
@@ -500,6 +516,22 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
+        setupInitialContents(false);
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L' ', red, false));
+        expected = decsc() sgr_red("\x1b[1S") decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, 2 }, std::nullopt, L' ', blu, false));
+        expected = decsc() sgr_blu("\x1b[2T") decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -10 }, std::nullopt, L' ', red, false));
+        expected = decsc() sgr_red("\x1b[4S") decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
         // cmd uses ScrollConsoleScreenBuffer to clear the buffer contents and that gets translated to a clear screen sequence.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -4 }, std::nullopt, 0, 0, true));
         expected = "\x1b[H\x1b[2J\x1b[3J";
@@ -589,53 +621,53 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         // while source and target overlap and there's a partially out-of-bounds clip rect.
         //
         // Before:
-        //                       clip rect
-        //                +~~~~~~~~~~~~~~~~~~~~~+
-        // +--------------$--------+            $
-        // |     A   Z   Z$  b   C | D   c   Y  $
-        // |              $+-------+------------$--+
-        // |     E   z   z$| f   G | H   g   Y  $  |
-        // |          src $|       |            $  |
-        // |     i   z   z$| J   d | B   E   L  $  |
-        // |              $|       |  dst       $  |
-        // |     m   n   M$| N   h | F   i   P  $  |
-        // +--------------$+-------+            $  |
-        //                +~e~~~~~~~~~~~~~~~~~~~+  |
+        //                         clip rect
+        //                     +~~~~~~~~~~~~~~~+
+        // +-------------------$---+           $
+        // |     A   Z   Z   b $ C | D   c   Y $
+        // |               +---$---+-----------$---+
+        // |     E   z   z | f $ G | H   g   Y $   |
+        // |          src  |   $   |           $   |
+        // |     i   z   z | J $ d | B   E   L $   |
+        // |               |   $   |  dst      $   |
+        // |     m   n   M | N $ h | F   i   P $   |
+        // +---------------|---$---+           $   |
+        //                 |   +~~~~~~~~~~~~~~~+   |
         //                 +-----------------------+
         //
         // After:
         //
         // +-----------------------+
-        // |     A   Z   Z   y   y | D   c   Y
+        // |     A   Z   Z   b   y | D   c   Y
         // |               +-------+---------------+
-        // |     E   z   z | y   A | Z   Z   b     |
+        // |     E   z   z | f   A | Z   Z   b     |
         // |               |       |               |
-        // |     i   z   z | y   E | z   z   f     |
+        // |     i   z   z | J   E | z   z   f     |
         // |               |       |               |
-        // |     m   n   M | y   i | z   z   J     |
+        // |     m   n   M | N   i | z   z   J     |
         // +---------------+-------+               |
         //                 |                       |
         //                 +-----------------------+
-        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 3, -1, 7, 9 }, L'y', blu, false));
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 4, -1, 7, 9 }, L'y', blu, false));
         expected =
             decsc() //
-            cup(1, 4) sgr_blu("yy") //
-            cup(2, 4) sgr_blu("yy") //
-            cup(3, 4) sgr_blu("yy") //
-            cup(4, 4) sgr_blu("yy") //
-            cup(2, 4) sgr_blu("y") sgr_red("AZZ") sgr_blu("b") //
-            cup(3, 4) sgr_blu("y") sgr_red("E") sgr_blu("zzf") //
-            cup(4, 4) sgr_blu("yizz") sgr_red("J") //
+            cup(1, 5) sgr_blu("y") //
+            cup(2, 5) sgr_blu("y") //
+            cup(3, 5) sgr_blu("y") //
+            cup(4, 5) sgr_blu("y") //
+            cup(2, 5) sgr_red("AZZ") sgr_blu("b") //
+            cup(3, 5) sgr_red("E") sgr_blu("zzf") //
+            cup(4, 5) sgr_blu("izz") sgr_red("J") //
             decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         static constexpr std::array<CHAR_INFO, 8 * 4> expectedContents{ {
             // clang-format off
-            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('y'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
-            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
-            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
-            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_blu('y'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
+            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
+            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
+            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
+            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_red('N'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
             // clang-format on
         } };
         std::array<CHAR_INFO, 8 * 4> actualContents{};
@@ -670,6 +702,16 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
             sgr_red() //
             decfra(32, 1, 1, 2, 2) // ' ' = 32
             decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L' ', red, false));
+        expected = decsc() sgr_red("\x1b[1S") decrc();
+        actual = readOutput();
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L'Z', red, false));
+        expected = decsc() sgr_red() deccra(2, 1, 4, 8, 1, 1) decfra(90, 4, 1, 4, 8) decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
@@ -759,56 +801,75 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         // while source and target overlap and there's a partially out-of-bounds clip rect.
         //
         // Before:
-        //                       clip rect
-        //                +~~~~~~~~~~~~~~~~~~~~~+
-        // +--------------$--------+            $
-        // |     A   Z   Z$  b   C | D   c   Y  $
-        // |              $+-------+------------$--+
-        // |     E   z   z$| f   G | H   g   Y  $  |
-        // |          src $|       |            $  |
-        // |     i   z   z$| J   d | B   E   L  $  |
-        // |              $|       |  dst       $  |
-        // |     m   n   M$| N   h | F   i   P  $  |
-        // +--------------$+-------+            $  |
-        //                +~e~~~~~~~~~~~~~~~~~~~+  |
+        //                         clip rect
+        //                     +~~~~~~~~~~~~~~~~+
+        // +-------------------$---+            $
+        // |     A   Z   Z   b $ C | D   c   Y  $
+        // |               +---$---+------------$--+
+        // |     E   z   z | f $ G | H   g   Y  $  |
+        // |          src  |   $   |            $  |
+        // |     i   z   z | J $ d | B   E   L  $  |
+        // |               |   $   |  dst       $  |
+        // |     m   n   M | N $ h | F   i   P  $  |
+        // +---------------|---$---+            $  |
+        //                 |   +~~~~~~~~~~~~~~~~+  |
         //                 +-----------------------+
         //
         // After:
         //
         // +-----------------------+
-        // |     A   Z   Z   y   y | D   c   Y
+        // |     A   Z   Z   b   y | D   c   Y
         // |               +-------+---------------+
-        // |     E   z   z | y   A | Z   Z   b     |
+        // |     E   z   z | f   A | Z   Z   b     |
         // |               |       |               |
-        // |     i   z   z | y   E | z   z   f     |
+        // |     i   z   z | J   E | z   z   f     |
         // |               |       |               |
-        // |     m   n   M | y   i | z   z   J     |
+        // |     m   n   M | N   i | z   z   J     |
         // +---------------+-------+               |
         //                 |                       |
         //                 +-----------------------+
-        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 3, -1, 7, 9 }, L'y', blu, false));
+        THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { -1, 0, 4, 3 }, { 3, 1 }, til::inclusive_rect{ 4, -1, 7, 9 }, L'y', blu, false));
         expected =
             decsc() //
             sgr_blu() //
             deccra(1, 1, 3, 4, 2, 5) //
-            decfra(121, 1, 4, 1, 5) // 'y' = 121
-            decfra(121, 2, 4, 4, 4) //
+            decfra(121, 1, 5, 1, 5) // 'y' = 121
             decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         static constexpr std::array<CHAR_INFO, 8 * 4> expectedContents{ {
             // clang-format off
-            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('y'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
-            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
-            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_blu('y'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
-            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_blu('y'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
+            ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'), ci_blu('y'), ci_red('D'), ci_blu('c'), ci_red('Y'),
+            ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'), ci_red('A'), ci_red('Z'), ci_red('Z'), ci_blu('b'),
+            ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'), ci_red('E'), ci_blu('z'), ci_blu('z'), ci_blu('f'),
+            ci_blu('m'), ci_blu('n'), ci_red('M'), ci_red('N'), ci_blu('i'), ci_blu('z'), ci_blu('z'), ci_red('J'),
             // clang-format on
         } };
         std::array<CHAR_INFO, 8 * 4> actualContents{};
         Viewport actualContentsRead;
         THROW_IF_FAILED(routines.ReadConsoleOutputWImpl(*screenInfo, actualContents, Viewport::FromDimensions({}, { 8, 4 }), actualContentsRead));
         VERIFY_IS_TRUE(memcmp(expectedContents.data(), actualContents.data(), sizeof(actualContents)) == 0);
+    }
+
+    // This a litmus test whether Read/WriteConsoleOutputWImplHelper properly recognize
+    // and reject too small buffers (and inversely permit sufficiently large ones).
+    TEST_METHOD(ReadWriteConsoleOutputWithClippedBounds)
+    {
+        setupInitialContents(false);
+
+        std::array<CHAR_INFO, 6> cells{};
+        Viewport result;
+
+        const auto topClipped = Viewport::FromInclusive({ 0, -1, 1, 1 });
+        VERIFY_ARE_EQUAL(E_INVALIDARG, ReadConsoleOutputWImplHelper(*screenInfo, std::span{ cells }.first(4), topClipped, result));
+        VERIFY_ARE_EQUAL(E_INVALIDARG, WriteConsoleOutputWImplHelper(*screenInfo, std::span{ cells }.first(4), 2, topClipped, result));
+        VERIFY_ARE_EQUAL("", readOutput());
+
+        const auto rightClipped = Viewport::FromInclusive({ 7, 0, 8, 2 });
+        THROW_IF_FAILED(ReadConsoleOutputWImplHelper(*screenInfo, std::span{ cells }.first(5), rightClipped, result));
+        THROW_IF_FAILED(WriteConsoleOutputWImplHelper(*screenInfo, std::span{ cells }.first(5), 2, rightClipped, result));
+        readOutput();
     }
 
     TEST_METHOD(SetConsoleActiveScreenBuffer)

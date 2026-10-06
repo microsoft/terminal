@@ -10,6 +10,8 @@ class ConsoleArguments;
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    enum class DeviceAttribute : uint64_t;
+
     class VtIo
     {
     public:
