@@ -1538,9 +1538,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto modifiers{ _GetPressedModifierKeys() };
 
-        // GH#18120: Direct key events bypass the regular _KeyHandler path,
-        // which gets the extended-key state from CorePhysicalKeyStatus.
-        // Without this, releasing e.g. RightAlt loses its ENHANCED_KEY flag.
         if (extended)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
