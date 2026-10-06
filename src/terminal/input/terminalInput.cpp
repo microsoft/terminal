@@ -717,7 +717,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
                 //
                 // NOTE: The specification doesn't mention that the value is
                 // not reported if it's identical to the regular key-code.
-                const auto cp = kbd.getKittyUSBaseKey(key);
+                const auto cp = KeyboardHelper::getKittyUSBaseKey(key);
                 if (cp < InvalidCodepoint && cp != enc.csiUnicodeKeyCode)
                 {
                     enc.csiAltKeyCodeBase = cp;
@@ -1423,56 +1423,149 @@ uint32_t TerminalInput::KeyboardHelper::getKeyboardKeyHelper(const SanitizedKeyE
         controlKeyState |= LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
     }
 
-    return getKeyboardKey(virtualKey, controlKeyState, nullptr);
+    return getKeyboardKey(virtualKey, controlKeyState);
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+#pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
 uint32_t TerminalInput::KeyboardHelper::getKittyUSBaseKey(const SanitizedKeyEvent& key) noexcept
 {
     // > The base layout key is the key corresponding to the physical key in the standard PC-101 key layout.
-    static const auto usLayout = LoadKeyboardLayoutW(L"00000409", 0);
-    if (!usLayout)
+    static constexpr auto lut = [] {
+        std::array<std::array<uint16_t, 128>, 2> data{};
+
+        data[0][0x01] = 0x1B; // VK_ESCAPE
+        data[0][0x02] = '1';
+        data[0][0x03] = '2';
+        data[0][0x04] = '3';
+        data[0][0x05] = '4';
+        data[0][0x06] = '5';
+        data[0][0x07] = '6';
+        data[0][0x08] = '7';
+        data[0][0x09] = '8';
+        data[0][0x0A] = '9';
+        data[0][0x0B] = '0';
+        data[0][0x0C] = '-'; // VK_OEM_MINUS
+        data[0][0x0D] = '='; // VK_OEM_PLUS
+        data[0][0x0E] = 0x7F; // VK_BACK
+        data[0][0x0F] = 0x09; // VK_TAB
+        data[0][0x10] = 'q';
+        data[0][0x11] = 'w';
+        data[0][0x12] = 'e';
+        data[0][0x13] = 'r';
+        data[0][0x14] = 't';
+        data[0][0x15] = 'y';
+        data[0][0x16] = 'u';
+        data[0][0x17] = 'i';
+        data[0][0x18] = 'o';
+        data[0][0x19] = 'p';
+        data[0][0x1A] = '['; // VK_OEM_4
+        data[0][0x1B] = ']'; // VK_OEM_6
+        data[0][0x1C] = 0x0D; // VK_RETURN
+        data[0][0x1D] = 57442; // VK_LCONTROL -> LEFT_CONTROL
+        data[0][0x1E] = 'a';
+        data[0][0x1F] = 's';
+        data[0][0x20] = 'd';
+        data[0][0x21] = 'f';
+        data[0][0x22] = 'g';
+        data[0][0x23] = 'h';
+        data[0][0x24] = 'j';
+        data[0][0x25] = 'k';
+        data[0][0x26] = 'l';
+        data[0][0x27] = ';'; // VK_OEM_1
+        data[0][0x28] = '\''; // VK_OEM_7
+        data[0][0x29] = '`'; // VK_OEM_3
+        data[0][0x2A] = 57441; // VK_LSHIFT -> LEFT_SHIFT
+        data[0][0x2B] = '\\'; // VK_OEM_5
+        data[0][0x2C] = 'z';
+        data[0][0x2D] = 'x';
+        data[0][0x2E] = 'c';
+        data[0][0x2F] = 'v';
+        data[0][0x30] = 'b';
+        data[0][0x31] = 'n';
+        data[0][0x32] = 'm';
+        data[0][0x33] = ','; // VK_OEM_COMMA
+        data[0][0x34] = '.'; // VK_OEM_PERIOD
+        data[0][0x35] = '/'; // VK_OEM_2
+        data[0][0x36] = 57447; // VK_RSHIFT -> RIGHT_SHIFT
+        data[0][0x37] = 57411; // VK_MULTIPLY -> KP_MULTIPLY
+        data[0][0x38] = 57443; // VK_LMENU -> LEFT_ALT
+        data[0][0x39] = ' ';
+        data[0][0x3A] = 57358; // VK_CAPITAL -> CAPS_LOCK
+        data[0][0x45] = 57360; // VK_NUMLOCK -> NUM_LOCK
+        data[0][0x46] = 57359; // VK_SCROLL -> SCROLL_LOCK
+        data[0][0x47] = 57423; // VK_HOME -> VK_HOME
+        data[0][0x48] = 57419; // VK_UP -> VK_UP
+        data[0][0x49] = 57421; // VK_PRIOR -> KP_PAGE_UP
+        data[0][0x4A] = 57412; // VK_SUBTRACT -> VK_SUBTRACT
+        data[0][0x4B] = 57417; // VK_LEFT -> VK_LEFT
+        data[0][0x4D] = 57418; // VK_RIGHT -> KP_RIGHT
+        data[0][0x4E] = 57413; // VK_ADD -> KP_ADD
+        data[0][0x4F] = 57424; // VK_END -> KP_END
+        data[0][0x50] = 57420; // VK_DOWN -> KP_DOWN
+        data[0][0x51] = 57422; // VK_NEXT -> KP_PAGE_DOWN
+        data[0][0x52] = 57425; // VK_INSERT -> KP_INSERT
+        data[0][0x53] = 57426; // VK_DELETE -> KP_DELETE
+        data[0][0x54] = 57361; // VK_SNAPSHOT -> KP_SNAPSHOT
+        data[0][0x56] = '\\'; // VK_OEM_102
+        data[0][0x64] = 57376; // F13
+        data[0][0x65] = 57377; // F14
+        data[0][0x66] = 57378; // F15
+        data[0][0x67] = 57379; // F16
+        data[0][0x68] = 57380; // F17
+        data[0][0x69] = 57381; // F18
+        data[0][0x6A] = 57382; // F19
+        data[0][0x6B] = 57383; // F20
+        data[0][0x6C] = 57384; // F21
+        data[0][0x6D] = 57385; // F22
+        data[0][0x6E] = 57386; // F23
+        data[0][0x76] = 57387; // VK_F24
+        data[0][0x7C] = 0x09; // VK_TAB
+
+        data[1][0x10] = 57436; // VK_MEDIA_PREV_TRACK -> MEDIA_TRACK_PREVIOUS
+        data[1][0x19] = 57435; // VK_MEDIA_NEXT_TRACK -> MEDIA_TRACK_NEXT
+        data[1][0x1C] = 57414; // VK_RETURN -> KP_ENTER
+        data[1][0x1D] = 57448; // VK_RCONTROL -> RIGHT_CONTROL
+        data[1][0x20] = 57440; // VK_VOLUME_MUTE -> MUTE_VOLUME
+        data[1][0x22] = 57430; // VK_MEDIA_PLAY_PAUSE -> MEDIA_PLAY_PAUSE
+        data[1][0x24] = 57432; // VK_MEDIA_STOP -> MEDIA_STOP
+        data[1][0x2E] = 57438; // VK_VOLUME_DOWN -> LOWER_VOLUME
+        data[1][0x30] = 57439; // VK_VOLUME_UP -> RAISE_VOLUME
+        data[1][0x35] = 57410; // VK_DIVIDE -> KP_DIVIDE
+        data[1][0x37] = 57361; // VK_SNAPSHOT -> PRINT_SCREEN
+        data[1][0x38] = 57449; // VK_RMENU -> RIGHT_ALT
+        data[1][0x46] = 0x03; // VK_CANCEL
+        data[1][0x5B] = 57444; // VK_LWIN -> LEFT_SUPER
+        data[1][0x5C] = 57450; // VK_RWIN -> RIGHT_SUPER
+        data[1][0x5D] = 57363; // VK_APPS -> MENU
+
+        return data;
+    }();
+
+    if (key.scanCode == 0xE11D)
+    {
+        return 57362; // PAUSE
+    }
+
+    const auto prefix = key.scanCode & 0xff00;
+    const auto scanCode = key.scanCode & 0xff;
+    if ((prefix != 0 && prefix != 0xE000) || scanCode >= std::size(lut[0]))
     {
         return InvalidCodepoint;
     }
 
-    const auto vkey = MapVirtualKeyExW(key.scanCode, MAPVK_VSC_TO_VK_EX, usLayout);
-    if (!vkey)
-    {
-        return InvalidCodepoint;
-    }
-
-    // KKP doesn't document whether the "base layout key" should also
-    // properly map function keys using the >0xE000 Private Use Area codes.
-    // I'm just going to do it.
-    auto keyCode = _getKittyFunctionalKeyCode(vkey, key.scanCode, WI_IsFlagSet(key.controlKeyState, ENHANCED_KEY));
-
-    // By extension, KKP also doesn't document what to do with function keys
-    // that only have a canonical legacy encoding (no assigned PUA code).
-    // Here I'll just treat them as unmapped.
-    if (keyCode == KittyKeyCodeLegacySentinel)
-    {
-        return InvalidCodepoint;
-    }
-
-    // Otherwise, map any text key to their text code.
-    if (keyCode == 0)
-    {
-        const auto controlKeyState = key.controlKeyState & ~(ALT_PRESSED | CTRL_PRESSED | SHIFT_PRESSED | CAPSLOCK_ON);
-        keyCode = getKeyboardKey(vkey, controlKeyState, usLayout);
-        keyCode = _codepointToLower(keyCode);
-    }
-
-    return keyCode;
+    const auto enhanced = prefix == 0xE000 || WI_IsFlagSet(key.controlKeyState, ENHANCED_KEY);
+    const auto keyCode = lut[enhanced][scanCode];
+    return keyCode ? keyCode : InvalidCodepoint;
 }
 
-uint32_t TerminalInput::KeyboardHelper::getKeyboardKey(UINT vkey, DWORD controlKeyState, HKL hkl) noexcept
+#pragma warning(pop)
+
+uint32_t TerminalInput::KeyboardHelper::getKeyboardKey(UINT vkey, DWORD controlKeyState) noexcept
 {
     init();
-
-    if (!hkl)
-    {
-        hkl = _keyboardLayout;
-    }
 
     vkey &= 0xff;
 
@@ -1495,7 +1588,7 @@ uint32_t TerminalInput::KeyboardHelper::getKeyboardKey(UINT vkey, DWORD controlK
     til::at(_keyboardState, vkey) = 0x80; // Momentarily pretend as if the key is set
 
     CodepointBuffer cb;
-    cb.len = ToUnicodeEx(vkey, 0, &_keyboardState[0], &cb.buf[0], ARRAYSIZE(cb.buf), 0b101, hkl);
+    cb.len = ToUnicodeEx(vkey, 0, &_keyboardState[0], &cb.buf[0], ARRAYSIZE(cb.buf), 0b101, _keyboardLayout);
 
     til::at(_keyboardState, vkey) = 0;
 
