@@ -78,8 +78,8 @@ namespace Microsoft::Console::VirtualTerminal
         // Kitty keyboard protocol methods
         void SetKittyKeyboardProtocol(uint8_t flags, KittyKeyboardProtocolMode mode) noexcept;
         uint8_t GetKittyFlags() const noexcept;
-        void PushKittyFlags(uint8_t flags);
-        void PopKittyFlags(size_t count);
+        void PushKittyFlags(uint8_t flags) noexcept;
+        void PopKittyFlags(size_t count) noexcept;
         void ResetKittyKeyboardProtocols() noexcept;
 
 #pragma region MouseInput

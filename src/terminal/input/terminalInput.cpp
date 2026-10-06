@@ -117,10 +117,10 @@ void TerminalInput::SetKittyKeyboardProtocol(uint8_t flags, const KittyKeyboardP
     auto& stack = _activeKittyStack();
     if (stack.len == 0)
     {
-        stack.flags[0] = 0;
+        til::at(stack.flags, 0) = 0;
         stack.len = 1;
     }
-    auto& currentFlags = stack.flags[stack.len - 1];
+    auto& currentFlags = til::at(stack.flags, stack.len - 1);
 
     flags &= KittyKeyboardProtocolFlags::All;
 
@@ -141,7 +141,7 @@ void TerminalInput::SetKittyKeyboardProtocol(uint8_t flags, const KittyKeyboardP
 uint8_t TerminalInput::GetKittyFlags() const noexcept
 {
     const auto& stack = _activeKittyStack();
-    return stack.len ? stack.flags[stack.len - 1] : 0;
+    return stack.len ? til::at(stack.flags, stack.len - 1) : 0;
 }
 
 TerminalInput::KittyStack& TerminalInput::_activeKittyStack() noexcept
@@ -154,7 +154,7 @@ const TerminalInput::KittyStack& TerminalInput::_activeKittyStack() const noexce
     return _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
 }
 
-void TerminalInput::PushKittyFlags(const uint8_t flags)
+void TerminalInput::PushKittyFlags(const uint8_t flags) noexcept
 {
     if (_forceDisableKittyKeyboardProtocol)
     {
@@ -169,14 +169,14 @@ void TerminalInput::PushKittyFlags(const uint8_t flags)
     {
         // NOTE: This copies 1 byte beyond the end of the array, because that
         // makes it a neat QWORD copy. This is safe due to the struct layout.
-        memmove(&stack.flags[0], &stack.flags[1], KittyStackMaxSize * sizeof(stack.flags[0]));
+        memmove(&til::at(stack.flags, 0), &til::at(stack.flags, 1), KittyStackMaxSize * sizeof(stack.flags[0]));
         --stack.len;
     }
 
-    stack.flags[stack.len++] = flags & KittyKeyboardProtocolFlags::All;
+    til::at(stack.flags, stack.len++) = flags & KittyKeyboardProtocolFlags::All;
 }
 
-void TerminalInput::PopKittyFlags(size_t count)
+void TerminalInput::PopKittyFlags(size_t count) noexcept
 {
     auto& stack = _activeKittyStack();
     // KKP> If a pop request is received that empties the stack, all flags are reset.
