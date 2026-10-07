@@ -25,13 +25,13 @@ Author(s):
         TraceLoggingPackedMetadata(TlgInINT16, "X"), \
         TraceLoggingPackedMetadata(TlgInINT16, "Y")
 
-#define TraceLoggingConsoleSmallRect(value, name)       \
-    TraceLoggingPackedData(&value, sizeof(SMALL_RECT)), \
-        TraceLoggingPackedStruct(4, name),              \
-        TraceLoggingInt16(TlgInINT16, "Left"),          \
-        TraceLoggingInt16(TlgInINT16, "Top"),           \
-        TraceLoggingInt16(TlgInINT16, "Right"),         \
-        TraceLoggingInt16(TlgInINT16, "Bottom")
+#define TraceLoggingConsoleSmallRect(value, name)        \
+    TraceLoggingPackedData(&value, sizeof(SMALL_RECT)),  \
+        TraceLoggingPackedStruct(4, name),               \
+        TraceLoggingPackedMetadata(TlgInINT16, "Left"),  \
+        TraceLoggingPackedMetadata(TlgInINT16, "Top"),   \
+        TraceLoggingPackedMetadata(TlgInINT16, "Right"), \
+        TraceLoggingPackedMetadata(TlgInINT16, "Bottom")
 
 // We intentionally don't differentiate between A and W versions of CHAR_INFO, because some particularly nasty
 // applications smuggle data in the upper bytes of the UnicodeChar field while using the A APIs and then they

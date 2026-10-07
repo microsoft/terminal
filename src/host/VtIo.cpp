@@ -213,7 +213,7 @@ bool VtIo::IsUsingVt() const
             // Allow the input thread to momentarily gain the console lock.
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto suspension = gci.SuspendLock();
-            _deviceAttributes = _pVtInputThread->WaitUntilDA1(1000);
+            _pVtInputThread->WaitUntilDA1(1000);
         }
     }
 
