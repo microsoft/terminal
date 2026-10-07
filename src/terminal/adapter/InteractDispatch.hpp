@@ -27,6 +27,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool IsVtInputEnabled() const override;
 
+        void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) override;
         void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) override;
         void WriteCtrlKey(const INPUT_RECORD& event) override;
         void WriteString(std::wstring_view string) override;
