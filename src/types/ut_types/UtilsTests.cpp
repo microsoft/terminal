@@ -34,6 +34,7 @@ class UtilsTests
     TEST_METHOD(TestDontTrimTrailingWhitespace);
 
     TEST_METHOD(TestEvaluateStartingDirectory);
+    TEST_METHOD(TestIsValidDirectory);
 
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
@@ -617,4 +618,24 @@ void UtilsTests::TestEvaluateStartingDirectory()
         test(L"/", cwd, L"/");
         test(L"/dev", cwd, L"/dev");
     }
+}
+
+void UtilsTests::TestIsValidDirectory()
+{
+    VERIFY_IS_FALSE(IsValidDirectory(nullptr));
+    VERIFY_IS_FALSE(IsValidDirectory(L""));
+
+    // OSC 7 / 9;9 can store these. They are not directories.
+    VERIFY_IS_FALSE(IsValidDirectory(L"https://example.com"));
+    VERIFY_IS_FALSE(IsValidDirectory(L"/select,C:\\Windows"));
+    VERIFY_IS_FALSE(IsValidDirectory(L"shell:AppsFolder\\Foo"));
+
+    wchar_t tempPath[MAX_PATH]{};
+    VERIFY_IS_GREATER_THAN(GetTempPathW(ARRAYSIZE(tempPath), tempPath), 0u);
+    VERIFY_IS_TRUE(IsValidDirectory(tempPath));
+
+    wchar_t tempFile[MAX_PATH]{};
+    VERIFY_ARE_NOT_EQUAL(0u, GetTempFileNameW(tempPath, L"ut", 0, tempFile));
+    VERIFY_IS_FALSE(IsValidDirectory(tempFile));
+    DeleteFileW(tempFile);
 }

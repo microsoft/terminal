@@ -510,10 +510,6 @@
     <value>로그인할 때 실행</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>Windows에 로그인할 때 터미널을 자동으로 시작합니다.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
-  </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>가운데</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
@@ -2717,11 +2713,11 @@
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Windows 설정의 Startup Apps 섹션에서 자동 시작을 사용하지 않도록 설정했습니다.</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>이 옵션은 엔터프라이즈 정책에 의해 관리되므로 여기에서 변경할 수 없습니다.</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>활성 확장</value>

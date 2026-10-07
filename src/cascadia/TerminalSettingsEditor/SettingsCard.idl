@@ -35,6 +35,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean IsActionIconVisible;
         static Windows.UI.Xaml.DependencyProperty IsActionIconVisibleProperty { get; };
 
+        Boolean IsExperimental;
+        static Windows.UI.Xaml.DependencyProperty IsExperimentalProperty { get; };
+
         SettingsCardContentAlignment ContentAlignment;
         static Windows.UI.Xaml.DependencyProperty ContentAlignmentProperty { get; };
     };

@@ -3624,8 +3624,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    safe_void_coroutine TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
     {
+        // This is our hook into SetCopyToClipboardCallback, which gets called by the VT parser thread.
+        // When this gets called, the console lock is being held. This is not a problem per-se, but there
+        // is just a teeny tiny problem... EmptyClipboard() sends WM_DESTROYCLIPBOARD to the previous owner.
+        // *We* may be the previous owner.
+        //
+        // So now we (VT thread, holding the lock) are waiting for us (UI thread, waiting for the lock)
+        // and immediately deadlock. *Tada* 5s app freeze.
+        //
+        // Solution: Just do it on the UI thread. Just like conhost.
+        co_await wil::resume_foreground(Dispatcher());
+
         if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
         {
             const auto plain = args.Plain();
