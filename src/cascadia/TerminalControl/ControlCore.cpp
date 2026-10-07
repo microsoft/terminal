@@ -18,7 +18,6 @@
 #include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../../types/inc/utils.hpp"
 
-#include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
 using namespace ::Microsoft::Console;
@@ -304,8 +303,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _raiseFontSizeChanged();
 
         // The renderer will be re-enabled in Initialize
-
-        Attached.raise(*this, nullptr);
     }
 
     TerminalConnection::ITerminalConnection ControlCore::Connection()
@@ -438,12 +435,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
             _terminal->UpdateSettings(_settings);
 
-            // Tell the render engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid
-            // unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](HANDLE handle) {
-                _renderEngineSwapChainChanged(handle);
-            });
+            if (SwapChainChanged)
+            {
+                // Tell the render engine to notify us when the swap chain changes.
+                // We do this after we initially set the swapchain so as to avoid
+                // unnecessary callbacks (and locking problems)
+                //
+                // We only do this if somebody is listening (and they have to have
+                // been listening from the start; see TermControl's constructor for
+                // an example). Otherwise, there is no reason for us to handle this
+                // callback, or copy the handle, or do anything else either.
+                _renderEngine->SetCallback([this](HANDLE handle) {
+                    _renderEngineSwapChainChanged(handle);
+                });
+            }
 
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -570,19 +575,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!_midiAudioSkipTimer)
         {
-            _midiAudioSkipTimer = _dispatcher.CreateTimer();
-            _midiAudioSkipTimer.Interval(std::chrono::seconds(1));
-            _midiAudioSkipTimer.IsRepeating(false);
-            _midiAudioSkipTimer.Tick([weakSelf = get_weak()](auto&&, auto&&) {
-                if (const auto self = weakSelf.get())
-                {
-                    self->_midiAudio.EndSkip();
-                }
-            });
+            // Capturing a no-lifetime reference to `this' is acceptable,
+            // as we will cancel outstanding work and wait for completion
+            // in the destructor. `this' will always outlive the timer.
+            _midiAudioSkipTimer.reset(CreateThreadpoolTimer(
+                [](PTP_CALLBACK_INSTANCE, PVOID ctx, PTP_TIMER) {
+                    auto myThis = static_cast<ControlCore*>(ctx);
+                    myThis->_midiAudio.EndSkip();
+                },
+                this,
+                nullptr));
         }
 
         _midiAudio.BeginSkip();
-        _midiAudioSkipTimer.Start();
+
+        static constexpr FILETIME oneMsFileTime{ .dwLowDateTime = static_cast<DWORD>(-10000000) /* 1ms in 100ns units */, .dwHighDateTime = 0 };
+        SetThreadpoolTimer(_midiAudioSkipTimer.get(), const_cast<PFILETIME>(&oneMsFileTime) /* safe; treated as const internally */, 0, 0);
     }
 
     bool ControlCore::_shouldTryUpdateSelection(const WORD vkey)
@@ -901,10 +909,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
+    std::wstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         const auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtViewportPosition(til::point{ pos }) };
+        return _terminal->GetHyperlinkAtViewportPosition(til::point{ pos });
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -1744,7 +1752,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::OpenCWD()
     {
         const auto workingDirectory = WorkingDirectory();
-        ShellExecute(nullptr, nullptr, L"explorer", workingDirectory.c_str(), nullptr, SW_SHOW);
+        if (!Utils::IsValidDirectory(workingDirectory.c_str()))
+        {
+            return;
+        }
+        ShellExecute(nullptr, nullptr, workingDirectory.c_str(), nullptr, nullptr, SW_SHOW);
     }
 
     void ControlCore::ClearQuickFix()
@@ -2035,7 +2047,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _lastSwapChainHandle = std::move(duplicatedHandle);
             // Now bubble the event up to the control.
-            SwapChainChanged.raise(*this, winrt::box_value<uint64_t>(reinterpret_cast<uint64_t>(_lastSwapChainHandle.get())));
+            SwapChainChanged.raise(*this, nullptr);
         }
     }
 
@@ -2332,13 +2344,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _renderer.get();
     }
 
-    uint64_t ControlCore::SwapChainHandle() const
+    HANDLE ControlCore::SwapChainHandle() const
     {
         // This is only ever called by TermControl::AttachContent, which occurs
         // when we're taking an existing core and moving it to a new control.
         // Otherwise, we only ever use the value from the SwapChainChanged
         // event.
-        return reinterpret_cast<uint64_t>(_lastSwapChainHandle.get());
+        return _lastSwapChainHandle.get();
     }
 
     // Method Description:
@@ -2993,5 +3005,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
+    }
+
+    ControlCore::TimerHandle ControlCore::RegisterRenderTimer(const char* name, std::function<void()> callback)
+    {
+        return _renderer->RegisterTimer(name, [cb = std::move(callback)](auto&&, auto&&) {
+            cb();
+        });
+    }
+
+    bool ControlCore::IsRenderTimerRunning(TimerHandle h)
+    {
+        return _renderer->IsTimerRunning(h);
+    }
+
+    void ControlCore::StartRepeatingRenderTimer(TimerHandle h, uint64_t micros)
+    {
+        _renderer->StartRepeatingTimer(h, std::chrono::microseconds(micros));
+    }
+
+    void ControlCore::StopRenderTimer(TimerHandle h)
+    {
+        _renderer->StopTimer(h);
     }
 }

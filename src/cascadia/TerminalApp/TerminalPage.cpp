@@ -1890,7 +1890,7 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
-    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool /*extended*/, const bool down)
     {
         const auto modifiers = _GetPressedModifierKeys();
         if (vkey == VK_SPACE && modifiers.IsAltPressed() && down)
@@ -2814,7 +2814,7 @@ namespace winrt::TerminalApp::implementation
     //   attached to our window. content represents a blob of JSON describing
     //   some startup actions for rebuilding the specified panes. They will
     //   include `__content` properties with the GUID of the existing
-    //   ControlInteractivity's we should use, rather than starting new ones.
+    //   Content we should use, rather than starting new ones.
     // - _MakePane is already enlightened to use the ContentId property to
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
@@ -3607,8 +3607,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    safe_void_coroutine TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
     {
+        // This is our hook into SetCopyToClipboardCallback, which gets called by the VT parser thread.
+        // When this gets called, the console lock is being held. This is not a problem per-se, but there
+        // is just a teeny tiny problem... EmptyClipboard() sends WM_DESTROYCLIPBOARD to the previous owner.
+        // *We* may be the previous owner.
+        //
+        // So now we (VT thread, holding the lock) are waiting for us (UI thread, waiting for the lock)
+        // and immediately deadlock. *Tada* 5s app freeze.
+        //
+        // Solution: Just do it on the UI thread. Just like conhost.
+        co_await wil::resume_foreground(Dispatcher());
+
         if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
         {
             const auto plain = args.Plain();

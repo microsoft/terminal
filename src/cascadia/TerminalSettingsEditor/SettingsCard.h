@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(hstring, ActionIconToolTip);
         DEPENDENCY_PROPERTY(bool, IsClickEnabled);
         DEPENDENCY_PROPERTY(bool, IsActionIconVisible);
+        DEPENDENCY_PROPERTY(bool, IsExperimental);
         DEPENDENCY_PROPERTY(Editor::SettingsCardContentAlignment, ContentAlignment);
 
     private:
@@ -62,6 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateDescriptionVisibility();
         void _UpdateFullDescription();
         void _UpdateHeaderIconVisibility();
+        void _UpdateExperimentalBadgeVisibility();
         void _UpdateContentVisibility();
         void _UpdateContentAlignmentState();
         void _CheckInitialVisualState();

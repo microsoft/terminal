@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
@@ -23,6 +22,8 @@
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
+
+#include <functional>
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -76,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     };
 
-    struct ControlCore : ControlCoreT<ControlCore>
+    struct ControlCore : winrt::implements<ControlCore, winrt::Windows::Foundation::IInspectable, ICoreState>
     {
     public:
         ControlCore(Control::IControlSettings settings,
@@ -105,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
-        uint64_t SwapChainHandle() const;
+        HANDLE SwapChainHandle() const;
         void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
@@ -144,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
-        winrt::hstring GetHyperlink(const Core::Point position) const;
+        std::wstring GetHyperlink(const Core::Point position) const;
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
@@ -264,6 +265,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void PreviewInput(std::wstring_view input);
 
+        using TimerHandle = ::Microsoft::Console::Render::TimerHandle;
+        TimerHandle RegisterRenderTimer(const char* name, std::function<void()> callback);
+        bool IsRenderTimerRunning(TimerHandle h);
+        void StartRepeatingRenderTimer(TimerHandle h, uint64_t micros);
+        void StopRenderTimer(TimerHandle h);
+
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
@@ -298,8 +305,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
-        til::typed_event<> Attached;
         // clang-format on
 
     private:
@@ -409,7 +414,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Audio stuff.
         MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+        wil::unique_threadpool_timer _midiAudioSkipTimer{}; // destroyed before _midiAudio
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
@@ -472,6 +477,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    BASIC_FACTORY(ControlCore);
     BASIC_FACTORY(SelectionColor);
 }

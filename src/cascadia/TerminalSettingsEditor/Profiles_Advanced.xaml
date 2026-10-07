@@ -285,6 +285,7 @@
             <!--  RepositionCursorWithMouse  -->
             <local:SettingsCard x:Name="RepositionCursorWithMouse"
                                 x:Uid="Profile_RepositionCursorWithMouse"
+                                IsExperimental="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                 Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
@@ -299,6 +300,7 @@
             <!--  RainbowSuggestions  -->
             <local:SettingsCard x:Name="RainbowSuggestions"
                                 x:Uid="Profile_RainbowSuggestions"
+                                IsExperimental="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"

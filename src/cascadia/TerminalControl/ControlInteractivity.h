@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "ControlInteractivity.g.h"
 #include "EventArgs.h"
 #include "../buffer/out/search.h"
 
@@ -31,7 +30,7 @@ namespace ControlUnitTests
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
+    struct ControlInteractivity : winrt::implements<ControlInteractivity, winrt::Windows::Foundation::IInspectable, IContentHandle>
     {
     public:
         ControlInteractivity(IControlSettings settings,
@@ -43,12 +42,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
         void UpdateSettings();
         void Initialize();
-        Control::ControlCore Core();
+        winrt::com_ptr<ControlCore> Core();
 
         void Close();
         void Detach();
 
-        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        void SetUiaEventDispatcher(::Microsoft::Console::Types::IUiaEventDispatcher* uiaEventDispatcher);
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
@@ -97,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
-        til::typed_event<IInspectable, IInspectable> Attached;
         til::typed_event<IInspectable, IInspectable> Closed;
 
     private:
@@ -144,7 +142,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static std::atomic<uint64_t> _nextId;
 
         bool _focused{ false };
+
+        // Auto scroll occurs when user, while selecting, drags cursor outside
+        // viewport. View is then scrolled to 'follow' the cursor.
+        double _autoScrollVelocity;
+        std::optional<uint32_t> _autoScrollingPointerId;
+        std::optional<Core::Point> _autoScrollingPointerPoint;
+        ControlCore::TimerHandle _autoScrollTimer;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
         bool _pointerPressedInBounds{ false };
+
+        void _tryStartAutoScroll(const uint32_t id, const Core::Point& point, const double scrollVelocity);
+        void _tryStopAutoScroll(const uint32_t pointerId);
+        void _updateAutoScroll();
+        double _getAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        void _createInteractivityTimers();
+        void _destroyInteractivityTimers();
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
@@ -160,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
+        std::wstring _getHyperLinkForPointerPress(const Control::MouseButtonState buttonState, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,
@@ -170,9 +185,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
     };
-}
-
-namespace winrt::Microsoft::Terminal::Control::factory_implementation
-{
-    BASIC_FACTORY(ControlInteractivity);
 }
