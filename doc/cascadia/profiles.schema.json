@@ -856,6 +856,64 @@
         "action"
       ]
     },
+    "NoArgsAction": {
+      "description": "An action that does not take any arguments",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "enum": [
+                "clearAllMarks",
+                "clearMark",
+                "closeOtherPanes",
+                "closePane",
+                "closeWindow",
+                "duplicateTab",
+                "expandSelectionToWord",
+                "find",
+                "identifyWindow",
+                "identifyWindows",
+                "markMode",
+                "openAbout",
+                "openCWD",
+                "openNewTabDropdown",
+                "openSystemMenu",
+                "openTabColorPicker",
+                "openTabRenamer",
+                "openWindowRenamer",
+                "paste",
+                "quit",
+                "resetFontSize",
+                "restoreLastClosed",
+                "scrollDownPage",
+                "scrollToBottom",
+                "scrollToTop",
+                "scrollUpPage",
+                "selectAll",
+                "switchSelectionEndpoint",
+                "tabSearch",
+                "toggleAlwaysOnTop",
+                "toggleBlockSelection",
+                "toggleFocusMode",
+                "toggleFullscreen",
+                "togglePaneZoom",
+                "toggleReadOnlyMode",
+                "toggleShaderEffects",
+                "toggleSplitOrientation",
+                "unbound",
+                "workspaces"
+              ],
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
     "AdjustFontSizeAction": {
       "description": "Arguments corresponding to an Adjust Font Size Action",
       "allOf": [
@@ -2157,6 +2215,9 @@
               "$ref": "#/$defs/ShortcutActionName"
             },
             {
+              "$ref": "#/$defs/NoArgsAction"
+            },
+            {
               "$ref": "#/$defs/NewTabAction"
             },
             {
@@ -2164,6 +2225,9 @@
             },
             {
               "$ref": "#/$defs/ScrollToMarkAction"
+            },
+            {
+              "$ref": "#/$defs/AddMarkAction"
             },
             {
               "$ref": "#/$defs/MoveFocusAction"
@@ -2185,6 +2249,15 @@
             },
             {
               "$ref": "#/$defs/OpenSettingsAction"
+            },
+            {
+              "$ref": "#/$defs/SetFocusModeAction"
+            },
+            {
+              "$ref": "#/$defs/SetFullScreenAction"
+            },
+            {
+              "$ref": "#/$defs/SetMaximizedAction"
             },
             {
               "$ref": "#/$defs/SetTabColorAction"
