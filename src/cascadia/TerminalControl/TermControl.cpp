@@ -268,21 +268,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return accessibilitySettings;
     }
 
+    IContentHandle TermControl::CreateContent(IControlSettings settings,
+                                              Control::IControlAppearance unfocusedAppearance,
+                                              TerminalConnection::ITerminalConnection connection)
+    {
+        auto interactivity = winrt::make_self<ControlInteractivity>(settings, unfocusedAppearance, connection);
+        return *interactivity;
+    }
+
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
-        TermControl{ winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection) }
+        TermControl{ winrt::make_self<ControlInteractivity>(settings, unfocusedAppearance, connection) }
     {
     }
 
-    TermControl::TermControl(Control::ControlInteractivity content) :
+    TermControl::TermControl(const IContentHandle& content) :
+        TermControl([&]() {
+            // Unpacking a projection to a com_ptr to the impl type is somewhat onerous.
+            winrt::com_ptr<ControlInteractivity> interactivity;
+            interactivity.copy_from(winrt::get_self<ControlInteractivity>(content));
+            return interactivity;
+        }()) {}
+
+    TermControl::TermControl(winrt::com_ptr<ControlInteractivity> interactivity) :
+        _interactivity{ std::move(interactivity) },
         _isInternalScrollBarUpdate{ false },
         _searchBox{ nullptr }
     {
         InitializeComponent();
 
-        _interactivity.copy_from(winrt::get_self<ControlInteractivity>(content));
-        _core.copy_from(winrt::get_self<ControlCore>(_interactivity->Core()));
+        _core = _interactivity->Core();
 
         // If high contrast mode was changed, update the appearance appropriately.
         _core->SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
@@ -491,7 +507,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - content: The preexisting ControlInteractivity to connect to.
     // Return Value:
     // - The newly constructed TermControl.
-    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content)
+    Control::TermControl TermControl::NewControlByAttachingContent(const IContentHandle& content)
     {
         const auto term{ winrt::make_self<TermControl>(content) };
         term->_initializeForAttach();
@@ -3227,6 +3243,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // color with VT sequences like they're currently allowed to with the
         // title.
         return _core->TabColor();
+    }
+
+    winrt::Windows::UI::Color TermControl::BackgroundColor() noexcept
+    {
+        return _core->BackgroundColor();
     }
 
     // Method Description:

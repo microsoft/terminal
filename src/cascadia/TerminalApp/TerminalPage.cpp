@@ -2814,7 +2814,7 @@ namespace winrt::TerminalApp::implementation
     //   attached to our window. content represents a blob of JSON describing
     //   some startup actions for rebuilding the specified panes. They will
     //   include `__content` properties with the GUID of the existing
-    //   ControlInteractivity's we should use, rather than starting new ones.
+    //   Content we should use, rather than starting new ones.
     // - _MakePane is already enlightened to use the ContentId property to
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
@@ -3138,7 +3138,7 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcher = Dispatcher();
         const auto windowSettings = _currentWindowSettings();
         const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
-        const auto sourceId = sender.try_as<ControlInteractivity>().Id();
+        const auto sourceId = sender.try_as<IContentHandle>().Id();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();

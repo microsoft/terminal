@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "ControlInteractivity.g.h"
 #include "EventArgs.h"
 #include "../buffer/out/search.h"
 
@@ -31,7 +30,7 @@ namespace ControlUnitTests
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
+    struct ControlInteractivity : winrt::implements<ControlInteractivity, winrt::Windows::Foundation::IInspectable, IContentHandle>
     {
     public:
         ControlInteractivity(IControlSettings settings,
@@ -43,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
         void UpdateSettings();
         void Initialize();
-        Control::ControlCore Core();
+        winrt::com_ptr<ControlCore> Core();
 
         void Close();
         void Detach();
@@ -97,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
-        til::typed_event<IInspectable, IInspectable> Attached;
         til::typed_event<IInspectable, IInspectable> Closed;
 
     private:
@@ -187,9 +185,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
     };
-}
-
-namespace winrt::Microsoft::Terminal::Control::factory_implementation
-{
-    BASIC_FACTORY(ControlInteractivity);
 }

@@ -7,9 +7,9 @@ Class Name:
 
 Abstract:
 - This is a helper class for tracking all of the terminal "content" instances of
-  the Terminal. These are all the ControlInteractivity & ControlCore's of each
-  of our TermControls. These are each assigned a GUID on creation, and stored in
-  a map for later lookup.
+  the Terminal. These are all the inner content handles of each of our
+  TermControls. These are each assigned a GUID on creation, and stored in a map
+  for later lookup.
 - This is used to enable moving panes between windows. TermControl's are not
   thread-agile, so they cannot be reused on other threads. However, the content
   is. This helper, which exists as a singleton across all the threads in the
@@ -33,15 +33,15 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         ContentManager() = default;
-        Microsoft::Terminal::Control::ControlInteractivity CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
-                                                                      const Microsoft::Terminal::Control::IControlAppearance& unfocusedAppearance,
-                                                                      const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
-        Microsoft::Terminal::Control::ControlInteractivity TryLookupCore(uint64_t id);
+        Microsoft::Terminal::Control::IContentHandle CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                                                const Microsoft::Terminal::Control::IControlAppearance& unfocusedAppearance,
+                                                                const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+        Microsoft::Terminal::Control::IContentHandle TryLookupCore(uint64_t id);
 
         void Detach(const Microsoft::Terminal::Control::TermControl& control);
 
     private:
-        std::unordered_map<uint64_t, Microsoft::Terminal::Control::ControlInteractivity> _content;
+        std::unordered_map<uint64_t, Microsoft::Terminal::Control::IContentHandle> _content;
 
         void _closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::Foundation::IInspectable& e);
