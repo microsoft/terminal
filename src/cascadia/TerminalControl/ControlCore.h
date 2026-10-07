@@ -81,7 +81,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    TerminalConnection::ITerminalConnection connection,
+                    Windows::System::DispatcherQueue dispatcher = nullptr);
         ~ControlCore();
 
         bool Initialize(const float actualWidth,
@@ -171,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
-        int ViewHeight() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -315,6 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
+        void _raiseFontSizeChanged();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);

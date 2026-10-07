@@ -177,12 +177,14 @@
     <Style x:Key="SettingsStackStyle"
            TargetType="StackPanel">
         <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Spacing" Value="2" />
     </Style>
 
-    <!--  Used to stack a group of settings inside a pivot  -->
-    <Style x:Key="PivotStackStyle"
+    <!--  Used to lay out a setting's control alongside its reset button  -->
+    <Style x:Key="SettingControlStackStyle"
            TargetType="StackPanel">
-        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="Spacing" Value="8" />
     </Style>
 
     <!--  Combo Box  -->
@@ -207,6 +209,21 @@
         <Setter Property="TextWrapping" Value="NoWrap" />
         <!--  Value is set below to appease the compiler. The localized resource is used instead.  -->
         <Setter x:Uid="TextBoxSettingStyle_PlaceholderText" Property="PlaceholderText" Value="None" />
+    </Style>
+
+    <!--  Check Box  -->
+    <Style x:Key="CheckBoxSettingStyle"
+           BasedOn="{StaticResource DefaultCheckBoxStyle}"
+           TargetType="CheckBox">
+        <!--
+            The default style sets a MinWidth and has a 2nd column for content.
+            Our design doesn't use that column because we'd rather place a label on the SettingsCard/Expander.
+            This styling makes adjustments to align the check box with the other controls on the right side of the card.
+        -->
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!--  Text Block  -->
@@ -276,6 +293,17 @@
     <Style x:Key="BrowseButtonStyle"
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+
+    <!--
+        Implicit style for the per-setting "reset value" button shown next to
+        Profile settings. Matches BrowseButtonStyle (DefaultButtonStyle + centered + 32px
+        min height) so the reset button visually pairs with the adjacent Browse buttons.
+    -->
+    <Style BasedOn="{StaticResource DefaultButtonStyle}"
+           TargetType="local:SettingResetButton">
+        <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
 

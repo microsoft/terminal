@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "TermControl.h"
 
+#include <DefaultSettings.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
@@ -2462,12 +2463,63 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newSize = e.NewSize();
+        if (newSize.Width <= 0 || newSize.Height <= 0)
+        {
+            return;
+        }
+
         _core.SizeChanged(newSize.Width, newSize.Height);
+        _ShowResizeOverlay();
 
         if (_automationPeer)
         {
             _automationPeer.UpdateControlBounds();
         }
+    }
+
+    // Shows an overlay with the current terminal dimensions (columns x rows).
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control.
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto size = coreImpl->ViewportSize();
+
+        // Sometimes _SwapChainSizeChanged is called despite no actual size change.
+        // This happens, e.g., when switching tabs. Ignore such "updates".
+        if (size == _lastResizeOverlaySize)
+        {
+            return;
+        }
+
+        const auto isInitialSize = _lastResizeOverlaySize == Core::Size{};
+        _lastResizeOverlaySize = size;
+        if (isInitialSize)
+        {
+            return;
+        }
+
+        ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
+        ResizeOverlay().Visibility(Visibility::Visible);
+
+        if (!_resizeOverlayTimer)
+        {
+            _resizeOverlayTimer.emplace();
+            _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+            _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                if (auto self = weakThis.get())
+                {
+                    self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                    self->_resizeOverlayTimer->Stop();
+                }
+            });
+        }
+
+        _resizeOverlayTimer->Start();
     }
 
     // Method Description:
@@ -2711,13 +2763,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ScrollOffset();
     }
 
-    // Function Description:
-    // - Gets the height of the terminal in lines of text
-    // Return Value:
-    // - The height of the terminal in lines of text
-    int TermControl::ViewHeight() const
+    // Gets the size of the terminal in cells.
+    Core::Size TermControl::ViewportSize() const
     {
-        return _core.ViewHeight();
+        return _core.ViewportSize();
     }
 
     int TermControl::BufferHeight() const
@@ -2746,16 +2795,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                                         int32_t commandlineRows)
     {
         // If the settings have negative or zero row or column counts, ignore those counts.
+        // Floor at MINIMUM_VISIBLE_CELLS so wt --size 1,1 / initialCols:1 cannot
+        // open a 1-cell viewport (GH#19996).
         // (The lower TerminalCore layer also has upper bounds as well, but at this layer
         //  we may eventually impose different ones depending on how many pixels we can address.)
         const auto cols = static_cast<float>(std::max(commandlineCols > 0 ?
                                                           commandlineCols :
                                                           settings.InitialCols(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
         const auto rows = static_cast<float>(std::max(commandlineRows > 0 ?
                                                           commandlineRows :
                                                           settings.InitialRows(),
-                                                      1));
+                                                      MINIMUM_VISIBLE_CELLS));
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
@@ -2847,8 +2898,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - a size containing the requested dimensions in pixels.
     winrt::Windows::Foundation::Size TermControl::GetNewDimensions(const winrt::Windows::Foundation::Size& sizeInChars)
     {
-        const auto cols = ::base::saturated_cast<int32_t>(sizeInChars.Width);
-        const auto rows = ::base::saturated_cast<int32_t>(sizeInChars.Height);
+        const auto cols = std::max(::base::saturated_cast<int32_t>(sizeInChars.Width), MINIMUM_VISIBLE_CELLS);
+        const auto rows = std::max(::base::saturated_cast<int32_t>(sizeInChars.Height), MINIMUM_VISIBLE_CELLS);
         const auto fontSize = _core.FontSize();
         const auto scrollState = _core.Settings().ScrollState();
         const auto padding = _core.Settings().Padding();
@@ -2889,20 +2940,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Get the absolute minimum size that this control can be resized to and
-    //   still have 1x1 character visible. This includes the space needed for
+    //   still have 2x2 characters visible. This includes the space needed for
     //   the scrollbar and the padding.
+    //   2x2 is the VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell
+    //   viewport can hang TextBuffer::Reflow on a wide glyph (GH#19996).
     // Arguments:
     // - <none>
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
-    //   have a visible character.
+    //   have a usable character grid.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         if (_initializedTerminal)
         {
             const auto fontSize = _core.FontSizeInDips();
-            auto width = fontSize.Width;
-            auto height = fontSize.Height;
+            auto width = fontSize.Width * MINIMUM_VISIBLE_CELLS;
+            auto height = fontSize.Height * MINIMUM_VISIBLE_CELLS;
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
@@ -3608,7 +3661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
                 const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
                 const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
-                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewportSize().Height)
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
@@ -3679,6 +3732,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _searchScrollOffset = _calculateSearchScrollOffset();
+
+        // _ShowResizeOverlay is shown when the swap chain panel size changes.
+        // But changing the font size changes the viewport size as well.
+        // So, track that too.
+        _ShowResizeOverlay();
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,

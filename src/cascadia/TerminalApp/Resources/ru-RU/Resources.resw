@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>При загрузке параметров пользователя возникли ошибки</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" не работает на вашем компьютере. Это может помешать терминалу получать ввод с клавиатуры.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>ОК</value>
   </data>
@@ -742,6 +738,10 @@
   <data name="UnnamedWindowName" xml:space="preserve">
     <value>окно без названия</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Новое окно</value>
+    <comment>Menu item to open a new terminal window.</comment>
   </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>Присвойте имя этому окну...</value>

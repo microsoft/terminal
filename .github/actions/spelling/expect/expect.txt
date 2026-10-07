@@ -169,6 +169,7 @@ chshdng
 CHT
 CInput
 CLASSSTRING
+CLAUDE
 cleartype
 CLICKACTIVE
 clickdown

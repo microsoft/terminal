@@ -133,13 +133,15 @@ void WindowSettings::LayerJson(const Json::Value& json)
 #undef WINDOW_SETTINGS_LAYER_JSON
 
     // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values.
+    // We only want to assign if the value did change through clamping,
+    // otherwise we could end up setting defaults that get persisted
     if (HasInitialCols())
     {
-        InitialCols(std::clamp(InitialCols(), 1, 999));
+        InitialCols(std::clamp(InitialCols(), MINIMUM_VISIBLE_CELLS, 999));
     }
     if (HasInitialRows())
     {
-        InitialRows(std::clamp(InitialRows(), 1, 999));
+        InitialRows(std::clamp(InitialRows(), MINIMUM_VISIBLE_CELLS, 999));
     }
 }
 

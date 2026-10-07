@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>사용자 설정을 로드하는 동안 오류가 발생했습니다.</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" 컴퓨터에서 실행되고 있지 않습니다. 단자가 키보드 입력을 수신할 수 없게 됩니다.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>확인</value>
   </data>
@@ -742,6 +738,10 @@
   <data name="UnnamedWindowName" xml:space="preserve">
     <value>이름 없는 창</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>새 창</value>
+    <comment>Menu item to open a new terminal window.</comment>
   </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
     <value>이 창의 이름 지정...</value>
