@@ -529,6 +529,7 @@
         { "command": "toggleShaderEffects", "id": "Terminal.ToggleShaderEffects" },
         { "command": "openTabColorPicker", "id": "Terminal.OpenTabColorPicker" },
         { "command": "renameTab", "id": "Terminal.RenameTab" },
+        { "command": "toggleTabPinned", "id": "Terminal.ToggleTabPinned" },
         { "command": "openTabRenamer", "id": "Terminal.OpenTabRenamer" },
         { "command": "commandPalette", "id": "Terminal.ToggleCommandPalette" },
         { "command": "identifyWindow", "id": "Terminal.IdentifyWindow" },

@@ -70,6 +70,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring GetTabText() const;
         void ResetTabText();
         void ActivateTabRenamer();
+        bool IsPinned() const noexcept;
+        void IsPinned(bool pinned);
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
@@ -102,7 +104,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
-        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
+        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs, const uint32_t pinnedTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
         void ThemeColor(const winrt::Microsoft::Terminal::Settings::Model::ThemeColor& focused,
@@ -138,10 +140,12 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, PropertyChanged.raise, nullptr);
 
     private:
+        static constexpr double PinnedTabWidth{ 80 };
         static constexpr double HeaderRenameBoxWidthDefault{ 165 };
         static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
 
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _pinTabMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _duplicateTabMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _splitTabMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _moveToNewWindowMenuItem{};
@@ -203,6 +207,8 @@ namespace winrt::TerminalApp::implementation
         std::vector<uint32_t> _mruPanes;
         uint32_t _nextPaneId{ 0 };
 
+        bool _isPinned{ false };
+        uint32_t _pinnedTabCount{ 0 };
         bool _receivedKeyDown{ false };
         bool _iconHidden{ false };
         bool _changingActivePane{ false };
@@ -227,6 +233,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
         void _UpdateMenuItemStates();
+        void _UpdatePinnedAppearance();
 
         winrt::hstring _GetActiveTitle() const;
 

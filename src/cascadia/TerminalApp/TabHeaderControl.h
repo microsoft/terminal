@@ -13,6 +13,7 @@ namespace winrt::TerminalApp::implementation
     {
         TabHeaderControl();
         void BeginRename();
+        void SetPinned(bool pinned);
 
         void RenameBoxLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                        const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
@@ -28,6 +29,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::TerminalTabStatus, TabStatus, PropertyChanged.raise);
 
     private:
+        bool _isPinned{ false };
         bool _receivedKeyDown{ false };
         bool _renameCancelled{ false };
 

@@ -55,6 +55,16 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void TabHeaderControl::SetPinned(bool pinned)
+    {
+        _isPinned = pinned;
+        HeaderPinIcon().Visibility(pinned ? Windows::UI::Xaml::Visibility::Visible : Windows::UI::Xaml::Visibility::Collapsed);
+        if (!InRename())
+        {
+            HeaderTextBlock().Visibility(pinned ? Windows::UI::Xaml::Visibility::Collapsed : Windows::UI::Xaml::Visibility::Visible);
+        }
+    }
+
     // Method Description:
     // - Returns true if we're in the middle of a tab rename. This is used to
     //   mitigate GH#10112.
@@ -131,7 +141,7 @@ namespace winrt::TerminalApp::implementation
         if (HeaderRenamerTextBox().Visibility() == Windows::UI::Xaml::Visibility::Visible)
         {
             HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
-            HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            HeaderTextBlock().Visibility(_isPinned ? Windows::UI::Xaml::Visibility::Collapsed : Windows::UI::Xaml::Visibility::Visible);
             RenameEnded.raise(*this, nullptr);
         }
     }

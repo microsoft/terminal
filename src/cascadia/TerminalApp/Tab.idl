@@ -10,6 +10,7 @@ namespace TerminalApp
         String Title { get; };
         String Icon { get; };
         Boolean ReadOnly { get; };
+        Boolean IsPinned { get; };
         Microsoft.Terminal.Settings.Model.TabCloseButtonVisibility CloseButtonVisibility { get; set; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
