@@ -165,7 +165,7 @@ namespace winrt::TerminalApp::implementation
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down);
 
         void AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
         void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
