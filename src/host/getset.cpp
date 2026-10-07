@@ -969,6 +969,31 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& buffer = context.GetActiveBuffer();
         const auto bufferSize = buffer.GetBufferSize();
+        const auto clipViewport = clip ? Viewport::FromInclusive(*clip).Clamp(bufferSize) : bufferSize;
+        const auto sourceViewport = Viewport::FromInclusive(source);
+        const auto fillViewport = sourceViewport.Clamp(clipViewport);
+        const til::point targetSourceDistance{ target - sourceViewport.Origin() };
+        const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
+
+        // To figure out what part of "source" we can copy to "target" without
+        // * reading outside the bufferSize
+        // * writing outside the clipViewport
+        // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
+        // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
+        const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
+        auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
+        if (!copySourceViewport.IsValid())
+        {
+            copySourceViewport = Viewport::Empty();
+        }
+
+        // Afterward we can undo the translation of clipAtSource to get the target rectangle.
+        const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
+        if (!fillViewport.IsValid() && !copyTargetViewport.IsValid())
+        {
+            return S_OK; // nothing to copy
+        }
+
         auto writer = gci.GetVtWriterForBuffer(&context);
 
         // Applications like to pass 0/0 for the fill char/attribute.
@@ -996,46 +1021,33 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
         else if (writer)
         {
-            const auto clipViewport = clip ? Viewport::FromInclusive(*clip).Clamp(bufferSize) : bufferSize;
-            const auto sourceViewport = Viewport::FromInclusive(source);
-            const auto fillViewport = sourceViewport.Clamp(clipViewport);
-
-            writer.BackupCursor();
-
-            const til::point targetSourceDistance{ target - sourceViewport.Origin() };
-            const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
-
-            // To figure out what part of "source" we can copy to "target" without
-            // * reading outside the bufferSize
-            // * writing outside the clipViewport
-            // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
-            // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
-            const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
-            auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
-            if (!copySourceViewport.IsValid())
-            {
-                copySourceViewport = Viewport::Empty();
-            }
-
-            // Afterward we can undo the translation of clipAtSource to get the target rectangle.
-            const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
-
             if (sourceViewport == bufferSize && clipViewport == bufferSize &&
                 targetSourceDistance.x == 0 && fillCharacter == UNICODE_SPACE &&
                 WI_AreAllFlagsClear(fillAttribute, ~(FG_ATTRS | BG_ATTRS)))
             {
                 // Several applications scroll the entire screen vertically with a whitespace fill, to essentially replicate
-                // what SU/SD can do. Our VT application is faster and better, so let's use that whenever applicable.
+                // what DL/IL can do. Our VT application is faster and better, so let's use that whenever applicable.
+                // NOTE: SU/SD is technically not portable (terminals implement it in different ways), so it's best avoided here.
+
                 std::wstring buf;
+                buf.reserve(32);
+                buf.append(L"\x1b\x37"); // DECSC: DEC Save Cursor (+ attributes)
+
                 Microsoft::Console::VirtualTerminal::VtIo::FormatAttributes(buf, TextAttribute{ fillAttribute });
+
                 const auto distance = std::min(std::abs(targetSourceDistance.y), bufferSize.Height());
-                fmt::format_to(std::back_inserter(buf), FMT_COMPILE(L"\x1b[{}{}"), distance, targetSourceDistance.y < 0 ? L'S' : L'T');
+                fmt::format_to(std::back_inserter(buf), FMT_COMPILE(L"\x1b[H\x1b[{}{}"), distance, targetSourceDistance.y < 0 ? L'M' : L'L');
+
+                buf.append(L"\x1b\x38"); // DECRC: DEC Restore Cursor (+ attributes)
                 WriteCharsVT(context, buf);
             }
             else if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
             {
                 const auto fills = Viewport::Subtract(fillViewport, copyTargetViewport);
+
                 std::wstring buf;
+                buf.reserve(128);
+                buf.append(L"\x1b\x37"); // DECSC: DEC Save Cursor (+ attributes)
 
                 if (!fills.empty())
                 {
@@ -1069,6 +1081,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                         fill.RightExclusive());
                 }
 
+                buf.append(L"\x1b\x38"); // DECRC: DEC Restore Cursor (+ attributes)
                 WriteCharsVT(context, buf);
             }
             else
@@ -1077,6 +1090,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 til::small_vector<CHAR_INFO, 1024> fill;
                 Viewport readViewport;
                 Viewport writtenViewport;
+
+                writer.BackupCursor();
 
                 if (copySourceViewport.IsValid())
                 {

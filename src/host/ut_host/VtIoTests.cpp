@@ -516,19 +516,18 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
-        setupInitialContents(false);
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L' ', red, false));
-        expected = decsc() sgr_red("\x1b[1S") decrc();
+        expected = decsc() sgr_red("\x1b[H\x1b[1M") decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, 2 }, std::nullopt, L' ', blu, false));
-        expected = decsc() sgr_blu("\x1b[2T") decrc();
+        expected = decsc() sgr_blu("\x1b[H\x1b[2L") decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -10 }, std::nullopt, L' ', red, false));
-        expected = decsc() sgr_red("\x1b[4S") decrc();
+        expected = decsc() sgr_red("\x1b[H\x1b[4M") decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
@@ -705,13 +704,20 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
+        // DL/IL scrolling should be preferred over DECCRA when applicable, because it's cheaper.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L' ', red, false));
-        expected = decsc() sgr_red("\x1b[1S") decrc();
+        expected = decsc() sgr_red("\x1b[H\x1b[1M") decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
+        // ...but it doesn't apply with non-space fill characters of course.
         THROW_IF_FAILED(routines.ScrollConsoleScreenBufferWImpl(*screenInfo, { 0, 0, 7, 3 }, { 0, -1 }, std::nullopt, L'Z', red, false));
-        expected = decsc() sgr_red() deccra(2, 1, 4, 8, 1, 1) decfra(90, 4, 1, 4, 8) decrc();
+        expected =
+            decsc() //
+            sgr_red() //
+            deccra(2, 1, 4, 8, 1, 1) //
+            decfra(90, 4, 1, 4, 8) //
+            decrc();
         actual = readOutput();
         VERIFY_ARE_EQUAL(expected, actual);
 
