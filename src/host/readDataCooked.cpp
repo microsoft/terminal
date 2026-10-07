@@ -1439,6 +1439,7 @@ void COOKED_READ_DATA::_popupsDone()
 }
 
 void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modifiers)
+try
 {
     if (_popups.empty())
     {
@@ -1464,6 +1465,11 @@ void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modif
     default:
         break;
     }
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    _popupsDone();
 }
 
 void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
