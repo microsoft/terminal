@@ -51,10 +51,6 @@ namespace Microsoft::Console::VirtualTerminal
 
     enum class DeviceAttribute : uint64_t
     {
-        // Special value to indicate that InputStateMachineEngine::_deviceAttributes has been set.
-        // 0 in this case means 1<<0 == 1, which in turn means that _deviceAttributes is non-zero.
-        __some__ = 0,
-
         Columns132 = 1,
         PrinterPort = 2,
         Sixel = 4,
@@ -164,7 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
         InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
 
         void CaptureNextCursorPositionReport() noexcept;
-        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) noexcept;
+        void WaitUntilDA1(DWORD timeout) noexcept;
 
         void UnknownSequence() noexcept override;
         bool EncounteredWin32InputModeSequence() const noexcept override;
@@ -192,7 +188,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
-        std::atomic<uint64_t> _deviceAttributes{ 0 };
+        std::atomic<bool> _receivedDA1{ false };
         std::atomic<bool> _captureNextCursorPositionReport{ false };
         bool _encounteredWin32InputModeSequence = false;
         bool _expectingStringTerminator = false;
