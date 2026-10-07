@@ -111,8 +111,6 @@ namespace Microsoft.Terminal.Control
 
         void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
 
-        UInt64 SwapChainHandle { get; };
-
         Windows.Foundation.Size FontSize { get; };
         Windows.Foundation.Size FontSizeInDips { get; };
         UInt16 FontWeight { get; };
