@@ -460,7 +460,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler
     // Return value:
     // - whether the key was handled
-    bool SuggestionsControl::OnDirectKeyEvent(const uint32_t /*vkey*/, const uint8_t /*scanCode*/, const bool /*down*/)
+    bool SuggestionsControl::OnDirectKeyEvent(const uint32_t /*vkey*/, const uint8_t /*scanCode*/, const bool /*extended*/, const bool /*down*/)
     {
         auto handled = false;
         return handled;

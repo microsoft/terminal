@@ -22,7 +22,7 @@ public:
     IslandWindow* GetWindow() const noexcept;
     winrt::TerminalApp::TerminalWindow Logic();
 
-    bool OnDirectKeyEvent(uint32_t vkey, uint8_t scanCode, bool down);
+    bool OnDirectKeyEvent(uint32_t vkey, uint8_t scanCode, bool extended, bool down);
     void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
     safe_void_coroutine HandleSummon(winrt::TerminalApp::SummonWindowBehavior args) const;
     void DispatchCommandline(winrt::TerminalApp::CommandlineArgs args);

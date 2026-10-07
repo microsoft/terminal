@@ -1500,9 +1500,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
     // Return value:
     // - Whether the key was handled.
-    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down)
     {
-        const auto modifiers{ _GetPressedModifierKeys() };
+        auto modifiers{ _GetPressedModifierKeys() };
+
+        if (extended)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
+
         return _KeyHandler(gsl::narrow_cast<WORD>(vkey), gsl::narrow_cast<WORD>(scanCode), modifiers, down);
     }
 
