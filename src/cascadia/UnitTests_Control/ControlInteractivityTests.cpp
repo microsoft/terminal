@@ -213,13 +213,15 @@ namespace ControlUnitTests
         auto expectedViewHeight = 20;
         auto expectedBufferHeight = 20;
 
+        auto scrollChangedCount = 0;
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+            ++scrollChangedCount;
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
             VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
             VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
         };
+        // Output and wheel scrolls both raise the core's ScrollPositionChanged.
         core->ScrollPositionChanged(scrollChangedHandler);
-        interactivity->ScrollPositionChanged(scrollChangedHandler);
 
         for (auto i = 0; i < 40; ++i)
         {
@@ -244,11 +246,13 @@ namespace ControlUnitTests
         const auto modifiers = ControlKeyStates();
         expectedBufferHeight = 41;
         expectedTop = 20;
+        scrollChangedCount = 0;
 
         interactivity->MouseWheel(modifiers,
                                   Core::Point{ 0, WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
+        VERIFY_ARE_EQUAL(1, scrollChangedCount);
 
         Log::Comment(L"Scroll up 19 more times, to the top");
         for (auto i = 0; i < 20; ++i)
@@ -259,6 +263,7 @@ namespace ControlUnitTests
                                       Core::Point{ 0, 0 },
                                       buttonState);
         }
+        VERIFY_ARE_EQUAL(21, scrollChangedCount);
         Log::Comment(L"Scrolling up more should do nothing");
         expectedTop = 0;
         interactivity->MouseWheel(modifiers,
@@ -269,6 +274,7 @@ namespace ControlUnitTests
                                   Core::Point{ 0, WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
+        VERIFY_ARE_EQUAL(21, scrollChangedCount);
 
         Log::Comment(L"Scroll down 21 more times, to the bottom");
         for (auto i = 0; i < 21; ++i)
@@ -281,6 +287,7 @@ namespace ControlUnitTests
                                       buttonState);
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
+        VERIFY_ARE_EQUAL(42, scrollChangedCount);
         Log::Comment(L"Scrolling down more should do nothing");
         expectedTop = 21;
         interactivity->MouseWheel(modifiers,
@@ -700,7 +707,6 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
         };
         core->ScrollPositionChanged(scrollChangedHandler);
-        interactivity->ScrollPositionChanged(scrollChangedHandler);
 
         for (auto i = 0; i < 40; ++i)
         {

@@ -27,10 +27,6 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Storage::Streams;
 
-// The minimum delay between updates to the scroll bar's values.
-// The updates are throttled to limit power usage.
-constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
-
 // The minimum delay between updating the TSF input control.
 // This is already throttled primarily in the ControlCore, with a timeout of 100ms. We're adding another smaller one here, as the (potentially x-proc) call will come in off the UI thread
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(8);
@@ -334,7 +330,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.UpdateSelectionMarkers = _core->UpdateSelectionMarkers(winrt::auto_revoke, { get_weak(), &TermControl::_updateSelectionMarkers });
         _revokers.coreOpenHyperlink = _core->OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
         _revokers.interactivityOpenHyperlink = _interactivity->OpenHyperlink(winrt::auto_revoke, { get_weak(), &TermControl::_HyperlinkHandler });
-        _revokers.interactivityScrollPositionChanged = _interactivity->ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.ContextMenuRequested = _interactivity->ContextMenuRequested(winrt::auto_revoke, { get_weak(), &TermControl::_contextMenuHandler });
 
         // "Bubbled" events - ones we want to handle, by raising our own event.
@@ -375,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TermControl::Dispatcher().
         auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 
-        // These three throttled functions are triggered by terminal output and interact with the UI.
+        // This throttled function is triggered by terminal output and interacts with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
         // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
         _playWarningBell = std::make_shared<ThrottledFunc<>>(
@@ -391,25 +386,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
-            dispatcher,
-            til::throttled_func_options{
-                .delay = ScrollBarUpdateInterval,
-                .trailing = true,
-            },
-            [weakThis = get_weak()](const auto& update) {
-                if (auto control{ weakThis.get() }; control && !control->_IsClosing())
-                {
-                    control->_throttledUpdateScrollbar(update);
-                }
-            });
-
         // These events might all be triggered by the connection, but that
         // should be drained and closed before we complete destruction. So these
         // are safe.
         //
-        // NOTE: _ScrollPositionChanged has to be registered after we set up the
-        // _updateScrollBar func. Otherwise, we could get a callback from an
+        // NOTE: WarningBell has to be registered after we set up the
+        // _playWarningBell func. Otherwise, we could get a callback from an
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core->ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core->WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
@@ -553,7 +535,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->HardResetWithoutErase();
     }
 
-    void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
+    void TermControl::_applyScrollBarUpdate(const ScrollBarUpdate& update)
     {
         if (!_initializedTerminal)
         {
@@ -567,7 +549,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isInternalScrollBarUpdate = true;
 
         auto scrollBar = ScrollBar();
-        if (update.newValue)
+        // Don't snap a dragged thumb onto the row it's already on: its value is
+        // fractional, and the core reports the row that value rounds to.
+        if (update.newValue && std::lround(scrollBar.Value()) != std::lround(*update.newValue))
         {
             scrollBar.Value(*update.newValue);
         }
@@ -839,7 +823,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 .newMinimum = scrollBar.Minimum(),
                 .newViewportSize = scrollBar.ViewportSize(),
             };
-            _updateScrollBar->Run(update);
+            _applyScrollBarUpdate(update);
         }
 
         // Set focus back to terminal control
@@ -2187,12 +2171,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto newValue = args.NewValue();
         _interactivity->UpdateScrollbar(static_cast<float>(newValue));
-
-        // User input takes priority over terminal events so cancel
-        // any pending scroll bar update if the user scrolls.
-        _updateScrollBar->ModifyPending([](auto& update) {
-            update.newValue.reset();
-        });
     }
 
     // Method Description:
@@ -2423,6 +2401,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_ScrollPositionChanged(const IInspectable& /*sender*/,
                                              const Control::ScrollPositionChangedArgs& args)
     {
+        // ControlCore raises this from its scrollbar throttle, on our UI thread.
+        if (_IsClosing())
+        {
+            return;
+        }
+
         ScrollBarUpdate update;
         const auto hiddenContent = args.BufferSize() - args.ViewHeight();
         update.newMaximum = hiddenContent;
@@ -2430,7 +2414,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newViewportSize = args.ViewHeight();
         update.newValue = args.ViewTop();
 
-        _updateScrollBar->Run(update);
+        _applyScrollBarUpdate(update);
 
         // If we have a selection with markers (exposed via selection mode),
         //   update the position of the markers
@@ -3725,7 +3709,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     .newMinimum = scrollBar.Minimum(),
                     .newViewportSize = scrollBar.ViewportSize(),
                 };
-                _updateScrollBar->Run(update);
+                _applyScrollBarUpdate(update);
             }
         }
 
