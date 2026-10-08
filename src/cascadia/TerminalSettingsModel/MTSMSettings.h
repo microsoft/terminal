@@ -35,6 +35,7 @@ Author(s):
     X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
     X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
+    X(bool, CloseOnMiddleClick, "closeOnMiddleClick", true)                                                                                                                                           \
     X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
     X(bool, ScrollToZoom, "experimental.scrollToZoom", true)                                                                                                                                          \
     X(bool, ScrollToChangeOpacity, "experimental.scrollToChangeOpacity", true)                                                                                                                        \

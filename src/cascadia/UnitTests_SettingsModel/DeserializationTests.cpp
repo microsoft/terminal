@@ -28,6 +28,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ValidateDuplicateProfiles);
         TEST_METHOD(ValidateManyWarnings);
         TEST_METHOD(LayerGlobalProperties);
+        TEST_METHOD(TestCloseOnMiddleClick);
         TEST_METHOD(ValidateProfileOrdering);
         TEST_METHOD(ValidateHideProfiles);
         TEST_METHOD(TestReorderWithNullGuids);
@@ -380,6 +381,38 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(240, settings->WindowSettingsDefaults().InitialCols());
         VERIFY_ARE_EQUAL(60, settings->WindowSettingsDefaults().InitialRows());
         VERIFY_ARE_EQUAL(false, settings->WindowSettingsDefaults().ShowTabsInTitlebar());
+    }
+
+    void DeserializationTests::TestCloseOnMiddleClick()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                {
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+        static constexpr std::string_view defaultUserSettings{ R"({
+            "profiles": [
+                {
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+        static constexpr std::string_view disabledUserSettings{ R"({
+            "closeOnMiddleClick": false,
+            "profiles": [
+                {
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const auto defaultSettings = winrt::make_self<implementation::CascadiaSettings>(defaultUserSettings, inboxSettings);
+        VERIFY_IS_TRUE(defaultSettings->WindowSettingsDefaults().CloseOnMiddleClick());
+
+        const auto disabledSettings = winrt::make_self<implementation::CascadiaSettings>(disabledUserSettings, inboxSettings);
+        VERIFY_IS_FALSE(disabledSettings->WindowSettingsDefaults().CloseOnMiddleClick());
     }
 
     void DeserializationTests::ValidateProfileOrdering()
