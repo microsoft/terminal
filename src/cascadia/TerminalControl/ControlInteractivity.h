@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AttachToNewControl();
 
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
-        til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
+        til::typed_event<IInspectable, IInspectable> PasteFromClipboard;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
