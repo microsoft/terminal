@@ -269,12 +269,13 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "default": "never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "default": "automatic",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. When set to \"automatic\", this behaves like \"indexed\" while high contrast mode is enabled in Windows, and like \"never\" otherwise. Other possible values are \"never\" and \"always\".",
           "enum": [
             "never",
             "indexed",
-            "always"
+            "always",
+            "automatic"
           ],
           "type": "string"
         },
@@ -284,6 +285,10 @@
         },
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        },
+        "experimental.pixelShaderImagePath": {
+          "description": "Use to set a path to an image that's made available to the `experimental.pixelShaderPath` shader in texture register t1 when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
         "useAcrylic": {
@@ -375,6 +380,16 @@
             }
           },
           "additionalProperties": false
+        },
+        "builtinGlyphs": {
+          "default": true,
+          "description": "When set to true, the terminal renders box drawing, block element, Powerline and legacy computing characters itself instead of using the font.",
+          "type": "boolean"
+        },
+        "colorGlyphs": {
+          "default": true,
+          "description": "When set to true, Emoji are displayed in full color. When set to false, they are displayed in the text's foreground color.",
+          "type": "boolean"
         },
         "cellWidth": {
           "$ref": "#/$defs/CSSLengthPercentage",
@@ -1896,13 +1911,10 @@
             },
             "queryUrl": {
               "type": "string",
-              "description": "URL of the web page to launch, %s is replaced with the selected text"
+              "description": "URL of the web page to launch, %s is replaced with the selected text. If omitted, the \"searchWebDefaultQueryUrl\" setting is used."
             }
           }
         }
-      ],
-      "required": [
-        "queryUrl"
       ]
     },
     "AdjustOpacityAction": {
@@ -2072,6 +2084,21 @@
         }
       }
     },
+    "SettingsTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the Settings UI",
+      "properties": {
+        "theme": {
+          "description": "Which UI theme the Settings UI should use, instead of the window's `applicationTheme`.",
+          "enum": [
+            "light",
+            "dark",
+            "system"
+          ],
+          "type": "string"
+        }
+      }
+    },
     "Theme": {
       "additionalProperties": false,
       "description": "A set of properties for customizing the appearance of the window. This controls things like the titlebar, the tabs, the application theme.",
@@ -2086,6 +2113,9 @@
               "system"
             ]
           }
+        },
+        "settings": {
+          "$ref": "#/$defs/SettingsTheme"
         },
         "tab": {
           "$ref": "#/$defs/TabTheme"
@@ -2469,6 +2499,11 @@
           "description": "When set to true, adds preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
           "type": "boolean"
         },
+        "experimental.enableShellCompletionMenu": {
+          "default": false,
+          "description": "When set to true, shells can send a list of completions (for example, from PowerShell) for the Terminal to display in a menu. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",
@@ -2480,9 +2515,21 @@
           "type": "boolean"
         },
         "warning.multiLinePaste": {
-          "default": true,
-          "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
-          "type": "boolean"
+          "default": "automatic",
+          "description": "Controls when a warning is displayed before pasting text that contains a newline. \"automatic\" warns only if the application hasn't enabled bracketed paste mode. If your shell doesn't support bracketed paste, we recommend \"always\" for security reasons. true and false are accepted as synonyms for \"automatic\" and \"never\" respectively.",
+          "oneOf": [
+            {
+              "enum": [
+                "automatic",
+                "always",
+                "never"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
         },
         "defaultProfile": {
           "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
@@ -2506,6 +2553,11 @@
           },
           "type": "array"
         },
+        "searchWebDefaultQueryUrl": {
+          "default": "https://www.bing.com/search?q=%22%s%22",
+          "description": "The URL to open when the \"searchWeb\" action doesn't specify a \"queryUrl\". The placeholder \"%s\" will be replaced with the selected text.",
+          "type": "string"
+        },
         "rendering.graphicsAPI": {
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
@@ -2521,6 +2573,11 @@
         },
         "rendering.software": {
           "description": "When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.",
+          "type": "boolean"
+        },
+        "debugFeatures": {
+          "default": false,
+          "description": "When set to true, enables features that are useful for troubleshooting or developing the Terminal.",
           "type": "boolean"
         },
         "experimental.input.forceVT": {
@@ -2634,6 +2691,15 @@
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
           "default": null
         },
+        "defaultInputScope": {
+          "default": "default",
+          "description": "Sets the default input mode of the input method editor (IME). When set to \"alphanumericHalfWidth\", IME-based languages default to English input.",
+          "enum": [
+            "default",
+            "alphanumericHalfWidth"
+          ],
+          "type": "string"
+        },
         "theme": {
           "default": "dark",
           "description": "Sets the theme of the application. This value should be the name of one of the themes defined in `themes`. The Terminal also includes the themes `dark`, `light`, and `system`.",
@@ -2671,7 +2737,7 @@
           "type": "boolean"
         },
         "snapToGridOnResize": {
-          "default": false,
+          "default": true,
           "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize smoothly",
           "type": "boolean"
         },
@@ -2812,6 +2878,11 @@
           "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
+        "compatibility.kittyKeyboardMode": {
+          "default": true,
+          "description": "When set to true, applications can enable the Kitty keyboard protocol for more detailed keyboard input reporting. When set to false, requests to enable it are ignored.",
+          "type": "boolean"
+        },
         "compatibility.allowDECRQCRA": {
           "default": false,
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
@@ -2936,6 +3007,10 @@
           "description": "Executable used in the profile.",
           "type": "string"
         },
+        "connectionType": {
+          "$ref": "#/$defs/ProfileGuid",
+          "description": "Identifies a special type of connection for this profile, such as Azure Cloud Shell. This is set automatically and shouldn't be changed."
+        },
         "cursorColor": {
           "oneOf": [
             {
@@ -3012,8 +3087,13 @@
           "default": false
         },
         "experimental.rightClickContextMenu": {
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"rightClickContextMenu\" setting.",
+          "deprecated": true
+        },
+        "rightClickContextMenu": {
           "default": false,
-          "description": "When true, right-click shows a context menu; otherwise, it pastes from the clipboard or copies selection.",
+          "description": "When set to true, right-clicking displays a context menu. When set to false, right-clicking copies the selected text, or pastes if there's no selection.",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {
@@ -3023,6 +3103,10 @@
         },
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        },
+        "experimental.pixelShaderImagePath": {
+          "description": "Use to set a path to an image that's made available to the `experimental.pixelShaderPath` shader in texture register t1. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
         "fontFace": {
@@ -3130,12 +3214,13 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "default": "never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "default": "automatic",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. When set to \"automatic\", this behaves like \"indexed\" while high contrast mode is enabled in Windows, and like \"never\" otherwise. Other possible values are \"never\" and \"always\".",
           "enum": [
             "never",
             "indexed",
-            "always"
+            "always",
+            "automatic"
           ],
           "type": "string"
         },
