@@ -71,6 +71,9 @@
     <Page Include="CommandPalette.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="OverviewPane.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="SuggestionsControl.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -131,6 +134,9 @@
     </ClInclude>
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="OverviewPane.h">
+      <DependentUpon>OverviewPane.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
@@ -243,6 +249,9 @@
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="OverviewPane.cpp">
+      <DependentUpon>OverviewPane.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
@@ -352,6 +361,10 @@
     </Midl>
     <Midl Include="CommandPalette.idl">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="OverviewPane.idl">
+      <DependentUpon>OverviewPane.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SuggestionsControl.idl">

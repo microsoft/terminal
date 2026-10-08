@@ -59,6 +59,7 @@
     ON_ALL_ACTIONS(ToggleShaderEffects)     \
     ON_ALL_ACTIONS(ToggleFocusMode)         \
     ON_ALL_ACTIONS(ToggleFullscreen)        \
+    ON_ALL_ACTIONS(ToggleOverview)          \
     ON_ALL_ACTIONS(ToggleAlwaysOnTop)       \
     ON_ALL_ACTIONS(OpenSettings)            \
     ON_ALL_ACTIONS(SetFocusMode)            \
