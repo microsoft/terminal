@@ -934,7 +934,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
         {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr, static_cast<uint32_t>(type)));
+            // Consumers of this event assume that it is coming in on the UI thread for now
+            auto eventArgs{ winrt::make<StringSentEventArgs>(wstr, static_cast<uint32_t>(type)) };
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal,
+                                  [weakThis = get_weak(), eventArgs = std::move(eventArgs)]() {
+                                      if (const auto strong = weakThis.get())
+                                      {
+                                          strong->StringSent.raise(*strong, eventArgs);
+                                      }
+                                  });
         }
     }
 
