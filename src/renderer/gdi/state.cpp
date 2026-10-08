@@ -750,13 +750,13 @@ GdiEngine::~GdiEngine()
 
         currentFaceName.resize(faceNameLength - 1); // remove the null terminator (wstring!)
 
-        Font.SetFaceName(std::move(currentFaceName));
-        Font.SetFamily(tm.tmPitchAndFamily);
-        Font.SetWeight(tm.tmWeight);
-        Font.SetCodePage(FontDesired.GetCodePage());
-        Font.SetFontSizeInPt((tm.tmHeight - tm.tmInternalLeading) * 72.0f / dpi);
-        Font.SetCellSizeInDIP({ coordFont.width * 96.0f / dpi, coordFont.height * 96.0f / dpi });
-        Font.SetCellSizeInPhysicalPx(coordFont);
+        Font.SetFromEngine(std::move(currentFaceName),
+                           tm.tmPitchAndFamily,
+                           tm.tmWeight,
+                           FontDesired.GetCodePage(),
+                           (tm.tmHeight - tm.tmInternalLeading) * 72.0f / dpi,
+                           { coordFont.width * 96.0f / dpi, coordFont.height * 96.0f / dpi },
+                           coordFont);
     }
 
     return S_OK;

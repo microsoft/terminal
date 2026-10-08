@@ -39,10 +39,13 @@ struct FontInfo : FontInfoBase
     CellSizeInDIP GetCellSizeInDIP() const noexcept;
     til::size GetCellSizeInPhysicalPx() const noexcept;
 
-    // NOTE: Render backends are expected to call all of these setters, plus all FontInfoBase setters.
-    void SetFontSizeInPt(float fontSizeInPt) noexcept;
-    void SetCellSizeInDIP(CellSizeInDIP cellSizeInDIP) noexcept;
-    void SetCellSizeInPhysicalPx(til::size cellSizeInPhysicalPx) noexcept;
+    void SetFromEngine(std::wstring faceName,
+               unsigned char family,
+               unsigned int weight,
+               unsigned int codePage,
+               float fontSizeInPt,
+               CellSizeInDIP cellSizeInDIP,
+               til::size cellSizeInPhysicalPx) noexcept;
 
     bool IsTrueTypeFont() const noexcept;
 

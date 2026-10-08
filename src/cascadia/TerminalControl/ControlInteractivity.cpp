@@ -587,8 +587,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
-
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
         // GH#3321: Alternate scroll mode is a special type of mouse input mode
@@ -603,6 +601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // here with a PointerPoint. However, as of #979, we don't have a
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
+            const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
             return _sendMouseEventHelper(terminalPosition,
                                          delta.Y != 0 ? WM_MOUSEWHEEL : WM_MOUSEHWHEEL,
                                          modifiers,

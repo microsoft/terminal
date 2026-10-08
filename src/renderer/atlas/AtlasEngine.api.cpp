@@ -851,13 +851,13 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
     const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
 
-    fontInfo.SetFaceName(primaryFontName);
-    fontInfo.SetFamily(fontInfoDesired.GetFamily());
-    fontInfo.SetWeight(requestedWeight);
-    fontInfo.SetCodePage(fontInfoDesired.GetCodePage());
-    fontInfo.SetFontSizeInPt(fontSizeInPt);
-    fontInfo.SetCellSizeInDIP({ cellWidth / pxPerDIP, cellHeight / pxPerDIP });
-    fontInfo.SetCellSizeInPhysicalPx({ cellWidth, cellHeight });
+    fontInfo.SetFromEngine(primaryFontName,
+                           fontInfoDesired.GetFamily(),
+                           requestedWeight,
+                           fontInfoDesired.GetCodePage(),
+                           fontSizeInPt,
+                           { cellWidth / pxPerDIP, cellHeight / pxPerDIP },
+                           { cellWidth, cellHeight });
 
     if (fontMetrics)
     {

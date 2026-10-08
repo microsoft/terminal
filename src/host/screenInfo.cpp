@@ -2471,10 +2471,15 @@ til::size SCREEN_INFORMATION::GetLegacyConhostFontCellSize() const noexcept
     // Try to use the given (desired) cell if we have one.
     auto size = _desiredFont.GetPixelCellSize();
 
-    if (!size)
+    if (!size) // when either dimension is zero
     {
         // Otherwise, fall back to the renderer size.
         size = _currentFont.GetCellSizeInDIP().AsInteger_DoNotUse();
+    }
+
+    if (!size)
+    {
+        size = { 8, 12 };
     }
 
     return size;

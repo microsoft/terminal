@@ -29,18 +29,20 @@ til::size FontInfo::GetCellSizeInPhysicalPx() const noexcept
     return _cellSizeInPhysicalPx;
 }
 
-void FontInfo::SetFontSizeInPt(float fontSizeInPt) noexcept
+void FontInfo::SetFromEngine(std::wstring faceName,
+                             unsigned char family,
+                             unsigned int weight,
+                             unsigned int codePage,
+                             float fontSizeInPt,
+                             CellSizeInDIP cellSizeInDIP,
+                             til::size cellSizeInPhysicalPx) noexcept
 {
+    _faceName = std::move(faceName);
+    _family = family;
+    _weight = weight;
+    _codePage = codePage;
     _fontSizeInPt = fontSizeInPt;
-}
-
-void FontInfo::SetCellSizeInDIP(CellSizeInDIP cellSizeInDIP) noexcept
-{
     _cellSizeInDIP = cellSizeInDIP;
-}
-
-void FontInfo::SetCellSizeInPhysicalPx(til::size cellSizeInPhysicalPx) noexcept
-{
     _cellSizeInPhysicalPx = cellSizeInPhysicalPx;
 }
 

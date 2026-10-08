@@ -332,13 +332,13 @@ CATCH_RETURN()
 #pragma warning(suppress : 26447)
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
-    fiFontInfo.SetFaceName(fiFontInfoDesired.GetFaceName());
-    fiFontInfo.SetFamily(fiFontInfoDesired.GetFamily());
-    fiFontInfo.SetWeight(fiFontInfoDesired.GetWeight());
-    fiFontInfo.SetCodePage(fiFontInfoDesired.GetCodePage());
-    fiFontInfo.SetFontSizeInPt(coordSize.height * 72.0f / USER_DEFAULT_SCREEN_DPI);
-    fiFontInfo.SetCellSizeInDIP({ static_cast<float>(coordSize.width), static_cast<float>(coordSize.height) });
-    fiFontInfo.SetCellSizeInPhysicalPx(coordSize);
+    fiFontInfo.SetFromEngine(fiFontInfoDesired.GetFaceName(),
+                             fiFontInfoDesired.GetFamily(),
+                             fiFontInfoDesired.GetWeight(),
+                             fiFontInfoDesired.GetCodePage(),
+                             coordSize.height * 72.0f / USER_DEFAULT_SCREEN_DPI,
+                             { static_cast<float>(coordSize.width), static_cast<float>(coordSize.height) },
+                             coordSize);
 
     return S_OK;
 }
