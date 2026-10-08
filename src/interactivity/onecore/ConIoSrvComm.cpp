@@ -444,7 +444,15 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                 // TODO: MSFT: 11833883 - Determine action when wait on paint operation via
                 //       DirectX on OneCoreUAP times out while switching console
                 //       applications.
+
+                UnlockConsole();
+                // Teardown may need to wait for an entire frame to finish, but it will not be
+                // able to do so while we are holding the console lock. Relinquish the lock
+                // for as long as it takes to quiesce the render thread, and then take it back
+                // afterwards. This is globally safe because ConIoSrv will not process any other
+                // requests while the focus event is outstanding.
                 Renderer->TriggerTeardown();
+                LockConsole();
 
                 // Relinquish control of the graphics device (only one
                 // DirectX application may control the device at any one

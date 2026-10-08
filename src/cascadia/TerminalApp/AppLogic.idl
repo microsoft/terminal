@@ -22,13 +22,11 @@ namespace TerminalApp
 
         ContentManager ContentManager { get; };
 
-        Boolean HasSettingsStartupActions();
-
         void ReloadSettings();
         void ReloadSettingsThrottled();
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
 
-        TerminalWindow CreateNewWindow();
+        TerminalWindow CreateNewWindow(String windowName);
 
         IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 

@@ -289,6 +289,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
+            if (unbox_prop_or<bool>(settings, L"ambiguousIsWide", false))
+            {
+                _flags |= PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE;
+            }
+
             const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
             const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
 

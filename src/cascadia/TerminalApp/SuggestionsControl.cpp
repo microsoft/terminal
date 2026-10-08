@@ -460,7 +460,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler
     // Return value:
     // - whether the key was handled
-    bool SuggestionsControl::OnDirectKeyEvent(const uint32_t /*vkey*/, const uint8_t /*scanCode*/, const bool /*down*/)
+    bool SuggestionsControl::OnDirectKeyEvent(const uint32_t /*vkey*/, const uint8_t /*scanCode*/, const bool /*extended*/, const bool /*down*/)
     {
         auto handled = false;
         return handled;
@@ -686,8 +686,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Helper method for retrieving the action from a command the user
-    //   selected, and dispatching that command. Also fires a tracelogging event
+    // - Helper method to retrieve the action from the user selected command,
+    //   and dispatch that command. Also fires a tracelogging event
     //   indicating that the user successfully found the action they were
     //   looking for.
     // Arguments:

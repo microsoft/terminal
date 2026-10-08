@@ -78,7 +78,7 @@ class RgbColorTests
     TEST_METHOD(TestVT256Grid);
 };
 
-// Takes windows 16 color table index, and returns a int for the equivalent SGR sequence
+// Takes windows 16 color table index, and returns an int for the equivalent SGR sequence
 WORD WinToVTColor(int winColor, bool isForeground)
 {
     auto red = (winColor & FOREGROUND_RED) > 0;

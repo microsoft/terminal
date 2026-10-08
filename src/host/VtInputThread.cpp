@@ -194,8 +194,8 @@ void VtInputThread::CaptureNextCursorPositionReport() const noexcept
     engine.CaptureNextCursorPositionReport();
 }
 
-til::enumset<DeviceAttribute, uint64_t> VtInputThread::WaitUntilDA1(DWORD timeout) const noexcept
+void VtInputThread::WaitUntilDA1(DWORD timeout) const noexcept
 {
     auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
-    return engine.WaitUntilDA1(timeout);
+    engine.WaitUntilDA1(timeout);
 }

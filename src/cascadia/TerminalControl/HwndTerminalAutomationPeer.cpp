@@ -140,7 +140,7 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     }
 
     // Try to suppress any events (or event data)
-    // that is just the keypress the user made
+    // that is just the keypress that the user made
     auto sanitized{ Sanitize(newOutput) };
     while (!_keyEvents.empty() && IsReadable(sanitized))
     {

@@ -101,22 +101,14 @@ void InputStateMachineEngine::CaptureNextCursorPositionReport() noexcept
     _captureNextCursorPositionReport.store(true, std::memory_order_relaxed);
 }
 
-til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) noexcept
+void InputStateMachineEngine::WaitUntilDA1(DWORD timeout) noexcept
 {
-    uint64_t val = 0;
-
     // atomic_wait() returns false when the timeout expires.
     // Technically we should decrement the timeout with each iteration,
     // but I suspect infinite spurious wake-ups are a theoretical problem.
-    for (;;)
+    while (!_receivedDA1.load(std::memory_order_relaxed))
     {
-        val = _deviceAttributes.load(std::memory_order::relaxed);
-        if (val)
-        {
-            break;
-        }
-
-        if (!til::atomic_wait(_deviceAttributes, val, timeout))
+        if (!til::atomic_wait(_receivedDA1, false, timeout))
         {
             break;
         }
@@ -125,8 +117,10 @@ til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DW
     // VtIo first sends a DSR CPR and then a DA1 request.
     // If we encountered a DA1 response here, the DSR request is definitely done now.
     _captureNextCursorPositionReport.store(false, std::memory_order_relaxed);
+}
 
-    return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
+void InputStateMachineEngine::UnknownSequence() noexcept
+{
 }
 
 bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
@@ -488,10 +482,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::DA_DeviceAttributes:
         // This assumes that InputStateMachineEngine is tightly coupled with VtInputThread and the rest of the ConPTY system (VtIo).
         // On startup, ConPTY will send a DA1 request to get more information about the hosting terminal.
-        // We catch it here and store the information for later retrieval.
-        if (_deviceAttributes.load(std::memory_order_relaxed) == 0)
+        if (!_receivedDA1.load(std::memory_order_relaxed))
         {
-            til::enumset<DeviceAttribute, uint64_t> attributes{ DeviceAttribute::__some__ };
+            til::enumset<DeviceAttribute, uint64_t> attributes;
 
             // The first parameter denotes the conformance level.
             const auto len = parameters.size();
@@ -509,8 +502,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
                 }
             }
 
-            _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
-            til::atomic_notify_all(_deviceAttributes);
+            _pDispatch->SetDeviceAttributes(attributes);
+            _receivedDA1.store(true, std::memory_order_relaxed);
+            til::atomic_notify_all(_receivedDA1);
             return true;
         }
         return false;

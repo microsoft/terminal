@@ -237,6 +237,7 @@
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
     <rescap:Capability Name="unvirtualizedResources" />
+    <rescap:Capability Name="appLicensing" />
   </Capabilities>
 
   <Extensions>

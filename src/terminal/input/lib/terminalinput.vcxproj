@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="..\mouseInput.cpp" />
     <ClCompile Include="..\terminalInput.cpp" />
+    <ClCompile Include="..\TestHook.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

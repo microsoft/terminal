@@ -65,6 +65,7 @@ jobs:
     inputs:
       solution: $(pgoToolsPath)\PGO.DB.proj
       msbuildArguments: '/t:CreatePGONuGet /p:PGOBuildMode=Instrument /p:PGDPathForAllArch=$(artifactsPath) /p:PGOOutputPath=$(Build.ArtifactStagingDirectory)'
+      msbuildArchitecture: x64
 
   - publish: $(Build.ArtifactStagingDirectory)
     artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}

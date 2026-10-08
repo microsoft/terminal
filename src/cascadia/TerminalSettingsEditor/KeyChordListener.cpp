@@ -76,6 +76,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProperties();
     }
 
+    // Moves keyboard focus into the inner text box so the control immediately begins
+    // capturing the next key chord the user presses.
+    void KeyChordListener::FocusInput()
+    {
+        if (auto tb{ FindName(L"KeyChordTextBox").try_as<TextBox>() })
+        {
+            tb.Focus(FocusState::Programmatic);
+        }
+    }
+
     void KeyChordListener::_InitializeProperties()
     {
         // Initialize any KeyChordListener dependency properties here.

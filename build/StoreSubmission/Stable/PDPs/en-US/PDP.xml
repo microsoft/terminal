@@ -56,9 +56,9 @@ This is an open source project and we welcome community participation. To partic
   <ReleaseNotes _locID="App_ReleaseNotes">
     <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Version __VERSION_NUMBER__
 
-- We've added dozens of settings to the UI that once only existed in the JSON file, including a new page for customizing the layout of your New Tab menu!
-- We have rearchitected window management to improve reliability; please file any bugs you encounter with the wt.exe alias
-- Profiles now show an icon if they've been hidden or refer to programs which were uninstalled.
+- A whole new Extensions page that shows what has been installed into your Terminal
+- Command Palette now shows up in your native language as well as English
+- New VT features such as synchronized rendering, new color schemes, configuration for quick mouse actions like zooming, and more
 
 Please see our GitHub releases page for additional details.
   </ReleaseNotes>

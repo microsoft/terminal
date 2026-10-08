@@ -15,10 +15,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept;
 
     // Wrapper for IndexEntry objects.
-    // Adds neutral locale, if necessary.
+    // Holds localized display text from entry's ResourceName
     struct LocalizedIndexEntry
     {
+        winrt::hstring DisplayTextLocalized;
         std::optional<winrt::hstring> DisplayTextNeutral = std::nullopt;
+        // No "Neutral" copy of SecondaryLabelLocalized: unlike DisplayText, the secondary
+        // label is display-only (rendered in the search result row's caption). It is never
+        // passed to the fuzzy matcher, so a single localized string is sufficient.
+        winrt::hstring SecondaryLabelLocalized;
         const IndexEntry* Entry = nullptr;
 
         std::array<std::pair<std::optional<winrt::hstring>, int>, 2> GetSearchableFields() const;

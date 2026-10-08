@@ -41,7 +41,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextMeasurement, TextMeasurement);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
+    DEFINE_ENUM_MAP(Model::ConfirmOnClose, ConfirmOnClose);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);

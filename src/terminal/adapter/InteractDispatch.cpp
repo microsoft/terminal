@@ -27,6 +27,12 @@ InteractDispatch::InteractDispatch() :
 {
 }
 
+void InteractDispatch::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetVtIo()->SetDeviceAttributes(attributes);
+}
+
 // Method Description:
 // - Writes a collection of input to the host. The new input is appended to the
 //      end of the input buffer.
@@ -166,7 +172,7 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 
     // Unblock any callers inside SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized().
     // The cursor position has now been updated to the terminal's.
-    info.ResetConptyCursorPositionMayBeWrong();
+    info.GetActiveBuffer().ResetConptyCursorPositionMayBeWrong();
 }
 
 // Routine Description:

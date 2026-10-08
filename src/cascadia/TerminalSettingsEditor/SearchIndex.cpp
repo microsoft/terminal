@@ -40,9 +40,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // This allows us to prioritize certain fields over others when scoring search results.
     std::array<std::pair<std::optional<winrt::hstring>, int>, 2> LocalizedIndexEntry::GetSearchableFields() const
     {
-        // Profile Defaults entries (DisplayTextUid starts with "Profile_") get a higher weight
-        const auto weight = til::starts_with(std::wstring_view{ Entry->DisplayTextUid }, L"Profile_") ? WeightProfileDefaults : WeightDisplayTextLocalized;
-        return { { { std::optional<winrt::hstring>{ Entry->DisplayTextLocalized }, weight },
+        // Profile Defaults entries get a higher weight so they rank above per-profile matches.
+        const auto weight = (std::wstring_view{ Entry->NavigationArgTag } == globalProfileTag) ? WeightProfileDefaults : WeightDisplayTextLocalized;
+        return { { { std::optional<winrt::hstring>{ DisplayTextLocalized }, weight },
                    { DisplayTextNeutral, WeightDisplayTextNeutral } } };
     }
 
@@ -66,13 +66,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring runtimeObjContext{};
         if (const auto profileVM = runtimeObj.try_as<Editor::ProfileViewModel>())
         {
-            // No runtimeObjContext: profile name and icon should be enough
             runtimeObjLabel = profileVM.Name();
+            runtimeObjContext = RS_(L"Nav_Profiles/Content");
         }
         else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
         {
-            // No runtimeObjContext: scheme name and generic icon should be enough
             runtimeObjLabel = colorSchemeVM.Name();
+            runtimeObjContext = RS_(L"Nav_ColorSchemes/Content");
         }
         else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
         {
@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             runtimeObjContext = RS_(L"Nav_Actions/Content");
         }
 
-        if (const auto& displayText = searchIndexEntry->Entry->DisplayTextLocalized; !displayText.empty())
+        if (const auto& displayText = searchIndexEntry->DisplayTextLocalized; !displayText.empty())
         {
             // Full index entry (for settings within runtime objects)
             // - primaryText: <displayText>
@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return *_overrideLabel;
         }
-        return _SearchIndexEntry->Entry->DisplayTextLocalized;
+        return _SearchIndexEntry->DisplayTextLocalized;
     }
 
     bool FilteredSearchResult::IsNoResultsPlaceholder() const
@@ -135,9 +135,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _NavigationArgOverride;
         }
-        else if (_SearchIndexEntry)
+        else if (_SearchIndexEntry && !_SearchIndexEntry->Entry->NavigationArgTag.empty())
         {
-            return _SearchIndexEntry->Entry->NavigationArg;
+            return box_value(hstring{ _SearchIndexEntry->Entry->NavigationArgTag });
         }
         return nullptr;
     }
@@ -253,9 +253,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 LocalizedIndexEntry localizedEntry;
                 localizedEntry.Entry = &entry;
+                localizedEntry.DisplayTextLocalized = GetLibraryResourceString(entry.ResourceName);
                 if (shouldIncludeLanguageNeutralResources)
                 {
-                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);
+                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.ResourceName);
+                }
+                if (!entry.SecondaryLabelResourceName.empty())
+                {
+                    localizedEntry.SecondaryLabelLocalized = GetLibraryResourceString(entry.SecondaryLabelResourceName);
                 }
                 localizedIndex.emplace_back(std::move(localizedEntry));
             }
@@ -341,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (bestScore >= MinimumMatchScore)
             {
-                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry));
+                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry, nullptr, std::nullopt, entry.SecondaryLabelLocalized));
             }
         }
 

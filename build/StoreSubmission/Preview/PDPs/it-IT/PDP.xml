@@ -54,11 +54,12 @@ Si tratta di un progetto open source e la partecipazione della community è molt
     
   </DevStudio>
   <ReleaseNotes>
-    Versione __VERSION_NUMBER__ 
+    Versione __VERSION_NUMBER__
 
-- Una pagina Estensioni completamente nuova che mostra ciò che è stato installato nel terminale
-- Il riquadro comandi ora viene visualizzato nella tua lingua di origine oltre che in inglese
-- Nuove funzionalità VT come il rendering sincronizzato, le nuove combinazioni di colori, la configurazione per azioni rapide del mouse come lo zoom e altro ancora
+- Finalmente è possibile cercare qualsiasi impostazione
+- Nuovo editor nativo per le associazioni di tasti, le azioni e le voci del riquadro comandi.
+- Nuove localizzazioni della community in serbo e ucraino
+- Supporto per il protocollo di tastiera "Kitty" per una codifica dell'input ad alta fedeltà
 
 Per altri dettagli, vedi la pagina delle release di GitHub.
   </ReleaseNotes>

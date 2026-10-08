@@ -277,6 +277,11 @@ using namespace Microsoft::Console::Interactivity;
                 pseudoClass.cbWndExtra = GWL_CONSOLE_WNDALLOC; // this is required to store the owning thread/process override in NTUSER
                 auto windowClassAtom{ RegisterClassExW(&pseudoClass) };
 
+                // You may be inclined to make this a HWND_MESSAGE (since it's a fake HWND),
+                // however some shoddy software straight up dies if you do this.
+                // Among these is the Azure PowerShell extension, which crashes the
+                // shell hard (no warning, etc.) as soon as you use the extension.
+                //
                 // Note that because we're not specifying WS_CHILD, this window
                 // will become an _owned_ window, not a _child_ window. This is
                 // important - child windows report their position as relative
@@ -291,7 +296,10 @@ using namespace Microsoft::Console::Interactivity;
                 // will return the console handle again, not the owning
                 // terminal's handle. It's not entirely clear why, but WS_POPUP
                 // is absolutely vital for this to work correctly.
-                hwnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
+                // The WS_EX_NOREDIRECTIONBITMAP flag is used to disable the GDI
+                // redirection surface for reduced memory usage, because this window
+                // is never shown and never paints anything.
+                hwnd = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP,
                                        reinterpret_cast<LPCWSTR>(windowClassAtom),
                                        nullptr,
                                        WS_POPUP,

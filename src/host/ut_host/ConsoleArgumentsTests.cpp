@@ -280,7 +280,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                    true); // successful parse?
 
     commandline = L"conhost.exe foo -- bar";
-    ArgTestsRunner(L"#3 Check that a implicit commandline with other expected args is treated as a whole client commandline (1)",
+    ArgTestsRunner(L"#3 Check that an implicit commandline with other expected args is treated as a whole client commandline (1)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -301,7 +301,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                    true); // successful parse?
 
     commandline = L"conhost.exe foo -- bar";
-    ArgTestsRunner(L"#4 Check that a implicit commandline with other expected args is treated as a whole client commandline (2)",
+    ArgTestsRunner(L"#4 Check that an implicit commandline with other expected args is treated as a whole client commandline (2)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -322,7 +322,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                    true); // successful parse?
 
     commandline = L"conhost.exe console --vtmode foo foo -- bar";
-    ArgTestsRunner(L"#5 Check that a implicit commandline with other expected args is treated as a whole client commandline (3)",
+    ArgTestsRunner(L"#5 Check that an implicit commandline with other expected args is treated as a whole client commandline (3)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -343,7 +343,7 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                    true); // successful parse?
 
     commandline = L"conhost.exe console --vtmode foo --outpipe foo -- bar";
-    ArgTestsRunner(L"#6 Check that a implicit commandline with other expected args is treated as a whole client commandline (4)",
+    ArgTestsRunner(L"#6 Check that an implicit commandline with other expected args is treated as a whole client commandline (4)",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -1149,7 +1149,7 @@ void ConsoleArgumentsTests::FeatureArgTests()
                    false); // successful parse?
 
     commandline = L"conhost.exe --feature pty --feature --signal foo";
-    ArgTestsRunner(L"#6 a invalid feature value that is otherwise a valid arg",
+    ArgTestsRunner(L"#6 an invalid feature value that is otherwise a valid arg",
                    commandline,
                    hInSample,
                    hOutSample,

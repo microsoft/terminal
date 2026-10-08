@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "ControlInteractivity.g.h"
 #include "EventArgs.h"
 #include "../buffer/out/search.h"
 
@@ -31,43 +30,44 @@ namespace ControlUnitTests
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlInteractivity : ControlInteractivityT<ControlInteractivity>
+    struct ControlInteractivity : winrt::implements<ControlInteractivity, winrt::Windows::Foundation::IInspectable, IContentHandle>
     {
     public:
         ControlInteractivity(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection);
+                             TerminalConnection::ITerminalConnection connection,
+                             Windows::System::DispatcherQueue dispatcher = nullptr);
 
         void GotFocus();
         void LostFocus();
         void UpdateSettings();
         void Initialize();
-        Control::ControlCore Core();
+        winrt::com_ptr<ControlCore> Core();
 
         void Close();
         void Detach();
 
-        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        void SetUiaEventDispatcher(::Microsoft::Console::Types::IUiaEventDispatcher* uiaEventDispatcher);
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(const uint32_t pointerId,
+                            Control::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
-        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
+        void TouchPressed(const Core::Point contactPoint);
 
-        bool PointerMoved(Control::MouseButtonState buttonState,
+        bool PointerMoved(const uint32_t pointerId,
+                          Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                          const bool focused,
-                          const Core::Point pixelPosition,
-                          const bool pointerPressedInBounds);
-        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
-                        const bool focused);
+                          const Core::Point pixelPosition);
+        void TouchMoved(const Core::Point newTouchPoint);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(const uint32_t pointerId,
+                             Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
@@ -96,7 +96,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
-        til::typed_event<IInspectable, IInspectable> Attached;
         til::typed_event<IInspectable, IInspectable> Closed;
 
     private:
@@ -115,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+        std::optional<Core::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -142,6 +141,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _id;
         static std::atomic<uint64_t> _nextId;
 
+        bool _focused{ false };
+
+        // Auto scroll occurs when user, while selecting, drags cursor outside
+        // viewport. View is then scrolled to 'follow' the cursor.
+        double _autoScrollVelocity;
+        std::optional<uint32_t> _autoScrollingPointerId;
+        std::optional<Core::Point> _autoScrollingPointerPoint;
+        ControlCore::TimerHandle _autoScrollTimer;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
+        bool _pointerPressedInBounds{ false };
+
+        void _tryStartAutoScroll(const uint32_t id, const Core::Point& point, const double scrollVelocity);
+        void _tryStopAutoScroll(const uint32_t pointerId);
+        void _updateAutoScroll();
+        double _getAutoScrollSpeed(double cursorDistanceFromBorder) const;
+
+        void _createInteractivityTimers();
+        void _destroyInteractivityTimers();
+
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
 
@@ -156,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
+        std::wstring _getHyperLinkForPointerPress(const Control::MouseButtonState buttonState, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,
@@ -166,9 +185,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
     };
-}
-
-namespace winrt::Microsoft::Terminal::Control::factory_implementation
-{
-    BASIC_FACTORY(ControlInteractivity);
 }

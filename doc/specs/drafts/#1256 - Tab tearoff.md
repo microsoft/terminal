@@ -31,7 +31,7 @@ There are several common pieces needed for both the tab tear-off scenario and th
 
 We need some sort of server/manager code that sits there waiting for connections from `wt.exe` processes and potentially `conhost.exe` processes such that it can broker a connection between the processes. It either needs to run in its own process or it needs to run in one of the existing `wt.exe`s that is chosen as the primary manager at the time. It should create communication channels and a global mutex at the time of creation.
 
-All other `wt.exe` processes starting after the primary should detect the existence of the server manager process and wait on the mutex handle. When the primary disappears, the OS scheduler should choose one of the others to wake up first on the mutex. It can take the lock and then set up the primary management channel. 
+All other `wt.exe` processes starting after the primary should detect the existence of the server manager process and wait on the mutex handle. When the primary disappears, the OS scheduler should choose one of the others to wake up first on the mutex. It can take the lock and then set up the primary management channel.
 
 Alternatively, if the manager process is completely isolated and we expect all `wt.exe`s to have to remain connected at all times, we can make it such that when the connections are broken between the individual processes and the manager that they all shut down. I would prefer that it is resilient (the previous option) over this one, but browsers must have a good reason for preferring this way.
 
@@ -85,7 +85,7 @@ If the registered handler fails to start the connection, there is no registered 
 
 ##### Interactive vs. Not
 
-We would have to be able to detect the difference between an interactive and non-interactive mode here. 
+We would have to be able to detect the difference between an interactive and non-interactive mode here.
 - Interactive is defined as the end-user is attempting to launch a command-line application with a visible window to see the output and enter input.
 - Non-interactive is defined as tools, utilities, and services attempting to launch a command-line application with no visible window (and possibly some redirected handles).
 
@@ -120,7 +120,7 @@ There's a few areas to study here.
 
 3. Updating conhost.exe to look up the launch preference and/or to launch another console host via a protocol handler
 - This would allow the `C:\windows\system32\conhost.exe` to effectively delegate the session to another `conhost.exe` that is hopefully newer than the inbox one. Given that the driver protocol in the box doesn't change and hasn't changed and we don't intend to change it, the forward/backward compatibility story is great here. Additionally, if for whatever reason the delegated `conhost.exe` fails to launch, we can just fall back and launch the old one like we would have prior to the change. It is significantly more likely, but still challenging, to argue for servicing `conhost.exe` back several versions in Windows to make this light up better for all folks. It might be especially more possible if it is a very targeted code snippet that can drop in to all the old versions of the `conhost.exe` code. We would still have the argument about spending resources developing for OS versions that are supposed to be dropped in favor of latest, but it's still a lesser argument than upending all of `kernelbase.dll`.
-- A protocol handler is also well understood and relatively well handled/tested in Windows. Old apps can handle protocols. New apps can handle protocols. Protocol handlers can take arguments. We don't have to lean on any other team to get them to help change the way the rest of the OS  works. 
+- A protocol handler is also well understood and relatively well handled/tested in Windows. Old apps can handle protocols. New apps can handle protocols. Protocol handlers can take arguments. We don't have to lean on any other team to get them to help change the way that the rest of the OS works.
 
 #### Communicating the launch
 For the parameters passing, I see a few options:
@@ -149,7 +149,7 @@ To simplify this for a first iteration, we could just make it so the transfer do
 - If released onto anything that isn't a `wt.exe` instance, we create a new `wt.exe` instance and send in the connection as the default startup parameter.
 
 #### Component UI
-It is also theoretically possible that if we could find a Component UI style solution (where the tab/panes live in their own process and just remote the UI/input into the shell) that it would be easy and even trivial to change out which shell/frame host is holding that element at any given time. 
+It is also theoretically possible that if we could find a Component UI style solution (where the tab/panes live in their own process and just remote the UI/input into the shell) that it would be easy and even trivial to change out which shell/frame host is holding that element at any given time.
 
 ### For Default Application
 The UX would make it look exactly like the user had started `wt.exe` from a shortcut or launch tile, but would launch the first tab differently than the defaults.
@@ -173,7 +173,7 @@ I don't believe it changes anything for accessibility. The only concern I'd have
 
 This particular feature will have to go through a security review/audit. It is unclear what level of control we will need over the IPC communication channels. A few things come to mind:
 1. We need to ensure that the mutexes/pipes/communications are restricted inside of one particular session to one particular user. If another user is also running WT in their session, it should involve a completely different manager process and system objects.
-1. We MAY have to enforce a scenario where we inhibit cross-integrity-level connections from being passed around. Generally speaking, processes at a higher integrity level have the authority to perform actions on those with a lower integrity level. This means that an elevated `wt.exe` could theoretically send a tab to a standard level `wt.exe`. We may be required to inhibit/prohibit this. We may also need to have one manager per integrity level. 
+1. We MAY have to enforce a scenario where we inhibit cross-integrity-level connections from being passed around. Generally speaking, processes at a higher integrity level have the authority to perform actions on those with a lower integrity level. This means that an elevated `wt.exe` could theoretically send a tab to a standard level `wt.exe`. We may be required to inhibit/prohibit this. We may also need to have one manager per integrity level.
 1. I'm not sure what sorts of ACL/DACL/SACLs we would need to apply to all the kernel objects involved.
 1. My initial prototype here used message-passing type pipes with a custom rolled protocol. If I make my own protocol, it needs to be fuzzed. And I'm probably missing something. Many/most of these concerns for security are probably eliminated if we use a well-known mechanism for this sort of IPC. My thoughts go to a COM server. More complicated to implement than message pipes, but probably brings a lot of security benefits and eliminates the need to fuzz the protocol (probably).
 
@@ -184,18 +184,18 @@ In the simple implementation, it will decrease reliability. We'll be shuffling c
 We might be able to mitigate some of the reliability concerns here or even improve reliability by going a step further with the process/containerization model like browsers do and standing up each individual tab as its own process host.
 
 ```
-wt.exe - Manager Mode 
-|- wt.exe - Frame Host Mode 
+wt.exe - Manager Mode
+|- wt.exe - Frame Host Mode
 |   |- wt.exe - Tab Host Mode
 |   |  |- conhost.exe - ConPTY mode
-|   |     |- pwsh.exe - Client application 
+|   |     |- pwsh.exe - Client application
 |   |- wt.exe - Tab Host Mode
 |      |- conhost.exe - ConPTY mode
-|         |- cmd.exe - Client application 
-|- wt.exe - Frame Host Mode 
+|         |- cmd.exe - Client application
+|- wt.exe - Frame Host Mode
     |- wt.exe - Tab Host Mode
        |- conhost.exe - ConPTY mode
-          |- pwsh.exe - Client application 
+          |- pwsh.exe - Client application
 ```
 
 The current structure of `wt.exe` has everything hosted within the one process. To improve reliability, we would likely have to make `wt.exe` run in three modes.
@@ -219,29 +219,29 @@ It is possible (but would need to be explored) that the APIs available to us to 
 In the one instance, we have this process hierarchy. Two instances of Windows Terminal exist. In Terminal A, the user has started a `cmd.exe` and a `pwsh.exe` tab. In the second instance, the user has started just one `cmd.exe` tab.
 
 ```
-- wt.exe (Terminal Instance A) 
+- wt.exe (Terminal Instance A)
   |- conhost.exe (in PTY mode) - Hosted to A
   |  |- cmd.exe
   |- conhost.exe (in PTY mode) - Hosted to A
      |- pwsh.exe <-- I will be dragged out
 
 - wt.exe (Terminal Instance B)
-  |- conhost.exe (in PTY mode) - Hosted to B 
-     |- cmd.exe 
+  |- conhost.exe (in PTY mode) - Hosted to B
+     |- cmd.exe
 ```
 
 When the `pwsh.exe` tab is torn off from Instance A and is dropped onto Instance B, the process hierarchy doesn't actually change. The connection details, preferences, and session metadata are passed via the IPC management channels, but to an outside observer, nothing has actually changed.
 
 ```
-- wt.exe (Terminal Instance A) 
+- wt.exe (Terminal Instance A)
   |- conhost.exe (in PTY mode) - Hosted to A
   |  |- cmd.exe
   |- conhost.exe (in PTY mode) - Hosted to B
      |- pwsh.exe <-- I am hosted in B but I'm parented to A
 
 - wt.exe (Terminal Instance B)
-  |- conhost.exe (in PTY mode) - Hosted to B 
-     |- cmd.exe 
+  |- conhost.exe (in PTY mode) - Hosted to B
+     |- cmd.exe
 ```
 
 I don't believe there are provisions in the Windows OS to reparent applications to a different process.
@@ -253,8 +253,8 @@ Additionally, this becomes more interesting when Terminal Instance A dies and B 
   |- pwsh.exe <-- I am hosted in B but I'm parented to A
 
 - wt.exe (Terminal Instance B)
-  |- conhost.exe (in PTY mode) - Hosted to B 
-     |- cmd.exe 
+  |- conhost.exe (in PTY mode) - Hosted to B
+     |- cmd.exe
 ```
 
 When instance A dies, the `conhost.exe` that was reparented keeps running and now just appears orphaned within the process hierarchy, reporting to the top level under utilities like Process Explorer.
@@ -280,7 +280,7 @@ The `conhost.exe` was started in response to a `pwsh.exe` being started with no 
 
 ```
 - conhost.exe - idling
-  
+
 - wt.exe (Terminal Instance A)
   |- conhost.exe (in PTY mode)
      |- pwsh.exe
@@ -294,7 +294,7 @@ This is obviously less efficient than not doing it as we have to stand up server
 
 But as long as we're creating threads and services that sleep most of the time and are only awakened on some kernel/system event, we shouldn't be wasting too much in terms of power and background resources.
 
-Additionally, `wt.exe` is worse than `conhost.exe` alone in all efficiency categories simply because it not only requires more resources to display in a "pretty" manner, but it also requires a `conhost.exe` under it in PTY mode to adapt the API calls. This is generally acceptable for end users who care more about the experience than the total performance. 
+Additionally, `wt.exe` is worse than `conhost.exe` alone in all efficiency categories simply because it not only requires more resources to display in a "pretty" manner, but it also requires a `conhost.exe` under it in PTY mode to adapt the API calls. This is generally acceptable for end users who care more about the experience than the total performance.
 
 It is, however, not likely to be much if any worse than just choosing to use `wt.exe` anyway over `conhost.exe`.
 
@@ -304,7 +304,7 @@ I've listed most of the issues above in their individual sections. The primary h
 1. Process tree layout - The processes in hierarchy may not make sense to someone inspecting them either visually with a tool or programmatically
 1. Process and kernel object lifetime - Applications may be counting on a specific process or object lifetime in regards to their hosting window and we might be tampering with that in how we apply job objects or shuffle around ownership to make tabs happen
 1. Default launch expectations - It is possible that test utilities or automation are counting on `conhost.exe` being the host application or that they're not ready to tolerate the potential for other applications to start. I think the interactive/non-interactive check mitigates this, but we'd have to remain concerned here.
-1. `AttachConsole` and `DetachConsole` and `AllocConsole` - I don't have the slightest idea what happens for these APIs. We would have to explore. `AttachConsole` has restrictions based on the process hierarchy. It would likely behave in interesting ways with the strange parenting order and might be a driver to why we would have to adjust the parenting of the processes (or change the API under the hood). `DetachConsole` might create an issue where a tab disappears out of the terminal and the job object causes everything to die. `AttachConsole` wouldn't necessarily be guaranteed to go back into the same `wt.exe` or a `wt.exe` at all. 
+1. `AttachConsole` and `DetachConsole` and `AllocConsole` - I don't have the slightest idea what happens for these APIs. We would have to explore. `AttachConsole` has restrictions based on the process hierarchy. It would likely behave in interesting ways with the strange parenting order and might be a driver to why we would have to adjust the parenting of the processes (or change the API under the hood). `DetachConsole` might create an issue where a tab disappears out of the terminal and the job object causes everything to die. `AttachConsole` wouldn't necessarily be guaranteed to go back into the same `wt.exe` or a `wt.exe` at all.
 
 ## Future considerations
 

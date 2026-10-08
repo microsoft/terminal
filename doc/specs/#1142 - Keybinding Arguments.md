@@ -189,7 +189,7 @@ However, for actions that _do_ require args, we'll set up a global function that
 can be used to parse a json blob into an `IActionArgs`.
 
 Once the `IActionArgs` is built for the keybinding, we'll set it in
-`AppKeyBindings` with a updated `AppKeyBindings::SetKeyBinding` call.
+`AppKeyBindings` with an updated `AppKeyBindings::SetKeyBinding` call.
 `SetKeyBinding`'s signature will be updated to take a `ActionAndArgs` instead.
 Should an action not need arguments, the `Args` member can be left `null` in the
 `ActionAndArgs`.

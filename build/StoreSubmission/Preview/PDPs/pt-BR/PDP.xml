@@ -56,9 +56,10 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-– Uma nova página de Extensões que mostra o que foi instalado no seu Terminal
-– A Paleta de Comandos agora aparece no seu idioma nativo, além do inglês
-– Novos recursos da VT, como renderização sincronizada, novos esquemas de cores, configuração para ações rápidas do mouse, como zoom, e muito mais
+- Finalmente, a possibilidade de pesquisar qualquer configuração!
+- Um novo editor nativo para combinações de teclas, ações e entradas na paleta de comandos.
+- Novas localizações da comunidade para sérvio e ucraniano
+- Suporte para o protocolo de teclado "Kitty" para codificação de entrada de alta fidelidade
 
 Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>

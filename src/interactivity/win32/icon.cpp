@@ -259,14 +259,7 @@ static UINT ConExtractIconInBothSizesW(PCWSTR szFileName, int nIconIndex, HICON*
 }
 // Excerpted Region Ends
 
-Icon::Icon() :
-    _fInitialized(false),
-    _hDefaultIcon(nullptr),
-    _hDefaultSmIcon(nullptr),
-    _hIcon(nullptr),
-    _hSmIcon(nullptr)
-{
-}
+Icon::Icon() = default;
 
 Icon::~Icon()
 {

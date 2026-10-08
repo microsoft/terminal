@@ -38,10 +38,10 @@ public:
     ConsoleProcessHandle& operator=(ConsoleProcessHandle&&) & = delete;
 
     const std::unique_ptr<ConsoleWaitQueue> pWaitBlockQueue;
-    std::unique_ptr<ConsoleHandleData> pInputHandle;
-    std::unique_ptr<ConsoleHandleData> pOutputHandle;
+    std::unique_ptr<ConsoleHandleData> pInputHandle{ nullptr };
+    std::unique_ptr<ConsoleHandleData> pOutputHandle{ nullptr };
 
-    bool fRootProcess;
+    bool fRootProcess{ false };
 
     DWORD const dwProcessId;
     DWORD const dwThreadId;
@@ -56,7 +56,7 @@ public:
     const FILETIME GetProcessCreationTime() const;
 
 private:
-    ULONG _ulTerminateCount;
+    ULONG _ulTerminateCount{ 0 };
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
 

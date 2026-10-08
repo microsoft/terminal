@@ -37,6 +37,7 @@ namespace Microsoft::Console::VirtualTerminal
         ITerminalApi& operator=(const ITerminalApi&) = delete;
         ITerminalApi& operator=(ITerminalApi&&) = delete;
 
+        virtual void UnknownSequence() noexcept = 0;
         virtual void ReturnResponse(const std::wstring_view response) = 0;
 
         struct BufferState
@@ -46,6 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool isMainBuffer;
         };
 
+        virtual bool IsConPTY() const noexcept = 0;
         virtual StateMachine& GetStateMachine() = 0;
         virtual BufferState GetBufferAndViewport() = 0;
         virtual void SetViewportPosition(const til::point position) = 0;
@@ -90,5 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
 
         virtual void SearchMissingCommand(const std::wstring_view command) = 0;
+
+        virtual void ShowNotification(const std::wstring_view title, const std::wstring_view body) = 0;
     };
 }

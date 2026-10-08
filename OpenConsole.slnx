@@ -860,17 +860,6 @@
   <Folder Name="/_Dependencies/Console/">
     <File Path="dep/Console/winconp.h" />
   </Folder>
-  <Folder Name="/_Dependencies/gsl/">
-    <File Path="dep/gsl/include/gsl/gsl" />
-    <File Path="dep/gsl/include/gsl/gsl_algorithm" />
-    <File Path="dep/gsl/include/gsl/gsl_assert" />
-    <File Path="dep/gsl/include/gsl/gsl_byte" />
-    <File Path="dep/gsl/include/gsl/gsl_util" />
-    <File Path="dep/gsl/include/gsl/multi_span" />
-    <File Path="dep/gsl/include/gsl/pointers" />
-    <File Path="dep/gsl/include/gsl/span" />
-    <File Path="dep/gsl/include/gsl/string_span" />
-  </Folder>
   <Folder Name="/_Dependencies/wil/">
     <File Path="dep/wil/include/wil/common.h" />
     <File Path="dep/wil/include/wil/filesystem.h" />

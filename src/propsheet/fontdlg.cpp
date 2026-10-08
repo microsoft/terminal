@@ -528,7 +528,7 @@ FontDlgProc(
 // Iterate through all of our fonts to find the font entries that match the desired family, charset, name (TT), and
 // boldness (TT). Each entry in FontInfo represents a specific combination of font states. We expect to encounter
 // numerous entries for each size/boldness/charset of TT fonts. If fAddBoldFonts is true, we'll add a font even if it's
-// bold, regardless of whether the user has chosen bold fonts or not.
+// bold, regardless of whether or not the user has chosen bold fonts.
 void AddFontSizesToList(PCWSTR pwszTTFace,
                         PCWSTR pwszAltTTFace,
                         const LONG_PTR dwExStyle,
@@ -579,8 +579,8 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
                 continue;
             }
 
-            // if we're being asked to add bold fonts, add unconditionally according to weight. Otherwise, only this
-            // entry to the list of it's in line with user choice. Raster fonts aren't available in bold.
+            // if we're being asked to add bold fonts, add unconditionally according to weight. Otherwise, only add this
+            // entry to the list if it's in line with user choice. Raster fonts aren't available in bold.
             if (!fAddBoldFonts && gbBold != IS_BOLD(FontInfo[i].Weight))
             {
                 DBGFONTS(("  Font %x has weight %d, but we wanted %sbold\n",

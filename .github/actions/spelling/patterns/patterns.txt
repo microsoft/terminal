@@ -1,5 +1,51 @@
 # See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
 
+# src/host/ut_host/AliasTests.cpp
+\$\d\$[A-ZA-z]
+
+# src/cascadia/TerminalSettingsEditor/Appearances.cpp
+// Pwease call.*
+
+# src/host/ft_host/CJK_DbcsTests.cpp
+// \|Q.*|^\s+// \|\s*aa\w+
+
+# App Package trailer
+__[a-z\d]{13}\b
+
+# src/host/ut_host/TextBufferTests.cpp
+// \d\|.{10}\|
+
+# contributors
+\[@[-_\w]+\]
+
+# src/types/CodepointWidthDetector.cpp
+  fallback to
+
+Include=".*?"
+
+^author = \w+
+
+D2D
+
+# Compiler flags
+\s-D(?=[A-Z])
+
+# Automatically suggested patterns
+
+# hit-count: 26 file-count: 12
+# unicode escaped characters (4)
+\\u[0-9a-fA-F]{4}
+
+# hit-count: 6 file-count: 5
+# ANSI color codes
+(?:\\(?:u00|x)1[Bb]|\\03[1-7]|\x1b|\\u\{1[Bb]\})\[(?:\d+(?:;\d+)*|)m(?=[a-z])
+
+# profiles.schema.json
+"pattern": ".*?"
+
+# Intentionally reversed binomials
+\b(?:bottom to top|down and up)\b
+
 # Windows accelerators
 \b[A-Z][a-z]*&[a-z]+(?!;)\b
 
@@ -43,7 +89,7 @@ L"[0-9A-F]{4}"
 
 # hit-count: 3904 file-count: 577
 # IServiceProvider / isAThing
-(?:(?:\b|_|(?<=[a-z]))[IT]|(?:\b|_)(?:nsI|isA))(?=(?:[A-Z][a-z]{2,})+(?:[A-Z\d]|\b))
+(?:(?:\b|_|(?<=[a-z]))[ITWX]|(?:\b|_)(?:nsI|isA))(?=(?:[A-Z][a-z]{2,})+(?:[A-Z\d]|\b))
 
 # hit-count: 2437 file-count: 826
 # #includes
@@ -130,7 +176,7 @@ mailto:[-a-zA-Z=;:/?%&0-9+@._]{3,}
 
 # hit-count: 1 file-count: 1
 # microsoft
-\b(?:https?://|)(?:(?:(?:blogs|download\.visualstudio|docs|msdn2?|research)\.|)microsoft|blogs\.msdn)\.co(?:m|\.\w\w)/[-_a-zA-Z0-9()=./%]*
+\b(?:https?://|)(?:(?:(?:blogs|download\.visualstudio|docs|msdn2?|research)\.|)microsoft|blogs\.msdn)\.co(?:m|\.\w\w)/[-_a-zA-Z0-9()=./%?#]*
 
 # hit-count: 1 file-count: 1
 # Punycode
@@ -171,7 +217,7 @@ Scro\&ll
  :\\windows\\syste\b
 TestUtils::VerifyExpectedString\(tb, L"[^"]+"
 (?:hostSm|mach)\.ProcessString\(L"[^"]+"
-\b([A-Za-z])\g{-1}{3,}\b
+
 Base64::s_(?:En|De)code\(L"[^"]+"
 VERIFY_ARE_EQUAL\(L"[^"]+"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
@@ -220,13 +266,15 @@ equals_insensitive_ascii\("\w+", "\w+"
 # mount
 \bmount\s+-t\s+(\w+)\s+\g{-1}\b
 # C/idl types, repeated CSS values, + English ...
-\s(auto|buffalo|center|div|Guid|GUID|inherit|long|LONG|none|normal|solid|that|thin|transparent|very)(?: \g{-1})+\s
+\s(auto|await|buffalo|center|div|Guid|GUID|inherit|long|LONG|none|normal|solid|that|thin|transparent|very)(?:\s\g{-1})+\s
 # C enum and struct
 \b(?:enum|struct)\s+(\w+)\s+\g{-1}\b
 # go templates
 \s(\w+)\s+\g{-1}\s+\`(?:graphql|inject|json|yaml):
 # doxygen / javadoc / .net
 (?:[\\@](?:brief|defgroup|groupname|link|t?param|return|retval)|(?:public|private|\[Parameter(?:\(.+\)|)\])(?:\s+(?:static|override|readonly|required|virtual))*)(?:\s+\{\w+\}|)\s+(\w+)\s+\g{-1}\s
+# C# getter/setter
+\s(\w+)\s+\g{-1}\s*\{\s*[gs]et;
 
 # macOS file path
 (?:Contents\W+|(?!iOS)/)MacOS\b

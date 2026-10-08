@@ -57,7 +57,7 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
         // In order for the _string to hold the correct representation of the
-        // ID stored in _value, we must be on a little endian architecture.
+        // ID stored in _value, we must be on a little-endian architecture.
         static_assert(std::endian::native == std::endian::little);
 
         uint64_t _value = 0;

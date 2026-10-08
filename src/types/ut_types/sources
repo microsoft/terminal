@@ -28,6 +28,9 @@ TARGETLIBS = \
     $(ONECORE_EXTERNAL_SDK_LIB_PATH)\ntdll.lib \
     $(TARGETLIBS) \
 
+DELAYLOAD = \
+    icu.dll \
+
 # -------------------------------------
 # Localization
 # -------------------------------------

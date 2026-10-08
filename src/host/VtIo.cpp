@@ -50,6 +50,11 @@ using namespace Microsoft::Console::Interactivity;
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
+        if (pArgs->GetAmbiguousIsWide())
+        {
+            CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -201,11 +206,14 @@ bool VtIo::IsUsingVt() const
             writer.Submit();
         }
 
+        // NOTE: The PTY host may not be a terminal and may never respond
+        // to our DA1 request. It's better to not wait for a response.
+        if (_lookingForCursorPosition)
         {
             // Allow the input thread to momentarily gain the console lock.
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto suspension = gci.SuspendLock();
-            _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+            _pVtInputThread->WaitUntilDA1(1000);
         }
     }
 

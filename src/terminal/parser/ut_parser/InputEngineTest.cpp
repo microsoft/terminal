@@ -315,6 +315,9 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 public:
     TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
+
+    void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t>) override {}
+
     virtual void WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
     virtual void WriteCtrlKey(const INPUT_RECORD& event) override;
@@ -896,7 +899,7 @@ void InputEngineTest::AltCtrlDTest()
 
 void InputEngineTest::AltIntermediateTest()
 {
-    // Tests GH#1209. When we process a alt+key combination where the key just
+    // Tests GH#1209. When we process an alt+key combination where the key just
     // so happens to be an intermediate character, we should make sure that an
     // immediately subsequent ctrl character is handled correctly.
 
@@ -966,7 +969,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
-    // First, expect a alt+backspace.
+    // First, expect an alt+backspace.
     testState.vExpectedInput.push_back(inputRec);
 
     std::wstring seq = L"\x1b\x7f";
@@ -981,7 +984,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
 
-    // Then, expect a enter
+    // Then, expect an enter
     testState.vExpectedInput.push_back(inputRec);
 
     seq = L"\x0d";

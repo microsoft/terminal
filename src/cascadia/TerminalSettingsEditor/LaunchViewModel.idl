@@ -17,7 +17,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> DefaultInputScopeList { get; };
 
         String LaunchSizeCurrentValue { get; };
+        String LaunchSizeAccessibleName { get; };
         String LaunchParametersCurrentValue { get; };
+        String LaunchParametersAccessibleName { get; };
         Double InitialPosX;
         Double InitialPosY;
         Boolean UseDefaultLaunchPosition;

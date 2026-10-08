@@ -29,8 +29,10 @@ class ConhostInternalGetSet final : public Microsoft::Console::VirtualTerminal::
 public:
     ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider& io);
 
+    void UnknownSequence() noexcept override;
     void ReturnResponse(const std::wstring_view response) override;
 
+    bool IsConPTY() const noexcept override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() override;
     BufferState GetBufferAndViewport() override;
     void SetViewportPosition(const til::point position) override;
@@ -71,6 +73,8 @@ public:
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
     void SearchMissingCommand(std::wstring_view missingCommand) override;
+
+    void ShowNotification(std::wstring_view title, std::wstring_view body) override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

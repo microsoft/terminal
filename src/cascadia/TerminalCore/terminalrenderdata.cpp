@@ -74,15 +74,16 @@ std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t 
 // Method Description:
 // - Gets the regex pattern ids of a location
 // Arguments:
-// - The location
+// - The viewport-relative location
 // Return value:
 // - The pattern IDs of the location
-std::vector<size_t> Terminal::GetPatternId(const til::point location) const
+std::vector<size_t> Terminal::GetPatternId(const til::point viewportPos) const
 {
     _assertLocked();
 
-    // Look through our interval tree for this location
-    const auto intervals = _patternIntervalTree.findOverlapping({ location.x + 1, location.y }, location);
+    // Convert viewport-relative (y=0 at visible start) to buffer-absolute
+    const til::point bufferPos{ viewportPos.x, viewportPos.y + _VisibleStartIndex() };
+    const auto intervals = _patternIntervalTree.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos);
     if (intervals.size() == 0)
     {
         return {};
@@ -183,11 +184,18 @@ void Terminal::SelectNewRegion(const til::point coordStart, const til::point coo
 std::wstring_view Terminal::GetConsoleTitle() const noexcept
 {
     _assertLocked();
-    if (_title.has_value())
+
+    if (_title)
     {
         return *_title;
     }
-    return _startingTitle;
+
+    if (_startingTitle)
+    {
+        return *_startingTitle;
+    }
+
+    return {};
 }
 
 // Method Description:

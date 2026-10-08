@@ -26,6 +26,12 @@ namespace Microsoft.Terminal.Control
         Console,
     };
 
+    enum AmbiguousWidth
+    {
+        Narrow,
+        Wide,
+    };
+
     enum DefaultInputScope
     {
         Default,
@@ -152,6 +158,12 @@ namespace Microsoft.Terminal.Control
     {
         String MissingCommand { get; };
         Int32 BufferRow { get; };
+    }
+
+    runtimeclass ShowNotificationEventArgs
+    {
+        String Title { get; };
+        String Body { get; };
     }
 
     runtimeclass WindowSizeChangedEventArgs

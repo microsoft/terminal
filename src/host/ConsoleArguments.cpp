@@ -22,6 +22,7 @@ const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
+static constexpr std::wstring_view AMBIGUOUS_IS_WIDE{ L"--ambiguousIsWide" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -109,45 +110,11 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _vtInHandle(hStdIn),
     _vtOutHandle(hStdOut)
 {
-    _clientCommandline = L"";
-    _headless = false;
-    _runAsComServer = false;
-    _createServerHandle = true;
-    _serverHandle = 0;
-    _signalHandle = 0;
-    _forceV1 = false;
-    _forceNoHandoff = false;
-    _width = 0;
-    _height = 0;
-    _inheritCursor = false;
 }
 
 ConsoleArguments::ConsoleArguments() :
     ConsoleArguments(L"", nullptr, nullptr)
 {
-}
-
-ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
-{
-    if (this != &other)
-    {
-        _commandline = other._commandline;
-        _clientCommandline = other._clientCommandline;
-        _vtInHandle = other._vtInHandle;
-        _vtOutHandle = other._vtOutHandle;
-        _headless = other._headless;
-        _createServerHandle = other._createServerHandle;
-        _serverHandle = other._serverHandle;
-        _signalHandle = other._signalHandle;
-        _forceV1 = other._forceV1;
-        _width = other._width;
-        _height = other._height;
-        _inheritCursor = other._inheritCursor;
-        _runAsComServer = other._runAsComServer;
-        _forceNoHandoff = other._forceNoHandoff;
-    }
-
-    return *this;
 }
 
 // Routine Description:
@@ -312,7 +279,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
     else
     {
-        // If we're trying to set the handle a second time, invalid.
+        // If we're trying to set the handle again, invalid.
         hr = E_INVALIDARG;
     }
 
@@ -498,6 +465,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             hr = s_GetArgumentValue(args, i, &_textMeasurement);
         }
+        else if (arg == AMBIGUOUS_IS_WIDE)
+        {
+            _ambiguousIsWide = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -619,6 +592,11 @@ std::wstring ConsoleArguments::GetClientCommandline() const
 const std::wstring& ConsoleArguments::GetTextMeasurement() const
 {
     return _textMeasurement;
+}
+
+bool ConsoleArguments::GetAmbiguousIsWide() const
+{
+    return _ambiguousIsWide;
 }
 
 bool ConsoleArguments::GetForceV1() const

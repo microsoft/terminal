@@ -143,6 +143,7 @@ void AppCommandlineArgs::_buildParser()
     // E.g., for "wt.exe -M -d c:/", we will use -M for the launch mode, but once we will encounter -d
     // we will know that the prefix is over and try to handle the suffix as a new tab subcommand
     _app.prefix_command();
+    _app.footer(RS_A(L"CmdAppHelpFooter"));
 
     // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
@@ -744,12 +745,21 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.AppendCommandLine(_appendCommandLineOption);
     }
 
-    bool inheritEnv = hasCommandline;
+    std::optional<bool> inheritEnv;
+    if (hasCommandline)
+    {
+        inheritEnv = true;
+    }
+
     if (*subcommand.inheritEnvOption)
     {
         inheritEnv = _inheritEnvironment;
     }
-    args.ReloadEnvironmentVariables(!inheritEnv);
+
+    if (inheritEnv.has_value())
+    {
+        args.ReloadEnvironmentVariables(!*inheritEnv);
+    }
 
     return args;
 }
@@ -1064,6 +1074,15 @@ std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
 int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
 {
     if (args.size() == 2 && args[1] == L"-Embedding")
+    {
+        return 0;
+    }
+
+    // When a toast notification is clicked, Windows may launch a new instance
+    // with "--from-toast" as the argument. This is a no-op sentinel. The
+    // in-process Activated handler on the toast already handled activation.
+    // See DesktopNotification.cpp for more details.
+    if (args.size() == 2 && args[1] == L"--from-toast")
     {
         return 0;
     }

@@ -92,7 +92,7 @@ const bool INPUT_KEY_INFO::IsShiftAndCtrlOnly() const
 }
 
 // Routine Description:
-// - Helps determine if this key input represents a alt+KEY combo
+// - Helps determine if this key input represents an alt+KEY combo
 // Arguments:
 // - <none>
 // Return Value:

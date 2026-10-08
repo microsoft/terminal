@@ -37,7 +37,7 @@ namespace VTApp
                         keyInfo = Console.ReadKey(true);
 
                         // 40-7E are the "dispatch" characters meaning the sequence is done.
-                        // 0x5B '[' is expected after the escape. So ignore that. We don't know a of a sequence terminated with it, so it also continues the loop.
+                        // 0x5B '[' is expected after the escape. So ignore that. We don't know of a sequence terminated with it, so it also continues the loop.
                         // keep collecting characters as the "reply" until then
                         while (keyInfo.KeyChar < 0x40 || keyInfo.KeyChar > 0x7E || keyInfo.KeyChar == '[')
                         {

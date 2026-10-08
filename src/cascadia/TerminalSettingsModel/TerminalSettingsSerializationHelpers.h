@@ -88,14 +88,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConfirmOnClose)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        return BaseEnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseEnumMapper::CanConvert(json);
+    }
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 6> mappings = {
+    static constexpr std::array<pair_type, 7> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
         pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
         pair_type{ "window", ValueType::Window },
         pair_type{ "taskbar", ValueType::Taskbar },
+        pair_type{ "notification", ValueType::Notification },
         pair_type{ "all", AllSet },
     };
 
@@ -571,9 +591,9 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
     JSON_MAPPINGS(4) = {
         pair_type{ "deprecated", ValueType::IgnoredDeprecatedEntry },
         pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
-        pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
 
         // Keep deprecated keys last, so when they get serialized again they aren't written out
+        pair_type{ "keyboardServiceWarning", ValueType::IgnoredDeprecatedEntry },
         pair_type{ "setAsDefault", ValueType::IgnoredDeprecatedEntry },
     };
 };
@@ -824,6 +844,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextMeasurement)
         pair_type{ "graphemes", ValueType::Graphemes },
         pair_type{ "wcswidth", ValueType::Wcswidth },
         pair_type{ "console", ValueType::Console },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::AmbiguousWidth)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "narrow", ValueType::Narrow },
+        pair_type{ "wide", ValueType::Wide },
     };
 };
 
