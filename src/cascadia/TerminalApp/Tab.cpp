@@ -1917,9 +1917,16 @@ namespace winrt::TerminalApp::implementation
         const auto firstMovableIndex = _isPinned ? 0u : _pinnedTabCount;
         const auto lastMovableIndex = (_isPinned ? _pinnedTabCount : numOfTabs) - 1;
 
+        // enabled if there are other unpinned tabs
         _closeOtherTabsMenuItem.IsEnabled(numOfTabs > _pinnedTabCount + (_isPinned ? 0u : 1u));
+
+        // enabled if there are unpinned tabs on the right
         _closeTabsAfterMenuItem.IsEnabled(numOfTabs > std::max(tabIndex + 1, _pinnedTabCount));
+
+        // enabled if not left-most tab in its pinned or unpinned group
         _moveLeftMenuItem.IsEnabled(tabIndex > firstMovableIndex);
+
+        // enabled if not last tab in its pinned or unpinned group
         _moveRightMenuItem.IsEnabled(tabIndex < lastMovableIndex);
     }
 
@@ -2696,6 +2703,14 @@ namespace winrt::TerminalApp::implementation
         _updateIsClosable();
     }
 
+    // Method Description:
+    // - Update our close button's visibility, to reflect both the ReadOnly
+    //   and pinned states of the tab, and also if we were told to have a visible
+    //   close button at all.
+    //   - the tab being read-only or pinned takes precedence. That will always suppress
+    //     the close button.
+    //   - Otherwise we'll use the state set in CloseButtonVisibility to control
+    //     the tab's visibility.
     void Tab::_updateIsClosable()
     {
         bool isClosable = true;

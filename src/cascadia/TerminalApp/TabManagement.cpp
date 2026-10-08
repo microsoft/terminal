@@ -1224,6 +1224,13 @@ namespace winrt::TerminalApp::implementation
         return gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(requestedIndex, firstIndex, lastIndex));
     }
 
+    // Method Description:
+    // - Moves the tab to another index in the tabs row (if required).
+    // Arguments:
+    // - currentTabIndex: the current index of the tab to move
+    // - suggestedNewTabIndex: the new index of the tab, limited to the tab's pinned or unpinned group
+    // Return Value:
+    // - <none>
     void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex,
                                    const int32_t suggestedNewTabIndex)
     {
