@@ -14,7 +14,7 @@ til::size CellSizeInDIP::AsInteger_DoNotUse() const noexcept
     return { til::math::rounding, width, height };
 }
 
-float FontInfo::GetFontSizeInDIP() const noexcept
+float FontInfo::GetFontSizeInPt() const noexcept
 {
     return _fontSizeInPt;
 }

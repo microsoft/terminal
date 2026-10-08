@@ -25,8 +25,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     FontInfo fontInfo) :
     _pConsoleWindowMetrics{ pMetrics },
     _PopupAttributes{ popupAttributes },
-    _currentFont{ std::move(fontInfo) },
-    _desiredFont{ std::move(fontInfoDesired) }
+    _currentFont{ std::move(fontInfo) }
 {
     // Check if VT mode should be enabled by default. This can be true if
     // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
@@ -36,6 +35,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
+    _setDesiredFont(std::move(fontInfoDesired));
 }
 
 // Routine Description:
@@ -526,7 +526,7 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
     }
 }
 
-void SCREEN_INFORMATION::UpdateFont(FontInfoDesired newFont)
+void SCREEN_INFORMATION::_setDesiredFont(FontInfoDesired newFont)
 {
     auto& globals = ServiceLocator::LocateGlobals();
     auto& gci = globals.getConsoleInformation();
@@ -546,12 +546,12 @@ void SCREEN_INFORMATION::UpdateFont(FontInfoDesired newFont)
         }
     }
 
-    _updateFont(std::move(newFont));
+    _desiredFont = std::move(newFont);
 }
 
-void SCREEN_INFORMATION::_updateFont(FontInfoDesired newFont)
+void SCREEN_INFORMATION::UpdateFont(FontInfoDesired newFont)
 {
-    _desiredFont = std::move(newFont);
+    _setDesiredFont(std::move(newFont));
 
     RefreshFontWithRenderer();
 
@@ -570,7 +570,7 @@ void SCREEN_INFORMATION::_updateFont(FontInfoDesired newFont)
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->_updateFont(_desiredFont);
+        _psiMainBuffer->UpdateFont(_desiredFont);
     }
 }
 

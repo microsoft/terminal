@@ -306,7 +306,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         FontInfoDesired fi;
-        fi.SetFaceName(consoleFontInfoEx.FaceName);
+        fi.SetFaceName({ consoleFontInfoEx.FaceName, wcsnlen_s(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName)) });
         fi.SetFamily(gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily));
         fi.SetWeight(consoleFontInfoEx.FontWeight);
         fi.SetCodePage(gci.OutputCP);

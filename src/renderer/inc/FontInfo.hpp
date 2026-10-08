@@ -35,7 +35,7 @@ struct CellSizeInDIP
 
 struct FontInfo : FontInfoBase
 {
-    float GetFontSizeInDIP() const noexcept;
+    float GetFontSizeInPt() const noexcept;
     CellSizeInDIP GetCellSizeInDIP() const noexcept;
     til::size GetCellSizeInPhysicalPx() const noexcept;
 

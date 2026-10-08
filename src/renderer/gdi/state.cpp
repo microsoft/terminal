@@ -632,7 +632,7 @@ GdiEngine::~GdiEngine()
         // some monospace fonts look very similar.
         LOGFONTW lf = { 0 };
         lf.lfHeight = lroundf(FontDesired.GetCellHeight().Resolve(16, dpi, 12, 0));
-        lf.lfWidth = lroundf(FontDesired.GetCellWidth().Resolve(0, dpi, 12, 0));
+        lf.lfWidth = FontDesired.IsTrueTypeFont() ? 0 : lroundf(FontDesired.GetCellWidth().Resolve(0, dpi, 12, 0));
         lf.lfWeight = FontDesired.GetWeight();
 
         // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
@@ -711,8 +711,8 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(E_FAIL, hFontOld.get());
 
     // Save off the font metrics for various other calculations
-    OUTLINETEXTMETRICW tm;
-    RETURN_HR_IF(E_FAIL, !(GetOutlineTextMetricsW(hdcTemp.get(), sizeof(tm), &tm)));
+    TEXTMETRICW tm;
+    RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(hdcTemp.get(), &tm)));
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     SIZE sz;
@@ -751,10 +751,10 @@ GdiEngine::~GdiEngine()
         currentFaceName.resize(faceNameLength - 1); // remove the null terminator (wstring!)
 
         Font.SetFaceName(std::move(currentFaceName));
-        Font.SetFamily(tm.otmTextMetrics.tmPitchAndFamily);
-        Font.SetWeight(tm.otmTextMetrics.tmWeight);
+        Font.SetFamily(tm.tmPitchAndFamily);
+        Font.SetWeight(tm.tmWeight);
         Font.SetCodePage(FontDesired.GetCodePage());
-        Font.SetFontSizeInPt((tm.otmAscent - tm.otmDescent) * 72.0f / dpi);
+        Font.SetFontSizeInPt((tm.tmHeight - tm.tmInternalLeading) * 72.0f / dpi);
         Font.SetCellSizeInDIP({ coordFont.width * 96.0f / dpi, coordFont.height * 96.0f / dpi });
         Font.SetCellSizeInPhysicalPx(coordFont);
     }

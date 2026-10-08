@@ -193,7 +193,7 @@ private:
     void _makeCursorVisible();
 
     // Rendering / Viewport
-    void _updateFont(FontInfoDesired newFont);
+    void _setDesiredFont(FontInfoDesired newFont);
     void _CalculateViewportSize(const til::rect* clientArea, til::size* size);
     void _AdjustViewportSize(const til::rect* clientNew, const til::rect* clientOld, const til::size* size);
     void _CommitViewport(const Microsoft::Console::Types::Viewport& viewport);

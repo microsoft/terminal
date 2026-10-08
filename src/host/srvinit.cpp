@@ -43,6 +43,8 @@ try
     Globals.uiOEMCP = GetOEMCP();
     Globals.uiWindowsCP = GetACP();
 
+    LOG_IF_NTSTATUS_FAILED(TrueTypeFontList::s_Initialize());
+
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.
     if (Globals.delegationPair.IsUndecided())

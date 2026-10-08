@@ -946,6 +946,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _colorGlyphs = _settings.EnableColorGlyphs();
             _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
             _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
+            _desiredFont.SetFaceName(std::wstring{ std::wstring_view{ _settings.FontFace() } });
+            _desiredFont.SetWeight(_settings.FontWeight().Weight);
+            _desiredFont.SetCodePage(CP_UTF8);
+            _desiredFont.SetCellWidth(_cellWidth);
+            _desiredFont.SetCellHeight(_cellHeight);
+            _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
+            _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
             _runtimeOpacity = std::nullopt;
             _runtimeFocusedOpacity = std::nullopt;
 
@@ -1126,8 +1133,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
-        _terminal->SetFontInfo(_actualFont);
-
         if (_renderEngine)
         {
             static constexpr auto cloneMap = [](const auto& map) {
@@ -1153,6 +1158,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
         }
+
+        _terminal->SetFontInfo(_actualFont);
     }
 
     void ControlCore::_raiseFontSizeChanged()
@@ -1172,7 +1179,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto before = _actualFont.GetCellSizeInPhysicalPx();
 
         const auto newSize = std::max(fontSize, 1.0f);
-        const auto fontFace = _settings.FontFace();
 
         _desiredFont.SetFontSizeInPt(newSize);
 

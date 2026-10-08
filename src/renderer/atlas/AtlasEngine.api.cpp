@@ -851,7 +851,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     const auto cellWidth = gsl::narrow<u16>(lrintf(adjustedWidth));
     const auto cellHeight = gsl::narrow<u16>(lrintf(adjustedHeight));
 
-    fontInfo.SetFaceName(faceName);
+    fontInfo.SetFaceName(primaryFontName);
     fontInfo.SetFamily(fontInfoDesired.GetFamily());
     fontInfo.SetWeight(requestedWeight);
     fontInfo.SetCodePage(fontInfoDesired.GetCodePage());
