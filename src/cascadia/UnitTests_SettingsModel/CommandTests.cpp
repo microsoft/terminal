@@ -455,6 +455,10 @@ namespace SettingsModelUnitTests
             {
                 "name":"action8_tabTitleEscaping",
                 "command": { "action": "newWindow", "tabTitle":"\\\";foo\\" }
+            },
+            {
+                "name":"action9_commandlineEscaping",
+                "command": { "action": "newWindow", "commandline":"C:\\Program Files\\example\\app.exe --flag \"quoted value\"" }
             }
         ])" };
 
@@ -464,7 +468,7 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json, OriginTag::None);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(9u, commands.Size());
+        VERIFY_ARE_EQUAL(10u, commands.Size());
 
         {
             auto command = commands.Lookup(L"action0");
@@ -551,7 +555,7 @@ namespace SettingsModelUnitTests
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
                 L"cmdline: \"%s\"", cmdline.c_str()));
-            VERIFY_ARE_EQUAL(L"-- \"pop.exe \"ya ha ha\"\"", terminalArgs.ToCommandline());
+            VERIFY_ARE_EQUAL(L"-- \"pop.exe \\\"ya ha ha\\\"\"", terminalArgs.ToCommandline());
         }
 
         {
@@ -600,6 +604,19 @@ namespace SettingsModelUnitTests
             Log::Comment(NoThrowString().Format(
                 L"cmdline: \"%s\"", cmdline.c_str()));
             VERIFY_ARE_EQUAL(LR"-(--title "\\\"\;foo\\")-", terminalArgs.ToCommandline());
+        }
+
+        {
+            auto command = commands.Lookup(L"action9_commandlineEscaping");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
+            const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_ARE_EQUAL(LR"-(-- "C:\Program Files\example\app.exe --flag \"quoted value\"")-", terminalArgs.ToCommandline());
         }
     }
 }

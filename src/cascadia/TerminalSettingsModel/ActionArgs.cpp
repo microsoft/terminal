@@ -210,7 +210,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!Commandline().empty())
         {
-            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"-- \"{}\" "), Commandline());
+            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"-- {} "), QuoteAndEscapeCommandlineArg(Commandline()));
         }
 
         if (str.empty())
