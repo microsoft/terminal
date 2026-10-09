@@ -208,9 +208,66 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // This kicks off TabView::SelectionChanged, in response to which
-        // we'll attach the terminal's Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+        if (_backgroundActions && _tabs.Size() > 1)
+        {
+            // `wt --background` leaves the current tab selected. Switching tabs
+            // moves keyboard focus, which would activate an inactive window.
+            _layOutBackgroundTab(*newTabImpl);
+        }
+        else
+        {
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
+    }
+
+    // Method Description:
+    // - A tab's terminals (and their processes) only start once the tab has
+    //   been laid out, which normally happens when it's selected. Lay out an
+    //   unselected tab behind the current one, with zero opacity, until its
+    //   terminals have started. Then detach it again like any other unselected
+    //   tab.
+    // Arguments:
+    // - tab: The new, unselected tab.
+    safe_void_coroutine TerminalPage::_layOutBackgroundTab(const winrt::TerminalApp::Tab tab)
+    {
+        const auto strong = get_strong();
+        const auto tabImpl{ _GetTabImpl(tab) };
+        const auto content{ tab.Content() };
+        if (!tabImpl || !content)
+        {
+            co_return;
+        }
+
+        const auto started = [&]() {
+            const auto rootPane{ tabImpl->GetRootPane() };
+            return !rootPane || !rootPane->WalkTree([](const auto& pane) {
+                const auto control{ pane->GetTerminalControl() };
+                return control && control.ConnectionState() == ConnectionState::NotConnected;
+            });
+        };
+
+        content.Opacity(0);
+        content.IsHitTestVisible(false);
+        _tabContent.Children().InsertAt(0, content);
+
+        // Minimized windows don't lay out on their own, so force it. Give up
+        // after 30s; the tab's terminals then start when it's first selected.
+        for (auto attempt = 0; attempt < 300 && !started() && _GetFocusedTab() != tab; ++attempt)
+        {
+            content.UpdateLayout();
+            co_await winrt::resume_after(std::chrono::milliseconds{ 100 });
+            co_await wil::resume_foreground(Dispatcher());
+        }
+
+        // The user may have selected the tab in the meantime.
+        if (uint32_t index; _GetFocusedTab() != tab && _tabContent.Children().IndexOf(content, index))
+        {
+            _tabContent.Children().RemoveAt(index);
+        }
+        content.Opacity(1);
+        content.IsHitTestVisible(true);
     }
 
     // Method Description:

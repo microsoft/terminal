@@ -861,14 +861,19 @@ void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord,
 // - <none>
 void AppHost::DispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
-    winrt::TerminalApp::SummonWindowBehavior summonArgs{};
-    summonArgs.MoveToCurrentDesktop(false);
-    summonArgs.DropdownDuration(0);
-    summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
-    // Summon the window whenever we dispatch a commandline to it. This will
-    // make it obvious when a new tab/pane is created in a window.
-    HandleSummon(std::move(summonArgs));
+    // `wt --background` leaves the window where it is, so that scripts can open
+    // tabs without stealing the focus from whatever the user is doing.
+    if (!args.Background())
+    {
+        winrt::TerminalApp::SummonWindowBehavior summonArgs{};
+        summonArgs.MoveToCurrentDesktop(false);
+        summonArgs.DropdownDuration(0);
+        summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+        // Summon the window whenever we dispatch a commandline to it. This will
+        // make it obvious when a new tab/pane is created in a window.
+        HandleSummon(std::move(summonArgs));
+    }
     _windowLogic.ExecuteCommandline(std::move(args));
 }
 
