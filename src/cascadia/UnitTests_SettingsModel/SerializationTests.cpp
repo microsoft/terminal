@@ -42,6 +42,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(Actions);
         TEST_METHOD(CascadiaSettings);
         TEST_METHOD(LegacyFontSettings);
+        TEST_METHOD(MigrateLegacyConfirmCloseAllTabs);
 
         TEST_METHOD(RoundtripReloadEnvVars);
         TEST_METHOD(DontRoundtripNoReloadEnvVars);
@@ -571,6 +572,86 @@ namespace SettingsModelUnitTests
         const auto jsonOutput{ VerifyParseSucceeded(expectedOutput) };
 
         VERIFY_ARE_EQUAL(toString(jsonOutput), toString(result));
+    }
+
+    void SerializationTests::MigrateLegacyConfirmCloseAllTabs()
+    {
+        struct TestCase
+        {
+            std::string_view globals;
+            ConfirmOnClose expected;
+            // The value we expect to be written as "warning.confirmOnClose", or empty if none.
+            std::string_view expectedJson;
+            bool expectFixup;
+        };
+
+        static constexpr std::array testCases{
+            // Nothing to migrate.
+            TestCase{ "", ConfirmOnClose::Automatic, "", false },
+            TestCase{ R"("warning.confirmOnClose": "never")", ConfirmOnClose::Never, "never", false },
+            // true -> automatic, false -> never, for both legacy keys.
+            TestCase{ R"("confirmCloseAllTabs": true)", ConfirmOnClose::Automatic, "automatic", true },
+            TestCase{ R"("confirmCloseAllTabs": false)", ConfirmOnClose::Never, "never", true },
+            TestCase{ R"("warning.confirmCloseAllTabs": true)", ConfirmOnClose::Automatic, "automatic", true },
+            TestCase{ R"("warning.confirmCloseAllTabs": false)", ConfirmOnClose::Never, "never", true },
+            // "warning.confirmOnClose" takes precedence over either legacy key.
+            TestCase{ R"("warning.confirmOnClose": "always", "confirmCloseAllTabs": false)", ConfirmOnClose::Always, "always", true },
+            TestCase{ R"("warning.confirmOnClose": "always", "warning.confirmCloseAllTabs": false)", ConfirmOnClose::Always, "always", true },
+            // "warning.confirmCloseAllTabs" takes precedence over "confirmCloseAllTabs".
+            TestCase{ R"("warning.confirmCloseAllTabs": false, "confirmCloseAllTabs": true)", ConfirmOnClose::Never, "never", true },
+            // A null value is ignored, but the stale key still gets removed.
+            TestCase{ R"("confirmCloseAllTabs": null)", ConfirmOnClose::Automatic, "", true },
+            TestCase{ R"("warning.confirmCloseAllTabs": null)", ConfirmOnClose::Automatic, "", true },
+        };
+
+        for (const auto& tc : testCases)
+        {
+            Log::Comment(NoThrowString().Format(L"Testing case: {%s}", til::u8u16(tc.globals).c_str()));
+
+            std::string settingsJson{ R"({
+                "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                "profiles": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ])" };
+            if (!tc.globals.empty())
+            {
+                settingsJson.append(",\n").append(tc.globals);
+            }
+            settingsJson.append("\n}");
+
+            implementation::SettingsLoader loader{ settingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+            loader.MergeInboxIntoUserSettings();
+            loader.FinalizeLayering();
+            VERIFY_ARE_EQUAL(tc.expectFixup, loader.FixupUserSettings());
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+            VERIFY_ARE_EQUAL(tc.expected, settings->GlobalSettings().ConfirmOnClose());
+            VERIFY_ARE_EQUAL(!tc.expectedJson.empty(), settings->GlobalSettings().HasConfirmOnClose());
+
+            const auto result{ settings->ToJson() };
+            VERIFY_IS_FALSE(result.isMember("confirmCloseAllTabs"));
+            VERIFY_IS_FALSE(result.isMember("warning.confirmCloseAllTabs"));
+            if (tc.expectedJson.empty())
+            {
+                VERIFY_IS_FALSE(result.isMember("warning.confirmOnClose"));
+            }
+            else
+            {
+                VERIFY_ARE_EQUAL(std::string{ tc.expectedJson }, result["warning.confirmOnClose"].asString());
+            }
+
+            Log::Comment(L"Reloading the written settings shouldn't need any further fixups");
+            implementation::SettingsLoader reloader{ toString(result), implementation::LoadStringResource(IDR_DEFAULTS) };
+            reloader.MergeInboxIntoUserSettings();
+            reloader.FinalizeLayering();
+            VERIFY_IS_FALSE(reloader.FixupUserSettings());
+
+            const auto reloaded = winrt::make_self<implementation::CascadiaSettings>(std::move(reloader));
+            VERIFY_ARE_EQUAL(tc.expected, reloaded->GlobalSettings().ConfirmOnClose());
+        }
     }
 
     void SerializationTests::RoundtripReloadEnvVars()
