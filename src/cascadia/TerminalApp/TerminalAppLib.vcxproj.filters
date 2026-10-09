@@ -2,6 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natstepfilter" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
@@ -27,12 +29,11 @@
     <ClCompile Include="CommandPaletteItems.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="fzf/fzf.cpp">
-      <Filter>fzf</Filter>
-    </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="TerminalSettingsCache.cpp" />
+    <ClCompile Include="../fzf/fzf.cpp" />
+    <ClCompile Include="DesktopNotification.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -55,13 +56,12 @@
     <ClInclude Include="BasePaletteItem.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="fzf/fzf.h">
-      <Filter>fzf</Filter>
-    </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />
     <ClInclude Include="TerminalSettingsCache.h" />
+    <ClInclude Include="../fzf/fzf.h" />
+    <ClInclude Include="DesktopNotification.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -119,6 +119,7 @@
     <Page Include="SuggestionsControl.xaml" />
     <Page Include="SnippetsPaneContent.xaml" />
     <Page Include="MarkdownPaneContent.xaml" />
+    <Page Include="WindowContextMenu.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">
