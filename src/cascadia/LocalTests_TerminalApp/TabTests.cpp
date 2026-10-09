@@ -97,6 +97,12 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestClampSwitchToTab);
 
+        TEST_METHOD(PinTabsAndKeepTheirOrder);
+        TEST_METHOD(MoveTabsWithinPinnedGroup);
+        TEST_METHOD(CloseOtherTabsKeepsPinnedTabs);
+        TEST_METHOD(CloseTabsAfterKeepsPinnedTabs);
+        TEST_METHOD(RestorePinnedTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -696,6 +702,191 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
 
         return page;
+    }
+
+    void TabTests::PinTabsAndKeepTheirOrder()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            NewTerminalArgs terminalArguments{ 1 };
+            page->_OpenNewTab(terminalArguments);
+            page->_OpenNewTab(terminalArguments);
+
+            const auto firstTab = page->_tabs.GetAt(0);
+            const auto secondTab = page->_tabs.GetAt(1);
+            const auto thirdTab = page->_tabs.GetAt(2);
+            const auto selectedItem = page->_tabView.SelectedItem();
+            const auto previouslyFocusedTab = page->_mruTabs.GetAt(1);
+            ActionEventArgs pinArguments{};
+            page->_HandleToggleTabPinned(secondTab, pinArguments);
+
+            VERIFY_IS_TRUE(pinArguments.Handled());
+            VERIFY_IS_TRUE(secondTab.IsPinned());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == secondTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == firstTab);
+            VERIFY_IS_TRUE(page->_tabView.SelectedItem() == selectedItem);
+            VERIFY_IS_TRUE(page->_mruTabs.GetAt(1) == previouslyFocusedTab);
+            VERIFY_IS_FALSE(secondTab.TabViewItem().IsClosable());
+            secondTab.CloseButtonVisibility(TabCloseButtonVisibility::Hover);
+            VERIFY_IS_FALSE(secondTab.TabViewItem().IsClosable());
+
+            page->_HandleToggleTabPinned(thirdTab, pinArguments);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == thirdTab);
+
+            page->_HandleToggleTabPinned(secondTab, pinArguments);
+            VERIFY_IS_FALSE(secondTab.IsPinned());
+            VERIFY_IS_TRUE(secondTab.TabViewItem().IsClosable());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == thirdTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == secondTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(2) == firstTab);
+
+            for (uint32_t index = 0; index < page->_tabs.Size(); ++index)
+            {
+                const auto tab = page->_tabs.GetAt(index);
+                VERIFY_ARE_EQUAL(index, tab.TabViewIndex());
+                VERIFY_IS_TRUE(page->_tabView.TabItems().GetAt(index) == tab.TabViewItem());
+            }
+        });
+    }
+
+    void TabTests::MoveTabsWithinPinnedGroup()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            NewTerminalArgs terminalArguments{ 1 };
+            page->_OpenNewTab(terminalArguments);
+            page->_OpenNewTab(terminalArguments);
+
+            const auto firstPinnedTab = page->_tabs.GetAt(0);
+            const auto secondPinnedTab = page->_tabs.GetAt(1);
+            const auto unpinnedTab = page->_tabs.GetAt(2);
+            ActionEventArgs pinArguments{};
+            page->_HandleToggleTabPinned(firstPinnedTab, pinArguments);
+            page->_HandleToggleTabPinned(secondPinnedTab, pinArguments);
+
+            page->_TryMoveTab(0, 2);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == secondPinnedTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == firstPinnedTab);
+            page->_TryMoveTab(2, 0);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(2) == unpinnedTab);
+
+            page->_TabDragStarted(nullptr, nullptr);
+            page->_tabView.TabItems().RemoveAt(0);
+            page->_tabView.TabItems().InsertAt(2, secondPinnedTab.TabViewItem());
+            page->_TabDragCompleted(nullptr, nullptr);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == firstPinnedTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == secondPinnedTab);
+            VERIFY_IS_TRUE(page->_tabView.TabItems().GetAt(1) == secondPinnedTab.TabViewItem());
+
+            page->_TabDragStarted(nullptr, nullptr);
+            page->_tabView.TabItems().RemoveAt(2);
+            page->_tabView.TabItems().InsertAt(0, unpinnedTab.TabViewItem());
+            page->_TabDragCompleted(nullptr, nullptr);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(2) == unpinnedTab);
+            VERIFY_IS_TRUE(page->_tabView.TabItems().GetAt(2) == unpinnedTab.TabViewItem());
+
+            page->_settings.WindowSettingsDefaults().NewTabPosition(NewTabPosition::AfterCurrentTab);
+            page->_SelectTab(0);
+            page->_OpenNewTab(terminalArguments);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == firstPinnedTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == secondPinnedTab);
+            VERIFY_IS_FALSE(page->_tabs.GetAt(2).IsPinned());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(3) == unpinnedTab);
+        });
+    }
+
+    void TabTests::CloseOtherTabsKeepsPinnedTabs()
+    {
+        auto page = _commonSetup();
+        winrt::TerminalApp::Tab pinnedTab{ nullptr };
+        winrt::TerminalApp::Tab keptTab{ nullptr };
+
+        TestOnUIThread([&]() {
+            page->_settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
+            NewTerminalArgs terminalArguments{ 1 };
+            page->_OpenNewTab(terminalArguments);
+            page->_OpenNewTab(terminalArguments);
+            pinnedTab = page->_tabs.GetAt(0);
+            keptTab = page->_tabs.GetAt(2);
+            ActionEventArgs pinArguments{};
+            page->_HandleToggleTabPinned(pinnedTab, pinArguments);
+
+            ActionEventArgs closeArguments{ CloseOtherTabsArgs{ 2 } };
+            page->_HandleCloseOtherTabs(nullptr, closeArguments);
+            VERIFY_IS_TRUE(closeArguments.Handled());
+        });
+
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0) == pinnedTab);
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1) == keptTab);
+        });
+    }
+
+    void TabTests::CloseTabsAfterKeepsPinnedTabs()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            page->_settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
+            NewTerminalArgs terminalArguments{ 1 };
+            page->_OpenNewTab(terminalArguments);
+            page->_OpenNewTab(terminalArguments);
+            ActionEventArgs pinArguments{};
+            page->_HandleToggleTabPinned(page->_tabs.GetAt(0), pinArguments);
+            page->_HandleToggleTabPinned(page->_tabs.GetAt(1), pinArguments);
+
+            ActionEventArgs closeArguments{ CloseTabsAfterArgs{ 0 } };
+            page->_HandleCloseTabsAfter(nullptr, closeArguments);
+            VERIFY_IS_TRUE(closeArguments.Handled());
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0).IsPinned());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1).IsPinned());
+
+            page->_HandleCloseTabRequested(page->_tabs.GetAt(0));
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0).IsPinned());
+        });
+    }
+
+    void TabTests::RestorePinnedTab()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            const auto originalTab = page->_tabs.GetAt(0);
+            ActionEventArgs pinArguments{};
+            page->_HandleToggleTabPinned(originalTab, pinArguments);
+
+            auto startupActions = page->_GetTabImpl(originalTab)->BuildStartupActions(BuildStartupKind::None);
+            const auto savedActions = winrt::single_threaded_vector<ActionAndArgs>(std::move(startupActions));
+            const auto restoredActions = ActionAndArgs::Deserialize(ActionAndArgs::Serialize(savedActions));
+            VERIFY_ARE_EQUAL(ShortcutAction::ToggleTabPinned, restoredActions.GetAt(restoredActions.Size() - 1).Action());
+
+            for (const auto& action : restoredActions)
+            {
+                page->_actionDispatch->DoAction(action);
+            }
+
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(0).IsPinned());
+            VERIFY_IS_TRUE(page->_tabs.GetAt(1).IsPinned());
+            VERIFY_IS_FALSE(page->_tabs.GetAt(1).TabViewItem().IsClosable());
+
+            page->_HandleToggleTabPinned(originalTab, pinArguments);
+            for (const auto& action : page->_GetTabImpl(originalTab)->BuildStartupActions(BuildStartupKind::None))
+            {
+                VERIFY_ARE_NOT_EQUAL(ShortcutAction::ToggleTabPinned, action.Action());
+            }
+        });
     }
 
     void TabTests::TryZoomPane()

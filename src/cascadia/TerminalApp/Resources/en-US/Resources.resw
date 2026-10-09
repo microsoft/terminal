@@ -239,6 +239,15 @@
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Reset</value>
   </data>
+  <data name="PinTabText" xml:space="preserve">
+    <value>Pin tab</value>
+  </data>
+  <data name="UnpinTabText" xml:space="preserve">
+    <value>Unpin tab</value>
+  </data>
+  <data name="PinnedTabStatus" xml:space="preserve">
+    <value>Pinned</value>
+  </data>
   <data name="RenameTabText" xml:space="preserve">
     <value>Rename tab</value>
   </data>

@@ -122,6 +122,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        insertPosition = std::max(insertPosition, _GetPinnedTabCount());
+
         // Add the new tab to the list of our tabs.
         _tabs.InsertAt(insertPosition, *newTabImpl);
         _mruTabs.Append(*newTabImpl);
@@ -970,6 +972,11 @@ namespace winrt::TerminalApp::implementation
 
         for (auto& tab : tabs)
         {
+            if (tab.IsPinned())
+            {
+                continue;
+            }
+
             winrt::Windows::Foundation::IAsyncAction action{ nullptr };
             if (const auto strong = weak.get())
             {
@@ -1080,7 +1087,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // `tab.Shutdown()` in `_RemoveTab()` sets the content to null = This checks if the tab is closed.
-        if (tab.Content())
+        if (tab.Content() && !tab.IsPinned())
         {
             _HandleCloseTabRequested(tab);
         }
@@ -1173,11 +1180,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTabIndices()
     {
         const auto size = _tabs.Size();
+        const auto pinnedTabs = _GetPinnedTabCount();
         for (uint32_t i = 0; i < size; ++i)
         {
             auto tab{ _tabs.GetAt(i) };
             auto tabImpl{ winrt::get_self<Tab>(tab) };
-            tabImpl->UpdateTabViewIndex(i, size);
+            tabImpl->UpdateTabViewIndex(i, size, pinnedTabs);
         }
     }
 
@@ -1200,20 +1208,40 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    uint32_t TerminalPage::_GetPinnedTabCount() const
+    {
+        return gsl::narrow_cast<uint32_t>(std::count_if(begin(_tabs), end(_tabs), [](const auto& tab) {
+            return tab.IsPinned();
+        }));
+    }
+
+    uint32_t TerminalPage::_ClampTabMoveIndex(const winrt::TerminalApp::Tab& tab, int32_t requestedIndex) const
+    {
+        const auto pinnedTabs = _GetPinnedTabCount();
+        const auto firstIndex = tab.IsPinned() ? 0u : pinnedTabs;
+        const auto lastIndex = (tab.IsPinned() ? pinnedTabs : _tabs.Size()) - 1;
+
+        return gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(requestedIndex, firstIndex, lastIndex));
+    }
+
     // Method Description:
     // - Moves the tab to another index in the tabs row (if required).
     // Arguments:
     // - currentTabIndex: the current index of the tab to move
-    // - suggestedNewTabIndex: the new index of the tab, might get clamped to fit int the tabs row boundaries
+    // - suggestedNewTabIndex: the new index of the tab, limited to the tab's pinned or unpinned group
     // Return Value:
     // - <none>
     void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex,
                                    const int32_t suggestedNewTabIndex)
     {
-        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        const auto tab = _tabs.GetAt(currentTabIndex);
+        const auto newTabIndex = _ClampTabMoveIndex(tab, suggestedNewTabIndex);
         if (currentTabIndex != newTabIndex)
         {
-            auto tab = _tabs.GetAt(currentTabIndex);
+            const auto selectedItem = _tabView.SelectedItem();
+            const auto wasRemoving = std::exchange(_removing, true);
+            auto restoreRemoving = wil::scope_exit([&]() noexcept { _removing = wasRemoving; });
+
             auto tabViewItem = tab.TabViewItem();
             _tabs.RemoveAt(currentTabIndex);
             _tabs.InsertAt(newTabIndex, tab);
@@ -1221,7 +1249,7 @@ namespace winrt::TerminalApp::implementation
 
             _tabView.TabItems().RemoveAt(currentTabIndex);
             _tabView.TabItems().InsertAt(newTabIndex, tabViewItem);
-            _tabView.SelectedItem(tabViewItem);
+            _tabView.SelectedItem(selectedItem);
 
             if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
             {
@@ -1245,17 +1273,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
                                          const IInspectable& /*eventArgs*/)
     {
-        auto& from{ _rearrangeFrom };
-        auto& to{ _rearrangeTo };
+        const auto from = _rearrangeFrom;
+        auto to = _rearrangeTo;
 
         if (from.has_value() && to.has_value() && to != from)
         {
             try
             {
                 auto& tabs{ _tabs };
-                auto tab = tabs.GetAt(from.value());
+                const auto tab = tabs.GetAt(from.value());
+                const auto destination = _ClampTabMoveIndex(tab, to.value());
+                if (destination != to.value())
+                {
+                    const auto item = tab.TabViewItem();
+                    _tabView.TabItems().RemoveAt(to.value());
+                    _tabView.TabItems().InsertAt(destination, item);
+                }
+
                 tabs.RemoveAt(from.value());
-                tabs.InsertAt(to.value(), tab);
+                tabs.InsertAt(destination, tab);
+                to = destination;
                 _UpdateTabIndices();
             }
             CATCH_LOG();
@@ -1270,8 +1307,8 @@ namespace winrt::TerminalApp::implementation
             TabRow().TabView().SelectedIndex(to.value());
         }
 
-        from = std::nullopt;
-        to = std::nullopt;
+        _rearrangeFrom = std::nullopt;
+        _rearrangeTo = std::nullopt;
     }
 
     void TerminalPage::_DismissTabContextMenus()

@@ -317,6 +317,19 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleTabPinned(const IInspectable& sender,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto tab = _senderOrFocusedTab(sender))
+        {
+            tab->IsPinned(!tab->IsPinned());
+            const auto destination = _GetPinnedTabCount() - (tab->IsPinned() ? 1u : 0u);
+            _TryMoveTab(tab->TabViewIndex(), destination);
+            _UpdateTabIndices();
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleTogglePaneReadOnly(const IInspectable& sender,
                                                  const ActionEventArgs& args)
     {
@@ -799,6 +812,7 @@ namespace winrt::TerminalApp::implementation
                 std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             }
 
+            std::erase_if(tabsToRemove, [](const auto& tab) { return tab.IsPinned(); });
             _RemoveTabs(tabsToRemove);
 
             actionArgs.Handled(!tabsToRemove.empty());
@@ -829,6 +843,7 @@ namespace winrt::TerminalApp::implementation
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
             std::vector<winrt::TerminalApp::Tab> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
+            std::erase_if(tabsToRemove, [](const auto& tab) { return tab.IsPinned(); });
             _RemoveTabs(tabsToRemove);
 
             // TODO:GH#7182 For whatever reason, if you run this action

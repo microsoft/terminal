@@ -559,6 +559,8 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateMRUTab(const winrt::TerminalApp::Tab& tab);
 
+        uint32_t _GetPinnedTabCount() const;
+        uint32_t _ClampTabMoveIndex(const winrt::TerminalApp::Tab& tab, int32_t requestedIndex) const;
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 
         void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);

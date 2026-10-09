@@ -103,6 +103,7 @@ namespace winrt::TerminalApp::implementation
         _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
+                tab->_UpdatePinnedAppearance();
                 tab->RequestFocusActiveControl.raise();
             }
         });
@@ -582,11 +583,12 @@ namespace winrt::TerminalApp::implementation
             {
                 newTabAction.Action(ShortcutAction::OpenSettings);
                 newTabAction.Args(OpenSettingsArgs{ SettingsTarget::SettingsUI });
-                return std::vector<ActionAndArgs>{ std::move(newTabAction) };
             }
-
-            newTabAction.Action(ShortcutAction::NewTab);
-            newTabAction.Args(NewTabArgs{ newContentArgs });
+            else
+            {
+                newTabAction.Action(ShortcutAction::NewTab);
+                newTabAction.Args(NewTabArgs{ newContentArgs });
+            }
 
             state.args.emplace(state.args.begin(), std::move(newTabAction));
         }
@@ -632,6 +634,11 @@ namespace winrt::TerminalApp::implementation
             zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
 
             state.args.emplace_back(std::move(zoomPaneAction));
+        }
+
+        if (_isPinned)
+        {
+            state.args.emplace_back(ShortcutAction::ToggleTabPinned, nullptr);
         }
 
         return state.args;
@@ -1039,6 +1046,39 @@ namespace winrt::TerminalApp::implementation
         ASSERT_UI_THREAD();
 
         _headerControl.BeginRename();
+        _UpdatePinnedAppearance();
+    }
+
+    bool Tab::IsPinned() const noexcept
+    {
+        return _isPinned;
+    }
+
+    void Tab::IsPinned(bool pinned)
+    {
+        ASSERT_UI_THREAD();
+
+        _isPinned = pinned;
+        _headerControl.SetPinned(pinned);
+        _pinTabMenuItem.Text(pinned ? RS_(L"UnpinTabText") : RS_(L"PinTabText"));
+        Automation::AutomationProperties::SetItemStatus(TabViewItem(), pinned ? RS_(L"PinnedTabStatus") : L"");
+        _UpdatePinnedAppearance();
+        _updateIsClosable();
+    }
+
+    void Tab::_UpdatePinnedAppearance()
+    {
+        const auto item = TabViewItem();
+        if (_isPinned && !_headerControl.InRename())
+        {
+            item.MinWidth(PinnedTabWidth);
+            item.MaxWidth(PinnedTabWidth);
+        }
+        else
+        {
+            item.ClearValue(FrameworkElement::MinWidthProperty());
+            item.ClearValue(FrameworkElement::MaxWidthProperty());
+        }
     }
 
     // Method Description:
@@ -1681,6 +1721,18 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
+        _pinTabMenuItem.Text(RS_(L"PinTabText"));
+        Controls::FontIcon pinSymbol;
+        pinSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        pinSymbol.Glyph(L"\xE718");
+        _pinTabMenuItem.Icon(pinSymbol);
+        _pinTabMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (const auto tab = weakThis.get())
+            {
+                tab->_dispatch.DoAction(*tab, ActionAndArgs{ ShortcutAction::ToggleTabPinned, nullptr });
+            }
+        });
+
         // "Change tab color..."
         Controls::MenuFlyoutItem chooseColorMenuItem;
         {
@@ -1814,6 +1866,7 @@ namespace winrt::TerminalApp::implementation
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
+        contextMenuFlyout.Items().Append(_pinTabMenuItem);
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(_duplicateTabMenuItem);
@@ -1861,25 +1914,29 @@ namespace winrt::TerminalApp::implementation
         const auto tabIndex = TabViewIndex();
         const auto numOfTabs = TabViewNumTabs();
 
-        // enabled if there are other tabs
-        _closeOtherTabsMenuItem.IsEnabled(numOfTabs > 1);
+        const auto firstMovableIndex = _isPinned ? 0u : _pinnedTabCount;
+        const auto lastMovableIndex = (_isPinned ? _pinnedTabCount : numOfTabs) - 1;
 
-        // enabled if there are other tabs on the right
-        _closeTabsAfterMenuItem.IsEnabled(tabIndex < numOfTabs - 1);
+        // enabled if there are other unpinned tabs
+        _closeOtherTabsMenuItem.IsEnabled(numOfTabs > _pinnedTabCount + (_isPinned ? 0u : 1u));
 
-        // enabled if not left-most tab
-        _moveLeftMenuItem.IsEnabled(tabIndex > 0);
+        // enabled if there are unpinned tabs on the right
+        _closeTabsAfterMenuItem.IsEnabled(numOfTabs > std::max(tabIndex + 1, _pinnedTabCount));
 
-        // enabled if not last tab
-        _moveRightMenuItem.IsEnabled(tabIndex < numOfTabs - 1);
+        // enabled if not left-most tab in its pinned or unpinned group
+        _moveLeftMenuItem.IsEnabled(tabIndex > firstMovableIndex);
+
+        // enabled if not last tab in its pinned or unpinned group
+        _moveRightMenuItem.IsEnabled(tabIndex < lastMovableIndex);
     }
 
-    void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
+    void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs, const uint32_t pinnedTabs)
     {
         ASSERT_UI_THREAD();
 
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
+        _pinnedTabCount = pinnedTabs;
         _EnableMenuItems();
         _UpdateSwitchToTabKeyChord();
     }
@@ -2648,9 +2705,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Update our close button's visibility, to reflect both the ReadOnly
-    //   state of the tab content, and also if if we were told to have a visible
+    //   and pinned states of the tab, and also if we were told to have a visible
     //   close button at all.
-    //   - the tab being read-only takes precedence. That will always suppress
+    //   - the tab being read-only or pinned takes precedence. That will always suppress
     //     the close button.
     //   - Otherwise we'll use the state set in CloseButtonVisibility to control
     //     the tab's visibility.
@@ -2658,7 +2715,7 @@ namespace winrt::TerminalApp::implementation
     {
         bool isClosable = true;
 
-        if (ReadOnly())
+        if (ReadOnly() || _isPinned)
         {
             isClosable = false;
         }
