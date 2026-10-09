@@ -7,7 +7,6 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "registry.hpp"
-#include "renderFontDefaults.hpp"
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -44,9 +43,7 @@ try
     Globals.uiOEMCP = GetOEMCP();
     Globals.uiWindowsCP = GetACP();
 
-    Globals.pFontDefaultList = new RenderFontDefaults();
-
-    FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+    LOG_IF_NTSTATUS_FAILED(TrueTypeFontList::s_Initialize());
 
     // Check if this conhost is allowed to delegate its activities to another.
     // If so, look up the registered default console handler.

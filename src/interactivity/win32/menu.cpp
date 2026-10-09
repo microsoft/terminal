@@ -304,11 +304,11 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->WindowPosX = rcWindow.left;
     pStateInfo->WindowPosY = rcWindow.top;
 
-    const auto& currentFont = ScreenInfo.GetCurrentFont();
-    pStateInfo->FontFamily = currentFont.GetFamily();
-    LOG_IF_FAILED(til::unwrap_coord_size_hr(currentFont.GetUnscaledSize(), pStateInfo->FontSize));
-    pStateInfo->FontWeight = currentFont.GetWeight();
-    LOG_IF_FAILED(StringCchCopyW(pStateInfo->FaceName, ARRAYSIZE(pStateInfo->FaceName), currentFont.GetFaceName().data()));
+    const auto& desiredFont = ScreenInfo.GetDesiredFont();
+    pStateInfo->FontFamily = desiredFont.GetFamily();
+    LOG_IF_FAILED(til::unwrap_coord_size_hr(desiredFont.GetPixelCellSize(), pStateInfo->FontSize));
+    pStateInfo->FontWeight = desiredFont.GetWeight();
+    desiredFont.FillLegacyNameBuffer(pStateInfo->FaceName);
 
     const auto& cursor = ScreenInfo.GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = cursor.GetSize();
@@ -444,17 +444,19 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     // end V2 console properties
 
     // Apply font information (must come before all character calculations for window/buffer size).
-    FontInfo fiNewFont(pStateInfo->FaceName, gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily), pStateInfo->FontWeight, til::wrap_coord_size(pStateInfo->FontSize), pStateInfo->CodePage);
-
-    ScreenInfo.UpdateFont(&fiNewFont);
-
-    const auto& fontApplied = ScreenInfo.GetCurrentFont();
+    FontInfoDesired fiNewFont;
+    fiNewFont.SetFaceName(pStateInfo->FaceName);
+    fiNewFont.SetFamily(gsl::narrow_cast<unsigned char>(pStateInfo->FontFamily));
+    fiNewFont.SetWeight(pStateInfo->FontWeight);
+    fiNewFont.SetCodePage(pStateInfo->CodePage);
+    fiNewFont.SetPixelCellSize(til::wrap_coord_size(pStateInfo->FontSize));
+    ScreenInfo.UpdateFont(std::move(fiNewFont));
 
     // Now make sure internal font state reflects the font chosen
-    gci.SetFontFamily(fontApplied.GetFamily());
-    gci.SetFontSize(fontApplied.GetUnscaledSize());
-    gci.SetFontWeight(fontApplied.GetWeight());
-    gci.SetFaceName(fontApplied.GetFaceName());
+    gci.SetFontFamily(pStateInfo->FontFamily);
+    gci.SetFontSize(til::wrap_coord_size(pStateInfo->FontSize));
+    gci.SetFontWeight(pStateInfo->FontWeight);
+    gci.SetFaceName(pStateInfo->FaceName);
 
     // Set the cursor properties in the Settings
     const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);
