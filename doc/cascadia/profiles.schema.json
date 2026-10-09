@@ -2553,10 +2553,10 @@
         },
         "firstWindowPreference": {
           "default": "defaultProfile",
-          "description": "Defines how the terminal behaves when it starts. \"defaultProfile\" launches one tab using the default profile. \"persistedWindowLayout\" saves the window layout on close and restores it on open. \"persistedLayoutAndContent\" saves both the layout and the tab content on close and restores them on open.",
+          "description": "Defines how the terminal behaves when it starts. \"defaultProfile\" launches one tab using the default profile. \"persistedLayout\" saves the window layout on close and restores it on open. \"persistedLayoutAndContent\" saves both the layout and the tab content on close and restores them on open. \"persistedWindowLayout\" is a deprecated compatibility alias for \"persistedLayoutAndContent\".",
           "enum": [
             "defaultProfile",
-            "persistedWindowLayout",
+            "persistedLayout",
             "persistedLayoutAndContent"
           ],
           "type": "string"
