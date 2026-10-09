@@ -596,7 +596,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs() = default;
         NewTabArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
+        NewTabArgs(const Model::INewContentArgs& terminalArgs, const Windows::Foundation::IReference<uint32_t>& tabIndex) :
+            _ContentArgs{ terminalArgs },
+            _TabIndex{ tabIndex } {};
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabIndex, nullptr);
 
     public:
         hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
@@ -607,7 +611,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_ContentArgs.Equals(_ContentArgs);
+                return otherAsUs->_ContentArgs.Equals(_ContentArgs) &&
+                       otherAsUs->TabIndex() == _TabIndex;
             }
             return false;
         }
@@ -617,6 +622,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<NewTabArgs>();
             auto [content, warnings] = ContentArgsFromJson(json);
             args->_ContentArgs = content;
+            if (json.isObject() && json.isMember("tabIndex"))
+            {
+                args->_TabIndex = json["tabIndex"].asUInt();
+            }
             return { *args, warnings };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -626,18 +635,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             const auto args{ get_self<NewTabArgs>(val) };
-            return ContentArgsToJson(args->_ContentArgs);
+            auto json = ContentArgsToJson(args->_ContentArgs);
+            if (args->_TabIndex)
+            {
+                json["tabIndex"] = args->_TabIndex.Value();
+            }
+            return json;
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<NewTabArgs>() };
             copy->_ContentArgs = _ContentArgs.Copy();
+            copy->_TabIndex = _TabIndex;
             return *copy;
         }
         size_t Hash() const
         {
             til::hasher h;
             h.write(ContentArgs());
+            if (_TabIndex)
+            {
+                h.write(_TabIndex.Value());
+            }
             return h.finalize();
         }
         winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()
