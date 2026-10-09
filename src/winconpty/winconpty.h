@@ -47,6 +47,7 @@ typedef struct _PseudoConsole
 #define PTY_SIGNAL_CLEAR_WINDOW (2u)
 #define PTY_SIGNAL_REPARENT_WINDOW (3u)
 #define PTY_SIGNAL_RESIZE_WINDOW (8u)
+#define PTY_SIGNAL_RESET_VT_STATE (9u)
 
 // CreatePseudoConsole Flags
 #ifndef PSEUDOCONSOLE_INHERIT_CURSOR

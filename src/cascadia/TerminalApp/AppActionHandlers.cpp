@@ -1560,6 +1560,28 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleResetTerminalState(const IInspectable& /*sender*/,
+                                                 const ActionEventArgs& args)
+    {
+        // Recovers a pane whose client exited without cleaning up (alternate
+        // buffer, mouse mode, margins) without erasing the buffer or restarting
+        // the connection (GH#20715). ConPTY parses the same output we do and keeps
+        // its own copy of this state, so it resets both copies. Any other
+        // connection, or one that has closed, should only have our state.
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            const auto conpty{ control.Connection().try_as<TerminalConnection::ConptyConnection>() };
+            if (conpty && conpty.State() == TerminalConnection::ConnectionState::Connected)
+            {
+                conpty.Reset();
+            }
+            else
+            {
+                control.HardResetWithoutErase();
+            }
+        });
+        args.Handled(res);
+    }
+
     void TerminalPage::_HandleShowContextMenu(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
