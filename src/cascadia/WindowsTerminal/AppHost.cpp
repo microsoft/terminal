@@ -895,6 +895,12 @@ safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindow
         co_return;
     }
 
+    // GH#20305: MoveWindowToDesktop may also move the window to another monitor.
+    // With monitor:"any" the window should stay where it is, so we restore its position afterwards.
+    const auto restorePosition = args.ToMonitor() == winrt::TerminalApp::MonitorBehavior::InPlace;
+    const auto windowRect = _window->GetWindowRect();
+    const auto dispatcher = _windowLogic.GetRoot().Dispatcher();
+
     // Just like AppHost::GetVirtualDesktopId:
     // IVirtualDesktopManager is cross-process COM into explorer.exe,
     // and we can't use that on the UI thread.
@@ -921,6 +927,12 @@ safe_void_coroutine AppHost::HandleSummon(const winrt::TerminalApp::SummonWindow
         }
         // If GetCurrentVirtualDesktopId failed, then just leave the window
         // where it is. Nothing else to be done :/
+    }
+
+    if (restorePosition)
+    {
+        co_await wil::resume_foreground(dispatcher);
+        SetWindowPos(_window->GetHandle(), nullptr, windowRect.left, windowRect.top, 0, 0, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSIZE);
     }
 }
 
