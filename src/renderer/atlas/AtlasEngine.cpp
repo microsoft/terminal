@@ -888,6 +888,48 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
         _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
         mappedEnd = idx + mappedLength;
 
+        // MapCharacters() splits some grapheme clusters across fonts. For instance, "1 U+FE0F U+20E3"
+        // gets split into "1 U+FE0F" (primary font) and U+20E3 (fallback font), which then don't line up.
+        // We can detect this, because all characters of a cluster share the same column.
+        if (mappedEnd < offEnd && _api.bufferLineColumn[mappedEnd - 1] == _api.bufferLineColumn[mappedEnd])
+        {
+            const auto clusterColumn = _api.bufferLineColumn[mappedEnd];
+            auto clusterBeg = mappedEnd - 1;
+            while (clusterBeg > idx && _api.bufferLineColumn[clusterBeg - 1] == clusterColumn)
+            {
+                --clusterBeg;
+            }
+
+            if (clusterBeg > idx)
+            {
+                // Stop before the split cluster. The next iteration will start with it.
+                mappedEnd = clusterBeg;
+            }
+            else
+            {
+                // The primary font lacks the cluster's trailing characters, so use their font for all of it.
+                // If that font lacks the leading characters instead, we keep the split, because a misaligned
+                // cluster is better than one drawn with missing glyphs.
+                auto clusterEnd = mappedEnd;
+                while (clusterEnd < offEnd && _api.bufferLineColumn[clusterEnd] == clusterColumn)
+                {
+                    ++clusterEnd;
+                }
+
+                u32 trailingLength = 0;
+                wil::com_ptr<IDWriteFontFace2> trailingFontFace;
+                _mapCharacters(_api.bufferLine.data() + mappedEnd, clusterEnd - mappedEnd, &trailingLength, trailingFontFace.addressof());
+
+                if (trailingFontFace && _hasGlyphs(trailingFontFace.get(), idx, clusterEnd))
+                {
+                    mappedFontFace = std::move(trailingFontFace);
+                    mappedEnd = clusterEnd;
+                }
+            }
+
+            mappedLength = mappedEnd - idx;
+        }
+
         if (!mappedFontFace)
         {
             _mapReplacementCharacter(idx, mappedEnd, row);
@@ -1182,6 +1224,33 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
         row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
     }
+}
+
+// Returns true if the font has a glyph for each code point in bufferLine[beg, end).
+// Variation selectors and U+200D (ZWJ) are skipped, because fonts don't need to map them.
+bool AtlasEngine::_hasGlyphs(IDWriteFontFace2* fontFace, u32 beg, u32 end) const
+{
+    for (auto i = beg; i < end;)
+    {
+        u32 codepoint = _api.bufferLine[i++];
+        if (til::is_leading_surrogate(codepoint) && i < end)
+        {
+            codepoint = til::combine_surrogates(codepoint, _api.bufferLine[i++]);
+        }
+
+        if ((codepoint >= 0xFE00 && codepoint <= 0xFE0F) || codepoint == 0x200D)
+        {
+            continue;
+        }
+
+        u16 glyphIndex = 0;
+        if (FAILED(fontFace->GetGlyphIndicesW(&codepoint, 1, &glyphIndex)) || glyphIndex == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void AtlasEngine::_mapReplacementCharacter(u32 from, u32 to, ShapedRow& row)
