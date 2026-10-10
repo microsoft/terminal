@@ -458,7 +458,7 @@ namespace SettingsModelUnitTests
             },
             {
                 "name":"action9_commandlineEscaping",
-                "command": { "action": "newWindow", "commandline":"C:\\Program Files\\example\\app.exe --flag \"quoted value\"" }
+                "command": { "action": "newWindow", "commandline":"\"C:\\Program Files\\example\\app.exe\" --flag \"quoted value\"" }
             }
         ])" };
 
@@ -616,7 +616,7 @@ namespace SettingsModelUnitTests
             VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
             const auto& terminalArgs = realArgs.ContentArgs().try_as<NewTerminalArgs>();
             VERIFY_IS_NOT_NULL(terminalArgs);
-            VERIFY_ARE_EQUAL(LR"-(-- "C:\Program Files\example\app.exe --flag \"quoted value\"")-", terminalArgs.ToCommandline());
+            VERIFY_ARE_EQUAL(LR"-(-- "\"C:\Program Files\example\app.exe\" --flag \"quoted value\"")-", terminalArgs.ToCommandline());
         }
     }
 }
