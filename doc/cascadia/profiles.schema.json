@@ -2394,7 +2394,7 @@
         },
         "enableTabDragDrop": {
           "default": true,
-          "description": "When set to true, tabs can be reordered and torn out into new windows by dragging them. When set to false, dragging tabs is disabled (they can still be moved with the \"moveTab\" actions). Dragging is always disabled when running as administrator.",
+          "description": "When set to true, tabs can be reordered and torn out into new windows by dragging them. When set to false, dragging tabs is disabled (they can still be moved with the \"moveTab\" actions). Dragging is always disabled when running as administrator or as a different user.",
           "type": "boolean"
         },
         "compatibility.enableUnfocusedAcrylic": {
