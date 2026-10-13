@@ -16,8 +16,11 @@
 #include "ControlCore.h"
 #include "ControlInteractivity.h"
 
+#include "HwndTerminalAutomationPeer.hpp"
+
 #include <windows.system.h>
 #include <windowsx.h>
+#include <UIAutomationCoreApi.h>
 
 #pragma warning(disable : 4100)
 
@@ -183,7 +186,7 @@ private:
     float _fontSize = 12.0f;
 };
 
-struct HwndTerminal
+struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInfo
 {
     static constexpr LPCWSTR term_window_class = L"HwndTerminalClass";
 
@@ -246,6 +249,12 @@ struct HwndTerminal
     {
         switch (uMsg)
         {
+        case WM_GETOBJECT:
+            if (lParam == UiaRootObjectId)
+            {
+                return UiaReturnRawElementProvider(hwnd, wParam, lParam, _getUiaProvider());
+            }
+            break;
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
         case WM_RBUTTONDOWN:
@@ -316,6 +325,11 @@ struct HwndTerminal
             break;
         }
         case WM_SETFOCUS:
+            if (!_tsfHandle)
+            {
+                _tsfHandle = Microsoft::Console::TSF::Handle::Create();
+                _tsfHandle.AssociateFocus(&_tsfDataProvider);
+            }
             _interactivity->GotFocus();
             _focused = true;
             _core->ApplyAppearance(_focused);
@@ -389,8 +403,7 @@ struct HwndTerminal
         // ... but ControlCore expects scaled sizes.
         _core->SizeChanged(w, h);
 
-        // TODO(DH): ControlCore has no API that returns the new size in cells
-        //wil::assign_to_opt_param(dimensions, /*thing*/);
+        wil::assign_to_opt_param(dimensions, til::size{ _core->ViewportSize() });
 
         return S_OK;
     }
@@ -464,7 +477,32 @@ struct HwndTerminal
 
     HRESULT SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown)
     {
+        if (_tsfHandle)
+        {
+            // If a composition just ended, its text is still queued up inside TSF. Hand it to
+            // the connection now, so that a key the IME passed on to us can't reach the
+            // connection before the text it finalized - neither by being forwarded to the PTY,
+            // nor by triggering an action bound to it. GH#20244
+            _tsfHandle.FlushPendingComposition();
+
+            if (_tsfHandle.HasActiveComposition())
+            {
+                // While TSF has an active composition, key events must not be forwarded
+                // to the PTY directly. The IME re-injects navigation/confirmation keys
+                // after composition ends, at which point HasActiveComposition() == false
+                // and they are forwarded normally. This mirrors conhost v1 behavior in
+                // src/interactivity/win32/windowio.cpp.
+                return S_OK;
+            }
+        }
+
         _core->TrySendKeyEvent(vkey, scanCode, getControlKeyState(), keyDown);
+
+        if (vkey && keyDown && _uiaProvider)
+        {
+            _uiaProvider->RecordKeyEvent(vkey);
+        }
+
         return S_OK;
     }
 
@@ -495,14 +533,71 @@ struct HwndTerminal
         _initialized = true;
     }
 
+#pragma region HwndTerminal Accessibility
+    til::size GetFontSize() const noexcept
+    {
+        if (_core)
+        {
+            return { til::math::rounding, _core->FontSize() };
+        }
+        return {};
+    }
+
+    til::rect GetBounds() const noexcept
+    {
+        til::rect windowRect;
+        GetWindowRect(_hwnd.get(), windowRect.as_win32_rect());
+        return windowRect;
+    }
+
+    til::rect GetPadding() const noexcept
+    {
+        return {};
+    }
+
+    void ChangeViewport(const til::inclusive_rect& NewWindow)
+    {
+        if (!_interactivity)
+        {
+            return;
+        }
+        _interactivity->UpdateScrollbar(static_cast<float>(NewWindow.top));
+    }
+
+    HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept
+    {
+        return UiaHostProviderFromHwnd(_hwnd.get(), provider);
+    }
+#pragma endregion
+
 private:
+    struct TsfDataProvider : public Microsoft::Console::TSF::IDataProvider
+    {
+        TsfDataProvider(HwndTerminal* t) :
+            _terminal(t) {}
+        virtual ~TsfDataProvider() = default;
+        STDMETHODIMP QueryInterface(REFIID, void**) noexcept override;
+        ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE Release() noexcept override;
+        HWND GetHwnd() override;
+        RECT GetViewport() override;
+        RECT GetCursorPosition() override;
+        void HandleOutput(std::wstring_view text) override;
+        Microsoft::Console::Render::Renderer* GetRenderer() override;
+        HwndTerminal* _terminal;
+    };
     winrt::com_ptr<CallbackBasedConnection> _connection;
     winrt::com_ptr<BasicTerminalSettings> _settingsBridge;
     winrt::com_ptr<implementation::ControlInteractivity> _interactivity{ nullptr };
     winrt::com_ptr<implementation::ControlCore> _core{ nullptr };
     bool _initialized{ false };
     bool _focused{ false };
+    winrt::com_ptr<HwndTerminalAutomationPeer> _uiaProvider;
     PSCROLLCB _scrollCallback{};
+
+    // Keep these ordered as-is for proper destruction.
+    TsfDataProvider _tsfDataProvider{ this };
+    Microsoft::Console::TSF::Handle _tsfHandle;
 
     void _scrollPositionChanged(const winrt::Windows::Foundation::IInspectable& i, const ScrollPositionChangedArgs& update)
     {
@@ -511,7 +606,108 @@ private:
             _scrollCallback(update.ViewTop(), update.ViewHeight(), update.BufferSize());
         }
     }
+
+    IRawElementProviderSimple* _getUiaProvider() noexcept
+    {
+        // If TermControlUiaProvider throws during construction,
+        // we don't want to try constructing an instance again and again.
+        if (!_uiaProvider)
+        {
+            try
+            {
+                if (!_core)
+                {
+                    return nullptr;
+                }
+                LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<HwndTerminalAutomationPeer>(_uiaProvider.put(), _core->GetRenderData(), this));
+                _interactivity->SetUiaEventDispatcher(_uiaProvider.get());
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                _uiaProvider = nullptr;
+            }
+        }
+
+        return _uiaProvider.get();
+    }
 };
+
+STDMETHODIMP HwndTerminal::TsfDataProvider::QueryInterface(REFIID, void**) noexcept
+{
+    return E_NOTIMPL;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::AddRef() noexcept
+{
+    return 1;
+}
+
+ULONG STDMETHODCALLTYPE HwndTerminal::TsfDataProvider::Release() noexcept
+{
+    return 1;
+}
+
+HWND HwndTerminal::TsfDataProvider::GetHwnd()
+{
+    return _terminal->_hwnd.get();
+}
+
+RECT HwndTerminal::TsfDataProvider::GetViewport()
+{
+    const auto hwnd = GetHwnd();
+
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getclientrect
+    // > The left and top members are zero. The right and bottom members contain the width and height of the window.
+    // --> We can turn the client rect into a screen-relative rect by adding the left/top position.
+    ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rc));
+    rc.right += rc.left;
+    rc.bottom += rc.top;
+
+    return rc;
+}
+
+RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
+{
+    // Convert from columns/rows to pixels.
+    til::point cursorPos;
+    til::size fontSize;
+    {
+        auto rawCursorPos = _terminal->_core->CursorPosition();
+        cursorPos = til::point{
+            static_cast<til::CoordType>(rawCursorPos.X),
+            static_cast<til::CoordType>(rawCursorPos.Y),
+        };
+        fontSize = { til::math::rounding, _terminal->_core->FontSize() }; // measured in pixels, not DIP
+    }
+    POINT ptSuggestion = {
+        .x = cursorPos.x * fontSize.width,
+        .y = cursorPos.y * fontSize.height,
+    };
+
+    ClientToScreen(GetHwnd(), &ptSuggestion);
+
+    // Final measurement should be in pixels
+    return {
+        .left = ptSuggestion.x,
+        .top = ptSuggestion.y,
+        .right = ptSuggestion.x + fontSize.width,
+        .bottom = ptSuggestion.y + fontSize.height,
+    };
+}
+
+void HwndTerminal::TsfDataProvider::HandleOutput(std::wstring_view text)
+{
+    _terminal->_core->SendInput(text);
+}
+
+Microsoft::Console::Render::Renderer* HwndTerminal::TsfDataProvider::GetRenderer()
+{
+    return _terminal->_core->GetRenderer();
+}
 
 #pragma region Implementation of IDispatcherQueue
 struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispatcherQueue, ::ABI::Windows::System::IDispatcherQueue, ::ABI::Windows::System::IDispatcherQueue2>
