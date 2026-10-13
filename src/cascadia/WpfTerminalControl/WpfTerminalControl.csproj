@@ -5,6 +5,7 @@
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
     <UseWpf>true</UseWpf>
+    <LangVersion>9.0</LangVersion>
 
     <RepoBinPath>$(MSBuildThisFileDirectory)..\..\..\bin\</RepoBinPath>
     <IntermediateOutputPath>$(RepoBinPath)..\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
