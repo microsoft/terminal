@@ -975,7 +975,9 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         wil::unique_wtsmem_ptr<wchar_t> domainName;
         DWORD userNameBytes = 0;
         DWORD domainNameBytes = 0;
+#pragma warning(suppress : 26477) // WTS_CURRENT_SERVER_HANDLE expands to NULL rather than nullptr.
         THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSUserName, wil::out_param(userName), &userNameBytes));
+#pragma warning(suppress : 26477) // WTS_CURRENT_SERVER_HANDLE expands to NULL rather than nullptr.
         THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSDomainName, wil::out_param(domainName), &domainNameBytes));
 
         // The byte counts include the null terminator. A session without an
@@ -996,7 +998,7 @@ static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
         BYTE sessionSid[SECURITY_MAX_SID_SIZE];
         SID_NAME_USE sidUse{};
         std::wstring referencedDomain;
-        THROW_IF_FAILED(wil::AdaptFixedSizeToAllocatedResult(referencedDomain, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
+        THROW_IF_FAILED(wil::AdaptFixedSizeToAllocatedResult(referencedDomain, [&](PWSTR value, size_t valueLength, gsl::not_null<size_t*> valueLengthNeededWithNull) noexcept -> HRESULT {
             DWORD sidSize = sizeof(sessionSid);
             auto domainLength = gsl::narrow_cast<DWORD>(valueLength);
             if (LookupAccountNameW(nullptr, account.c_str(), &sessionSid[0], &sidSize, value, &domainLength, &sidUse))
