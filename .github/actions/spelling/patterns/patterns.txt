@@ -163,6 +163,9 @@ mailto:[-a-zA-Z=;:/?%&0-9+@._]{3,}
 
 # hit-count: 2 file-count: 2
 # Alternative printf
+# tmux control-mode notification (must precede the generic %s pattern)
+%session-window-changed
+
 # %s
 %(?:s(?=[a-z]{2,}))(?!%)(?=[_a-zA-Z]+(?!%[^s])\b)(?=.*?['"])
 

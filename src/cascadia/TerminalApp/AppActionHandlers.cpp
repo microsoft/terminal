@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "TmuxConnections.h"
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
@@ -64,6 +65,28 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
+        if (Feature_TmuxIntegration::IsEnabled())
+        {
+            auto focusedConnection{ _TmuxFocusedConnection() };
+            auto* session = _TmuxSessionForConnection(focusedConnection);
+            // A new TermControl from a split can briefly own XAML focus while
+            // its TMUX connection is still being established. Keep duplicate
+            // tab in the same mux by selecting an existing window connection.
+            if (!session)
+            {
+                focusedConnection = _TmuxAnyConnectionInWindow();
+                session = _TmuxSessionForConnection(focusedConnection);
+            }
+            if (session)
+            {
+                if (const auto follower{ session->CreateFollowerForUserTab(_TmuxPaneIdFromConnection(focusedConnection)) })
+                {
+                    _TmuxOpenFollowerAsTab(follower);
+                    args.Handled(true);
+                    return;
+                }
+            }
+        }
         _DuplicateFocusedTab();
         args.Handled(true);
     }
@@ -96,6 +119,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
+        if (Feature_TmuxIntegration::IsEnabled())
+        {
+            if (const auto conn{ _TmuxFocusedConnection() })
+            {
+                if (auto* session{ _TmuxSessionForConnection(conn) })
+                {
+                    session->HandleUserClose(conn);
+                }
+            }
+        }
         _CloseFocusedPane();
         args.Handled(true);
     }
@@ -274,15 +307,70 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
+
+            const auto& activeTab{ _senderOrFocusedTab(sender) };
+
+            // Intercept before the invalid-profile bail-out so a command-line
+            // duplicate split on an TMUX follower still talks to htmd.
+            // Prefer any TMUX connection in this window: CLI ``-w last`` often
+            // arrives before the TermControl is the XAML focus target.
+            if (Feature_TmuxIntegration::IsEnabled())
+            {
+                const auto tmuxConn{ _TmuxAnyConnectionInWindow() };
+                auto* session = _TmuxSessionForConnection(tmuxConn);
+                if (!session && _tmuxSession && _tmuxSession->IsActive())
+                {
+                    session = _tmuxSession.get();
+                }
+                if (session)
+                {
+                    auto sourceId = _TmuxPaneIdFromConnection(tmuxConn);
+                    if (sourceId.empty() || !session->HasFollower(sourceId))
+                    {
+                        sourceId = session->LeaderPaneId();
+                    }
+                    if (!session->HasFollower(sourceId))
+                    {
+                        sourceId = session->FirstLiveFollowerPaneId();
+                    }
+                    if (sourceId.empty())
+                    {
+                        // htmd still owns panes after a local map miss (e.g. UI
+                        // collapsed and UnregisterFollower raced); target root.
+                        sourceId = "%0";
+                    }
+                    const auto direction = realArgs.SplitDirection();
+                    const bool vertical = direction != SplitDirection::Up && direction != SplitDirection::Down;
+                    if (const auto follower{ session->CreateFollowerForUserSplit(sourceId, vertical) })
+                    {
+                        // Prefer splitting the focused follower tab; otherwise
+                        // locate the source pane across windows.
+                        if (tmuxConn && AsTmuxFollower(tmuxConn) && session->HasFollower(sourceId) &&
+                            _TmuxPaneIdFromConnection(tmuxConn) == sourceId)
+                        {
+                            _SplitPane(activeTab,
+                                       direction,
+                                       realArgs.SplitSize(),
+                                       _MakePane(realArgs.ContentArgs(), duplicateFromTab, follower));
+                        }
+                        else
+                        {
+                            _TmuxSplitExisting(sourceId, follower, vertical);
+                        }
+                        args.Handled(true);
+                        return;
+                    }
+                    args.Handled(true);
+                    return;
+                }
+            }
+
             if (_shouldBailForInvalidProfileIndex(_settings, realArgs.ContentArgs()))
             {
                 args.Handled(false);
                 return;
             }
-
-            const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
-
-            const auto& activeTab{ _senderOrFocusedTab(sender) };
 
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),
@@ -908,6 +996,28 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
+        if (Feature_TmuxIntegration::IsEnabled())
+        {
+            if (auto* session{ _TmuxSessionForConnection(_TmuxFocusedConnection()) })
+            {
+                if (const auto follower{ session->CreateFollowerForUserWindow() })
+                {
+                    _TmuxOpenFollowerAsWindow(follower);
+                    actionArgs.Handled(true);
+                    return;
+                }
+            }
+            else if (_tmuxSession && _tmuxSession->IsActive())
+            {
+                if (const auto follower{ _tmuxSession->CreateFollowerForUserWindow() })
+                {
+                    _TmuxOpenFollowerAsWindow(follower);
+                    actionArgs.Handled(true);
+                    return;
+                }
+            }
+        }
+
         INewContentArgs newContentArgs{ nullptr };
         // If the caller provided NewTerminalArgs, then try to use those
         if (actionArgs)
