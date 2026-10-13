@@ -161,16 +161,14 @@ namespace winrt::TerminalApp::implementation
     void MarkdownPaneContent::_handleRunCommandRequest(const Microsoft::Terminal::UI::Markdown::CodeBlock& /*sender*/,
                                                        const Microsoft::Terminal::UI::Markdown::RequestRunCommandsArgs& request)
     {
-        auto text = request.Commandlines();
-
         if (const auto& strongControl{ _control.get() })
         {
-            Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, Model::SendInputArgs{ text } };
-
-            // By using the last active control as the sender here, the
-            // action dispatch will send this to the active control,
-            // thinking that it is the control that requested this event.
-            DispatchActionRequested.raise(strongControl, actionAndArgs);
+            std::wstring text{ request.Commandlines() };
+            if (!text.empty() && text.back() != L'\r' && text.back() != L'\n')
+            {
+                text.push_back(L'\r');
+            }
+            strongControl.WriteInputString(winrt::hstring{ text }, Microsoft::Terminal::Control::WriteInputStringType::Clipboard);
             strongControl.Focus(winrt::WUX::FocusState::Programmatic);
         }
     }
