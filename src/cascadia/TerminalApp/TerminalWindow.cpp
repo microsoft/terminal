@@ -56,6 +56,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"DuplicateRemainingProfilesEntry"),
     USES_RESOURCE(L"InvalidUseOfContent"),
     USES_RESOURCE(L"InvalidRegex"),
+    USES_RESOURCE(L"IncompleteColorSchemeText"),
 };
 
 static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));

@@ -35,6 +35,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestLayeringNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
+        TEST_METHOD(TestIncompleteColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
@@ -741,6 +742,57 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().DarkColorSchemeName());
             VERIFY_ARE_EQUAL(L"Campbell", profile.DefaultAppearance().LightColorSchemeName());
         }
+    }
+
+    void DeserializationTests::TestIncompleteColorSchemeName()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"GH#11457: a scheme that exists but is missing colors should warn that it is "
+            L"incomplete, not that it is unknown."));
+
+        // This scheme is missing "cyan" (which has no alias), so it has only 15 of the 16
+        // required colors. ColorScheme::FromJson rejects it, but because it has a "name" we
+        // report it as incomplete rather than nonexistent.
+        static constexpr std::string_view settings0String{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "Incomplete"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "Incomplete",
+                    "foreground": "#F2F2F2",
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "red": "#C50F1F",
+                    "green": "#13A10E",
+                    "yellow": "#C19C00",
+                    "blue": "#0037DA",
+                    "purple": "#881798",
+                    "white": "#CCCCCC",
+                    "brightBlack": "#767676",
+                    "brightRed": "#E74856",
+                    "brightGreen": "#16C60C",
+                    "brightYellow": "#F9F1A5",
+                    "brightBlue": "#3B78FF",
+                    "brightPurple": "#B4009E",
+                    "brightCyan": "#61D6D6",
+                    "brightWhite": "#F2F2F2"
+                }
+            ]
+        })" };
+
+        const auto settings = createSettings(settings0String);
+
+        VERIFY_ARE_EQUAL(1u, settings->Warnings().Size());
+        VERIFY_ARE_EQUAL(SettingsLoadWarnings::IncompleteColorScheme, settings->Warnings().GetAt(0));
+
+        // The incomplete scheme was ignored, so the profile falls back to the default colors.
+        VERIFY_ARE_EQUAL(1u, settings->AllProfiles().Size());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->AllProfiles().GetAt(0).DefaultAppearance().DarkColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->AllProfiles().GetAt(0).DefaultAppearance().LightColorSchemeName());
     }
 
     void DeserializationTests::ValidateColorSchemeInCommands()
