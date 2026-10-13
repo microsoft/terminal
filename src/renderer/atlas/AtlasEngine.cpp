@@ -881,24 +881,63 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
 {
     auto& row = *_p.rows[_api.lastPaintBufferLineCoord.y];
 
+    // All characters of a grapheme cluster share the same column.
+    const auto findClusterBeg = [&](u32 beg, u32 pos) {
+        const auto column = _api.bufferLineColumn[pos];
+        while (pos > beg && _api.bufferLineColumn[pos - 1] == column)
+        {
+            --pos;
+        }
+        return pos;
+    };
+    const auto findClusterEnd = [&](u32 pos, u32 end) {
+        const auto column = _api.bufferLineColumn[pos];
+        while (pos < end && _api.bufferLineColumn[pos] == column)
+        {
+            ++pos;
+        }
+        return pos;
+    };
+
     for (u32 idx = gsl::narrow_cast<u32>(offBeg), mappedEnd = 0; idx < offEnd; idx = mappedEnd)
     {
         u32 mappedLength = 0;
         wil::com_ptr<IDWriteFontFace2> mappedFontFace;
-        _mapCharacters(_api.bufferLine.data() + idx, gsl::narrow_cast<u32>(offEnd - idx), &mappedLength, mappedFontFace.addressof());
+        auto segmentEnd = gsl::narrow_cast<u32>(offEnd);
+
+        // Clusters with U+FE0F request emoji presentation, but MapCharacters() ignores it.
+        // Like Chromium, we split them off and draw them with the emoji font.
+        const std::wstring_view text{ _api.bufferLine.data() + idx, segmentEnd - idx };
+        if (const auto vs16 = text.find(L'\uFE0F'); vs16 != std::wstring_view::npos)
+        {
+            const auto vs16Pos = gsl::narrow_cast<u32>(idx + vs16);
+            const auto clusterBeg = findClusterBeg(idx, vs16Pos);
+
+            if (clusterBeg > idx)
+            {
+                // Map the text before the cluster first. The next iteration will start with it.
+                segmentEnd = clusterBeg;
+            }
+            else
+            {
+                segmentEnd = findClusterEnd(vs16Pos, segmentEnd);
+                mappedFontFace = _mapEmoji(idx, segmentEnd);
+                mappedLength = segmentEnd - idx;
+            }
+        }
+
+        if (!mappedFontFace)
+        {
+            _mapCharacters(_api.bufferLine.data() + idx, segmentEnd - idx, &mappedLength, mappedFontFace.addressof());
+        }
+
         mappedEnd = idx + mappedLength;
 
-        // MapCharacters() splits some grapheme clusters across fonts. For instance, "1 U+FE0F U+20E3"
-        // gets split into "1 U+FE0F" (primary font) and U+20E3 (fallback font), which then don't line up.
-        // We can detect this, because all characters of a cluster share the same column.
-        if (mappedEnd < offEnd && _api.bufferLineColumn[mappedEnd - 1] == _api.bufferLineColumn[mappedEnd])
+        // MapCharacters() splits some grapheme clusters across fonts. For instance, "1 U+20E3"
+        // gets split into "1" (primary font) and U+20E3 (fallback font), which then don't line up.
+        if (mappedEnd < segmentEnd && _api.bufferLineColumn[mappedEnd - 1] == _api.bufferLineColumn[mappedEnd])
         {
-            const auto clusterColumn = _api.bufferLineColumn[mappedEnd];
-            auto clusterBeg = mappedEnd - 1;
-            while (clusterBeg > idx && _api.bufferLineColumn[clusterBeg - 1] == clusterColumn)
-            {
-                --clusterBeg;
-            }
+            const auto clusterBeg = findClusterBeg(idx, mappedEnd);
 
             if (clusterBeg > idx)
             {
@@ -910,12 +949,7 @@ void AtlasEngine::_mapRegularText(size_t offBeg, size_t offEnd)
                 // The primary font lacks the cluster's trailing characters, so use their font for all of it.
                 // If that font lacks the leading characters instead, we keep the split, because a misaligned
                 // cluster is better than one drawn with missing glyphs.
-                auto clusterEnd = mappedEnd;
-                while (clusterEnd < offEnd && _api.bufferLineColumn[clusterEnd] == clusterColumn)
-                {
-                    ++clusterEnd;
-                }
-
+                const auto clusterEnd = findClusterEnd(mappedEnd, segmentEnd);
                 u32 trailingLength = 0;
                 wil::com_ptr<IDWriteFontFace2> trailingFontFace;
                 _mapCharacters(_api.bufferLine.data() + mappedEnd, clusterEnd - mappedEnd, &trailingLength, trailingFontFace.addressof());
@@ -1224,6 +1258,49 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
         row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + actualGlyphCount);
         row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + actualGlyphCount);
     }
+}
+
+// Returns the emoji font if it has glyphs for all of bufferLine[beg, end).
+wil::com_ptr<IDWriteFontFace2> AtlasEngine::_mapEmoji(u32 beg, u32 end) const
+{
+    // There's no API to get the emoji font, but U+1F51F (KEYCAP TEN) only exists in emoji fonts.
+    // We ask the system font fallback, because the user's font list may contain monochrome emoji fonts.
+    TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), L"\U0001F51F", 2 };
+    const auto baseWeight = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Bold) ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_p.s->font->fontWeight);
+    const auto baseStyle = WI_IsFlagSet(_api.attributes, FontRelevantAttributes::Italic) ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+    u32 mappedLength = 0;
+    wil::com_ptr<IDWriteFont> font;
+    // We don't read from scale anyways.
+#pragma warning(suppress : 26494) // Variable 'scale' is uninitialized. Always initialize an object (type.5).
+    f32 scale;
+
+    THROW_IF_FAILED(_api.systemFontFallback->MapCharacters(
+        /* analysisSource     */ &analysisSource,
+        /* textPosition       */ 0,
+        /* textLength         */ 2,
+        /* baseFontCollection */ nullptr,
+        /* baseFamilyName     */ nullptr,
+        /* baseWeight         */ baseWeight,
+        /* baseStyle          */ baseStyle,
+        /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
+        /* mappedLength       */ &mappedLength,
+        /* mappedFont         */ font.addressof(),
+        /* scale              */ &scale));
+
+    if (!font)
+    {
+        return nullptr;
+    }
+
+    wil::com_ptr<IDWriteFontFace2> fontFace;
+    THROW_IF_FAILED(font->CreateFontFace(reinterpret_cast<IDWriteFontFace**>(fontFace.addressof())));
+
+    if (!_hasGlyphs(fontFace.get(), beg, end))
+    {
+        return nullptr;
+    }
+
+    return fontFace;
 }
 
 // Returns true if the font has a glyph for each code point in bufferLine[beg, end).
