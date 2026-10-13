@@ -31,6 +31,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="FlatC.h" />
+    <ClInclude Include="HwndTerminalAutomationPeer.h" />
     <ClInclude Include="ControlCore.h" />
     <ClInclude Include="ControlInteractivity.h" />
     <ClInclude Include="ScrollBarVisualStateManager.h">
@@ -60,6 +61,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="FlatC.cpp" />
+    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
     <ClCompile Include="ControlCore.cpp" />
     <ClCompile Include="ControlInteractivity.cpp" />
     <ClCompile Include="ScrollBarVisualStateManager.cpp">
