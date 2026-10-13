@@ -95,7 +95,7 @@
 
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>uiautomationcore.dll;icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <!--
       ControlLib contains a DllMain that we need to force the use of.
