@@ -55,8 +55,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void _InitializeProperties();
         static void _OnCurrentIconPathChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 
+        static bool _IsBuiltInIconValue(const winrt::hstring& icon) noexcept;
+        static bool _IsImageIconValue(const winrt::hstring& icon);
+        static bool _IsNoIconValue(const winrt::hstring& icon) noexcept;
+
         void _DeduceCurrentIconType();
         void _DeduceCurrentBuiltInIcon();
+        void _NotifyCurrentIconTypeChanged();
         void _updateIconFilter(std::wstring_view filter);
         void _updateFilteredIconList();
     };
