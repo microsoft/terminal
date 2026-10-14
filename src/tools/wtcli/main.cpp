@@ -28,6 +28,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // Helpers
@@ -613,7 +614,21 @@ int main()
 
     try
     {
-        app.parse(__argc, __argv);
+        // `/?` should print the help output, write it to CLI11's --help
+        std::vector<std::string> argStorage;
+        argStorage.reserve(static_cast<size_t>(__argc));
+        for (int i = 0; i < __argc; ++i)
+        {
+            argStorage.emplace_back(std::string_view{ __argv[i] } == "/?" ? "--help" : __argv[i]);
+        }
+        std::vector<char*> argv;
+        argv.reserve(argStorage.size());
+        for (auto& arg : argStorage)
+        {
+            argv.push_back(arg.data());
+        }
+
+        app.parse(static_cast<int>(argv.size()), argv.data());
     }
     catch (const CLI::ParseError& e)
     {
