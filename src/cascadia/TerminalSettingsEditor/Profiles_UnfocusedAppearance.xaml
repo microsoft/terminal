@@ -6,12 +6,13 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:idx="urn:microsoft:terminal:settings-index"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      mc:Ignorable="d idx">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -54,6 +55,7 @@
             <!--  Delete Unfocused Appearance  -->
             <local:SettingsCard x:Name="DeleteUnfocusedAppearance"
                                 x:Uid="Profile_DeleteUnfocusedAppearance"
+                                idx:Ignore="True"
                                 Margin="0,18,0,0"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <local:SettingsCard.HeaderIcon>

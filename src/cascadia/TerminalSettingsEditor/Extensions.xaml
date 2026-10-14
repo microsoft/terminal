@@ -6,12 +6,13 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:idx="urn:microsoft:terminal:settings-index"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      mc:Ignorable="d idx">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -128,6 +129,7 @@
             <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
                 <local:SettingsCard x:Uid="Extensions_DefaultPackageNavigator"
+                                    idx:Ignore="True"
                                     AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Header="{x:Bind Package.Source}"
@@ -147,6 +149,7 @@
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplate"
                           x:DataType="local:ExtensionPackageViewModel">
                 <local:SettingsCard x:Uid="Extensions_ComplexPackageNavigator"
+                                    idx:Ignore="True"
                                     AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Description="{x:Bind Package.Source}"
@@ -167,6 +170,7 @@
             <DataTemplate x:Key="ComplexExtensionNavigatorTemplateWithFontIcon"
                           x:DataType="local:ExtensionPackageViewModel">
                 <local:SettingsCard x:Uid="Extensions_ComplexPackageNavigatorFontIcon"
+                                    idx:Ignore="True"
                                     AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="ExtensionNavigator_Click"
                                     Description="{x:Bind Package.Source}"
@@ -187,6 +191,7 @@
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
                           x:DataType="local:FragmentProfileViewModel">
                 <local:SettingsCard x:Uid="Extensions_FragmentProfileNavigator"
+                                    idx:Ignore="True"
                                     AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="NavigateToProfile_Click"
                                     IsClickEnabled="True"
@@ -364,6 +369,7 @@
             <DataTemplate x:Key="FragmentColorSchemeViewModelTemplate"
                           x:DataType="local:FragmentColorSchemeViewModel">
                 <local:SettingsCard x:Uid="Extensions_FragmentColorSchemeNavigator"
+                                    idx:Ignore="True"
                                     AutomationProperties.Name="{x:Bind AccessibleName}"
                                     Click="NavigateToColorScheme_Click"
                                     IsClickEnabled="True"
@@ -439,6 +445,7 @@
                         <!--  Scope  -->
                         <local:SettingsCard x:Name="Scope"
                                             x:Uid="Extensions_Scope"
+                                            idx:Ignore="True"
                                             IsTabStop="False">
                             <TextBlock VerticalAlignment="Center"
                                        Style="{ThemeResource SecondaryTextBlockStyle}"

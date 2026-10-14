@@ -16,28 +16,50 @@ param(
     [Parameter(Mandatory=$false)][string]$OutputDir = "$PSScriptRoot\..\src\cascadia\TerminalSettingsEditor\Generated Files\"
 )
 
-# Prohibited UIDs (exact match, case-insensitive by default)
-$ProhibitedUids = @(
-    "ColorScheme_ColorsHeader",
-    "ColorScheme_InboxSchemeDuplicate",
-    "ColorScheme_Rename",
-    "Extensions_ComplexPackageNavigator",
-    "Extensions_ComplexPackageNavigatorFontIcon",
-    "Extensions_DefaultPackageNavigator",
-    "Extensions_FragmentColorSchemeNavigator",
-    "Extensions_FragmentProfileNavigator",
-    "Extensions_Scope",
-    "Profile_AdvancedNavigator",
-    "Profile_AppearanceNavigator",
-    "Profile_DeleteProfile",
-    "Profile_DeleteUnfocusedAppearance",
-    "Profile_MissingFontFaces",
-    "Profile_ProportionalFontFaces",
-    "Profile_ResetProfile",
-    "Profile_TerminalNavigator",
-    "Profiles_ColorSchemesNavigator",
-    "Profiles_DefaultsNavigator"
-)
+# XML namespace for build-time indexer attributes that tell this
+# script how an element participates in the search index.
+$IndexerNamespace = "urn:microsoft:terminal:settings-index"
+
+# Recognized idx:* attributes and their permitted values.
+# Validate both the name and the value.
+$KnownIndexerDirectives = @{
+    "Ignore" = @("True")
+    "Label"  = @("True")
+    "Scope"  = @("Profile")
+}
+
+# Reads an idx:* directive off an element, or $null when absent.
+function GetIndexerDirective($node, $name)
+{
+    if (-not $node.HasAttribute($name, $IndexerNamespace))
+    {
+        return $null
+    }
+    return $node.GetAttribute($name, $IndexerNamespace)
+}
+
+# Warns about any idx:* attribute this script doesn't understand, across a set of elements.
+function WarnOnUnknownIndexerDirectives($nodes, $filename)
+{
+    foreach ($node in $nodes)
+    {
+        foreach ($attr in $node.Attributes)
+        {
+            if ($attr.NamespaceURI -ne $IndexerNamespace)
+            {
+                continue
+            }
+            if (-not $KnownIndexerDirectives.ContainsKey($attr.LocalName))
+            {
+                Write-Warning "Unknown indexer directive 'idx:$($attr.LocalName)' on <$($node.LocalName)> in file $filename. Recognized directives: $(($KnownIndexerDirectives.Keys | Sort-Object) -join ', ')."
+            }
+            elseif ($KnownIndexerDirectives[$attr.LocalName] -cnotcontains $attr.Value)
+            {
+                Write-Warning "Unexpected value 'idx:$($attr.LocalName)=`"$($attr.Value)`"' on <$($node.LocalName)> in file $filename. Permitted values: $($KnownIndexerDirectives[$attr.LocalName] -join ', ')."
+            }
+        }
+    }
+}
 
 # Prohibited XAML files (already limited to Page root elements)
 $ProhibitedXamlFiles = @(
@@ -150,6 +172,9 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     $xm.AddNamespace("local", "using:Microsoft.Terminal.Settings.Editor")
     $xm.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
 
+    # Validate every idx:* directive in the file
+    WarnOnUnknownIndexerDirectives $xml.DocumentElement.SelectNodes("//*") $filename
+
     if ($xml.DocumentElement.LocalName -ne "Page" -and $filename -ne "Appearances.xaml")
     {
         # Only allow xaml files for Page elements (or Appearances.xaml)
@@ -247,6 +272,11 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
+        if ((GetIndexerDirective $settingContainer "Ignore") -eq "True")
+        {
+            continue
+        }
+
         # Determine what to index for this container. A SettingContainer is indexable
         # either via its own x:Uid (its label comes from the Header, resource suffix
         # "/Header") OR, when it has none, via a content-labeled child control
@@ -259,10 +289,23 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         if ([string]::IsNullOrEmpty($uid))
         {
-            # No x:Uid on the container itself, look for a child control.
+            # No x:Uid on the container itself, look for a labeled control inside it.
             $child = $settingContainer.SelectNodes("*") |
                 Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
                 Select-Object -First 1
+            if ($null -eq $child)
+            {
+                # The control isn't a direct child, which happens when it's wrapped in a panel.
+                # Those cases mark the control with idx:Label="True" so it's clear which descendant provides the label.
+                $child = $settingContainer.SelectNodes(".//*") |
+                    Where-Object { (GetIndexerDirective $_ "Label") -eq "True" } |
+                    Select-Object -First 1
+                if ($null -ne $child -and [string]::IsNullOrEmpty($child.GetAttribute("x:Uid")))
+                {
+                    Write-Warning "idx:Label=`"True`" on <$($child.LocalName)> in file $filename, but it has no x:Uid to take a label from. Skipping entry."
+                    continue
+                }
+            }
             if ($null -ne $child)
             {
                 $suffix = "Content"
@@ -276,12 +319,12 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             }
             else
             {
-                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. Skipping entry."
+                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. If the labeled control is nested inside a panel, mark it with idx:Label=`"True`". Skipping entry."
                 continue
             }
         }
 
-        if ([string]::IsNullOrEmpty($uid) -or ($ProhibitedUids -contains $uid))
+        if ([string]::IsNullOrEmpty($uid))
         {
             continue
         }
@@ -320,7 +363,8 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         }
         elseif ($pageClass -match "Editor::Profiles_Base" -or (IsProfileSubPage $pageClass))
         {
-            $includeInBuildIndex = !($name -eq "Name" -or $name -eq "Commandline")
+            # idx:Scope="Profile" is for settings that only exist on real profiles (i.e. not on profile defaults)
+            $includeInBuildIndex = (GetIndexerDirective $settingContainer "Scope") -ne "Profile"
             $includeInPartialIndex = $true
         }
         elseif ($pageClass -match "Editor::EditColorScheme")
