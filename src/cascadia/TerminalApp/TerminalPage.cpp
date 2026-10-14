@@ -3297,7 +3297,8 @@ namespace winrt::TerminalApp::implementation
 
                 if (shouldLaunch)
                 {
-                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    const auto launchPath = _GetLaunchPathForUri(parsed);
+            ShellExecuteW(nullptr, L"open", launchPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                 }
             }
             else
@@ -3378,6 +3379,32 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    std::wstring TerminalPage::_GetLaunchPathForUri(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"file")
+        {
+            std::wstring unescapedPath{ winrt::Windows::Foundation::Uri::UnescapeComponent(parsedUri.Path()) };
+            std::replace(unescapedPath.begin(), unescapedPath.end(), L'/', L'\\');
+
+            const auto host = parsedUri.Host();
+            if (host.empty())
+            {
+                if (unescapedPath.size() >= 3 && unescapedPath[0] == L'\\' && unescapedPath[2] == L':')
+                {
+                    unescapedPath.erase(0, 1);
+                }
+                return unescapedPath;
+            }
+
+            std::wstring result{ L"\\\\" };
+            result.append(host);
+            result.append(unescapedPath);
+            return result;
+        }
+
+        return std::wstring{ parsedUri.RawUri() };
+    }
+
     bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
@@ -3398,7 +3425,7 @@ namespace winrt::TerminalApp::implementation
         if (schemeName == L"file")
         {
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
-            const auto filename = parsedUri.Path();
+            const auto filename = winrt::Windows::Foundation::Uri::UnescapeComponent(parsedUri.Path());
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
                 if (til::ends_with_insensitive_ascii(filename, e))
