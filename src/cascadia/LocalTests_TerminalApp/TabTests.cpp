@@ -96,7 +96,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
         TEST_METHOD(TestClampSwitchToTab);
-
+        TEST_METHOD(FileUriToLaunchPath);
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1517,5 +1517,31 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
         });
     }
+    void TabTests::FileUriToLaunchPath()
+{
+            using winrt::Windows::Foundation::Uri;
+            using TerminalPage = winrt::TerminalApp::implementation::TerminalPage;
+
+{
+                const Uri uri{ L"file:///C:/Users/test/wt-link-repro/ascii/a.txt" };
+                VERIFY_IS_TRUE(TerminalPage::_IsUriSupported(uri));
+                VERIFY_ARE_EQUAL(L"C:\\Users\\test\\wt-link-repro\\ascii\\a.txt", TerminalPage::_GetLaunchPathForUri(uri));
+}
+{
+                const Uri uri{ L"file:///C:/Users/test/wt-link-repro/%E4%B8%AD%E6%96%87/b.txt" };
+                VERIFY_IS_TRUE(TerminalPage::_IsUriSupported(uri));
+                VERIFY_ARE_EQUAL(L"C:\\Users\\test\\wt-link-repro\\\u4E2D\u6587\\b.txt", TerminalPage::_GetLaunchPathForUri(uri));
+}
+{
+                const Uri uri{ L"file:///C:/Temp/my%20folder/100%25.txt" };
+                VERIFY_IS_TRUE(TerminalPage::_IsUriSupported(uri));
+                VERIFY_ARE_EQUAL(L"C:\\Temp\\my folder\\100%.txt", TerminalPage::_GetLaunchPathForUri(uri));
+}
+{
+                const Uri uri{ L"file://wsl.localhost/Ubuntu/home/user/%E4%B8%AD%E6%96%87/b.txt" };
+                VERIFY_IS_TRUE(TerminalPage::_IsUriSupported(uri));
+                VERIFY_ARE_EQUAL(L"\\\\wsl.localhost\\Ubuntu\\home\\user\\\u4E2D\u6587\\b.txt", TerminalPage::_GetLaunchPathForUri(uri));
+}
+}
 
 }
