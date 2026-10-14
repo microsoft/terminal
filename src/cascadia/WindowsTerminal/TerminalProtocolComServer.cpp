@@ -13,6 +13,7 @@
 #include <json/json.h>
 #include <til/io.h>
 #include "../TerminalProtocol/ProtocolParsing.h"
+#include "WindowTarget.h"
 
 #include <algorithm>
 #include <thread>
@@ -28,7 +29,7 @@ namespace ProtocolParsing = Microsoft::Terminal::Protocol::Parsing;
 
 namespace Protocol = winrt::Microsoft::Terminal::Protocol;
 
-// Static state — set once before registration, never mutated.
+// Static state, set once before registration and never mutated.
 WindowEmperor* TerminalProtocolComServer::s_emperor = nullptr;
 
 // Returns the CLSID to register/activate the protocol server.
@@ -78,7 +79,7 @@ try
     g_comMtaThread = std::thread([&ready, &regHr]() {
         auto coInit = wil::CoInitializeEx(COINIT_MULTITHREADED);
 
-        // Classic-COM class factory (WRL) — marshaled via the OpenConsoleProxy
+        // Classic-COM class factory (WRL), marshaled via the OpenConsoleProxy
         // proxy/stub, not WinRT MBM.
         const auto factory = Make<SimpleClassFactory<TerminalProtocolComServer>>();
         if (!factory)
@@ -212,7 +213,6 @@ static winrt::TerminalApp::TerminalPage _getPage(AppHost* host)
     return root.try_as<winrt::TerminalApp::TerminalPage>();
 }
 
-// Parse a JSON string into Json::Value
 static bool _parseJson(const std::string& str, Json::Value& out)
 {
     Json::CharReaderBuilder rb;
@@ -221,7 +221,7 @@ static bool _parseJson(const std::string& str, Json::Value& out)
     return Json::parseFromStream(rb, ss, &out, &errs);
 }
 
-// ── JSON serialization helpers (the wire format is JSON; see wtcli Formatting) ──
+// JSON serialization helpers. The wire format is JSON; see wtcli Formatting.
 
 static std::string _guidStr(const winrt::guid& g)
 {
@@ -255,6 +255,7 @@ static Json::Value _toJson(const Protocol::WindowInfo& w)
 {
     Json::Value v;
     v["window_id"] = static_cast<Json::UInt64>(w.WindowId);
+    v["name"] = winrt::to_string(w.Name);
     v["title"] = winrt::to_string(w.Title);
     v["is_focused"] = static_cast<bool>(w.IsFocused);
     v["tab_count"] = static_cast<Json::UInt>(w.TabCount);
@@ -320,6 +321,7 @@ static Json::Value _toJson(const Protocol::TabCreationResult& r)
     v["session_id"] = _guidStr(r.SessionId);
     v["window_id"] = static_cast<Json::UInt64>(r.WindowId);
     v["pid"] = static_cast<Json::UInt>(r.Pid);
+    v["pending"] = static_cast<bool>(r.Pending);
     return v;
 }
 
@@ -328,6 +330,20 @@ static winrt::hstring _hstr(BSTR b)
 {
     return b ? winrt::hstring{ b } : winrt::hstring{};
 }
+
+// Resolve a window target for a read-only query. "new" (and negative IDs) are
+// rejected because a query should never have the side effect of creating a window.
+static HRESULT _resolveWindowForQuery(WindowEmperor* emperor, BSTR windowTarget, const AppHost*& resolved) noexcept
+try
+{
+    const auto target = ParseWindowTarget(_hstr(windowTarget));
+    RETURN_HR_IF(E_INVALIDARG, target.Kind == WindowTargetKind::New);
+
+    resolved = emperor->ResolveWindowTarget(target);
+    RETURN_HR_IF(E_INVALIDARG, !resolved);
+    return S_OK;
+}
+CATCH_RETURN()
 
 // ============================================================================
 // Queries
@@ -350,7 +366,7 @@ try
     auto info = page.GetProtocolActivePane().get();
     RETURN_HR_IF(E_FAIL, info.SessionId == winrt::guid{});
 
-    // TerminalPage doesn't know the window ID — fill it in here.
+    // TerminalPage doesn't know the window ID, so fill it in here.
     const auto& props = host->Logic().WindowProperties();
     info.WindowId = props.WindowId();
 
@@ -380,11 +396,12 @@ try
 
         Protocol::WindowInfo info{};
         info.WindowId = props.WindowId();
-        info.Title = props.WindowNameForDisplay();
+        info.Name = props.WindowName();
         info.IsFocused = (host.get() == mostRecent);
 
         const auto page = _getPage(host.get());
         info.TabCount = page ? page.TabCount() : 0;
+        info.Title = page ? page.WindowTitle() : winrt::hstring{};
         arr.append(_toJson(info));
     }
 
@@ -393,7 +410,7 @@ try
 }
 CATCH_RETURN()
 
-STDMETHODIMP TerminalProtocolComServer::ListTabs(unsigned __int64 windowIdFilter, BSTR* json)
+STDMETHODIMP TerminalProtocolComServer::ListTabs(BSTR windowTarget, boolean allWindows, BSTR* json)
 try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
@@ -401,23 +418,28 @@ try
     RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
+    const AppHost* filter = nullptr;
+    if (!allWindows)
+    {
+        RETURN_IF_FAILED(_resolveWindowForQuery(s_emperor, windowTarget, filter));
+    }
+
     Json::Value arr(Json::arrayValue);
 
     for (const auto& host : s_emperor->GetWindows())
     {
-        const auto logic = host->Logic();
-        if (!logic)
+        if (filter && host.get() != filter)
             continue;
 
-        const auto& props = logic.WindowProperties();
-        if (windowIdFilter != 0 && props.WindowId() != windowIdFilter)
+        const auto logic = host->Logic();
+        if (!logic)
             continue;
 
         const auto page = _getPage(host.get());
         if (!page)
             continue;
 
-        const auto windowId = props.WindowId();
+        const auto windowId = logic.WindowProperties().WindowId();
         const auto tabs = page.GetProtocolTabs().get();
         for (uint32_t i = 0; i < tabs.Size(); ++i)
         {
@@ -432,7 +454,7 @@ try
 }
 CATCH_RETURN()
 
-STDMETHODIMP TerminalProtocolComServer::ListPanes(unsigned __int64 windowIdFilter, unsigned long tabIdFilter, BSTR* json)
+STDMETHODIMP TerminalProtocolComServer::ListPanes(BSTR windowTarget, boolean allWindows, unsigned long tabIdFilter, BSTR* json)
 try
 {
     RETURN_HR_IF_NULL(E_POINTER, json);
@@ -440,23 +462,28 @@ try
     RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
+    const AppHost* filter = nullptr;
+    if (!allWindows)
+    {
+        RETURN_IF_FAILED(_resolveWindowForQuery(s_emperor, windowTarget, filter));
+    }
+
     Json::Value arr(Json::arrayValue);
 
     for (const auto& host : s_emperor->GetWindows())
     {
-        const auto logic = host->Logic();
-        if (!logic)
+        if (filter && host.get() != filter)
             continue;
 
-        const auto& props = logic.WindowProperties();
-        if (windowIdFilter != 0 && props.WindowId() != windowIdFilter)
+        const auto logic = host->Logic();
+        if (!logic)
             continue;
 
         const auto page = _getPage(host.get());
         if (!page)
             continue;
 
-        const auto windowId = props.WindowId();
+        const auto windowId = logic.WindowProperties().WindowId();
         const auto panes = page.GetProtocolPanes(tabIdFilter).get();
         for (uint32_t i = 0; i < panes.Size(); ++i)
         {
@@ -542,13 +569,75 @@ CATCH_RETURN()
 // Mutations
 // ============================================================================
 
-STDMETHODIMP TerminalProtocolComServer::CreateTab(unsigned __int64 windowId,
+// Create a window for `target` and report its first tab.
+//
+// The window is created on the main thread via SendMessage, but its first tab
+// is only built later during XAML's first layout pass. So we wait up to
+// waitTimeoutMs for the page to report itself initialized and then read the
+// tab back. If the caller didn't want to wait or the wait expired, we still
+// succeeded in creating the window, so report it as Pending rather than failing,
+// and let the caller follow up by WindowId.
+static HRESULT _createTabInNewWindow(WindowEmperor* emperor,
+                                     const WindowTarget& target,
+                                     const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args,
+                                     unsigned long waitTimeoutMs,
+                                     BSTR* json) noexcept
+try
+{
+    WindowEmperor::ProtocolWindowRequest request{ &target, args, 0 };
+    SendMessageW(emperor->GetMainWindowForProtocol(),
+                 WindowEmperor::WM_CREATE_PROTOCOL_WINDOW,
+                 0,
+                 reinterpret_cast<LPARAM>(&request));
+    RETURN_HR_IF(E_FAIL, request.CreatedWindowId == 0);
+
+    Protocol::TabCreationResult result{};
+    result.WindowId = request.CreatedWindowId;
+    result.Pending = true;
+
+    const auto reportPending = [&]() {
+        *json = _bstrFromJson(_toJson(result));
+        return S_OK;
+    };
+
+    if (waitTimeoutMs == 0)
+    {
+        return reportPending();
+    }
+
+    WindowTarget byId{ WindowTargetKind::Id, request.CreatedWindowId };
+    const auto page = _getPage(emperor->ResolveWindowTarget(byId));
+    if (!page || !page.WaitForInitialized(waitTimeoutMs).get())
+    {
+        return reportPending();
+    }
+
+    // Grab the first pane of the first tab
+    const auto panes = page.GetProtocolPanes(0).get();
+    if (!panes || panes.Size() == 0)
+    {
+        return reportPending();
+    }
+
+    const auto pane = panes.GetAt(0);
+    result.TabId = pane.TabId;
+    result.SessionId = pane.SessionId;
+    result.Pid = pane.Pid;
+    result.Pending = false;
+
+    *json = _bstrFromJson(_toJson(result));
+    return S_OK;
+}
+CATCH_RETURN()
+
+STDMETHODIMP TerminalProtocolComServer::CreateTab(BSTR windowTarget,
                                                   BSTR profile,
                                                   BSTR commandline,
                                                   BSTR title,
                                                   BSTR startingDirectory,
                                                   boolean suppressAppTitle,
                                                   boolean background,
+                                                  unsigned long waitTimeoutMs,
                                                   BSTR* json)
 try
 {
@@ -557,22 +646,8 @@ try
     RETURN_IF_FAILED(_authorizeCaller());
     RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
 
-    // Find target window.
-    AppHost* targetHost = nullptr;
-    if (windowId != 0)
-    {
-        targetHost = s_emperor->GetWindowById(windowId);
-    }
-    else
-    {
-        targetHost = s_emperor->GetMostRecentWindow();
-    }
-    RETURN_HR_IF(E_FAIL, !targetHost);
+    const auto target = ParseWindowTarget(_hstr(windowTarget));
 
-    const auto page = _getPage(targetHost);
-    RETURN_HR_IF(E_FAIL, !page);
-
-    // Build NewTerminalArgs.
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTermArgs;
     const auto profileH = _hstr(profile);
     const auto commandlineH = _hstr(commandline);
@@ -590,6 +665,17 @@ try
         if (suppressAppTitle)
             newTermArgs.SuppressApplicationTitle(true);
     }
+
+    auto* targetHost = s_emperor->ResolveWindowTarget(target);
+    if (!targetHost)
+    {
+        RETURN_HR_IF(E_INVALIDARG, target.Kind == WindowTargetKind::Id);
+        RETURN_HR_IF(E_FAIL, target.Kind == WindowTargetKind::Unspecified || target.Kind == WindowTargetKind::Existing);
+        return _createTabInNewWindow(s_emperor, target, newTermArgs, waitTimeoutMs, json);
+    }
+
+    const auto page = _getPage(targetHost);
+    RETURN_HR_IF(E_FAIL, !page);
 
     auto cr = page.CreateProtocolTab(newTermArgs, background != 0).get();
     RETURN_HR_IF(E_FAIL, cr.SessionId == winrt::guid{});
@@ -621,7 +707,6 @@ try
     auto splitDir = static_cast<winrt::Microsoft::Terminal::Settings::Model::SplitDirection>(
         static_cast<int>(parsedDir));
 
-    // Build NewTerminalArgs.
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTermArgs;
     const auto profileH = _hstr(profile);
     const auto commandlineH = _hstr(commandline);

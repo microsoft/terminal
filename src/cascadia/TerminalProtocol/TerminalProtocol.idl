@@ -8,6 +8,9 @@ namespace Microsoft.Terminal.Protocol
     struct WindowInfo
     {
         UInt64 WindowId;
+        // The window's name, as accepted by `wt -w <name>`. Empty when the
+        // window is unnamed.
+        String Name;
         String Title;
         Boolean IsFocused;
         UInt32 TabCount;
@@ -63,6 +66,10 @@ namespace Microsoft.Terminal.Protocol
         Guid SessionId;
         UInt64 WindowId;
         UInt32 Pid;
+        // True when a window was created but its first tab isn't ready yet. In
+        // that case TabId, SessionId and Pid are not yet meaningful, and the
+        // caller should query the window by WindowId once it has started.
+        Boolean Pending;
     };
 }
 

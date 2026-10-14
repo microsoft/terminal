@@ -16,6 +16,7 @@
 
 #include "AppHost.h"
 #include "TerminalProtocolComServer.h"
+#include "WindowTarget.h"
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
 #include "../../types/inc/User32Utils.hpp"
@@ -258,6 +259,43 @@ AppHost* WindowEmperor::GetWindowByName(std::wstring_view name) const noexcept
     return nullptr;
 }
 
+// Resolve a parsed `-w` target to an existing window.
+//
+// Note that Existing resolves to the most recently activated window
+// on any virtual desktop, whereas the commandline path restricts it to
+// the current desktop (see _dispatchCommandlineCurrentDesktop).
+AppHost* WindowEmperor::ResolveWindowTarget(const WindowTarget& target) const noexcept
+{
+    switch (target.Kind)
+    {
+    case WindowTargetKind::Id:
+        for (const auto& window : _windows)
+        {
+            if (window->Logic().WindowProperties().WindowId() == target.Id)
+            {
+                return window.get();
+            }
+        }
+        return nullptr;
+    case WindowTargetKind::Name:
+        for (const auto& window : _windows)
+        {
+            if (window->Logic().WindowProperties().WindowName() == target.Name)
+            {
+                return window.get();
+            }
+        }
+        return nullptr;
+    case WindowTargetKind::Unspecified:
+    case WindowTargetKind::Existing:
+        return _mostRecentWindow();
+    case WindowTargetKind::New:
+        return nullptr;
+    }
+
+    return nullptr;
+}
+
 void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args)
 {
     _assertIsMainThread();
@@ -342,14 +380,25 @@ void WindowEmperor::OpenWindow(const winrt::hstring& name)
     _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
 }
 
-// Shared tail used by both the commandline dispatch path and OpenWindow():
-// build a WindowRequestedArgs for a new window and, if the request carries a
-// name, atomically claim any persisted workspace stored under that name so
-// it's restored here and no subsequent caller can pick up the same entry.
-void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+// Shared tail used by the commandline dispatch path, OpenWindow(), and the
+// protocol server: build a WindowRequestedArgs for a new window and, if the
+// request carries a name, atomically claim any persisted workspace stored under
+// that name so it's restored here and no subsequent caller can pick up the same
+// entry.
+//
+// startupActions, when provided, describes the window's initial content. Note
+// AppHost prefers a PersistedLayout over StartupActions, so a window restored
+// from a workspace ignores them. That's the same precedence `wt -w <name> <cmd>`
+// already has.
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args, const Collections::IVector<ActionAndArgs>& startupActions)
 {
     winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
     request.WindowName(windowName);
+
+    if (startupActions && startupActions.Size() > 0)
+    {
+        request.StartupActions(startupActions);
+    }
 
     if (!windowName.empty())
     {
@@ -360,6 +409,31 @@ void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, cons
     }
 
     CreateNewWindow(std::move(request));
+}
+
+// Create a window on behalf of the Terminal Protocol server.
+// Must run on the main thread, because the protocol server gets here
+// by using SendMessage WM_CREATE_PROTOCOL_WINDOW from its MTA thread.
+//
+// Returns the new window's ID, or 0 on failure. Note the window's tabs do not
+// exist yet when this returns, the tabs are built from StartupActions during XAML's
+// first layout pass. Callers that need the tab must wait for the page to report
+// itself initialized.
+uint64_t WindowEmperor::_createProtocolWindow(const WindowTarget& target, const NewTerminalArgs& args)
+{
+    _assertIsMainThread();
+
+    // Similar to TerminalPage::_OpenNewWindow
+    ActionAndArgs newTabAction{};
+    newTabAction.Action(ShortcutAction::NewTab);
+    newTabAction.Args(NewTabArgs{ args });
+    auto actions = winrt::single_threaded_vector<ActionAndArgs>({ std::move(newTabAction) });
+
+    const auto windowName = target.Kind == WindowTargetKind::Name ? target.Name : winrt::hstring{};
+    _createWindowMaybeRestoringWorkspace(0, windowName, winrt::TerminalApp::CommandlineArgs{}, actions);
+
+    // CreateNewWindow appends to _windows, so the window we just made is last.
+    return _windows.empty() ? 0 : _windows.back()->Logic().WindowProperties().WindowId();
 }
 
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
@@ -814,42 +888,32 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
         return;
     }
 
-    const auto parsedTarget = args.TargetWindow();
+    const auto target = ParseWindowTarget(args.TargetWindow());
     WindowingMode windowingBehavior = WindowingMode::UseNew;
     uint64_t windowId = 0;
     winrt::hstring windowName;
 
-    // Figure out the windowing behavior the caller wants
-    // and get the sanitized window ID (if any) and window name (if any).
-    if (parsedTarget.empty())
+    switch (target.Kind)
     {
+    case WindowTargetKind::Unspecified:
         windowingBehavior = _app.Logic().Settings().GlobalSettings().WindowingBehavior();
-    }
-    else if (const auto opt = til::parse_signed<int64_t>(parsedTarget, 10))
-    {
-        // Negative window IDs map to WindowingMode::UseNew.
-        if (*opt > 0)
-        {
-            windowId = gsl::narrow_cast<uint64_t>(*opt);
-        }
-        else if (*opt == 0)
-        {
-            windowingBehavior = WindowingMode::UseExisting;
-        }
-    }
-    else if (parsedTarget == L"last")
-    {
+        break;
+    case WindowTargetKind::Id:
+        windowId = target.Id;
+        break;
+    case WindowTargetKind::Existing:
         windowingBehavior = WindowingMode::UseExisting;
-    }
-    // A window name of "new" maps to WindowingMode::UseNew.
-    else if (parsedTarget != L"new")
-    {
-        windowName = parsedTarget;
+        break;
+    case WindowTargetKind::New:
+        windowingBehavior = WindowingMode::UseNew;
+        break;
+    case WindowTargetKind::Name:
+        windowName = target.Name;
+        break;
     }
 
     AppHost* window = nullptr;
 
-    // Map from the windowing behavior, ID, and name to a window.
     if (windowId)
     {
         window = GetWindowById(windowId);
@@ -1216,6 +1280,22 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                     const auto props = host->Logic().WindowProperties();
                     result->emplace_back(WindowListEntry{ props.WindowId(), std::wstring{ props.WindowName() } });
                 }
+            }
+            return 0;
+        }
+        case WM_CREATE_PROTOCOL_WINDOW:
+        {
+            auto* request = reinterpret_cast<ProtocolWindowRequest*>(lParam);
+            if (request && request->Target)
+            {
+                // The protocol server is blocked in SendMessage waiting on this,
+                // so don't let an exception escape into the window process.
+                request->CreatedWindowId = 0;
+                try
+                {
+                    request->CreatedWindowId = _createProtocolWindow(*request->Target, request->Args);
+                }
+                CATCH_LOG();
             }
             return 0;
         }

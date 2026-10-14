@@ -136,6 +136,8 @@ namespace TerminalApp
 
         // Terminal Protocol Bridge Methods
         UInt32 TabCount { get; };
+        String WindowTitle { get; };
+        Windows.Foundation.IAsyncOperation<Boolean> WaitForInitialized(UInt32 timeoutMs);
         Windows.Foundation.IReference<UInt32> FocusedTabIndex { get; };
         Windows.Foundation.IAsyncOperation<Microsoft.Terminal.Protocol.PaneInfo> GetProtocolActivePane();
         Windows.Foundation.IAsyncOperation<Windows.Foundation.Collections.IVector<Microsoft.Terminal.Protocol.TabInfo> > GetProtocolTabs();

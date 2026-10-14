@@ -12,7 +12,7 @@
 
 namespace ProtocolParsing = Microsoft::Terminal::Protocol::Parsing;
 
-// Core fuzzing logic — called by both LibFuzzer and the manual main().
+// Core fuzzing logic, called by both LibFuzzer and the manual main().
 static int FuzzOneInput(const uint8_t* data, size_t size)
 {
     if (size == 0)
@@ -22,7 +22,7 @@ static int FuzzOneInput(const uint8_t* data, size_t size)
 
     const std::string input(reinterpret_cast<const char*>(data), size);
 
-    // ── Target 1: ParseSplitDirection ──
+    // Target 1: ParseSplitDirection
     // Feed fuzzed data as a direction string. Exercises all 8 recognized
     // values plus arbitrary unrecognized strings.
     {

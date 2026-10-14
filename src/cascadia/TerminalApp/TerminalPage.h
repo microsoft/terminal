@@ -231,6 +231,8 @@ namespace winrt::TerminalApp::implementation
 
         // Terminal Protocol Bridge Methods
         uint32_t TabCount() const;
+        hstring WindowTitle();
+        Windows::Foundation::IAsyncOperation<bool> WaitForInitialized(uint32_t timeoutMs);
         Windows::Foundation::IReference<uint32_t> FocusedTabIndex() const;
         Windows::Foundation::IAsyncOperation<Microsoft::Terminal::Protocol::PaneInfo> GetProtocolActivePane();
         Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVector<Microsoft::Terminal::Protocol::TabInfo>> GetProtocolTabs();

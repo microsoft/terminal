@@ -11,7 +11,7 @@
 
 namespace Microsoft::Terminal::Protocol::Parsing
 {
-    // ── SplitPane direction mapping ──
+    // SplitPane direction mapping
 
     // Mirror of TerminalSettingsModel::SplitDirection enum values.
     // Kept in sync with ActionArgs.idl.
@@ -26,7 +26,7 @@ namespace Microsoft::Terminal::Protocol::Parsing
 
     // Map a direction string to a SplitDirection value.
     // Accepts: "right", "left", "up", "down", "auto", "automatic",
-    // and legacy values "horizontal" (→ Down) / "vertical" (→ Right).
+    // and the legacy values "horizontal" (maps to Down) and "vertical" (maps to Right).
     // Returns Right for unrecognized strings (matching server default).
     inline SplitDirection ParseSplitDirection(const std::string& direction)
     {
@@ -64,7 +64,7 @@ namespace Microsoft::Terminal::Protocol::Parsing
             return SplitDirection::Right;
         }
 
-        // Unrecognized — default to Right
+        // Default to Right for anything unrecognized.
         return SplitDirection::Right;
     }
 }

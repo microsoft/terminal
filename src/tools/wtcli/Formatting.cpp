@@ -12,7 +12,7 @@ void PrintJson(const Json::Value& val)
     printf("%s\n", Json::writeString(wb, val).c_str());
 }
 
-// ── Human-readable formatters (read the server's JSON) ──
+// Human-readable formatters that read the server's JSON.
 
 void FormatWindowsHuman(const Json::Value& windows)
 {
@@ -21,11 +21,12 @@ void FormatWindowsHuman(const Json::Value& windows)
         printf("No windows found.\n");
         return;
     }
-    printf("%-12s %-30s %s\n", "WINDOW_ID", "TITLE", "FOCUSED");
+    printf("%-12s %-20s %-30s %s\n", "WINDOW_ID", "NAME", "TITLE", "FOCUSED");
     for (const auto& w : windows)
     {
-        printf("%-12llu %-30s %s\n",
+        printf("%-12llu %-20s %-30s %s\n",
                static_cast<unsigned long long>(w["window_id"].asUInt64()),
+               w["name"].asString().c_str(),
                w["title"].asString().c_str(),
                w["is_focused"].asBool() ? "*" : "");
     }
@@ -85,6 +86,14 @@ void FormatPaneStatusHuman(const Json::Value& status)
 
 void FormatCreatedTabHuman(const Json::Value& result)
 {
+    // A new window builds the first tab asynchronously, so the server may
+    // only be able to tell us which window it made.
+    if (result["pending"].asBool())
+    {
+        printf("Created window %llu; its first tab is still starting.\n",
+               static_cast<unsigned long long>(result["window_id"].asUInt64()));
+        return;
+    }
     printf("Created tab %u (session %s)\n",
            result["tab_id"].asUInt(),
            result["session_id"].asString().c_str());

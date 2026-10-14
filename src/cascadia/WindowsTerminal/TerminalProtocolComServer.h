@@ -8,7 +8,7 @@
 
 #include "ITerminalProtocol.h"
 
-// Per-brand CLSIDs — same pattern as CTerminalHandoff.
+// Per-brand CLSIDs, following the same pattern as CTerminalHandoff.
 #if defined(WT_BRANDING_RELEASE)
 #define __CLSID_TerminalProtocolServer "832FDEC7-AA6F-4BAB-85FA-A491405638FC"
 #elif defined(WT_BRANDING_PREVIEW)
@@ -29,22 +29,22 @@ class WindowEmperor;
 struct __declspec(uuid(__CLSID_TerminalProtocolServer))
 TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalProtocol>
 {
-    // ── ITerminalProtocol ──
+    // ITerminalProtocol
     STDMETHODIMP GetActivePane(BSTR* json) override;
     STDMETHODIMP ListWindows(BSTR* json) override;
-    STDMETHODIMP ListTabs(unsigned __int64 windowIdFilter, BSTR* json) override;
-    STDMETHODIMP ListPanes(unsigned __int64 windowIdFilter, unsigned long tabIdFilter, BSTR* json) override;
+    STDMETHODIMP ListTabs(BSTR windowTarget, boolean allWindows, BSTR* json) override;
+    STDMETHODIMP ListPanes(BSTR windowTarget, boolean allWindows, unsigned long tabIdFilter, BSTR* json) override;
     STDMETHODIMP GetProcessStatus(GUID sessionId, BSTR* json) override;
     STDMETHODIMP GetSessionVariable(GUID sessionId, BSTR name, BSTR* json) override;
     STDMETHODIMP GetSettings(BSTR* json) override;
-    STDMETHODIMP CreateTab(unsigned __int64 windowId, BSTR profile, BSTR commandline, BSTR title, BSTR startingDirectory, boolean suppressAppTitle, boolean background, BSTR* json) override;
+    STDMETHODIMP CreateTab(BSTR windowTarget, BSTR profile, BSTR commandline, BSTR title, BSTR startingDirectory, boolean suppressAppTitle, boolean background, unsigned long waitTimeoutMs, BSTR* json) override;
     STDMETHODIMP SplitPane(GUID sessionId, BSTR direction, float size, BSTR profile, BSTR commandline, boolean background, BSTR* json) override;
     STDMETHODIMP ClosePane(GUID sessionId) override;
     STDMETHODIMP SendInput(GUID sessionId, BSTR text) override;
     STDMETHODIMP FocusPane(GUID sessionId) override;
     STDMETHODIMP SetSessionVariable(GUID sessionId, BSTR name, BSTR value) override;
 
-    // Static setup — must be called before s_StartListening().
+    // Static setup that must be called before s_StartListening().
     static void s_setEmperor(WindowEmperor* emperor) noexcept;
 
     static HRESULT s_StartListening();

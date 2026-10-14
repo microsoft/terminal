@@ -17,31 +17,36 @@ import "unknwn.idl";
 // LOAD BEARING (same discipline as ITerminalHandoff): OpenConsoleProxy.dll is a
 // single shared proxy/stub DLL. Never change or reuse the UUIDs below.
 
-// Terminal protocol — implemented by WindowsTerminal.exe, activated by the
+// Terminal protocol, implemented by WindowsTerminal.exe and activated by the
 // client via CoCreateInstance(CLSCTX_LOCAL_SERVER) with the per-brand CLSID.
+//
+// Methods that take a `windowTarget` use the same grammar as `wt --window,-w` (see WindowTarget.h)
+// i.e. a positive ID, "0"/"last" for an existing window, "new" or a negative ID for a new one
+// or any other string as a window name. An empty string resolves to the most recent window.
 [
     object,
     uuid(D999831E-7EBD-4B14-9D2F-8B09417582D4),
     pointer_default(unique)
 ] interface ITerminalProtocol : IUnknown
 {
-    // ── Queries (complex results as JSON) ──
+    // Queries (complex results as JSON)
     HRESULT GetActivePane([out, retval] BSTR* json);
     HRESULT ListWindows([out, retval] BSTR* json);
-    HRESULT ListTabs([in] unsigned hyper windowIdFilter, [out, retval] BSTR* json);
-    HRESULT ListPanes([in] unsigned hyper windowIdFilter, [in] unsigned long tabIdFilter, [out, retval] BSTR* json);
+    HRESULT ListTabs([in] BSTR windowTarget, [in] boolean allWindows, [out, retval] BSTR* json);
+    HRESULT ListPanes([in] BSTR windowTarget, [in] boolean allWindows, [in] unsigned long tabIdFilter, [out, retval] BSTR* json);
     HRESULT GetProcessStatus([in] GUID sessionId, [out, retval] BSTR* json);
     HRESULT GetSessionVariable([in] GUID sessionId, [in] BSTR name, [out, retval] BSTR* json);
     HRESULT GetSettings([out, retval] BSTR* json);
 
-    // ── Mutations ──
-    HRESULT CreateTab([in] unsigned hyper windowId,
+    // Mutations
+    HRESULT CreateTab([in] BSTR windowTarget,
                       [in] BSTR profile,
                       [in] BSTR commandline,
                       [in] BSTR title,
                       [in] BSTR startingDirectory,
                       [in] boolean suppressAppTitle,
                       [in] boolean background,
+                      [in] unsigned long waitTimeoutMs,
                       [out, retval] BSTR* json);
     HRESULT SplitPane([in] GUID sessionId,
                       [in] BSTR direction,

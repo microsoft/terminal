@@ -19,6 +19,7 @@ Abstract:
 
 class AppHost;
 struct TerminalProtocolComServer;
+struct WindowTarget;
 
 class WindowEmperor
 {
@@ -30,6 +31,7 @@ public:
         WM_IDENTIFY_ALL_WINDOWS,
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
         WM_GET_WINDOW_LIST,
+        WM_CREATE_PROTOCOL_WINDOW,
     };
 
     // Used by WM_GET_WINDOW_LIST.  Callers allocate a vector on their
@@ -39,6 +41,20 @@ public:
     {
         uint64_t Id;
         std::wstring Name;
+    };
+
+    // Used by WM_CREATE_PROTOCOL_WINDOW. The Terminal Protocol COM server runs
+    // on an MTA thread, but windows can only be created on the main/UI thread,
+    // so it allocates one of these on its stack and passes a pointer through
+    // LPARAM. SendMessage blocks until the main thread has filled in the result.
+    struct ProtocolWindowRequest
+    {
+        // in: the parsed -w target. Only New and (unmatched) Name reach here.
+        const WindowTarget* Target;
+        // in: for window's first tab.
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs Args;
+        // out: 0 if the window could not be created.
+        uint64_t CreatedWindowId;
     };
 
     WindowEmperor();
@@ -56,6 +72,8 @@ public:
     // Protocol server access
     const std::vector<std::shared_ptr<::AppHost>>& GetWindows() const noexcept { return _windows; }
     AppHost* GetMostRecentWindow() const noexcept { return _mostRecentWindow(); }
+    AppHost* ResolveWindowTarget(const WindowTarget& target) const noexcept;
+    HWND GetMainWindowForProtocol() const noexcept { return _window.get(); }
 
 private:
     struct SummonWindowSelectionArgs
@@ -69,7 +87,8 @@ private:
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
     AppHost* _mostRecentWindow() const noexcept;
-    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args);
+    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args, const winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& startupActions = nullptr);
+    uint64_t _createProtocolWindow(const WindowTarget& target, const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args);
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;

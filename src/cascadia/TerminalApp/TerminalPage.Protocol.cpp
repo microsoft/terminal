@@ -84,6 +84,50 @@ namespace winrt::TerminalApp::implementation
         }().get();
     }
 
+    // The window's title is the focused tab's title. Reading it walks the XAML
+    // tab view, which must happen on the UI thread, because the protocol server
+    // calls this from an MTA COM thread.
+    hstring TerminalPage::WindowTitle()
+    {
+        return [this]() -> IAsyncOperation<hstring> {
+            co_await wil::resume_foreground(Dispatcher());
+            co_return Title();
+        }().get();
+    }
+
+    // Wait until this page has finished its startup actions so the initial
+    // tabs actually exist
+    IAsyncOperation<bool> TerminalPage::WaitForInitialized(uint32_t timeoutMs)
+    {
+        auto strong = get_strong();
+        co_await wil::resume_foreground(Dispatcher());
+
+        if (_startupState == StartupState::Initialized)
+        {
+            co_return true;
+        }
+
+        auto done = std::make_shared<wil::unique_event>(wil::EventOptions::ManualReset);
+        const auto token = Initialized([done](auto&&, auto&&) {
+            done->SetEvent();
+        });
+        auto unsubscribe = wil::scope_exit([this, token]() noexcept {
+            Initialized(token);
+        });
+
+        // Re-check now in case Initialized was raised between the check above and the subscription.
+        if (_startupState == StartupState::Initialized)
+        {
+            co_return true;
+        }
+
+        // LOAD BEARING: we have to get off the UI thread before waiting.
+        // Initialized is raised via Dispatcher().RunAsync(), so blocking the UI
+        // thread here would deadlock, since it could never run the handler.
+        co_await winrt::resume_background();
+        co_return done->wait(timeoutMs);
+    }
+
     Windows::Foundation::IReference<uint32_t> TerminalPage::FocusedTabIndex() const
     {
         return [this]() -> IAsyncOperation<Windows::Foundation::IReference<uint32_t>> {
@@ -98,7 +142,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // ============================================================================
-    // Queries — return typed WinRT structs
+    // Queries that return typed WinRT structs
     // ============================================================================
 
     IAsyncOperation<Protocol::PaneInfo> TerminalPage::GetProtocolActivePane()
@@ -317,7 +361,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // ============================================================================
-    // Mutations — return typed structs or bool
+    // Mutations that return typed structs or bool
     // ============================================================================
 
     IAsyncOperation<bool> TerminalPage::SetProtocolSessionVariable(winrt::guid /*sessionId*/, hstring /*name*/, hstring /*value*/)
@@ -439,8 +483,6 @@ namespace winrt::TerminalApp::implementation
     IAsyncOperation<bool> TerminalPage::SendProtocolInput(winrt::guid sessionId, hstring text)
     {
         auto strong = get_strong();
-        // Replace \n with \r — shells expect carriage return (Enter key)
-        // rather than line feed to execute commands.
         std::wstring input{ text };
         std::replace(input.begin(), input.end(), L'\n', L'\r');
 

@@ -56,6 +56,7 @@
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
     <ClInclude Include="WindowEmperor.h" />
+    <ClInclude Include="WindowTarget.h" />
     <ClInclude Include="TerminalProtocolComServer.h" />
   </ItemGroup>
   <ItemGroup>

@@ -14,8 +14,7 @@
 // Classic-COM Terminal protocol. Generated from
 // src/host/proxy/ITerminalProtocol.idl; found via the OpenConsoleProxy IntDir
 // added to this project's include path. Marshaled by the OpenConsoleProxy
-// proxy/stub (NOT WinRT MBM), so activation/marshaling never hits the combase
-// WinRT activation catalog.
+// proxy/stub, so activation/marshaling never hits the combase WinRT activation catalog.
 #include "ITerminalProtocol.h"
 
 #include <CLI/CLI.hpp>
@@ -31,9 +30,9 @@
 #include <string>
 #include <vector>
 
-// ── Helpers ──
+// Helpers
 
-// Per-brand CLSID — matches the server's compile-time selection.
+// Per-brand CLSID that matches the server's compile-time selection.
 #if defined(WT_BRANDING_RELEASE)
 static constexpr CLSID CLSID_TerminalProtocol = { 0x832FDEC7, 0xAA6F, 0x4BAB, { 0x85, 0xFA, 0xA4, 0x91, 0x40, 0x56, 0x38, 0xFC } };
 #elif defined(WT_BRANDING_PREVIEW)
@@ -131,8 +130,7 @@ static HRESULT CallJson(F&& call, Json::Value& out)
         }
         // A success HRESULT with a null BSTR or malformed JSON is a broken
         // server contract; surface it as an error so callers' FAILED(hr)
-        // checks fire immediately instead of proceeding with a
-        // default-constructed `out`.
+        // checks fire immediately
         if (!parsed)
             hr = E_UNEXPECTED;
     }
@@ -207,34 +205,46 @@ static bool ResolveSessionId(ITerminalProtocol* server, const std::string& targe
     return sessionId != GUID{};
 }
 
-static HRESULT GetFirstWindowId(ITerminalProtocol* server, uint64_t& windowId)
+// Allocate a BSTR from a UTF-8 std::string.
+static BSTR Bstr(const std::string& s)
 {
-    Json::Value windows;
-    RETURN_IF_FAILED(CallJson([&](BSTR* j) { return server->ListWindows(j); }, windows));
-    if (windows.isArray() && !windows.empty())
-    {
-        windowId = windows[0u]["window_id"].asUInt64();
-        return S_OK;
-    }
-    return S_FALSE;
+    return SysAllocString(winrt::to_hstring(s).c_str());
 }
 
-static HRESULT GetFirstTabId(ITerminalProtocol* server, uint64_t windowId, uint32_t& tabId)
+// Help text for every `-w,--window` option. Matches `wt --window,-w`
+static constexpr const char* WindowTargetHelp =
+    "Window target: an ID, a name, 0/last for the current window, or new for a new one (default: current window)";
+
+static constexpr unsigned long NewWindowWaitTimeoutMs = 10000;
+
+static void PrintWindowTargetError(const char* operation, HRESULT hr, const std::string& windowTarget)
+{
+    if (hr == E_INVALIDARG)
+    {
+        if (windowTarget.empty())
+        {
+            fprintf(stderr, "[wtcli] Could not resolve a window (no windows found)\n");
+        }
+        else
+        {
+            fprintf(stderr, "[wtcli] No such window: %s\n", windowTarget.c_str());
+        }
+        return;
+    }
+    PrintProtocolError(operation, hr);
+}
+
+static HRESULT GetFirstTabId(ITerminalProtocol* server, const std::string& windowTarget, uint32_t& tabId)
 {
     Json::Value tabs;
-    RETURN_IF_FAILED(CallJson([&](BSTR* j) { return server->ListTabs(windowId, j); }, tabs));
+    wil::unique_bstr target{ Bstr(windowTarget) };
+    RETURN_IF_FAILED(CallJson([&](BSTR* j) { return server->ListTabs(target.get(), false, j); }, tabs));
     if (tabs.isArray() && !tabs.empty())
     {
         tabId = tabs[0u]["tab_id"].asUInt();
         return S_OK;
     }
     return S_FALSE;
-}
-
-// Allocate a BSTR from a UTF-8 std::string.
-static BSTR Bstr(const std::string& s)
-{
-    return SysAllocString(winrt::to_hstring(s).c_str());
 }
 
 // Parse a base-10 unsigned 64-bit integer without throwing (unlike std::stoull,
@@ -254,7 +264,7 @@ static bool TryParseU64(const std::string& s, uint64_t& out)
     return true;
 }
 
-// ── Main ──
+// Main
 
 int main()
 {
@@ -274,7 +284,7 @@ int main()
         return server;
     };
 
-    // ── list-windows ──
+    // list-windows
     auto* listWindowsCmd = app.add_subcommand("list-windows", "List all windows")->alias("lsw");
     listWindowsCmd->callback([&]() {
         auto server = connect();
@@ -300,44 +310,25 @@ int main()
         }
     });
 
-    // ── list-tabs ──
-    std::string listTabsWindowId;
+    // list-tabs
+    std::string listTabsWindow;
+    bool listTabsAll = false;
     auto* listTabsCmd = app.add_subcommand("list-tabs", "List tabs in a window")->alias("lst");
-    listTabsCmd->add_option("-w,--window-id", listTabsWindowId, "Window ID");
+    auto* listTabsWindowOpt = listTabsCmd->add_option("-w,--window", listTabsWindow, WindowTargetHelp);
+    auto* listTabsWindowIdOpt = listTabsCmd->add_option("--window-id", listTabsWindow, "Deprecated alias for --window")->group("");
+    listTabsCmd->add_flag("--all", listTabsAll, "List tabs across every window")
+        ->excludes(listTabsWindowOpt)
+        ->excludes(listTabsWindowIdOpt);
     listTabsCmd->callback([&]() {
         auto server = connect();
         if (!server)
             return;
-        uint64_t wid = 0;
-        if (listTabsWindowId.empty())
-        {
-            const auto resolveHr = GetFirstWindowId(server.get(), wid);
-            if (FAILED(resolveHr))
-            {
-                PrintProtocolError("ListWindows", resolveHr);
-                exitCode = 1;
-                return;
-            }
-            if (resolveHr == S_FALSE || wid == 0)
-            {
-                // 0 is the server's "no filter" sentinel, not a real window id;
-                // bail rather than silently listing tabs for ALL windows.
-                fprintf(stderr, "[wtcli] Could not resolve a window (no windows found)\n");
-                exitCode = 1;
-                return;
-            }
-        }
-        else if (!TryParseU64(listTabsWindowId, wid))
-        {
-            fprintf(stderr, "[wtcli] Invalid --window-id: %s\n", listTabsWindowId.c_str());
-            exitCode = 1;
-            return;
-        }
         Json::Value tabs;
-        auto hr = CallJson([&](BSTR* j) { return server->ListTabs(wid, j); }, tabs);
+        wil::unique_bstr target{ Bstr(listTabsWindow) };
+        auto hr = CallJson([&](BSTR* j) { return server->ListTabs(target.get(), listTabsAll, j); }, tabs);
         if (FAILED(hr))
         {
-            PrintProtocolError("ListTabs", hr);
+            PrintWindowTargetError("ListTabs", hr, listTabsWindow);
             exitCode = 1;
             return;
         }
@@ -353,22 +344,20 @@ int main()
         }
     });
 
-    // ── list-panes ──
-    std::string listPanesTabId, listPanesWindowId;
+    // list-panes
+    std::string listPanesTabId, listPanesWindow;
+    bool listPanesAll = false;
     auto* listPanesCmd = app.add_subcommand("list-panes", "List panes in a tab")->alias("lsp");
     listPanesCmd->add_option("-t,--tab-id", listPanesTabId, "Tab ID");
-    listPanesCmd->add_option("-w,--window-id", listPanesWindowId, "Window ID");
+    auto* listPanesWindowOpt = listPanesCmd->add_option("-w,--window", listPanesWindow, WindowTargetHelp);
+    auto* listPanesWindowIdOpt = listPanesCmd->add_option("--window-id", listPanesWindow, "Deprecated alias for --window")->group("");
+    listPanesCmd->add_flag("--all", listPanesAll, "List panes across every window")
+        ->excludes(listPanesWindowOpt)
+        ->excludes(listPanesWindowIdOpt);
     listPanesCmd->callback([&]() {
         auto server = connect();
         if (!server)
             return;
-        uint64_t wid = 0;
-        if (!listPanesWindowId.empty() && !TryParseU64(listPanesWindowId, wid))
-        {
-            fprintf(stderr, "[wtcli] Invalid --window-id: %s\n", listPanesWindowId.c_str());
-            exitCode = 1;
-            return;
-        }
         uint32_t tid = UINT32_MAX;
         if (!listPanesTabId.empty())
         {
@@ -381,28 +370,12 @@ int main()
             }
             tid = static_cast<uint32_t>(t);
         }
-        if (tid == UINT32_MAX)
+        if (tid == UINT32_MAX && !listPanesAll)
         {
-            if (wid == 0)
-            {
-                const auto resolveWindowHr = GetFirstWindowId(server.get(), wid);
-                if (FAILED(resolveWindowHr))
-                {
-                    PrintProtocolError("ListWindows", resolveWindowHr);
-                    exitCode = 1;
-                    return;
-                }
-                if (resolveWindowHr == S_FALSE || wid == 0)
-                {
-                    fprintf(stderr, "[wtcli] Could not resolve a window (no windows found)\n");
-                    exitCode = 1;
-                    return;
-                }
-            }
-            const auto resolveTabHr = GetFirstTabId(server.get(), wid, tid);
+            const auto resolveTabHr = GetFirstTabId(server.get(), listPanesWindow, tid);
             if (FAILED(resolveTabHr))
             {
-                PrintProtocolError("ListTabs", resolveTabHr);
+                PrintWindowTargetError("ListTabs", resolveTabHr, listPanesWindow);
                 exitCode = 1;
                 return;
             }
@@ -414,10 +387,11 @@ int main()
             }
         }
         Json::Value panes;
-        auto hr = CallJson([&](BSTR* j) { return server->ListPanes(wid, tid, j); }, panes);
+        wil::unique_bstr target{ Bstr(listPanesWindow) };
+        auto hr = CallJson([&](BSTR* j) { return server->ListPanes(target.get(), listPanesAll, tid, j); }, panes);
         if (FAILED(hr))
         {
-            PrintProtocolError("ListPanes", hr);
+            PrintWindowTargetError("ListPanes", hr, listPanesWindow);
             exitCode = 1;
             return;
         }
@@ -433,7 +407,7 @@ int main()
         }
     });
 
-    // ── active-pane ──
+    // active-pane
     auto* activePaneCmd = app.add_subcommand("active-pane", "Show the currently active pane");
     activePaneCmd->callback([&]() {
         auto server = connect();
@@ -453,7 +427,7 @@ int main()
             FormatActivePaneHuman(info);
     });
 
-    // ── pane-status ──
+    // pane-status
     std::string paneStatusTarget;
     auto* paneStatusCmd = app.add_subcommand("pane-status", "Show pane process status");
     paneStatusCmd->add_option("-t,--target", paneStatusTarget, "Session ID (GUID)");
@@ -481,24 +455,28 @@ int main()
             FormatPaneStatusHuman(status);
     });
 
-    // ── new-tab ──
-    std::string newTabCommand, newTabTitle, newTabCwd;
+    // new-tab
+    std::string newTabCommand, newTabTitle, newTabCwd, newTabWindow;
+    bool newTabNoWait = false;
     auto* newTabCmd = app.add_subcommand("new-tab", "Create a new tab")->alias("neww");
     newTabCmd->add_option("-c,--command", newTabCommand, "Command to run");
     newTabCmd->add_option("-n,--title", newTabTitle, "Tab title");
     newTabCmd->add_option("-d,--cwd", newTabCwd, "Starting directory");
+    newTabCmd->add_option("-w,--window", newTabWindow, WindowTargetHelp);
+    newTabCmd->add_flag("--no-wait", newTabNoWait, "When creating a window, return as soon as it exists instead of waiting for its first tab");
     newTabCmd->callback([&]() {
         auto server = connect();
         if (!server)
             return;
         wil::unique_bstr profile{ Bstr("") }, command{ Bstr(newTabCommand) }, title{ Bstr(newTabTitle) }, cwd{ Bstr(newTabCwd) };
+        wil::unique_bstr windowTarget{ Bstr(newTabWindow) };
         Json::Value result;
         auto hr = CallJson([&](BSTR* j) {
-            return server->CreateTab(0, profile.get(), command.get(), title.get(), cwd.get(), false, true, j);
+            return server->CreateTab(windowTarget.get(), profile.get(), command.get(), title.get(), cwd.get(), false, true, newTabNoWait ? 0 : NewWindowWaitTimeoutMs, j);
         }, result);
         if (FAILED(hr))
         {
-            PrintProtocolError("CreateTab", hr);
+            PrintWindowTargetError("CreateTab", hr, newTabWindow);
             exitCode = 1;
             return;
         }
@@ -508,7 +486,7 @@ int main()
             FormatCreatedTabHuman(result);
     });
 
-    // ── split-pane ──
+    // split-pane
     std::string splitPaneTarget, splitPaneCommand, splitPaneDirection;
     bool splitHorizontal = false, splitVertical = false;
     double splitSize = 0.5;
@@ -555,7 +533,7 @@ int main()
             FormatCreatedPaneHuman(result);
     });
 
-    // ── kill-pane ──
+    // kill-pane
     std::string killPaneTarget;
     auto* killPaneCmd = app.add_subcommand("kill-pane", "Close a pane")->alias("killp");
     killPaneCmd->add_option("-t,--target", killPaneTarget, "Session ID (GUID)");
@@ -589,7 +567,7 @@ int main()
         }
     });
 
-    // ── focus-pane ──
+    // focus-pane
     std::string focusPaneTarget;
     auto* focusPaneCmd = app.add_subcommand("focus-pane", "Switch focus to a pane")->alias("focusp");
     focusPaneCmd->add_option("-t,--target", focusPaneTarget, "Session ID (GUID)");
@@ -623,7 +601,7 @@ int main()
         }
     });
 
-    // ── Default (no subcommand) ──
+    // Default (no subcommand)
     app.callback([&]() {
         if (app.get_subcommands().empty())
         {
