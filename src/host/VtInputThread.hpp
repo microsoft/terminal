@@ -18,11 +18,6 @@ Author(s):
 
 namespace Microsoft::Console
 {
-    namespace VirtualTerminal
-    {
-        enum class DeviceAttribute : uint64_t;
-    }
-
     class VtInputThread
     {
     public:
@@ -30,7 +25,7 @@ namespace Microsoft::Console
 
         [[nodiscard]] HRESULT Start();
         void CaptureNextCursorPositionReport() const noexcept;
-        til::enumset<VirtualTerminal::DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
+        void WaitUntilDA1(DWORD timeout) const noexcept;
 
     private:
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);

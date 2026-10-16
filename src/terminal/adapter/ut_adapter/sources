@@ -28,6 +28,7 @@ SOURCES = \
     inputTest.cpp \
     kittyKeyboardProtocol.cpp \
     MouseInputTest.cpp \
+    TestHook.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

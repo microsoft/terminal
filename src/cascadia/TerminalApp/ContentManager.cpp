@@ -21,11 +21,11 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    ControlInteractivity ContentManager::CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
-                                                    const IControlAppearance& unfocusedAppearance,
-                                                    const TerminalConnection::ITerminalConnection& connection)
+    IContentHandle ContentManager::CreateCore(const Microsoft::Terminal::Control::IControlSettings& settings,
+                                              const IControlAppearance& unfocusedAppearance,
+                                              const TerminalConnection::ITerminalConnection& connection)
     {
-        ControlInteractivity content{ settings, unfocusedAppearance, connection };
+        IContentHandle content{ TermControl::CreateContent(settings, unfocusedAppearance, connection) };
         content.Closed({ get_weak(), &ContentManager::_closedHandler });
 
         _content.emplace(content.Id(), content);
@@ -33,10 +33,10 @@ namespace winrt::TerminalApp::implementation
         return content;
     }
 
-    ControlInteractivity ContentManager::TryLookupCore(uint64_t id)
+    IContentHandle ContentManager::TryLookupCore(uint64_t id)
     {
         const auto it = _content.find(id);
-        return it != _content.end() ? it->second : ControlInteractivity{ nullptr };
+        return it != _content.end() ? it->second : IContentHandle{ nullptr };
     }
 
     void ContentManager::Detach(const Microsoft::Terminal::Control::TermControl& control)
@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
     void ContentManager::_closedHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable&)
     {
-        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::ControlInteractivity>() })
+        if (const auto& content{ sender.try_as<winrt::Microsoft::Terminal::Control::IContentHandle>() })
         {
             const auto& contentId{ content.Id() };
             _content.erase(contentId);
