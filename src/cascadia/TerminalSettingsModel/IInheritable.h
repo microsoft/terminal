@@ -136,7 +136,7 @@ private:                                                                    \
         return std::nullopt;                                                \
     }                                                                       \
                                                                             \
-    auto _get##name##OverrideSourceImpl()->decltype(get_strong())           \
+    auto _get##name##OverrideSourceImpl() -> decltype(get_strong())         \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
@@ -159,7 +159,7 @@ private:                                                                    \
     }                                                                       \
                                                                             \
     auto _get##name##OverrideSourceAndValueImpl()                           \
-        ->std::pair<decltype(get_strong()), storageType>                    \
+        -> std::pair<decltype(get_strong()), storageType>                   \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
@@ -229,23 +229,22 @@ public:                                                                         
         _##name = value;                                                          \
     }
 
-#define INHERITABLE_NULLABLE_STRING_SETTING(projectedType, name, ...)                         \
-    _BASE_INHERITABLE_SETTING(projectedType, NullableSetting<winrt::hstring>, name, __VA_ARGS__) \
-public:                                                                                      \
-    winrt::Windows::Foundation::IPropertyValue name() const                                   \
-    {                                                                                        \
-        const auto value = _get##name##Impl().value_or(                                       \
-            std::optional<winrt::hstring>{ __VA_ARGS__ });                                    \
-        if (value)                                                                           \
-        {                                                                                    \
-            return winrt::box_value(*value).as<winrt::Windows::Foundation::IPropertyValue>(); \
-        }                                                                                    \
-        return nullptr;                                                                      \
-    }                                                                                        \
-    void name(const winrt::Windows::Foundation::IPropertyValue& value)                         \
-    {                                                                                        \
-        _##name = value ? std::optional<winrt::hstring>{ value.GetString() }                  \
-                        : std::optional<winrt::hstring>{};                                   \
+#define INHERITABLE_NULLABLE_STRING_SETTING(projectedType, name, ...)                                           \
+    _BASE_INHERITABLE_SETTING(projectedType, NullableSetting<winrt::hstring>, name, __VA_ARGS__)                \
+public:                                                                                                         \
+    winrt::Windows::Foundation::IPropertyValue name() const                                                     \
+    {                                                                                                           \
+        const auto value = _get##name##Impl().value_or(                                                         \
+            std::optional<winrt::hstring>{ __VA_ARGS__ });                                                      \
+        if (value)                                                                                              \
+        {                                                                                                       \
+            return winrt::box_value(*value).as<winrt::Windows::Foundation::IPropertyValue>();                   \
+        }                                                                                                       \
+        return nullptr;                                                                                         \
+    }                                                                                                           \
+    void name(const winrt::Windows::Foundation::IPropertyValue& value)                                          \
+    {                                                                                                           \
+        _##name = value ? std::optional<winrt::hstring>{ value.GetString() } : std::optional<winrt::hstring>{}; \
     }
 
 // This macro is similar to the one above, but is reserved for optional settings

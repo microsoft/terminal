@@ -97,7 +97,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         til::env _launchEnvironment{};
         winrt::hstring _shellName;
         uint32_t _shellPid{ 0 };
-        bool _elevated{ false };
         guid _profileGuid{};
 
         struct StartupInfoFromDefTerm

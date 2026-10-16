@@ -2673,7 +2673,7 @@
         "windowTitleFormat": {
           "type": ["string", "null"],
           "default": "${workspaceName}${separator}${tabTitle}",
-          "description": "Complete window caption template. Null selects the legacy caption. Supports paneTitle, tabTitle, profileName, workspaceName (alias windowName), appName, tabIndex, numPanes, numOtherPanes, otherPanes, elevated, elevatedShield, shellName, shellPid, processName, cwd, cwdFolder and env:NAME. Use ${separator} between optional components and $${ to display a literal ${. Unavailable values are empty; processName requires a reliable provider and is currently unavailable. Environment values are launch snapshots and become visible in task switching and screen sharing.",
+          "description": "Complete window caption template. Null selects the legacy caption. Supports paneTitle, tabTitle, profileName, workspaceName (alias windowName), appName, tabIndex, numPanes, numOtherPanes, otherPanes, elevated, elevatedShield, shellName, shellPid, cwd, cwdFolder and env:NAME. Use ${separator} between optional components and $${ to display a literal ${. Unavailable values are empty. Elevation describes the Terminal host, not its child processes. Environment values are launch snapshots and become visible in task switching and screen sharing.",
           "examples": ["${tabTitle}", "${workspaceName}", "${tabTitle}${separator}${workspaceName}${separator}${appName}"]
         },
         "windowTitleSeparator": {
@@ -3225,7 +3225,7 @@
         "tabTitleFormat": {
           "type": ["string", "null"],
           "default": null,
-          "description": "Optional tab title template selected by the active pane's profile. Null clears an inherited format; a runtime tab rename remains a literal override. Supports paneTitle, profileName, workspaceName (alias windowName), appName, tabIndex, numPanes, numOtherPanes, otherPanes, elevated, elevatedShield, shellName, shellPid, processName, cwd, cwdFolder and env:NAME. tabTitle is window-only. Use ${separator} between optional components and $${ to display a literal ${. Environment values come from the effective launch environment and become visible in titles. processName is unavailable until a reliable provider is supplied.",
+          "description": "Optional tab title template selected by the active pane's profile. Null clears an inherited format; a runtime tab rename remains a literal override. Supports paneTitle, profileName, workspaceName (alias windowName), appName, tabIndex, numPanes, numOtherPanes, otherPanes, elevated, elevatedShield, shellName, shellPid, cwd, cwdFolder and env:NAME. tabTitle is window-only. Use ${separator} between optional components and $${ to display a literal ${. Elevation describes the Terminal host, not its child processes. Environment values come from the effective launch environment and become visible in titles.",
           "examples": ["${paneTitle}${separator}${otherPanes}", "${tabIndex}: ${profileName}${separator}${paneTitle}", "${env:PROJECT}${separator}${cwdFolder}${separator}${paneTitle}"]
         },
         "tabTitleSeparator": {

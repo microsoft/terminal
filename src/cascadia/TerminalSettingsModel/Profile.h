@@ -126,7 +126,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
         INHERITABLE_NULLABLE_STRING_SETTING(Model::Profile, TabTitleFormat, std::nullopt);
         INHERITABLE_SETTING(Model::Profile, hstring, TabTitleSeparator, L" - ");
-        bool InvalidTitleSettings() const noexcept { return _invalidTitleSettings; }
+        bool InvalidTitleSettings() const noexcept
+        {
+            return _invalidTitleSettings || std::any_of(_parents.begin(), _parents.end(), [](const auto& parent) {
+                       return parent->InvalidTitleSettings();
+                   });
+        }
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
         // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson

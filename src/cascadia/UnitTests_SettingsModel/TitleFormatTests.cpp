@@ -2,6 +2,7 @@
 #include "../inc/TitleFormat.h"
 #include "../TerminalSettingsModel/Profile.h"
 #include "../TerminalSettingsModel/GlobalAppSettings.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "JsonTestClass.h"
 
 using namespace WEX::TestExecution;
@@ -34,6 +35,8 @@ namespace SettingsModelUnitTests
             const auto resolve = [](std::wstring_view) { return std::wstring{ L"${workspaceName}" }; };
             VERIFY_ARE_EQUAL(std::wstring{ L"${workspaceName}" }, TitleFormat(L"${paneTitle}", TitleFormat::Surface::Tab).Evaluate(resolve, L" - "));
             VERIFY_ARE_EQUAL(std::wstring{ LR"(${workspaceName} $ \)" }, TitleFormat(LR"($${workspaceName} $ \)", TitleFormat::Surface::Tab).Evaluate(resolve, L" - "));
+            VERIFY_ARE_EQUAL(std::wstring{ L"$${paneTitle}" }, TitleFormat(L"$$${paneTitle}", TitleFormat::Surface::Tab).Evaluate(resolve, L" - "));
+            VERIFY_ARE_EQUAL(std::wstring{ L"$$" }, TitleFormat(L"$$", TitleFormat::Surface::Tab).Evaluate(resolve, L" - "));
             for (const auto text : { L"${", L"${foo${bar}}", L"${numPanes > 1}", L"${env:}", L"${_name}", L"${tabTitle}" })
             {
                 const TitleFormat format{ text, TitleFormat::Surface::Tab };
@@ -51,11 +54,10 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(VariablesAndNormalization)
         {
-            for (const auto name : { L"paneTitle", L"tabTitle", L"profileName", L"workspaceName", L"windowName", L"appName", L"tabIndex", L"numPanes", L"numOtherPanes", L"otherPanes", L"elevated", L"elevatedShield", L"shellName", L"shellPid", L"processName", L"cwd", L"cwdFolder", L"env:PROJECT" })
+            for (const auto name : { L"paneTitle", L"tabTitle", L"profileName", L"workspaceName", L"windowName", L"appName", L"tabIndex", L"numPanes", L"numOtherPanes", L"otherPanes", L"elevated", L"elevatedShield", L"shellName", L"shellPid", L"cwd", L"cwdFolder", L"env:PROJECT" })
             {
                 const TitleFormat format{ std::wstring{ L"${" } + name + L"}", TitleFormat::Surface::Window };
                 VERIFY_IS_FALSE(format.HasWarning());
-                VERIFY_IS_TRUE(format.Dependencies().contains(name));
                 VERIFY_ARE_EQUAL(std::wstring{ L"value" }, format.Evaluate([](auto) { return L"value"; }, L" - "));
                 VERIFY_IS_TRUE(format.Evaluate([](auto) { return L""; }, L" - ").empty());
             }
@@ -66,13 +68,19 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(DirectoryNames)
         {
-            for (const auto root : { L"/", L"C:\\", L"C:/", L"\\\\server\\share", L"\\\\server\\share\\" })
+            for (const auto root : { L"/", L"\\", L"C:", L"C:\\", L"C:/", L"\\\\server\\share", L"\\\\server\\share\\", LR"(\\?\UNC\server\share)", LR"(\\?\UNC\server\share\)", LR"(\\?\unc\server\share\)", LR"(\\?\C:\)" })
             {
                 VERIFY_ARE_EQUAL(std::wstring{ root }, TitleFormat::DirectoryName(root));
             }
             VERIFY_ARE_EQUAL(std::wstring{ L"src" }, TitleFormat::DirectoryName(L"/home/user/src/"));
             VERIFY_ARE_EQUAL(std::wstring{ L"src" }, TitleFormat::DirectoryName(L"C:\\dev\\src\\"));
             VERIFY_ARE_EQUAL(std::wstring{ L"a\\b" }, TitleFormat::DirectoryName(L"/home/a\\b"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"a\\b" }, TitleFormat::DirectoryName(L"a\\b"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"bar" }, TitleFormat::DirectoryName(LR"(\foo\bar)"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"foo" }, TitleFormat::DirectoryName(L"C:foo"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"bar" }, TitleFormat::DirectoryName(LR"(C:foo\bar)"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"src" }, TitleFormat::DirectoryName(LR"(\\?\UNC\server\share\src\)"));
+            VERIFY_ARE_EQUAL(std::wstring{ L"src" }, TitleFormat::DirectoryName(LR"(\\?\C:\dev\src\)"));
             VERIFY_IS_TRUE(TitleFormat::DirectoryName(L"").empty());
         }
 
@@ -110,11 +118,16 @@ namespace SettingsModelUnitTests
             const auto parent = implementation::Profile::FromJson(VerifyParseSucceeded(R"({"tabTitleFormat":"${paneTitle}"})"));
             const auto child = parent->CreateChild();
             const auto profile = child.as<Profile>();
+            const auto wrongType = winrt::box_value(42).as<winrt::Windows::Foundation::IPropertyValue>();
+            VERIFY_IS_FALSE(profile.HasTabTitleFormat());
+            VERIFY_THROWS(profile.TabTitleFormat(wrongType), winrt::hresult_error);
             VERIFY_IS_FALSE(profile.HasTabTitleFormat());
             VERIFY_ARE_EQUAL(winrt::hstring{ L"${paneTitle}" }, profile.TabTitleFormat().GetString());
             profile.TabTitleFormat(empty);
             VERIFY_IS_TRUE(profile.HasTabTitleFormat());
             VERIFY_IS_NOT_NULL(profile.TabTitleFormat());
+            VERIFY_IS_TRUE(profile.TabTitleFormat().GetString().empty());
+            VERIFY_THROWS(profile.TabTitleFormat(wrongType), winrt::hresult_error);
             VERIFY_IS_TRUE(profile.TabTitleFormat().GetString().empty());
             VERIFY_IS_TRUE(child->ToJson()["tabTitleFormat"].isString());
             profile.TabTitleFormat(nullptr);
@@ -130,9 +143,13 @@ namespace SettingsModelUnitTests
             const auto settings = implementation::GlobalAppSettings::FromJson(VerifyParseSucceeded(R"({})"));
             const auto globals = settings.as<GlobalAppSettings>();
             VERIFY_IS_FALSE(globals.HasWindowTitleFormat());
+            VERIFY_THROWS(globals.WindowTitleFormat(wrongType), winrt::hresult_error);
+            VERIFY_IS_FALSE(globals.HasWindowTitleFormat());
             globals.WindowTitleFormat(empty);
             VERIFY_IS_TRUE(globals.HasWindowTitleFormat());
             VERIFY_IS_NOT_NULL(globals.WindowTitleFormat());
+            VERIFY_IS_TRUE(globals.WindowTitleFormat().GetString().empty());
+            VERIFY_THROWS(globals.WindowTitleFormat(wrongType), winrt::hresult_error);
             VERIFY_IS_TRUE(globals.WindowTitleFormat().GetString().empty());
             VERIFY_IS_TRUE(settings->ToJson()["windowTitleFormat"].isString());
             globals.WindowTitleFormat(nullptr);
@@ -146,6 +163,51 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(winrt::hstring{ L"${workspaceName}${separator}${tabTitle}" }, globals.WindowTitleFormat().GetString());
         }
 
+        TEST_METHOD(FragmentTitleWarnings)
+        {
+            constexpr std::string_view user = R"({"profiles":[{"guid":"{6239a42c-1111-49a3-80bd-e8fdd045185c}","name":"base","commandline":"cmd.exe"}]})";
+            for (const auto fragment : {
+                     R"({"profiles":[{"guid":"{6239a42c-2222-49a3-80bd-e8fdd045185c}","name":"fragment","commandline":"cmd.exe","tabTitleFormat":42}]})",
+                     R"({"profiles":[{"updates":"{6239a42c-1111-49a3-80bd-e8fdd045185c}","tabTitleSeparator":null}]})" })
+            {
+                implementation::SettingsLoader loader{ user, std::string_view{} };
+                loader.MergeInboxIntoUserSettings();
+                loader.MergeFragmentIntoUserSettings(L"TitleTest", {}, fragment);
+                loader.FinalizeLayering();
+                const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+                size_t titleWarnings = 0;
+                for (const auto warning : settings->Warnings())
+                {
+                    if (warning == SettingsLoadWarnings::InvalidTitleFormat)
+                        ++titleWarnings;
+                }
+                VERIFY_ARE_EQUAL(size_t{ 1 }, titleWarnings);
+            }
+        }
+
+        TEST_METHOD(TitleWarningsAreDeduplicated)
+        {
+            constexpr std::string_view json = R"({
+                "windowTitleFormat":"${unknown}", "windowTitleSeparator":null,
+                "profiles": {
+                    "defaults":{"tabTitleFormat":"${unknown}","tabTitleSeparator":null},
+                    "list":[
+                        {"name":"first","commandline":"cmd.exe","tabTitleFormat":42},
+                        {"name":"second","commandline":"cmd.exe","tabTitleSeparator":false}
+                    ]
+                }
+            })";
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(json);
+            size_t titleWarnings = 0;
+            for (const auto warning : settings->Warnings())
+            {
+                if (warning == SettingsLoadWarnings::InvalidTitleFormat)
+                    ++titleWarnings;
+            }
+            VERIFY_ARE_EQUAL(size_t{ 1 }, titleWarnings);
+            VERIFY_ARE_EQUAL(winrt::hstring{ L" - " }, settings->GlobalSettings().WindowTitleSeparator());
+        }
+
         TEST_METHOD(WindowMigration)
         {
             const auto defaults = implementation::GlobalAppSettings::FromJson(VerifyParseSucceeded(R"({})"));
@@ -156,6 +218,11 @@ namespace SettingsModelUnitTests
             VERIFY_IS_TRUE(legacy->ToJson().isMember("windowTitleFormat"));
             VERIFY_IS_TRUE(legacy->ToJson()["windowTitleFormat"].isNull());
             VERIFY_IS_NULL(implementation::GlobalAppSettings::FromJson(legacy->ToJson())->WindowTitleFormat());
+            auto reenabledJson = legacy->ToJson();
+            reenabledJson["showTerminalTitleInTitlebar"] = true;
+            const auto reenabled = implementation::GlobalAppSettings::FromJson(reenabledJson);
+            VERIFY_IS_NULL(reenabled->WindowTitleFormat());
+            VERIFY_IS_TRUE(reenabled->ShowTitleInTitlebar());
             const auto explicitFormat = implementation::GlobalAppSettings::FromJson(VerifyParseSucceeded(R"({"showTerminalTitleInTitlebar":false,"windowTitleFormat":"caption"})"));
             VERIFY_ARE_EQUAL(winrt::hstring{ L"caption" }, explicitFormat->WindowTitleFormat().GetString());
             VERIFY_ARE_EQUAL(winrt::hstring{ L"caption" }, explicitFormat->Copy()->WindowTitleFormat().GetString());

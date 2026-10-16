@@ -12,6 +12,7 @@
 #include "../TerminalApp/CommandPalette.h"
 #include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"
+#include "../UnitTests_Control/MockConnection.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -39,6 +40,11 @@ namespace winrt
 
 namespace TerminalAppLocalTests
 {
+    void EmitTitleOutput(const winrt::com_ptr<ControlUnitTests::MockConnection>& connection, std::wstring_view text)
+    {
+        connection->WriteInput(winrt::array_view<const char16_t>{ reinterpret_cast<const char16_t*>(text.data()), static_cast<uint32_t>(text.size()) });
+    }
+
     // TODO:microsoft/terminal#3838:
     // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
     // an updated TAEF that will let us install framework packages when the test
@@ -97,6 +103,11 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestClampSwitchToTab);
         TEST_METHOD(RuntimeTitleFormats);
+        TEST_METHOD(MovedGroupTitleFormat);
+        TEST_METHOD(QueuedWindowTitleUpdates);
+        TEST_METHOD(TerminalOutputTitleUpdates);
+        TEST_METHOD(TransferredTitleCallbacks);
+        TEST_METHOD(FailedConnectionTitleMetadata);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -110,8 +121,9 @@ namespace TerminalAppLocalTests
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                     CascadiaSettings initialSettings);
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
+                                     CascadiaSettings initialSettings,
+                                     winrt::TerminalApp::ContentManager sharedManager = nullptr);
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup(winrt::TerminalApp::ContentManager sharedManager = nullptr);
         winrt::com_ptr<winrt::TerminalApp::implementation::WindowProperties> _windowProperties;
         winrt::com_ptr<winrt::TerminalApp::implementation::ContentManager> _contentManager;
     };
@@ -121,6 +133,21 @@ namespace TerminalAppLocalTests
     {
         const auto result = RunOnUIThread(function);
         VERIFY_SUCCEEDED(result);
+    }
+
+    void DrainTitleUpdates()
+    {
+        const auto elapsed = std::make_shared<wil::unique_event>(wil::EventOptions::ManualReset);
+        DispatcherQueueTimer timer{ nullptr };
+        TestOnUIThread([&] {
+            timer = DispatcherQueue::GetForCurrentThread().CreateTimer();
+            timer.IsRepeating(false);
+            timer.Interval(std::chrono::seconds{ 1 });
+            timer.Tick([elapsed](auto&&, auto&&) { elapsed->SetEvent(); });
+            timer.Start();
+        });
+        VERIFY_IS_TRUE(elapsed->wait(5000));
+        TestOnUIThread([&] { timer.Stop(); });
     }
 
     void TabTests::EnsureTestsActivate()
@@ -226,7 +253,8 @@ namespace TerminalAppLocalTests
     // Return Value:
     // - <none>
     void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                           CascadiaSettings initialSettings)
+                                           CascadiaSettings initialSettings,
+                                           winrt::TerminalApp::ContentManager sharedManager)
     {
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -240,7 +268,7 @@ namespace TerminalAppLocalTests
 
         _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
         winrt::TerminalApp::WindowProperties props = *_windowProperties;
-        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+        _contentManager = sharedManager ? winrt::get_self<winrt::TerminalApp::implementation::ContentManager>(sharedManager)->get_strong() : winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
         winrt::TerminalApp::ContentManager contentManager = *_contentManager;
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
@@ -567,7 +595,7 @@ namespace TerminalAppLocalTests
     // - <none>
     // Return Value:
     // - The initialized TerminalPage, ready to use.
-    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
+    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup(winrt::TerminalApp::ContentManager sharedManager)
     {
         static constexpr std::wstring_view settingsJson0{ LR"(
         {
@@ -689,7 +717,7 @@ namespace TerminalAppLocalTests
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-        _initializeTerminalPage(page, settings0);
+        _initializeTerminalPage(page, settings0, sharedManager);
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
@@ -711,15 +739,31 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(profile.Name(), tab->Title());
 
             const auto globals = page->_settings.GlobalSettings();
+            const auto expectedPaneTitle = tab->GetActiveContent().Title();
             globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}${separator}${paneTitle}" }).as<winrt::Windows::Foundation::IPropertyValue>());
             _windowProperties->WindowName(L"workspace");
-            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(TitleVariables::PaneTitle) }, page->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + std::wstring{ expectedPaneTitle } }, page->Title());
 
             tab->SetTabText(L"literal ${paneTitle}");
             VERIFY_ARE_EQUAL(winrt::hstring{ L"literal ${paneTitle}" }, tab->Title());
-            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + tab->ResolveTitleVariable(TitleVariables::PaneTitle) }, page->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"workspace - " + std::wstring{ expectedPaneTitle } }, page->Title());
             tab->ResetTabText();
             VERIFY_ARE_EQUAL(profile.Name(), tab->Title());
+            for (const auto text : { L"", L"${env:}", L"${unknown}" })
+            {
+                profile.TabTitleFormat(winrt::box_value(winrt::hstring{ text }).as<winrt::Windows::Foundation::IPropertyValue>());
+                tab->UpdateTitle();
+                VERIFY_ARE_EQUAL(expectedPaneTitle, tab->Title());
+                globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ text }).as<winrt::Windows::Foundation::IPropertyValue>());
+                page->_currentWindowSettings().ShowTitleInTitlebar(true);
+                VERIFY_ARE_EQUAL(expectedPaneTitle, page->Title());
+                page->_currentWindowSettings().ShowTitleInTitlebar(false);
+                VERIFY_ARE_EQUAL(winrt::hstring{ L"Terminal" }, page->Title());
+            }
+            const auto expectedShield = ::Microsoft::Console::Utils::IsRunningElevated() ? std::wstring{ L"\U0001F6E1" } : std::wstring{};
+            VERIFY_ARE_EQUAL(expectedShield, tab->ResolveTitleVariable(TitleVariables::ElevatedShield));
+            globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"host:${elevatedShield}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"host:" + expectedShield }, page->Title());
 
             profile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"${numPanes}${separator}${otherPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
             tab->UpdateTitle();
@@ -746,6 +790,233 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::hstring{ L"explicit caption" }, page->Title());
         });
         VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::QueuedWindowTitleUpdates()
+    {
+        auto page = _commonSetup();
+        const auto titles = std::make_shared<std::vector<winrt::hstring>>();
+        winrt::TerminalApp::TerminalPage::TitleChanged_revoker revoker;
+        TestOnUIThread([&] {
+            page->_settings.GlobalSettings().WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            page->_GetFocusedTabImpl()->SetTabText(L"fixed tab");
+            _windowProperties->WindowName(L"initial");
+        });
+        TestOnUIThread([&] {
+            revoker = page.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
+                                                                               [weakPage = page->get_weak(), titles](auto&&, auto&&) {
+                                                                                   if (const auto sender = weakPage.get())
+                                                                                       titles->push_back(sender->Title());
+                                                                               });
+            _windowProperties->WindowName(L"intermediate");
+            _windowProperties->WindowName(L"final");
+            VERIFY_IS_TRUE(titles->empty());
+        });
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(size_t{ 1 }, titles->size());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"final" }, titles->at(0));
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"fixed tab" }, page->_GetFocusedTabImpl()->Title());
+            page->_GetFocusedTabImpl()->UpdateTitle();
+            page->_ScheduleTitleUpdate();
+            page->_ScheduleTitleUpdate();
+        });
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(size_t{ 1 }, titles->size());
+            revoker.revoke();
+        });
+    }
+
+    void TabTests::TerminalOutputTitleUpdates()
+    {
+        auto page = _commonSetup();
+        const auto active = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto inactive = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto replacement = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto titles = std::make_shared<std::vector<winrt::hstring>>();
+        winrt::TerminalApp::TerminalPage::TitleChanged_revoker revoker;
+        TestOnUIThread([&] {
+            page->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*inactive);
+            VERIFY_SUCCEEDED(page->_OpenNewTab(NewTerminalArgs{}));
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            const auto selected = page->_tabs.GetAt(1);
+            page->_tabView.SelectedItem(selected.TabViewItem());
+            page->_UpdatedSelectedTab(selected);
+            page->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*active);
+            page->_GetFocusedTabImpl()->SetTabText(L"fixed tab");
+            page->_settings.GlobalSettings().WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${paneTitle}${separator}${cwd}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            EmitTitleOutput(active, L"\x1b]2;initial\x7\x1b]9;9;C:\\initial\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"initial - C:\\initial" }, page->Title());
+            revoker = page.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
+                                                                               [weakPage = page->get_weak(), titles](auto&&, auto&&) {
+                                                                                   if (const auto sender = weakPage.get())
+                                                                                       titles->push_back(sender->Title());
+                                                                               });
+            EmitTitleOutput(active, L"\x1b]2;intermediate\x7\x1b]9;9;C:\\intermediate\x7");
+            EmitTitleOutput(active, L"\x1b]2;final\x7\x1b]9;9;C:\\final\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(size_t{ 1 }, titles->size());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"final - C:\\final" }, titles->at(0));
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"fixed tab" }, page->_GetFocusedTabImpl()->Title());
+            titles->clear();
+            EmitTitleOutput(active, L"\x1b]2;final\x7\x1b]9;9;C:\\final\x7");
+            EmitTitleOutput(inactive, L"\x1b]2;inactive\x7\x1b]9;9;C:\\inactive\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_IS_TRUE(titles->empty());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"final - C:\\final" }, page->Title());
+            page->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*replacement);
+            EmitTitleOutput(replacement, L"\x1b]2;replacement\x7\x1b]9;9;C:\\replacement\x7");
+            EmitTitleOutput(active, L"\x1b]2;stale\x7\x1b]9;9;C:\\stale\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(size_t{ 1 }, titles->size());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"replacement - C:\\replacement" }, titles->at(0));
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"fixed tab" }, page->_GetFocusedTabImpl()->Title());
+            revoker.revoke();
+        });
+    }
+
+    void TabTests::FailedConnectionTitleMetadata()
+    {
+        using namespace winrt::Microsoft::Terminal::TerminalConnection;
+        const ConptyConnection connection;
+        const auto close = wil::scope_exit([&] { connection.Close(); });
+        const auto overrides = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+        overrides.Insert(L"TITLE_TEST_FAILED", L"not-published");
+        const winrt::hstring missingExecutable{ L"C:\\TitleTest-" + ::Microsoft::Console::Utils::GuidToPlainString(::Microsoft::Console::Utils::CreateGuid()) + L"\\missing.exe" };
+        connection.Initialize(ConptyConnection::CreateSettings(missingExecutable, L"", L"", false, L"", overrides.GetView(), 30, 120, {}, {}));
+        connection.Start();
+        VERIFY_ARE_EQUAL(ConnectionState::Failed, connection.State());
+        for (const auto name : { L"shellName", L"shellPid", L"env:TITLE_TEST_FAILED", L"env:WT_SESSION", L"env:WT_PROFILE_ID" })
+        {
+            VERIFY_IS_TRUE(connection.TitleVariable(name).empty());
+        }
+    }
+
+    void TabTests::TransferredTitleCallbacks()
+    {
+        auto source = _commonSetup();
+        const auto sourceProperties = _windowProperties;
+        const auto survivor = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto moving = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto resident = winrt::make_self<ControlUnitTests::MockConnection>();
+        const auto sourceTitles = std::make_shared<std::vector<winrt::hstring>>();
+        winrt::TerminalApp::TerminalPage::TitleChanged_revoker sourceRevoker;
+        TestOnUIThread([&] {
+            sourceProperties->WindowName(L"source");
+            source->_settings.GlobalSettings().WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}:${paneTitle}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            source->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*survivor);
+            EmitTitleOutput(survivor, L"\x1b]2;survivor\x7");
+            VERIFY_SUCCEEDED(source->_OpenNewTab(NewTerminalArgs{}));
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            const auto selected = source->_tabs.GetAt(1);
+            source->_tabView.SelectedItem(selected.TabViewItem());
+            source->_UpdatedSelectedTab(selected);
+            source->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*moving);
+            EmitTitleOutput(moving, L"\x1b]2;moving\x7");
+        });
+        auto destination = _commonSetup(source->_manager);
+        TestOnUIThread([&] {
+            _windowProperties->WindowName(L"destination");
+            destination->_settings.GlobalSettings().WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${workspaceName}:${paneTitle}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            destination->_GetFocusedTabImpl()->GetActiveTerminalControl().Connection(*resident);
+            EmitTitleOutput(resident, L"\x1b]2;resident\x7");
+            const auto tab = source->_GetFocusedTabImpl();
+            auto actions = tab->BuildStartupActions(BuildStartupKind::Content);
+            EmitTitleOutput(moving, L"\x1b]2;pending\x7");
+            EmitTitleOutput(moving, L"\x1b]2;pending trailing\x7");
+            source->_DetachTabFromWindow(tab);
+            source->_RemoveTab(*tab);
+            EmitTitleOutput(moving, L"\x1b]2;detached\x7");
+            destination->AttachContent(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)), 1);
+            const auto selected = destination->_tabs.GetAt(1);
+            destination->_tabView.SelectedItem(selected.TabViewItem());
+            destination->_UpdatedSelectedTab(selected);
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"source:survivor" }, source->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"destination:detached" }, destination->Title());
+            VERIFY_ARE_EQUAL(std::wstring{ L"destination" }, destination->_GetFocusedTabImpl()->ResolveTitleVariable(::Microsoft::Terminal::TitleVariables::WorkspaceName));
+            sourceRevoker = source.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
+                                                                                       [weakPage = source->get_weak(), sourceTitles](auto&&, auto&&) {
+                                                                                           if (const auto sender = weakPage.get())
+                                                                                               sourceTitles->push_back(sender->Title());
+                                                                                       });
+            EmitTitleOutput(moving, L"\x1b]2;attached\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"source:survivor" }, source->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"destination:attached" }, destination->Title());
+            VERIFY_IS_TRUE(sourceTitles->empty());
+            EmitTitleOutput(moving, L"\x1b]2;closing\x7");
+            EmitTitleOutput(moving, L"\x1b]2;closing trailing\x7");
+            destination->_GetFocusedTabImpl()->GetActivePane()->Close();
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(1u, source->_tabs.Size());
+            VERIFY_ARE_EQUAL(1u, destination->_tabs.Size());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"source:survivor" }, source->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"destination:resident" }, destination->Title());
+            EmitTitleOutput(moving, L"\x1b]2;after close\x7");
+        });
+        DrainTitleUpdates();
+        TestOnUIThread([&] {
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"source:survivor" }, source->Title());
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"destination:resident" }, destination->Title());
+            VERIFY_IS_TRUE(sourceTitles->empty());
+            sourceRevoker.revoke();
+        });
+    }
+
+    void TabTests::MovedGroupTitleFormat()
+    {
+        namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
+        auto page = _commonSetup();
+        TestOnUIThread([&] {
+            const auto tab = page->_GetFocusedTabImpl();
+            const auto firstProfile = tab->GetFocusedProfile();
+            firstProfile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"first:${numPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            SplitPaneArgs split{ SplitDirection::Right, NewTerminalArgs{ 1 } };
+            ActionEventArgs splitEvent{ split };
+            page->_HandleSplitPane(nullptr, splitEvent);
+            const auto secondProfile = tab->GetFocusedProfile();
+            VERIFY_ARE_NOT_EQUAL(firstProfile.Guid(), secondProfile.Guid());
+            secondProfile.TabTitleFormat(winrt::box_value(winrt::hstring{ L"second:${numPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            tab->UpdateTitle();
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"second:2" }, tab->Title());
+            VERIFY_IS_TRUE(tab->NavigateFocus(FocusDirection::Parent));
+            const auto groupTitle = tab->GetActivePane()->GetLastFocusedContent();
+            VERIFY_IS_NOT_NULL(groupTitle);
+            VERIFY_IS_TRUE(tab->ResolveTitleVariable(TitleVariables::ProfileName).empty());
+            const auto expectedGroupTitle = tab->ResolveTitleVariable(TitleVariables::PaneTitle);
+            VERIFY_IS_FALSE(expectedGroupTitle.empty());
+
+            const auto globals = page->_settings.GlobalSettings();
+            globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${paneTitle}${separator}${numPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
+            MovePaneArgs move;
+            move.TabIndex(page->_tabs.Size());
+            VERIFY_IS_TRUE(page->_MovePane(move));
+            const auto moved = page->_GetFocusedTabImpl();
+            VERIFY_ARE_EQUAL(winrt::hstring{ L"second:2" }, moved->Title());
+            VERIFY_ARE_EQUAL(std::wstring{ L"2" }, moved->ResolveTitleVariable(TitleVariables::NumPanes));
+            VERIFY_ARE_EQUAL(expectedGroupTitle, moved->ResolveTitleVariable(TitleVariables::PaneTitle));
+            VERIFY_IS_TRUE(moved->ResolveTitleVariable(TitleVariables::ProfileName).empty());
+            VERIFY_ARE_EQUAL(winrt::hstring{ expectedGroupTitle + L" - 2" }, page->Title());
+        });
     }
 
     void TabTests::TryZoomPane()

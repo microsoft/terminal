@@ -466,36 +466,33 @@ void CascadiaSettings::_validateSettings()
     _validateRegexes();
     using TitleFormat = ::Microsoft::Terminal::TitleFormat;
     std::set<std::wstring> checkedTabFormats;
-    if (_baseLayerProfile->InvalidTitleSettings())
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
-    }
+    bool invalidTitleSettings = _baseLayerProfile->InvalidTitleSettings();
     if (const auto format = _baseLayerProfile->TabTitleFormat())
     {
         const auto text = format.GetString();
         checkedTabFormats.emplace(text);
         if (TitleFormat{ text, TitleFormat::Surface::Tab }.HasWarning())
         {
-            _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+            invalidTitleSettings = true;
         }
     }
     for (const auto& profile : _allProfiles)
     {
         if (winrt::get_self<Profile>(profile)->InvalidTitleSettings())
         {
-            _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+            invalidTitleSettings = true;
         }
         if (const auto format = profile.TabTitleFormat())
         {
             const auto text = format.GetString();
             if (checkedTabFormats.emplace(text).second && TitleFormat{ text, TitleFormat::Surface::Tab }.HasWarning())
             {
-                _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
+                invalidTitleSettings = true;
             }
         }
     }
     const auto windowFormat = _globals->WindowTitleFormat();
-    if (_globals->InvalidTitleSettings() || (windowFormat && TitleFormat{ windowFormat.GetString(), TitleFormat::Surface::Window }.HasWarning()))
+    if (invalidTitleSettings || _globals->InvalidTitleSettings() || (windowFormat && TitleFormat{ windowFormat.GetString(), TitleFormat::Surface::Window }.HasWarning()))
     {
         _warnings.Append(SettingsLoadWarnings::InvalidTitleFormat);
     }
@@ -1105,14 +1102,17 @@ void CascadiaSettings::UpdateColorSchemeReferences(const winrt::hstring& oldName
 
 winrt::hstring CascadiaSettings::ApplicationDisplayName()
 {
-    try
-    {
-        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-        return package.DisplayName();
-    }
-    CATCH_LOG();
+    static const winrt::hstring displayName = [] {
+        try
+        {
+            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+            return package.DisplayName();
+        }
+        CATCH_LOG();
 
-    return IsPortableMode() ? RS_(L"ApplicationDisplayNamePortable") : RS_(L"ApplicationDisplayNameUnpackaged");
+        return IsPortableMode() ? RS_(L"ApplicationDisplayNamePortable") : RS_(L"ApplicationDisplayNameUnpackaged");
+    }();
+    return displayName;
 }
 
 winrt::hstring CascadiaSettings::ApplicationVersion()

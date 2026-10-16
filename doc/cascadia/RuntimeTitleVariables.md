@@ -54,15 +54,14 @@ characters and trim outer whitespace.
 | `numPanes` | Terminal leaf count across the entire tab, including zoom-hidden panes. |
 | `numOtherPanes` | Count minus one, empty when zero. |
 | `otherPanes` | Complete `[+N]` decoration, empty for one pane. |
-| `elevated`, `elevatedShield` | Localized administrator label or U+1F6E1 for known elevated local connections. |
+| `elevated`, `elevatedShield` | Localized administrator label or U+1F6E1 when the Terminal host is elevated; empty otherwise. |
 | `shellName`, `shellPid` | Launched local executable basename and PID when known to ConPTY. |
-| `processName` | Reserved for a reliable active-local-process provider; currently unavailable. |
 | `cwd`, `cwdFolder` | Existing working directory and its final component, initially seeded from the configured starting directory and updated by supported directory reports; roots remain roots. |
 | `env:NAME` | Effective ConPTY launch environment value after profile overrides. |
 
 Leaf-specific values are empty for a selected pane group; its most recently
 focused terminal profile selects the tab format. Non-terminal tabs retain their
-own title logic and expose only tab/window identity to the window formatter.
+own title logic and expose tab/window identity and host elevation to the window formatter.
 
 Directory variables use the same working directory as other terminal operations.
 Without directory reports, this value does not track shell directory changes.
@@ -74,10 +73,8 @@ timer is used.
 Putting an environment value in a title exposes it in tabs, window captions,
 task switching, taskbar previews, and screen sharing. Do not use secrets.
 
-## Provider Follow-Up
-
-`processName` needs a reliable foreground-process provider before that feature
-is complete. Connections without metadata support return empty values; a local
-SSH client does not reveal a remote process or its privilege level. Existing
+Connections without metadata support return empty values; a local
+SSH client does not reveal a remote process or its privilege level. Host elevation
+does not track child-process, WSL, or remote privileges. Existing
 elevation chrome is unchanged. The formatter does not strip application-provided
 administrator prefixes.

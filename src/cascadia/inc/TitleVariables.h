@@ -16,7 +16,6 @@ namespace Microsoft::Terminal::TitleVariables
     inline constexpr wchar_t ElevatedShield[] = L"elevatedShield";
     inline constexpr wchar_t ShellName[] = L"shellName";
     inline constexpr wchar_t ShellPid[] = L"shellPid";
-    inline constexpr wchar_t ProcessName[] = L"processName";
     inline constexpr wchar_t Cwd[] = L"cwd";
     inline constexpr wchar_t CwdFolder[] = L"cwdFolder";
     inline constexpr wchar_t Separator[] = L"separator";
