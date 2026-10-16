@@ -11,8 +11,8 @@
              xmlns:model="using:Microsoft.Terminal.Settings.Model"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-             IsTabStop="False"
              xmlns:search="urn:microsoft:terminal:settings-index"
+             IsTabStop="False"
              mc:Ignorable="d search">
 
     <UserControl.Resources>
@@ -329,8 +329,8 @@
                     </local:SettingsCard>
                     <local:SettingsCard x:Name="MissingFontFaces"
                                         x:Uid="Profile_MissingFontFaces"
-                                        search:Ignore="True"
                                         Margin="0,6,0,0"
+                                        search:Ignore="True"
                                         Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
                                         Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
                                         Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
@@ -344,8 +344,8 @@
                     </local:SettingsCard>
                     <local:SettingsCard x:Name="ProportionalFontFaces"
                                         x:Uid="Profile_ProportionalFontFaces"
-                                        search:Ignore="True"
                                         Margin="0,6,0,0"
+                                        search:Ignore="True"
                                         Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
                                         Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
                                         Style="{StaticResource ExpanderAlignedSettingsCardStyle}"

@@ -108,8 +108,8 @@
                             <local:SettingResetButton SettingName="Elevate"
                                                       Target="{x:Bind Profile}" />
                             <CheckBox x:Uid="Profile_Elevate"
-                                      search:Label="True"
                                       VerticalAlignment="Center"
+                                      search:Label="True"
                                       IsChecked="{x:Bind Profile.Elevate, Mode=TwoWay}" />
                         </StackPanel>
                     </local:SettingsCard>
@@ -123,8 +123,8 @@
                             <local:SettingResetButton SettingName="Hidden"
                                                       Target="{x:Bind Profile}" />
                             <CheckBox x:Uid="Profile_Hidden"
-                                      search:Label="True"
                                       VerticalAlignment="Center"
+                                      search:Label="True"
                                       IsChecked="{x:Bind Profile.Hidden, Mode=TwoWay}" />
                         </StackPanel>
                     </local:SettingsCard>

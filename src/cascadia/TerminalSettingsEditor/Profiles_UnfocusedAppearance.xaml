@@ -55,8 +55,8 @@
             <!--  Delete Unfocused Appearance  -->
             <local:SettingsCard x:Name="DeleteUnfocusedAppearance"
                                 x:Uid="Profile_DeleteUnfocusedAppearance"
-                                search:Ignore="True"
                                 Margin="0,18,0,0"
+                                search:Ignore="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <local:SettingsCard.HeaderIcon>
                     <FontIcon Glyph="&#xE74D;" />
