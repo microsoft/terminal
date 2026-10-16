@@ -119,7 +119,7 @@ namespace Microsoft.Terminal.Core
         Int32 InitialCols { get; };
 
         Boolean SnapOnInput { get; };
-        Boolean AllowCursorBlinking { get; };
+        Windows.Foundation.IReference<UInt32> CursorBlinkInterval { get; };
         Boolean AltGrAliasing { get; };
         String AnswerbackMessage { get; };
 

@@ -305,7 +305,9 @@ namespace winrt::Microsoft::Terminal::Settings
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
-        _AllowCursorBlinking = profile.AllowCursorBlinking();
+        _CursorBlinkInterval = profile.HasCursorBlinkInterval() || profile.CursorBlinkIntervalOverrideSource() ?
+                                   winrt::Windows::Foundation::IReference<uint32_t>{ profile.CursorBlinkInterval() } :
+                                   nullptr;
         _AltGrAliasing = profile.AltGrAliasing();
         _AnswerbackMessage = profile.AnswerbackMessage();
 

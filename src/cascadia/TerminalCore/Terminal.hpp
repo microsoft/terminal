@@ -364,6 +364,7 @@ private:
 
     CursorType _defaultCursorShape = CursorType::Legacy;
     std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
+    std::optional<uint32_t> _cursorBlinkIntervalOverride;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 

@@ -147,7 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile.DefaultAppearance(), UseAcrylic) \
     X(_profile, HistorySize)                    \
     X(_profile, SnapOnInput)                    \
-    X(_profile, AllowCursorBlinking)            \
+    X(_profile, CursorBlinkInterval)            \
     X(_profile, AltGrAliasing)                  \
     X(_profile, BellStyle)                      \
     X(_profile, BellSound)                      \
@@ -171,6 +171,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 #define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
         PROFILE_INHERITABLE_SETTINGS(PROFILE_GEN_PROJECTED)
 #undef PROFILE_GEN_PROJECTED
+
+        double CursorBlinkIntervalValue() const;
+        void CursorBlinkIntervalValue(double value);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

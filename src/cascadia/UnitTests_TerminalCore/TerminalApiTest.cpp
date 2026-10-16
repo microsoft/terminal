@@ -27,8 +27,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SetColorTableEntry);
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
-        TEST_METHOD(CursorBlinkingOverride);
-        TEST_METHOD(CursorBlinkingDisabledOnCreation);
+        TEST_METHOD(CursorBlinkInterval);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
         // This test ensures that Terminal::_WriteBuffer doesn't get stuck when
@@ -60,6 +59,42 @@ void TerminalApiTest::SetColorTableEntry()
     VERIFY_NO_THROW(term._renderSettings.SetColorTableEntry(255, 100));
 
     VERIFY_THROWS(term._renderSettings.SetColorTableEntry(512, 100), std::exception);
+}
+
+void TerminalApiTest::CursorBlinkInterval()
+{
+    using Microsoft::Console::Render::TimerDuration;
+
+    Terminal term{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &term };
+    term.Create({ 100, 100 }, 0, renderer);
+    auto settings = winrt::make_self<MockTermSettings>(100, 100, 100);
+
+    const auto systemInterval = []() {
+        const auto enabled = GetSystemMetrics(SM_CARETBLINKINGENABLED);
+        const auto interval = GetCaretBlinkTime();
+        return enabled && interval > 0 && interval <= 10000 ? std::chrono::milliseconds(interval) : TimerDuration::max();
+    };
+
+    term.UpdateSettings(settings.as<ICoreSettings>());
+    VERIFY_ARE_EQUAL(systemInterval().count(), term.GetBlinkInterval().count());
+
+    for (const uint32_t interval : { 0u, 1u, 250u, 10000u, 10001u, UINT32_MAX })
+    {
+        settings->CursorBlinkInterval(winrt::Windows::Foundation::IReference<uint32_t>{ interval });
+        term.UpdateSettings(settings.as<ICoreSettings>());
+
+        const auto expected = interval > 0 && interval <= 10000 ? std::chrono::milliseconds(interval) : TimerDuration::max();
+        VERIFY_ARE_EQUAL(expected.count(), term.GetBlinkInterval().count());
+
+        std::ignore = term.FocusChanged(true);
+        VERIFY_ARE_EQUAL(expected.count(), term.GetBlinkInterval().count());
+        std::ignore = term.FocusChanged(false);
+    }
+
+    settings->CursorBlinkInterval(nullptr);
+    term.UpdateSettings(settings.as<ICoreSettings>());
+    VERIFY_ARE_EQUAL(systemInterval().count(), term.GetBlinkInterval().count());
 }
 
 // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
@@ -173,122 +208,6 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     stateMachine.ProcessString(L"\x1b[?12;25l");
     VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
-}
-
-void TerminalApiTest::CursorBlinkingOverride()
-{
-    using namespace Microsoft::Console::Render;
-
-    Terminal term{ Terminal::TestDummyMarker{} };
-    DummyRenderer renderer{ &term };
-    auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
-    VERIFY_IS_TRUE(settings->AllowCursorBlinking());
-    term.CreateFromSettings(*settings, renderer);
-    term._cursorBlinkInterval = std::chrono::milliseconds{ 500 };
-    renderer._viewport = term.GetViewport();
-    renderer.AllowCursorVisibility(InhibitionSource::Host, true);
-
-    const auto verifyCursor = [&](const bool blinking, const bool visible) {
-        renderer._updateCursorInfo();
-        VERIFY_ARE_EQUAL(blinking, renderer.IsTimerRunning(renderer._cursorBlinker));
-        VERIFY_ARE_EQUAL(visible, renderer._currentCursorOptions.isVisible);
-        if (!blinking)
-        {
-            VERIFY_ARE_EQUAL(visible, renderer._currentCursorOptions.isOn);
-        }
-    };
-
-    auto& stateMachine = *term._stateMachine;
-    verifyCursor(true, true);
-
-    // Reload while the cursor is in its off phase.
-    renderer._cursorBlinkerOn = false;
-    settings->AllowCursorBlinking(false);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, true);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-
-    stateMachine.ProcessString(L"\x1b[?25l");
-    verifyCursor(false, false);
-    stateMachine.ProcessString(L"\x1b[?25h");
-    verifyCursor(false, true);
-
-    stateMachine.ProcessString(L"\x1b[?12l");
-    verifyCursor(false, true);
-    settings->AllowCursorBlinking(true);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, true);
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-
-    stateMachine.ProcessString(L"\x1b[?12h");
-    verifyCursor(true, true);
-    settings->AllowCursorBlinking(false);
-    term.UpdateSettings(*settings);
-    stateMachine.ProcessString(L"\x1b[2 q");
-    verifyCursor(false, true);
-    settings->AllowCursorBlinking(true);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, true);
-
-    settings->AllowCursorBlinking(false);
-    term.UpdateSettings(*settings);
-    stateMachine.ProcessString(L"\x1b[1 q");
-    verifyCursor(false, true);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-
-    stateMachine.ProcessString(L"\x1b[?25l");
-    settings->AllowCursorBlinking(true);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, false);
-    stateMachine.ProcessString(L"\x1b[?25h");
-    verifyCursor(true, true);
-
-    settings->AllowCursorBlinking(false);
-    term.UpdateSettings(*settings);
-    stateMachine.ProcessString(L"\x1b" L"c");
-    verifyCursor(false, true);
-    stateMachine.ProcessString(L"\x1b[?1049h");
-    verifyCursor(false, true);
-    stateMachine.ProcessString(L"\x1b[?1049l");
-    verifyCursor(false, true);
-    stateMachine.ProcessString(L"\x1b[?1049h");
-    settings->AllowCursorBlinking(true);
-    term.UpdateSettings(*settings);
-    verifyCursor(true, true);
-    stateMachine.ProcessString(L"\x1b[?1049l");
-    verifyCursor(true, true);
-
-    renderer.AllowCursorVisibility(InhibitionSource::Host, false);
-    settings->AllowCursorBlinking(false);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, false);
-    renderer.AllowCursorVisibility(InhibitionSource::Host, true);
-    verifyCursor(false, true);
-
-    term._cursorBlinkInterval = TimerDuration::max();
-    settings->AllowCursorBlinking(true);
-    term.UpdateSettings(*settings);
-    verifyCursor(false, true);
-    term._cursorBlinkInterval = std::chrono::milliseconds{ 500 };
-    verifyCursor(true, true);
-}
-
-void TerminalApiTest::CursorBlinkingDisabledOnCreation()
-{
-    using namespace Microsoft::Console::Render;
-
-    Terminal term{ Terminal::TestDummyMarker{} };
-    DummyRenderer renderer{ &term };
-    auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
-    settings->AllowCursorBlinking(false);
-    term.CreateFromSettings(*settings, renderer);
-    renderer._viewport = term.GetViewport();
-    renderer.AllowCursorVisibility(InhibitionSource::Host, true);
-    renderer._updateCursorInfo();
-
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-    VERIFY_IS_FALSE(renderer.IsTimerRunning(renderer._cursorBlinker));
-    VERIFY_IS_TRUE(renderer._currentCursorOptions.isOn);
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()

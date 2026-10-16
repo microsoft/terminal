@@ -3250,10 +3250,11 @@
           "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
           "type": "boolean"
         },
-        "allowCursorBlinking": {
-          "default": true,
-          "description": "Allows the cursor to blink when requested by the application and enabled in Windows. When false, the cursor does not blink, but the application can still show or hide it. Changes apply immediately to running terminals.",
-          "type": "boolean"
+        "cursorBlinkInterval": {
+          "description": "The cursor blink interval in milliseconds. When omitted, the Windows setting is used. 0 or values greater than 10000 disable blinking. Applications can still disable blinking or show and hide the cursor.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
         },
         "altGrAliasing": {
           "default": true,

@@ -42,11 +42,18 @@ TimerDuration Terminal::GetBlinkInterval() noexcept
 {
     if (!_cursorBlinkInterval)
     {
-        const auto enabled = GetSystemMetrics(SM_CARETBLINKINGENABLED);
-        const auto interval = GetCaretBlinkTime();
-        // >10s --> no blinking. The limit is arbitrary, because technically the valid range
-        // on Windows is 200-1200ms. GetCaretBlinkTime() returns INFINITE for no blinking, 0 for errors.
-        _cursorBlinkInterval = enabled && interval <= 10000 ? std ::chrono::milliseconds(interval) : TimerDuration::max();
+        auto interval = TimerDuration::max();
+        if (_cursorBlinkIntervalOverride.has_value() || GetSystemMetrics(SM_CARETBLINKINGENABLED))
+        {
+            // >10s --> no blinking. The limit is arbitrary, because technically the valid range
+            // on Windows is 200-1200ms. GetCaretBlinkTime() returns INFINITE for no blinking, 0 for errors.
+            const auto i = _cursorBlinkIntervalOverride ? *_cursorBlinkIntervalOverride : GetCaretBlinkTime();
+            if (i > 0 && i <= 10000)
+            {
+                interval = std::chrono::milliseconds(i);
+            }
+        }
+        _cursorBlinkInterval = interval;
     }
     return *_cursorBlinkInterval;
 }

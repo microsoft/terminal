@@ -64,6 +64,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentAntiAliasingMode");
             }
+            else if (viewModelProperty == L"CursorBlinkInterval")
+            {
+                _NotifyChanges(L"CursorBlinkIntervalValue");
+            }
             else if (viewModelProperty == L"CloseOnExit")
             {
                 _NotifyChanges(L"CurrentCloseOnExitMode");
@@ -445,6 +449,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                   "XAML reset buttons.");
 #undef PROFILE_COUNT
 #undef PROFILE_INHERITABLE_SETTINGS
+
+    double ProfileViewModel::CursorBlinkIntervalValue() const
+    {
+        return _profile.HasCursorBlinkInterval() || _profile.CursorBlinkIntervalOverrideSource() ?
+                   _profile.CursorBlinkInterval() :
+                   std::numeric_limits<double>::quiet_NaN();
+    }
+
+    void ProfileViewModel::CursorBlinkIntervalValue(double value)
+    {
+        if (std::isnan(value))
+        {
+            ClearCursorBlinkInterval();
+        }
+        else
+        {
+            _profile.CursorBlinkInterval(base::saturated_cast<uint32_t>(value));
+            _NotifyChanges(L"HasCursorBlinkInterval", L"CursorBlinkInterval");
+        }
+    }
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {

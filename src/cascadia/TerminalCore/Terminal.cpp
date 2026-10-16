@@ -10,7 +10,6 @@
 #include "../../types/inc/colorTable.hpp"
 #include "../../buffer/out/search.h"
 #include "../../buffer/out/UTextAdapter.h"
-#include "../../renderer/base/renderer.hpp"
 
 #include <til/hash.h>
 #include <til/regex.h>
@@ -96,6 +95,13 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     UpdateAppearance(settings);
 
+    _cursorBlinkIntervalOverride.reset();
+    _cursorBlinkInterval.reset();
+    if (const auto i = settings.CursorBlinkInterval())
+    {
+        _cursorBlinkIntervalOverride = std::optional{ i.Value() };
+    }
+
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _answerbackMessage = settings.AnswerbackMessage();
@@ -145,8 +151,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // Regenerate the pattern tree for the new buffer size
     if (_mainBuffer)
     {
-        _mainBuffer->GetRenderer()->AllowCursorBlinking(InhibitionSource::User, settings.AllowCursorBlinking());
-
         // Clear the patterns first
         _detectURLs = settings.DetectURLs();
         _updateUrlDetection();

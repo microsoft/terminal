@@ -911,13 +911,17 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
-  <data name="Profile_AllowCursorBlinking.Header" xml:space="preserve">
-    <value>Allow blinking</value>
-    <comment>Header for a toggle in the Cursor section that allows the text cursor to blink.</comment>
+  <data name="Profile_CursorBlinkInterval.Header" xml:space="preserve">
+    <value>Blink interval</value>
+    <comment>Header for a control in the Cursor section that sets the text cursor blink interval.</comment>
   </data>
-  <data name="Profile_AllowCursorBlinking.Description" xml:space="preserve">
-    <value>Allow the cursor to blink when requested by the application and enabled in Windows. When disabled, applications can still show or hide the cursor.</value>
-    <comment>Description for the cursor blinking override.</comment>
+  <data name="Profile_CursorBlinkInterval.Description" xml:space="preserve">
+    <value>The cursor blink interval in milliseconds. Leave empty to use the Windows setting. Set to 0 or more than 10000 to disable blinking. Applications can still disable blinking or show and hide the cursor.</value>
+    <comment>Description for the cursor blink interval override.</comment>
+  </data>
+  <data name="Profile_CursorBlinkIntervalBox.PlaceholderText" xml:space="preserve">
+    <value>Windows setting</value>
+    <comment>Placeholder shown when the cursor blink interval follows the Windows setting.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Cursor height</value>
