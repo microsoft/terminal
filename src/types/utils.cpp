@@ -10,6 +10,7 @@
 #include "inc/colorTable.hpp"
 
 #include <icu.h>
+#include <shlwapi.h>
 
 using namespace Microsoft::Console;
 
@@ -1248,6 +1249,25 @@ bool Utils::IsValidDirectory(const wchar_t* path) noexcept
     WIN32_FILE_ATTRIBUTE_DATA data;
     const auto ok = GetFileAttributesExW(path, GetFileExInfoStandard, &data);
     return ok && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+std::wstring Utils::FileUriToPath(const std::wstring_view uri)
+{
+    THROW_HR_IF(E_INVALIDARG, uri.find(L'\0') != std::wstring_view::npos);
+
+    // PathCreateFromUrlW supports writing to the input pointer,
+    // and the resulting path can never be longer than the URI.
+    std::wstring path{ uri };
+    auto length = gsl::narrow<DWORD>(path.size());
+
+    // > dwFlags: Reserved. Set this parameter to NULL.
+    // What is this? Unsanitized, undocumented flags in MY broken-by-default shell API? Unthinkable!
+    // Without URL_UNESCAPE_AS_UTF8, PathCreateFromUrlW would translate %XY percent
+    // encoded bytes 1:1 to wchar_t, i.e. the parsing would be functionally ASCII-only.
+    THROW_IF_FAILED(PathCreateFromUrlW(path.c_str(), path.data(), &length, URL_UNESCAPE_AS_UTF8));
+
+    path.resize(length);
+    return path;
 }
 
 #pragma warning(pop)

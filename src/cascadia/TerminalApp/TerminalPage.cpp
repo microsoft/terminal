@@ -3269,13 +3269,23 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
+        const auto strongThis = get_strong();
+
         try
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
             if (_IsUriSupported(parsed))
             {
-                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+                std::wstring filePath;
+                std::wstring_view launchTarget{ uriString };
+                if (parsed.SchemeName() == L"file")
+                {
+                    filePath = Utils::FileUriToPath(uriString);
+                    launchTarget = filePath;
+                }
+
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed, launchTarget) };
 
                 if (!shouldLaunch)
                 {
@@ -3297,7 +3307,17 @@ namespace winrt::TerminalApp::implementation
 
                 if (shouldLaunch)
                 {
-                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    SHELLEXECUTEINFOW info{ sizeof(info) };
+                    info.fMask = SEE_MASK_FLAG_NO_UI;
+                    info.hwnd = _hostingHwnd.value_or(nullptr);
+                    info.lpVerb = L"open";
+                    info.lpFile = launchTarget.data();
+                    info.nShow = SW_SHOWNORMAL;
+                    if (!ShellExecuteExW(&info))
+                    {
+                        const auto error = HRESULT_FROM_WIN32(GetLastError());
+                        _ShowCouldNotOpenDialog(winrt::hresult_error{ error }.message(), uriString);
+                    }
                 }
             }
             else
@@ -3378,7 +3398,7 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
         // file URIs pointing to remote locations are *always* considered unsafe.
@@ -3398,10 +3418,9 @@ namespace winrt::TerminalApp::implementation
         if (schemeName == L"file")
         {
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
-            const auto filename = parsedUri.Path();
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
-                if (til::ends_with_insensitive_ascii(filename, e))
+                if (!e.empty() && til::ends_with_insensitive_ascii(launchTarget, e))
                 {
                     return false;
                 }
