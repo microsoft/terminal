@@ -3275,16 +3275,16 @@ namespace winrt::TerminalApp::implementation
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
-            if (_IsUriSupported(parsed))
+            std::wstring filePath;
+            std::wstring_view launchTarget{ uriString };
+            if (parsed.SchemeName() == L"file")
             {
-                std::wstring filePath;
-                std::wstring_view launchTarget{ uriString };
-                if (parsed.SchemeName() == L"file")
-                {
-                    filePath = Utils::FileUriToPath(uriString);
-                    launchTarget = filePath;
-                }
+                filePath = Utils::FileUriToPath(uriString);
+                launchTarget = filePath;
+            }
 
+            if (_IsUriSupported(parsed, launchTarget))
+            {
                 bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed, launchTarget) };
 
                 if (!shouldLaunch)
@@ -3358,9 +3358,10 @@ namespace winrt::TerminalApp::implementation
     // - Determines if the given URI is currently supported
     // Arguments:
     // - The parsed URI
+    // - The actual launch target, after converting file URIs to paths
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
@@ -3368,27 +3369,41 @@ namespace winrt::TerminalApp::implementation
         }
         if (parsedUri.SchemeName() == L"file")
         {
-            const auto host = parsedUri.Host();
-            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
-            // and we allow it
-            if (host == L"")
+            if (til::starts_with(launchTarget, L"\\\\"))
             {
-                return true;
+                // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
+                const auto serverEnd = launchTarget.find_first_of(L"\\/", 2);
+                const auto server = til::safe_slice_abs(launchTarget, 2, serverEnd);
+                return til::equals_insensitive_ascii(server, L"wsl$") ||
+                       til::equals_insensitive_ascii(server, L"wsl.localhost");
             }
-
-            // GH#10188: WSL paths are okay. We'll let those through.
-            if (host == L"wsl$" || host == L"wsl.localhost")
+            else
             {
-                return true;
-            }
+                // Relative file URIs would be weird, right? Reject them.
+                //
+                // NOTE: std::filesystem::path::is_absolute() would permit paths
+                // like `//foo/` as absolute, which feels overly permissive here.
+                if (launchTarget.size() < 3)
+                {
+                    return false;
+                }
 
-            // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
-            // comparing that value against what is returned by GetComputerNameExW and making sure they match.
-            // However, ShellExecute does not seem to be happy with file URIs of the form
-            //          file://{hostname}/path/to/file.ext
-            // and so while we could do the hostname matching, we do not know how to actually open the URI
-            // if its given in that form. So for now we ignore all hostnames other than localhost
-            return false;
+                // This is how STL implemented std::filesystem:_Is_drive_prefix().
+                // I thought it was such a neat trick, that I wanted to use it here.
+                // It's very ugly, but kind of beautiful. Obviously, this only works
+                // in little endian, but who would do big endian in this day and age.
+                uint32_t prefix;
+                memcpy(&prefix, launchTarget.data(), sizeof(prefix)); // load from possibly unaligned address
+                prefix &= 0xFFFF'FFDFu; // transform lowercase drive letters into uppercase ones
+                prefix -= (static_cast<unsigned int>(L':') << (sizeof(wchar_t) * CHAR_BIT)) | L'A';
+                if (prefix >= 26)
+                {
+                    return false;
+                }
+
+                const auto slash = launchTarget[2];
+                return slash == L'\\' || slash == L'/';
+            }
         }
 
         // In this case, the app manually output a URI other than file:// or

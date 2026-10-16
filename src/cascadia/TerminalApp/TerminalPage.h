@@ -485,7 +485,7 @@ namespace winrt::TerminalApp::implementation
                                                        const Microsoft::Terminal::Control::PasteFromClipboardEventArgs eventArgs);
 
         safe_void_coroutine _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
-        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget);
         bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget) const;
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
