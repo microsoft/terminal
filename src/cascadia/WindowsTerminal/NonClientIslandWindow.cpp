@@ -16,6 +16,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 
 static constexpr int AutohideTaskbarSize = 2;
@@ -743,23 +744,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     if (originalRet != HTCLIENT)
     {
-        // If we're the quake window, suppress resizing on any side except the
-        // bottom. I don't believe that this actually works on the top. That's
-        // handled below.
-        if (IsQuakeWindow())
-        {
-            switch (originalRet)
-            {
-            case HTBOTTOMRIGHT:
-            case HTRIGHT:
-            case HTTOPRIGHT:
-            case HTTOP:
-            case HTTOPLEFT:
-            case HTLEFT:
-            case HTBOTTOMLEFT:
-                return HTCLIENT;
-            }
-        }
         return originalRet;
     }
 
@@ -779,9 +763,13 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // the top of the drag bar is used to resize the window
     if (!_isMaximized && isOnResizeBorder)
     {
-        // However, if we're the quake window, then just return HTCAPTION so we
-        // don't get a resize handle on the top.
-        return IsQuakeWindow() ? HTCAPTION : HTTOP;
+        // If we're docked to the top, return HTCAPTION so we don't get a
+        // resize handle on the top.
+        if (_docked() && _dockingSettings.Side() == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top)
+        {
+            return HTCAPTION;
+        }
+        return HTTOP;
     }
 
     return HTCAPTION;
