@@ -3398,10 +3398,10 @@ namespace winrt::TerminalApp::implementation
                 // This is how STL implemented std::filesystem:_Is_drive_prefix().
                 // I thought it was such a neat trick, that I wanted to use it here.
                 // It's very ugly, but kind of beautiful. Obviously, this only works
-                // in little endian, but who would do big endian in this day and age.
+                // in little endian, but who would do big-endian in this day and age.
                 uint32_t prefix;
                 memcpy(&prefix, launchTarget.data(), sizeof(prefix)); // load from possibly unaligned address
-                prefix &= 0xFFFF'FFDFu; // transform lowercase drive letters into uppercase ones
+                prefix &= 0xFFFFFFDFu; // transform lowercase drive letters into uppercase ones
                 prefix -= (static_cast<unsigned int>(L':') << (sizeof(wchar_t) * CHAR_BIT)) | L'A';
                 if (prefix >= 26)
                 {
