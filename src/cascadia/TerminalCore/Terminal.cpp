@@ -10,6 +10,7 @@
 #include "../../types/inc/colorTable.hpp"
 #include "../../buffer/out/search.h"
 #include "../../buffer/out/UTextAdapter.h"
+#include "../../renderer/base/renderer.hpp"
 
 #include <til/hash.h>
 #include <til/regex.h>
@@ -144,6 +145,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // Regenerate the pattern tree for the new buffer size
     if (_mainBuffer)
     {
+        _mainBuffer->GetRenderer()->AllowCursorBlinking(InhibitionSource::User, settings.AllowCursorBlinking());
+
         // Clear the patterns first
         _detectURLs = settings.DetectURLs();
         _updateUrlDetection();
