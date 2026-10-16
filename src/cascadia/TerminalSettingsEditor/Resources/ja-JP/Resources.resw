@@ -1363,7 +1363,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>試験段階: マウスのクリックでカーソルの位置を変更する</value>
+    <value>マウスのクリックでカーソルの位置を変更する</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -2640,7 +2640,7 @@
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
-    <value>試験段階: 入力候補を虹色で表示する</value>
+    <value>入力候補を虹色で表示する</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
@@ -2648,7 +2648,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>試験的。キー バインドを使用して選択したテキストまたは一致するテキストをカスタム カラーで強調表示する</value>
+    <value>キー バインドを使用して選択したテキストまたは一致するテキストをカスタム カラーで強調表示する</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2761,6 +2761,14 @@
   <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
     <value>新規</value>
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
+    <value>試験段階</value>
+    <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">
+    <value>試験段階の設定</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>正規表現について詳細を表示する</value>

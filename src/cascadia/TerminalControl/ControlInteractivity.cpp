@@ -10,10 +10,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
 
-#include "InteractivityAutomationPeer.h"
-
-#include "ControlInteractivity.g.cpp"
-
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -48,13 +44,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _id = _nextId.fetch_add(1, std::memory_order_relaxed);
 
         _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection, dispatcher);
-
-        _core->Attached([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto self{ weakThis.get() })
-            {
-                self->Attached.raise(*self, nullptr);
-            }
-        });
 
         // GH#14464: Mark mode and quick-edit (shift+arrow) selections update
         // the selection through ControlCore, bypassing SetEndSelectionPoint.
@@ -126,9 +115,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }
 
-    Control::ControlCore ControlInteractivity::Core()
+    winrt::com_ptr<ControlCore> ControlInteractivity::Core()
     {
-        return *_core;
+        return _core;
     }
 
     void ControlInteractivity::Close()
@@ -847,23 +836,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - None
     // Return Value:
     // - The automation peer for our control
-    Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
+    void ControlInteractivity::SetUiaEventDispatcher(IUiaEventDispatcher* uiaEventDispatcher)
     try
     {
-        const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
         if (_uiaEngine)
         {
             _core->DetachUiaEngine(_uiaEngine.get());
         }
-        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(uiaEventDispatcher);
         _core->AttachUiaEngine(_uiaEngine.get());
-        return *autoPeer;
     }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        return nullptr;
-    }
+    CATCH_LOG()
 
     ::Microsoft::Console::Render::IRenderData* ControlInteractivity::GetRenderData() const
     {
