@@ -201,7 +201,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 #pragma warning(disable : 26490) // Win32 APIs can only store void*/LONG_PTR, have to use reinterpret_cast
         if (uMsg == WM_NCCREATE)
         {
-            // Setup the GWLP_USERDATA pointer based on the param passed into CreateWindowEx
+            // Set the GWLP_USERDATA pointer based on the param passed into CreateWindowEx
             const auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
             HwndTerminal* that = static_cast<HwndTerminal*>(cs->lpCreateParams);
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
