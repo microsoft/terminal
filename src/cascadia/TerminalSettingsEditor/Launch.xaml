@@ -7,12 +7,12 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:idx="urn:microsoft:terminal:settings-index"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d idx">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -108,7 +108,7 @@
                     <StackPanel Orientation="Vertical">
                         <CheckBox x:Name="StartOnUserLogin"
                                   x:Uid="Globals_StartOnUserLogin_Checkbox"
-                                  idx:Label="True"
+                                  search:Label="True"
                                   IsChecked="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                                   IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}" />
                         <TextBlock FontSize="{ThemeResource SettingsCardDescriptionFontSize}"

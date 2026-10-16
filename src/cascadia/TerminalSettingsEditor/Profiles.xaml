@@ -6,13 +6,13 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:idx="urn:microsoft:terminal:settings-index"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d idx">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -29,7 +29,7 @@
         <!--  Defaults navigator  -->
         <local:SettingsCard x:Name="DefaultsNavigator"
                             x:Uid="Profiles_DefaultsNavigator"
-                            idx:Ignore="True"
+                            search:Ignore="True"
                             Click="{x:Bind ViewModel.RequestOpenDefaults}"
                             IsClickEnabled="True">
             <local:SettingsCard.HeaderIcon>
@@ -40,7 +40,7 @@
         <!--  Color schemes navigator  -->
         <local:SettingsCard x:Name="ColorSchemesNavigator"
                             x:Uid="Profiles_ColorSchemesNavigator"
-                            idx:Ignore="True"
+                            search:Ignore="True"
                             Click="{x:Bind ViewModel.RequestOpenColorSchemes}"
                             IsClickEnabled="True">
             <local:SettingsCard.HeaderIcon>
