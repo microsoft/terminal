@@ -1535,12 +1535,12 @@ namespace TerminalAppLocalTests
         });
         VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
 
-        TestOnUIThread([&page, this]() {
+        TestOnUIThread([&page]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"The new tab should use the scheme from the args, not the profile");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
         });
         Log::Comment(L"Sleep to let events propagate");
