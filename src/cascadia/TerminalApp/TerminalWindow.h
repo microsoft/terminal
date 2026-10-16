@@ -159,7 +159,7 @@ namespace winrt::TerminalApp::implementation
         void PropertyChanged(winrt::event_token const& token) { _root->PropertyChanged(token); }
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::Theme> RequestedThemeChanged;
-        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> IsQuakeWindowChanged;
+        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> WindowSettingsChanged;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs> SystemMenuChangeRequested;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;

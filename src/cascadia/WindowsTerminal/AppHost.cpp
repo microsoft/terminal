@@ -62,8 +62,8 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
         _window = std::make_unique<IslandWindow>();
     }
 
-    // Update our own internal state tracking if we're in quake mode or not.
-    _IsQuakeWindowChanged(nullptr, nullptr);
+    // Apply the per-window settings (docking, notification area, etc.) for this window.
+    _WindowSettingsChanged(nullptr, nullptr);
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
@@ -276,7 +276,7 @@ void AppHost::Initialize()
     // properties.
     _revokers.SettingsChanged = _windowLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
 
-    _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
+    _revokers.WindowSettingsChanged = _windowLogic.WindowSettingsChanged(winrt::auto_revoke, { this, &AppHost::_WindowSettingsChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.SummonWindowByIdRequested = _windowLogic.SummonWindowByIdRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowByIdRequested });
     _revokers.FocusTabRequested = _windowLogic.FocusTabRequested(winrt::auto_revoke, { this, &AppHost::_FocusTabRequested });
@@ -1129,8 +1129,8 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _updateTheme();
 }
 
-void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
-                                    const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_WindowSettingsChanged(const winrt::Windows::Foundation::IInspectable&,
+                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->DockSettings(_windowLogic.Docking(), _windowLogic.CenterOnLaunch());
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());

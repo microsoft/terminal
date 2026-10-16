@@ -549,7 +549,7 @@ namespace winrt::TerminalApp::implementation
 
             // It's possible that newTerminalArgs is null here.
             // GetProfileForArgs should be resilient to that.
-            const auto profile{ settings.GetProfileForArgs(newTerminalArgs, settings.WindowSettingsDefaults()) };
+            const auto profile{ settings.GetProfileForArgs(newTerminalArgs, settings.WindowSettings(_WindowProperties.WindowName())) };
             if (profile.Elevate())
             {
                 continue;

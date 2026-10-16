@@ -1193,6 +1193,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldName = _WindowProperties->WindowName();
+        const auto oldWindowSettings = _settings ? _currentWindowSettings() : nullptr;
         _WindowProperties->WindowName(name);
         // If this window had a persisted workspace under the old name, rename
         // that entry too so we don't leave a stale copy behind.
@@ -1200,12 +1201,17 @@ namespace winrt::TerminalApp::implementation
         {
             ApplicationState::SharedInstance().RenameWorkspace(oldName, name);
         }
-        if (!_root)
+        if (!_root || !_settings)
         {
             return;
         }
-        _root->SetSettings(_settings, true);
-        IsQuakeWindowChanged.raise(*this, nullptr);
+        // Renaming the window may cause a different set of per-window settings
+        // to apply. Only refresh if that actually happened.
+        if (_currentWindowSettings() != oldWindowSettings)
+        {
+            _root->SetSettings(_settings, true);
+            WindowSettingsChanged.raise(*this, nullptr);
+        }
     }
     void TerminalWindow::WindowId(const uint64_t& id)
     {

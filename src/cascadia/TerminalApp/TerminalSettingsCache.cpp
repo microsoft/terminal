@@ -25,6 +25,15 @@ namespace winrt::TerminalApp::implementation
 
     std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile, const MTSM::WindowSettings& windowSettings)
     {
+        // The window settings participate in computing the TerminalSettings
+        // (e.g. the light/dark color scheme depends on the window's theme), so
+        // every cached entry is only valid for the window settings it was
+        // created with. If we're asked about a different one, re-key the cache.
+        if (windowSettings != _windowSettings)
+        {
+            Reset(_settings, windowSettings);
+        }
+
         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
         // GH#2455: If there are any panes with controls that had been
         // initialized with a Profile that no longer exists in our list of
