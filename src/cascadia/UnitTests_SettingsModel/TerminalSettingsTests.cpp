@@ -672,49 +672,67 @@ namespace SettingsModelUnitTests
 
     void TerminalSettingsTests::CursorBlinkingProfileSetting()
     {
-        VERIFY_IS_TRUE(winrt::make<implementation::Profile>().AllowCursorBlinking());
+        VERIFY_IS_NULL(winrt::make<implementation::Profile>().CursorBlinkInterval());
 
         static constexpr std::string_view settingsJson{ R"({
             "profiles": {
                 "defaults": {
-                    "allowCursorBlinking": false,
+                    "cursorBlinkInterval": 0,
                     "unfocusedAppearance": {}
                 },
                 "list": [
                     { "name": "inherited" },
-                    { "name": "overridden", "allowCursorBlinking": true }
+                    { "name": "custom", "cursorBlinkInterval": 275 },
+                    { "name": "system", "cursorBlinkInterval": null },
+                    { "name": "disabled", "cursorBlinkInterval": 0 }
                 ]
             }
         })" };
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
-        VERIFY_ARE_EQUAL(2u, settings->ActiveProfiles().Size());
+        VERIFY_ARE_EQUAL(4u, settings->ActiveProfiles().Size());
 
         const auto defaultsJson = winrt::get_self<implementation::Profile>(settings->ProfileDefaults())->ToJson();
-        VERIFY_IS_TRUE(defaultsJson.isMember("allowCursorBlinking"));
-        VERIFY_IS_FALSE(defaultsJson["allowCursorBlinking"].asBool());
+        VERIFY_IS_TRUE(defaultsJson.isMember("cursorBlinkInterval"));
+        VERIFY_ARE_EQUAL(0u, defaultsJson["cursorBlinkInterval"].asUInt());
 
-        for (auto i = 0u; i < 2u; ++i)
-        {
-            const auto profile = settings->ActiveProfiles().GetAt(i);
-            const auto expected = i == 1;
-            VERIFY_ARE_EQUAL(expected, profile.AllowCursorBlinking());
-            VERIFY_ARE_EQUAL(expected, profile.HasAllowCursorBlinking());
-
-            const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
-            VERIFY_ARE_EQUAL(expected, json.isMember("allowCursorBlinking"));
+        const std::array<std::optional<uint32_t>, 4> intervals{ 0u, 275u, std::nullopt, 0u };
+        const auto verifyInterval = [](const std::optional<uint32_t> expected, const winrt::Windows::Foundation::IReference<uint32_t>& actual) {
+            VERIFY_ARE_EQUAL(expected.has_value(), static_cast<bool>(actual));
             if (expected)
             {
-                VERIFY_IS_TRUE(json["allowCursorBlinking"].asBool());
+                VERIFY_ARE_EQUAL(*expected, actual.Value());
+            }
+        };
+        for (auto i = 0u; i < intervals.size(); ++i)
+        {
+            const auto profile = settings->ActiveProfiles().GetAt(i);
+            const auto expected = intervals[i];
+            verifyInterval(expected, profile.CursorBlinkInterval());
+            VERIFY_ARE_EQUAL(i != 0, profile.HasCursorBlinkInterval());
+
+            const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
+            VERIFY_ARE_EQUAL(i != 0, json.isMember("cursorBlinkInterval"));
+            if (i != 0)
+            {
+                if (expected)
+                {
+                    VERIFY_ARE_EQUAL(*expected, json["cursorBlinkInterval"].asUInt());
+                }
+                else
+                {
+                    VERIFY_IS_TRUE(json["cursorBlinkInterval"].isNull());
+                }
+                verifyInterval(expected, implementation::Profile::FromJson(json)->CursorBlinkInterval());
             }
 
             const auto result = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), profile);
-            VERIFY_ARE_EQUAL(expected, result.DefaultSettings()->AllowCursorBlinking());
+            verifyInterval(expected, result.DefaultSettings()->CursorBlinkInterval());
             VERIFY_IS_NOT_NULL(result.UnfocusedSettings());
-            VERIFY_ARE_EQUAL(expected, result.UnfocusedSettings()->AllowCursorBlinking());
+            verifyInterval(expected, result.UnfocusedSettings()->CursorBlinkInterval());
 
-            profile.ClearAllowCursorBlinking();
-            VERIFY_IS_FALSE(profile.AllowCursorBlinking());
-            VERIFY_IS_FALSE(profile.HasAllowCursorBlinking());
+            profile.ClearCursorBlinkInterval();
+            verifyInterval(0u, profile.CursorBlinkInterval());
+            VERIFY_IS_FALSE(profile.HasCursorBlinkInterval());
         }
     }
 

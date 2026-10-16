@@ -71,7 +71,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
-        INHERITABLE_PROFILE_SETTING(Boolean, AllowCursorBlinking);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<UInt32>, CursorBlinkInterval);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(String, AnswerbackMessage);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);

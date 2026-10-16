@@ -90,6 +90,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UseParentProcessDirectory() const;
         void UseParentProcessDirectory(const bool useParent);
 
+        int32_t CursorBlinkModeIndex() const;
+        void CursorBlinkModeIndex(int32_t index);
+        bool UseCustomCursorBlinkInterval() const;
+        double CursorBlinkIntervalValue() const;
+        void CursorBlinkIntervalValue(double value);
+
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
@@ -147,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile.DefaultAppearance(), UseAcrylic) \
     X(_profile, HistorySize)                    \
     X(_profile, SnapOnInput)                    \
-    X(_profile, AllowCursorBlinking)            \
+    X(_profile, CursorBlinkInterval)            \
     X(_profile, AltGrAliasing)                  \
     X(_profile, BellStyle)                      \
     X(_profile, BellSound)                      \
@@ -184,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        uint32_t _lastCursorBlinkInterval{ 500 };
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 

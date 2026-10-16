@@ -60,6 +60,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"CurrentStartingDirectoryPreview");
             }
+            else if (viewModelProperty == L"CursorBlinkInterval")
+            {
+                _NotifyChanges(L"CursorBlinkModeIndex", L"UseCustomCursorBlinkInterval", L"CursorBlinkIntervalValue");
+            }
             else if (viewModelProperty == L"AntialiasingMode")
             {
                 _NotifyChanges(L"CurrentAntiAliasingMode");
@@ -157,6 +161,63 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
         _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    int32_t ProfileViewModel::CursorBlinkModeIndex() const
+    {
+        const auto interval = CursorBlinkInterval();
+        if (!interval)
+        {
+            return 0;
+        }
+        return interval.Value() == 0 ? 1 : 2;
+    }
+
+    void ProfileViewModel::CursorBlinkModeIndex(const int32_t index)
+    {
+        if (index == CursorBlinkModeIndex())
+        {
+            return;
+        }
+        _lastCursorBlinkInterval = static_cast<uint32_t>(CursorBlinkIntervalValue());
+        switch (index)
+        {
+        case 0:
+            CursorBlinkInterval(nullptr);
+            break;
+        case 1:
+            CursorBlinkInterval(IReference<uint32_t>{ 0u });
+            break;
+        case 2:
+            CursorBlinkInterval(IReference<uint32_t>{ _lastCursorBlinkInterval });
+            break;
+        }
+    }
+
+    bool ProfileViewModel::UseCustomCursorBlinkInterval() const
+    {
+        return CursorBlinkModeIndex() == 2;
+    }
+
+    double ProfileViewModel::CursorBlinkIntervalValue() const
+    {
+        const auto interval = CursorBlinkInterval();
+        return interval && interval.Value() != 0 ? std::min(interval.Value(), 10000u) : _lastCursorBlinkInterval;
+    }
+
+    void ProfileViewModel::CursorBlinkIntervalValue(const double value)
+    {
+        // Clearing a NumberBox produces NaN; restore the current interval instead.
+        if (UseCustomCursorBlinkInterval() && !std::isnan(value))
+        {
+            _lastCursorBlinkInterval = static_cast<uint32_t>(std::clamp(value, 1.0, 10000.0));
+            // Two-way binding also writes back on model changes. Preserve inherited values.
+            if (CursorBlinkIntervalValue() != _lastCursorBlinkInterval)
+            {
+                CursorBlinkInterval(IReference<uint32_t>{ _lastCursorBlinkInterval });
+            }
+        }
+        _NotifyChanges(L"CursorBlinkIntervalValue");
     }
 
     void ProfileViewModel::LeftPadding(double value) noexcept

@@ -1599,7 +1599,7 @@ void Renderer::_updateCursorInfo()
     {
         StopTimer(_cursorBlinker);
     }
-    else if (!IsTimerRunning(_cursorBlinker))
+    else
     {
         const auto actual = GetTimerInterval(_cursorBlinker);
         const auto expected = _pData->GetBlinkInterval();
@@ -1613,7 +1613,8 @@ void Renderer::_updateCursorInfo()
         }
         else
         {
-            // If blinking is disabled due to the OS settings, then we force-enable it.
+            StopTimer(_cursorBlinker);
+            // A disabled blink interval means steady-on, not frozen in the off phase.
             _cursorBlinkerOn = true;
         }
     }

@@ -106,6 +106,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _rainbowSuggestions = settings.RainbowSuggestions();
     _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
 
+    const auto cursorBlinkInterval = settings.CursorBlinkInterval();
+    _cursorBlinkIntervalOverride = cursorBlinkInterval ?
+                                       std::optional<TimerDuration>{ std::chrono::milliseconds{ std::min(cursorBlinkInterval.Value(), 10000u) } } :
+                                       std::nullopt;
+
     if (_stateMachine)
     {
         SetOptionalFeatures(settings);
@@ -145,7 +150,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // Regenerate the pattern tree for the new buffer size
     if (_mainBuffer)
     {
-        _mainBuffer->GetRenderer()->AllowCursorBlinking(InhibitionSource::User, settings.AllowCursorBlinking());
+        _mainBuffer->NotifyPaintFrame();
 
         // Clear the patterns first
         _detectURLs = settings.DetectURLs();
