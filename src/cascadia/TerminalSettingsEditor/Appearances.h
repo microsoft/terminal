@@ -250,7 +250,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(AdjustIndistinguishableColors, Microsoft::Terminal::Core::AdjustTextMode, Appearance().AdjustIndistinguishableColors);
 
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
-        WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(Editor::ProfileViewModel, SourceProfile, PropertyChanged.raise, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);

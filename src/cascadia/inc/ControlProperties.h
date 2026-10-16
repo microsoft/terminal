@@ -37,6 +37,7 @@
     X(int32_t, InitialRows, 30)                                                                                   \
     X(int32_t, InitialCols, 80)                                                                                   \
     X(bool, SnapOnInput, true)                                                                                    \
+    X(winrt::Windows::Foundation::IReference<uint32_t>, CursorBlinkInterval, nullptr)                             \
     X(bool, AltGrAliasing, true)                                                                                  \
     X(winrt::hstring, AnswerbackMessage)                                                                          \
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \

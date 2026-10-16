@@ -92,6 +92,7 @@ Author(s):
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
+    X(Windows::Foundation::IReference<uint32_t>, CursorBlinkInterval, "cursorBlinkInterval", nullptr)                                                          \
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
     X(hstring, AnswerbackMessage, "answerbackMessage")                                                                                                         \
     X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                 \

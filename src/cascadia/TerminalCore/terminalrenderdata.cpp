@@ -40,6 +40,11 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
 
 TimerDuration Terminal::GetBlinkInterval() noexcept
 {
+    if (_cursorBlinkIntervalOverride)
+    {
+        return *_cursorBlinkIntervalOverride;
+    }
+
     if (!_cursorBlinkInterval)
     {
         const auto enabled = GetSystemMetrics(SM_CARETBLINKINGENABLED);

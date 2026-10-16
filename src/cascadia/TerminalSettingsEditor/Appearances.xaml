@@ -580,6 +580,34 @@
         <TextBlock x:Uid="Profile_CursorHeader"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
         <StackPanel Style="{StaticResource SettingsStackStyle}">
+            <local:SettingsCard x:Name="CursorBlinkInterval"
+                                x:Uid="Profile_CursorBlinkInterval"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
+                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <StackPanel Spacing="8">
+                        <ComboBox x:Uid="Profile_CursorBlinkMode"
+                                  SelectedIndex="{x:Bind SourceProfile.CursorBlinkModeIndex, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
+                            <ComboBoxItem x:Uid="Profile_CursorBlinkModeSystem" />
+                            <ComboBoxItem x:Uid="Profile_CursorBlinkModeDisabled" />
+                            <ComboBoxItem x:Uid="Profile_CursorBlinkModeCustom" />
+                        </ComboBox>
+                        <muxc:NumberBox x:Uid="Profile_CursorBlinkIntervalBox"
+                                        LargeChange="100"
+                                        Maximum="10000"
+                                        Minimum="1"
+                                        SmallChange="50"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Visibility="{x:Bind SourceProfile.UseCustomCursorBlinkInterval, Mode=OneWay}"
+                                        Value="{x:Bind SourceProfile.CursorBlinkIntervalValue, Mode=TwoWay}" />
+                    </StackPanel>
+                    <local:SettingResetButton VerticalAlignment="Top"
+                                              SettingName="CursorBlinkInterval"
+                                              Target="{x:Bind SourceProfile}" />
+                </StackPanel>
+            </local:SettingsCard>
+
             <!--  Cursor Shape  -->
             <local:SettingsCard x:Name="CursorShape"
                                 x:Uid="Profile_CursorShape"

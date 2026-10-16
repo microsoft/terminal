@@ -7,6 +7,13 @@
 #include "../inc/IRenderEngine.hpp"
 #include "../inc/RenderSettings.hpp"
 
+#ifdef UNIT_TESTING
+namespace TerminalCoreUnitTests
+{
+    class TerminalApiTest;
+}
+#endif
+
 namespace Microsoft::Console::Render
 {
     enum class InhibitionSource
@@ -77,6 +84,10 @@ namespace Microsoft::Console::Render
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
+#ifdef UNIT_TESTING
+        friend class ::TerminalCoreUnitTests::TerminalApiTest;
+#endif
+
         struct TimerRoutine
         {
             const char* description = nullptr;

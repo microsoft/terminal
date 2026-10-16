@@ -3250,6 +3250,16 @@
           "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
           "type": "boolean"
         },
+        "cursorBlinkInterval": {
+          "default": null,
+          "description": "Time in milliseconds between cursor visibility changes while blinking. Null uses the Windows cursor blink settings; 0 disables blinking. A positive value overrides the Windows interval, but applications can still request a steady cursor or hide it. Values above 10000 are clamped to 10000. Changes apply immediately to running terminals.",
+          "minimum": 0,
+          "maximum": 10000,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "altGrAliasing": {
           "default": true,
           "description": "By default Windows treats Ctrl+Alt as an alias for AltGr. When altGrAliasing is set to false, this behavior will be disabled.",
