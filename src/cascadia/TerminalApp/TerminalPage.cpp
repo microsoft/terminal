@@ -3369,6 +3369,13 @@ namespace winrt::TerminalApp::implementation
         }
         if (parsedUri.SchemeName() == L"file")
         {
+            // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
+            // comparing that value against what is returned by GetComputerNameExW and making sure they match.
+            // However, ShellExecute does not seem to be happy with file URIs of the form
+            //          file://{hostname}/path/to/file.ext
+            // and so while we could do the hostname matching, we do not know how to actually open the URI
+            // if its given in that form. So for now we ignore all hostnames other than localhost
+
             if (til::starts_with(launchTarget, L"\\\\"))
             {
                 // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
