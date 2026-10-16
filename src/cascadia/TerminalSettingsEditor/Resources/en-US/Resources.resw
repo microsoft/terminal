@@ -911,6 +911,14 @@
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
+  <data name="Profile_AllowCursorBlinking.Header" xml:space="preserve">
+    <value>Allow blinking</value>
+    <comment>Header for a toggle in the Cursor section that allows the text cursor to blink.</comment>
+  </data>
+  <data name="Profile_AllowCursorBlinking.Description" xml:space="preserve">
+    <value>Allow the cursor to blink when requested by the application and enabled in Windows. When disabled, applications can still show or hide the cursor.</value>
+    <comment>Description for the cursor blinking override.</comment>
+  </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Cursor height</value>
     <comment>Header for a control to determine the height of the text cursor.</comment>

@@ -119,6 +119,7 @@ namespace Microsoft.Terminal.Core
         Int32 InitialCols { get; };
 
         Boolean SnapOnInput { get; };
+        Boolean AllowCursorBlinking { get; };
         Boolean AltGrAliasing { get; };
         String AnswerbackMessage { get; };
 

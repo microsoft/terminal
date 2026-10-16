@@ -147,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile.DefaultAppearance(), UseAcrylic) \
     X(_profile, HistorySize)                    \
     X(_profile, SnapOnInput)                    \
+    X(_profile, AllowCursorBlinking)            \
     X(_profile, AltGrAliasing)                  \
     X(_profile, BellStyle)                      \
     X(_profile, BellSound)                      \
