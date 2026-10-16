@@ -40,6 +40,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestMoveTabArgs);
         TEST_METHOD(TestGetKeyBindingForAction);
         TEST_METHOD(KeybindingsWithoutVkey);
+        TEST_METHOD(RefreshKeyBindings);
+        TEST_METHOD(EditPreservedKeyBindings);
     };
 
     void KeyBindingsTests::KeyChords()
@@ -777,8 +779,8 @@ namespace SettingsModelUnitTests
                      L" an equivalent sc() key should replace it.");
 
         // Wrap the first one in `R"!(...)!"` because it has `()` internally.
-        const std::string bindings0String{ R"!([ { "command": "quakeMode", "keys":"win+sc(41)" } ])!" };
-        const std::string bindings1String{ R"([ { "keys": "win+`", "command": { "action": "globalSummon", "monitor": "any" } } ])" };
+        const std::string bindings0String{ R"!([ { "command": "quakeMode", "id": "Test.Scan", "keys":"win+sc(41)" } ])!" };
+        const std::string bindings1String{ R"([ { "keys": "win+`", "id": "Test.Character", "command": { "action": "globalSummon", "monitor": "any" } } ])" };
         const std::string bindings2String{ R"([ { "keys": "ctrl+shift+`", "command": { "action": "quakeMode" } } ])" };
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
@@ -792,10 +794,12 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings1Json, OriginTag::None);
-        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size(), L"Layering the second action should replace the first one.");
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size(), L"Preserve both definitions in case they differ on another layout.");
+        VERIFY_ARE_EQUAL(1u, actionMap->KeyBindings().Size(), L"The later definition wins on this layout.");
+        VERIFY_ARE_EQUAL(ShortcutAction::GlobalSummon, actionMap->GetActionByKeyChord(KeyChordSerialization::FromString(L"win+`")).ActionAndArgs().Action());
 
         actionMap->LayerJson(bindings2Json, OriginTag::None);
-        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
+        VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
     }
 
     void KeyBindingsTests::KeybindingsWithoutVkey()
@@ -807,5 +811,112 @@ namespace SettingsModelUnitTests
 
         const auto action = actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Shift, 0, 255 });
         VERIFY_IS_NOT_NULL(action);
+    }
+
+    void KeyBindingsTests::RefreshKeyBindings()
+    {
+        const auto originalLayout = GetKeyboardLayout(0);
+        std::vector<HKL> originalLayouts(GetKeyboardLayoutList(0, nullptr));
+        GetKeyboardLayoutList(gsl::narrow_cast<int>(originalLayouts.size()), originalLayouts.data());
+        const auto us = LoadKeyboardLayoutW(L"00000409", KLF_NOTELLSHELL);
+        const auto de = LoadKeyboardLayoutW(L"00000407", KLF_NOTELLSHELL);
+        const auto restoreLayout = wil::scope_exit([&]() {
+            LOG_LAST_ERROR_IF_NULL(ActivateKeyboardLayout(originalLayout, 0));
+            for (const auto layout : { us, de })
+            {
+                if (layout && std::find(originalLayouts.begin(), originalLayouts.end(), layout) == originalLayouts.end())
+                {
+                    LOG_IF_WIN32_BOOL_FALSE(UnloadKeyboardLayout(layout));
+                }
+            }
+        });
+        if (!us || !de || MapVirtualKeyExW(21, MAPVK_VSC_TO_VK_EX, us) != 'Y' || MapVirtualKeyExW(21, MAPVK_VSC_TO_VK_EX, de) != 'Z')
+        {
+            Log::Result(TestResults::Skipped, L"US and German keyboard layouts are required.");
+            return;
+        }
+        VERIFY_IS_NOT_NULL(ActivateKeyboardLayout(us, 0));
+
+        auto parent = implementation::ActionMap::FromJson(VerifyParseSucceeded(R"!([
+            { "command": "copy", "id": "Test.Scan", "keys": "ctrl+sc(21)" },
+            { "command": "paste", "id": "Test.Virtual", "keys": "ctrl+y" },
+            { "command": "quakeMode", "id": "Test.Global", "keys": "win+sc(21)" },
+            { "command": "newTab", "id": "Test.Character", "keys": "ctrl+@" }
+        ])!"));
+        auto actionMap = implementation::ActionMap::FromJson(VerifyParseSucceeded(R"([
+            { "keys": "ctrl+z", "id": null }
+        ])"));
+        actionMap->AddLeastImportantParent(parent);
+        const auto parentJson = parent->KeyBindingsToJson();
+        const auto childJson = actionMap->KeyBindingsToJson();
+        const auto scanCommand = parent->GetActionByID(L"Test.Scan");
+        const auto virtualCommand = parent->GetActionByID(L"Test.Virtual");
+        const KeyChord ctrlY{ VirtualKeyModifiers::Control, 'Y', 0 };
+        const KeyChord ctrlZ{ VirtualKeyModifiers::Control, 'Z', 0 };
+
+        VERIFY_ARE_EQUAL(virtualCommand, actionMap->GetActionByKeyChord(ctrlY));
+        VERIFY_IS_NULL(actionMap->GetKeyBindingForAction(L"Test.Scan"), L"The later binding shadows the scan code on US.");
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(ctrlZ));
+        VERIFY_ARE_EQUAL('Y', actionMap->GlobalHotkeys().First().Current().Key().Vkey());
+        VERIFY_ARE_EQUAL(L"ctrl+shift+2", KeyChordSerialization::ToString(actionMap->GetKeyBindingForAction(L"Test.Character")));
+
+        // Copies must retain definitions hidden by collisions, not just the effective bindings.
+        auto copied = actionMap->Copy();
+        VERIFY_IS_NOT_NULL(ActivateKeyboardLayout(de, 0));
+        parent->RefreshKeyBindings();
+        actionMap->RefreshKeyBindings();
+        copied->RefreshKeyBindings();
+        VERIFY_ARE_EQUAL(scanCommand, parent->GetActionByKeyChord(ctrlZ));
+        VERIFY_ARE_EQUAL(virtualCommand, actionMap->GetActionByKeyChord(ctrlY));
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(ctrlZ), L"A child's unbinding still overrides a parent's scan code.");
+        VERIFY_IS_NULL(actionMap->GetKeyBindingForAction(L"Test.Scan"));
+        VERIFY_ARE_EQUAL('Z', actionMap->GlobalHotkeys().First().Current().Key().Vkey());
+        VERIFY_ARE_EQUAL(L"ctrl+alt+q", KeyChordSerialization::ToString(actionMap->GetKeyBindingForAction(L"Test.Character")));
+        VERIFY_ARE_EQUAL(L"ctrl+alt+q", KeyChordSerialization::ToString(copied->GetKeyBindingForAction(L"Test.Character")));
+        VERIFY_ARE_EQUAL(L"Test.Scan", copied->Parents().front()->GetActionByKeyChord(ctrlZ).ID());
+        VERIFY_IS_TRUE(parentJson == parent->KeyBindingsToJson());
+        VERIFY_IS_TRUE(childJson == actionMap->KeyBindingsToJson());
+
+        VERIFY_IS_NOT_NULL(ActivateKeyboardLayout(us, 0));
+        parent->RefreshKeyBindings();
+        actionMap->RefreshKeyBindings();
+        VERIFY_ARE_EQUAL(virtualCommand, parent->GetActionByKeyChord(ctrlY));
+        VERIFY_IS_NULL(parent->GetActionByKeyChord(ctrlZ));
+        VERIFY_ARE_EQUAL('Y', actionMap->GlobalHotkeys().First().Current().Key().Vkey());
+        VERIFY_ARE_EQUAL(L"ctrl+shift+2", KeyChordSerialization::ToString(actionMap->GetKeyBindingForAction(L"Test.Character")));
+    }
+
+    void KeyBindingsTests::EditPreservedKeyBindings()
+    {
+        auto actionMap = implementation::ActionMap::FromJson(VerifyParseSucceeded(R"!([
+            { "command": "copy", "id": "Test.Copy", "keys": "ctrl+vk(65)" },
+            { "command": "paste", "id": "Test.Paste", "keys": "ctrl+b" }
+        ])!"));
+        const KeyChord ctrlA{ VirtualKeyModifiers::Control, 'A', 0 };
+        const KeyChord ctrlB{ VirtualKeyModifiers::Control, 'B', 0 };
+        const KeyChord ctrlC{ VirtualKeyModifiers::Control, 'C', 0 };
+        VERIFY_ARE_EQUAL(L"Test.Copy", actionMap->GetActionByKeyChord(ctrlA).ID());
+        VERIFY_IS_TRUE(actionMap->RebindKeys(ctrlA, ctrlC));
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord(ctrlA));
+        VERIFY_ARE_EQUAL(L"Test.Copy", actionMap->GetActionByKeyChord(ctrlC).ID());
+        actionMap->DeleteKeyBinding(ctrlB);
+        VERIFY_IS_NULL(actionMap->GetActionByKeyChord(ctrlB));
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+
+        auto parent = implementation::ActionMap::FromJson(VerifyParseSucceeded(R"([
+            { "command": "paste", "id": "Test.ParentPaste", "keys": "ctrl+c" }
+        ])"));
+        actionMap->AddLeastImportantParent(parent);
+        actionMap->DeleteKeyBinding(ctrlC);
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(ctrlC));
+        actionMap->RefreshKeyBindings();
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(ctrlC));
+        VERIFY_IS_NULL(actionMap->GetKeyBindingForAction(L"Test.ParentPaste"));
+
+        const KeyChord scan{ VirtualKeyModifiers::Control, 0, 21 };
+        const KeyChord vkey{ VirtualKeyModifiers::Control, scan.Vkey(), 0 };
+        actionMap->AddKeyBinding(scan, L"Test.Copy");
+        VERIFY_IS_TRUE(actionMap->RebindKeys(scan, vkey), L"An equivalent virtual key may replace a scan-code definition.");
+        VERIFY_ARE_EQUAL(KeyChordSerialization::ToString(vkey), actionMap->_KeyMap.back().first);
     }
 }

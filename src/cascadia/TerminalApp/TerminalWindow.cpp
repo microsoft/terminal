@@ -215,6 +215,7 @@ namespace winrt::TerminalApp::implementation
         _root->Create();
 
         AppLogic::Current()->SettingsChanged({ get_weak(), &TerminalWindow::UpdateSettingsHandler });
+        AppLogic::Current()->KeyboardLayoutChanged({ get_weak(), &TerminalWindow::_KeyboardLayoutChanged });
 
         _RefreshThemeRoutine();
 
@@ -1171,6 +1172,11 @@ namespace winrt::TerminalApp::implementation
                                                const winrt::TerminalApp::SettingsLoadEventArgs& args)
     {
         UpdateSettings(args);
+    }
+
+    void TerminalWindow::_KeyboardLayoutChanged(const winrt::IInspectable& /*sender*/, const winrt::IInspectable& /*args*/)
+    {
+        _root->RefreshKeyBindings();
     }
 
     void TerminalWindow::IdentifyWindow()

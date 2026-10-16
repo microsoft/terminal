@@ -150,6 +150,7 @@ namespace winrt::TerminalApp::implementation
         STDMETHODIMP Initialize(HWND hwnd);
 
         void SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
+        void RefreshKeyBindings();
 
         void Create();
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();

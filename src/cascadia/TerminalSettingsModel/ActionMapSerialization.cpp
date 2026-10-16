@@ -62,6 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             // if there are keys, extract them first
             Control::KeyChord keys{ nullptr };
+            winrt::hstring keyText;
             if (withKeybindings && jsonBlock.isMember(JsonKey(KeysKey)))
             {
                 const auto keysJson{ jsonBlock[JsonKey(KeysKey)] };
@@ -72,6 +73,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 else
                 {
                     JsonUtils::GetValueForKey(jsonBlock, KeysKey, keys);
+                    if (keys)
+                    {
+                        keyText = winrt::to_hstring(keysJson.isArray() ? keysJson[0].asString() : keysJson.asString());
+                    }
                 }
             }
 
@@ -80,7 +85,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 auto command = Command::FromJson(jsonBlock, warnings, origin);
                 command->LogSettingChanges(_changeLog);
-                AddAction(*command, keys);
+                AddAction(*command, nullptr);
+                if (keys && !command->IsNestedCommand() && command->IterateOn() == ExpandCommandType::None)
+                {
+                    const auto id = command->ActionAndArgs().Action() == ShortcutAction::Invalid ? hstring{} : command->ID();
+                    _SetKeyBinding(keyText, id);
+                    _changeLog.emplace(KeysKey);
+                }
 
                 if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)) && origin == OriginTag::User &&
                     (!jsonBlock.isMember(JsonKey(IDKey)) || jsonBlock.isMember(JsonKey(KeysKey))))
@@ -101,7 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 JsonUtils::GetValueForKey(jsonBlock, IDKey, idJson);
 
                 // any existing keybinding with the same keychord in this layer will get overwritten
-                _KeyMap.insert_or_assign(keys, idJson);
+                _SetKeyBinding(keyText, idJson);
 
                 if (!_changeLog.contains(KeysKey.data()))
                 {

@@ -71,9 +71,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<ActionMap> Copy() const;
 
         // queries
-        Model::Command GetActionByKeyChord(const Control::KeyChord& keys) const;
+        Model::Command GetActionByKeyChord(const Control::KeyChord& keys);
         Model::Command GetActionByID(const winrt::hstring& cmdID) const;
-        bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
+        bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys);
         Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
         Windows::Foundation::Collections::IVector<Control::KeyChord> AllKeyBindingsForAction(const winrt::hstring& cmdID);
 
@@ -96,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DeleteUserCommand(const winrt::hstring& cmdID);
         void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
         void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
+        void RefreshKeyBindings();
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -107,9 +108,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Model::Command _GetActionByID(const winrt::hstring& actionID) const;
-        std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;
-        std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
+        std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys);
+        std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys);
 
+        void _SetKeyBinding(winrt::hstring keys, winrt::hstring cmdID);
         void _RefreshKeyBindingCaches();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
@@ -134,10 +136,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool _fixupsAppliedDuringLoad{ false };
 
-        // _KeyMap is the map of key chords -> action IDs defined in this layer
+        // Preserve the original key strings and their order: scan codes and character
+        // literals may collide on one keyboard layout but not another. Only the caches
+        // contain layout-dependent KeyChords, with later bindings winning collisions.
         // _ActionMap is the map of action IDs -> commands defined in this layer
         // These maps are the ones that we deserialize into when parsing the user json and vice-versa
-        std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> _KeyMap;
+        std::vector<std::pair<winrt::hstring, winrt::hstring>> _KeyMap;
         std::unordered_map<winrt::hstring, Model::Command> _ActionMap;
 
         // _CumulativeKeyMapCache is the map of key chords -> action IDs defined in all layers, with child layers overriding parent layers

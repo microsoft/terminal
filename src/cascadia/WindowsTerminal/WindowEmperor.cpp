@@ -572,6 +572,10 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             _setupSessionPersistence(args.NewSettings().GlobalSettings().ShouldUsePersistedLayout());
         }
     });
+    _app.Logic().KeyboardLayoutChanged([this](auto&&, auto&&) {
+        _assertIsMainThread();
+        _setupGlobalHotkeys();
+    });
 
     {
         const wil::unique_environstrings_ptr envMem{ GetEnvironmentStringsW() };

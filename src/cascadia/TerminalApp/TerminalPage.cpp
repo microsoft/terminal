@@ -301,6 +301,21 @@ namespace winrt::TerminalApp::implementation
         return _settings.WindowSettings(_WindowProperties.WindowName());
     }
 
+    void TerminalPage::RefreshKeyBindings()
+    {
+        assert(Dispatcher().HasThreadAccess());
+        const auto actionMap = _settings.ActionMap();
+        if (const auto palette = CommandPaletteElement())
+        {
+            palette.SetActionMap(actionMap);
+        }
+        for (const auto& tab : _tabs)
+        {
+            winrt::get_self<Tab>(tab)->SetActionMap(actionMap);
+        }
+        _CreateNewTabFlyout();
+    }
+
     bool TerminalPage::IsRunningElevated() const noexcept
     {
         // GH#2455 - Make sure to try/catch calls to Application::Current,

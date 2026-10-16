@@ -26,6 +26,17 @@ This spec describes a mechanism by which we could provide a common implementatio
 
 ## Details
 
+### Keyboard-layout changes
+
+`ActionMap` preserves the original binding strings in declaration order and resolves
+them into `KeyChord` lookup caches for the active keyboard layout. Later bindings
+override earlier bindings in the same layer, and child layers override their parents.
+Definitions that collide on one layout are retained because they may differ on another.
+
+Changing the input method refreshes these caches, global hotkeys, and shortcut labels.
+It does not reload settings from disk or reapply profiles to existing terminal panes,
+so runtime colors, font size, and opacity are preserved.
+
 When the UX frontend is created, it should instantiate a `IKeyBindings` object with the keybindings mapped as it would like.
 
 When it's creating its platform-dependent terminal component, it can pass the `IKeyBindings` object to that component. The component will then be able to pass that object to the terminal instance.

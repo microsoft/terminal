@@ -96,6 +96,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
         TEST_METHOD(TestClampSwitchToTab);
+        TEST_METHOD(RefreshKeyBindingsPreservesAppearance);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1287,6 +1288,36 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&]() {
             VERIFY_IS_FALSE(windowNameChanged,
                             L"The window name should not have changed, we should have rejected the change.");
+        });
+    }
+
+    void TabTests::RefreshKeyBindingsPreservesAppearance()
+    {
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&]() {
+            const auto control = page->_GetActiveControl();
+            VERIFY_IS_NOT_NULL(control);
+            const auto originalDimensions = control.CharacterDimensions();
+            control.AdjustFontSize(4);
+            control.AdjustOpacity(0.5f, false);
+            page->_HandleSetColorScheme(nullptr, ActionEventArgs{ SetColorSchemeArgs{ L"Vintage" } });
+            const auto dimensions = control.CharacterDimensions();
+            const auto background = control.BackgroundColor();
+            const auto opacity = control.BackgroundOpacity();
+            VERIFY_ARE_NOT_EQUAL(originalDimensions.Height, dimensions.Height);
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ background });
+            const auto settings = page->_settings;
+
+            settings.ActionMap().RefreshKeyBindings();
+            page->RefreshKeyBindings();
+
+            VERIFY_ARE_EQUAL(settings, page->_settings);
+            VERIFY_ARE_EQUAL(control, page->_GetActiveControl());
+            VERIFY_ARE_EQUAL(dimensions, control.CharacterDimensions());
+            VERIFY_ARE_EQUAL(background, control.BackgroundColor());
+            VERIFY_ARE_EQUAL(opacity, control.BackgroundOpacity());
         });
     }
 

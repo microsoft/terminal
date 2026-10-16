@@ -149,9 +149,14 @@ namespace winrt::TerminalApp::implementation
             });
 
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
-            // TODO: This is really bad, because we reset any current user customizations.
-            // See GH#11522.
-            ReloadSettingsThrottled();
+            // Let TSF finish activating the layout before resolving any key bindings.
+            THROW_HR_IF(E_FAIL, !DispatcherQueue::GetForCurrentThread().TryEnqueue([weakSelf = get_weak()]() {
+                if (const auto self = weakSelf.get(); self && self->_settings)
+                {
+                    self->_settings.ActionMap().RefreshKeyBindings();
+                    self->KeyboardLayoutChanged.raise(*self, nullptr);
+                }
+            }));
         });
 
         // Do this here, rather than at the top of main. This will prevent us from

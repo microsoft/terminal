@@ -5,6 +5,7 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
+#include "KeyChordSerialization.h"
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"
@@ -16,6 +17,20 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    static Control::KeyChord ResolveKeyChord(const winrt::hstring& text)
+    {
+        try
+        {
+            return KeyChordSerialization::FromString(text);
+        }
+        catch (const winrt::hresult_invalid_argument&)
+        {
+            // A character literal may not exist on the newly selected layout.
+            LOG_HR_MSG(E_INVALIDARG, "Key binding is unavailable on this keyboard layout: %ls", text.c_str());
+            return nullptr;
+        }
+    }
+
     static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
     {
         til::hasher hasher;
@@ -316,8 +331,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        std::unordered_map<KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality> keysToReassign;
-
         // now, look through our _ActionMap for commands that
         // - had an ID generated for them
         // - do not have a name/icon path
@@ -329,12 +342,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 const auto userActionHash = Hash(userCmdImpl->ActionAndArgs());
                 if (const auto inboxCmd = inboxActions.find(userActionHash); inboxCmd != inboxActions.end())
                 {
-                    for (const auto& [key, cmdID] : _KeyMap)
+                    for (auto& [key, cmdID] : _KeyMap)
                     {
                         // for any of our keys that point to the user action, point them to the inbox action instead
                         if (cmdID == pair.first)
                         {
-                            keysToReassign.insert_or_assign(key, inboxCmd->second.ID());
+                            cmdID = inboxCmd->second.ID();
                         }
                     }
 
@@ -344,11 +357,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return false;
         });
-
-        for (const auto [key, cmdID] : keysToReassign)
-        {
-            _KeyMap.insert_or_assign(key, cmdID);
-        }
     }
 
     bool ActionMap::FixupsAppliedDuringLoad() const
@@ -549,15 +557,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Child's pairs override parents' pairs
     void ActionMap::_PopulateCumulativeKeyMaps(std::unordered_map<Control::KeyChord, winrt::hstring, KeyChordHash, KeyChordEquality>& keyToActionMap, std::unordered_map<winrt::hstring, Control::KeyChord>& actionToKeyMap)
     {
-        for (const auto& [keys, cmdID] : _KeyMap)
+        for (auto it = _KeyMap.rbegin(); it != _KeyMap.rend(); ++it)
         {
-            if (!keyToActionMap.contains(keys))
+            const auto& [text, cmdID] = *it;
+            if (const auto keys = ResolveKeyChord(text); keys && keyToActionMap.emplace(keys, cmdID).second)
             {
-                keyToActionMap.emplace(keys, cmdID);
-            }
-            if (!actionToKeyMap.contains(cmdID))
-            {
-                actionToKeyMap.emplace(cmdID, keys);
+                actionToKeyMap.try_emplace(cmdID, keys);
             }
         }
 
@@ -649,6 +654,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _ResolvedKeyToActionMapCache = single_threaded_map(std::move(resolvedKeyToActionMap));
         _GlobalHotkeysCache = single_threaded_map(std::move(globalHotkeys));
         _AllCommandsCache = single_threaded_vector(std::move(allCommandsVector));
+    }
+
+    void ActionMap::RefreshKeyBindings()
+    {
+        _RefreshKeyBindingCaches();
+    }
+
+    void ActionMap::_SetKeyBinding(winrt::hstring keys, winrt::hstring cmdID)
+    {
+        std::erase_if(_KeyMap, [&](const auto& binding) {
+            return til::equals_insensitive_ascii(binding.first, keys);
+        });
+        _KeyMap.emplace_back(std::move(keys), std::move(cmdID));
+        _ResolvedKeyToActionMapCache = nullptr;
+        _GlobalHotkeysCache = nullptr;
     }
 
     com_ptr<ActionMap> ActionMap::Copy() const
@@ -811,7 +831,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // (empty id in the _KeyMap indicates the keychord was explicitly unbound)
         const auto action = cmd.ActionAndArgs().Action();
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
-        _KeyMap.insert_or_assign(keys, id);
+        _SetKeyBinding(KeyChordSerialization::ToString(keys), id);
         _changeLog.emplace(KeysKey);
     }
 
@@ -822,7 +842,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return value:
     // - true if the keychord is explicitly unbound
     // - false if either the keychord is bound, or not bound at all
-    bool ActionMap::IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const
+    bool ActionMap::IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys)
     {
         // We use the fact that the ..Internal call returns nullptr for explicitly unbound
         // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
@@ -837,7 +857,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - the command with the given key chord
     // - nullptr if the key chord doesn't exist
-    Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys) const
+    Model::Command ActionMap::GetActionByKeyChord(const Control::KeyChord& keys)
     {
         return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
@@ -856,21 +876,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command ID with the given key chord
     // - an empty string if the key chord is explicitly unbound
     // - nullopt if it is not bound
-    std::optional<winrt::hstring> ActionMap::_GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const
+    std::optional<winrt::hstring> ActionMap::_GetActionIdByKeyChordInternal(const Control::KeyChord& keys)
     {
-        if (const auto keyIDPair = _KeyMap.find(keys); keyIDPair != _KeyMap.end())
+        if (!_ResolvedKeyToActionMapCache)
         {
-            // the keychord is defined in this layer, return the ID
-            return keyIDPair->second;
+            _RefreshKeyBindingCaches();
         }
-
-        // search through our parents
-        for (const auto& parent : _parents)
+        if (const auto keyIDPair = _CumulativeKeyToActionMapCache.find(keys); keyIDPair != _CumulativeKeyToActionMapCache.end())
         {
-            if (const auto foundCmdID = parent->_GetActionIdByKeyChordInternal(keys))
-            {
-                return foundCmdID;
-            }
+            return keyIDPair->second;
         }
 
         // we did not find the keychord anywhere, it's not bound and not explicitly unbound either
@@ -886,7 +900,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command with the given key chord
     // - nullptr if the key chord is explicitly unbound
     // - nullopt if it is not bound
-    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const Control::KeyChord& keys) const
+    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const Control::KeyChord& keys)
     {
         if (const auto actionIDOptional = _GetActionIdByKeyChordInternal(keys))
         {
@@ -962,18 +976,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return false;
         }
 
-        if (auto oldKeyPair = _KeyMap.find(oldKeys); oldKeyPair != _KeyMap.end())
+        if (KeyChordSerialization::ToString(oldKeys) == KeyChordSerialization::ToString(newKeys))
         {
-            // oldKeys is bound in our layer, replace it with newKeys
-            _KeyMap.insert_or_assign(newKeys, cmd.ID());
-            _KeyMap.erase(oldKeyPair);
+            return true;
         }
-        else
-        {
-            // oldKeys is bound in some other layer, set newKeys to cmd in this layer, and oldKeys to unbound in this layer
-            _KeyMap.insert_or_assign(newKeys, cmd.ID());
-            _KeyMap.insert_or_assign(oldKeys, L"");
-        }
+
+        DeleteKeyBinding(oldKeys);
+        AddKeyBinding(newKeys, cmd.ID());
 
         return true;
     }
@@ -986,24 +995,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void ActionMap::DeleteKeyBinding(const KeyChord& keys)
     {
-        if (auto keyPair = _KeyMap.find(keys); keyPair != _KeyMap.end())
+        auto text = KeyChordSerialization::ToString(keys);
+        const auto keyPair = std::find_if(_KeyMap.rbegin(), _KeyMap.rend(), [&](const auto& binding) {
+            const auto resolved = ResolveKeyChord(binding.first);
+            return resolved && resolved.Equals(keys);
+        });
+        if (keyPair != _KeyMap.rend())
         {
-            // this keychord is bound in our layer, delete it
-            _KeyMap.erase(keyPair);
+            text = keyPair->first;
+            _KeyMap.erase(std::next(keyPair).base());
+            _ResolvedKeyToActionMapCache = nullptr;
+            _GlobalHotkeysCache = nullptr;
         }
 
-        // either the keychord was never in this layer or we just deleted it above,
-        // if GetActionByKeyChord still returns a command that means the keychord is bound in another layer
+        // A previous definition or an inherited binding may still bind this chord.
         if (GetActionByKeyChord(keys))
         {
-            // set to unbound in this layer
-            _KeyMap.emplace(keys, L"");
+            _SetKeyBinding(text, L"");
         }
     }
 
     void ActionMap::AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID)
     {
-        _KeyMap.insert_or_assign(keys, cmdID);
+        _SetKeyBinding(KeyChordSerialization::ToString(keys), cmdID);
         _changeLog.emplace(KeysKey);
         _RefreshKeyBindingCaches();
     }
@@ -1234,18 +1248,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _ActionMap.emplace(newID, cmd);
 
             // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
-            std::vector<KeyChord> keysToRemap;
-            for (const auto& [keys, cmdID] : _KeyMap)
+            for (auto& [keys, cmdID] : _KeyMap)
             {
                 if (cmdID == oldID)
                 {
-                    keysToRemap.push_back(keys);
+                    cmdID = newID;
                 }
-            }
-            for (const auto& keys : keysToRemap)
-            {
-                _KeyMap.erase(keys);
-                _KeyMap.emplace(keys, newID);
             }
         }
         _RefreshKeyBindingCaches();

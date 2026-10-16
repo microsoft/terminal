@@ -48,6 +48,7 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ContentManager ContentManager();
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
+        til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable> KeyboardLayoutChanged;
 
     private:
         bool _isElevated{ false };
@@ -64,7 +65,7 @@ namespace winrt::TerminalApp::implementation
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 
-        // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
+        // The file watcher invokes _reloadSettings and must be destroyed before it.
         // (C++ destroys members in reverse-declaration-order.)
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
         wil::unique_folder_change_reader_nothrow _reader;
