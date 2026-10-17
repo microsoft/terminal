@@ -77,6 +77,33 @@
                 </StackPanel>
             </local:SettingsCard>
 
+            <!--  Code Page  -->
+            <local:SettingsCard x:Name="CodePage"
+                                x:Uid="Profile_CodePage"
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <AutoSuggestBox x:Name="CodePageBox"
+                                    x:Uid="Profile_CodePageBox"
+                                    GotFocus="CodePageBox_GotFocus"
+                                    ItemsSource="{x:Bind Profile.FilteredCodePageList, Mode=OneWay}"
+                                    LostFocus="CodePageBox_LostFocus"
+                                    PlaceholderText="{x:Bind Profile.CodePageUnsetText, Mode=OneWay}"
+                                    QuerySubmitted="CodePageBox_QuerySubmitted"
+                                    Text="{x:Bind Profile.CodePageDisplayText, Mode=OneWay}"
+                                    TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                    TextChanged="CodePageBox_TextChanged"
+                                    UpdateTextOnSelect="False">
+                        <AutoSuggestBox.ItemTemplate>
+                            <DataTemplate x:DataType="local:EnumEntry">
+                                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+                            </DataTemplate>
+                        </AutoSuggestBox.ItemTemplate>
+                    </AutoSuggestBox>
+                    <local:SettingResetButton SettingName="CodePage"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
+
             <!--  History Size  -->
             <local:SettingsCard x:Name="HistorySize"
                                 x:Uid="Profile_HistorySize"

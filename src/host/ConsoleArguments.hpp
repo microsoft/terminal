@@ -53,6 +53,7 @@ public:
 
     short GetWidth() const;
     short GetHeight() const;
+    UINT GetCodePage() const noexcept;
     bool GetInheritCursor() const;
 
 #ifdef UNIT_TESTING
@@ -70,6 +71,7 @@ public:
     static const std::wstring_view FILEPATH_LEADER_PREFIX;
     static const std::wstring_view WIDTH_ARG;
     static const std::wstring_view HEIGHT_ARG;
+    static const std::wstring_view CODEPAGE_ARG;
     static const std::wstring_view INHERIT_CURSOR_ARG;
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
@@ -91,7 +93,8 @@ private:
                      const DWORD serverHandle,
                      const DWORD signalHandle,
                      const bool inheritCursor,
-                     const bool runAsComServer) :
+                     const bool runAsComServer,
+                     const UINT codePage = 0) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
@@ -105,7 +108,8 @@ private:
         _serverHandle(serverHandle),
         _signalHandle(signalHandle),
         _inheritCursor(inheritCursor),
-        _runAsComServer{ runAsComServer }
+        _runAsComServer{ runAsComServer },
+        _codePage{ codePage }
     {
     }
 #endif
@@ -127,6 +131,7 @@ private:
 
     short _width = 0;
     short _height = 0;
+    UINT _codePage = 0;
 
     bool _runAsComServer = false;
     bool _createServerHandle = true;
@@ -146,6 +151,9 @@ private:
     [[nodiscard]] static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                     _Inout_ size_t& index,
                                                     _Out_opt_ short* const pSetting);
+    [[nodiscard]] static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                                    _Inout_ size_t& index,
+                                                    _Out_opt_ UINT* const pSetting);
     [[nodiscard]] static HRESULT s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args,
                                                       _Inout_ size_t& index);
 
@@ -216,6 +224,7 @@ namespace WEX
                        expected.GetVtOutHandle() == actual.GetVtOutHandle() &&
                        expected.GetWidth() == actual.GetWidth() &&
                        expected.GetHeight() == actual.GetHeight() &&
+                       expected.GetCodePage() == actual.GetCodePage() &&
                        expected.GetForceV1() == actual.GetForceV1() &&
                        expected.IsHeadless() == actual.IsHeadless() &&
                        expected.ShouldCreateServerHandle() == actual.ShouldCreateServerHandle() &&
@@ -243,6 +252,7 @@ namespace WEX
                        !object.GetForceV1() &&
                        (object.GetWidth() == 0) &&
                        (object.GetHeight() == 0) &&
+                       (object.GetCodePage() == 0) &&
                        !object.IsHeadless() &&
                        !object.ShouldCreateServerHandle() &&
                        object.GetServerHandle() == 0 &&

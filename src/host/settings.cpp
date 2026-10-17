@@ -130,6 +130,7 @@ void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
 {
     const auto width = consoleArgs.GetWidth();
     const auto height = consoleArgs.GetHeight();
+    const auto codePage = consoleArgs.GetCodePage();
 
     if (width > 0 && height > 0)
     {
@@ -143,6 +144,11 @@ void Settings::ApplyCommandlineArguments(const ConsoleArguments& consoleArgs)
     {
         // If we're a PTY but we weren't explicitly told a size, use the window size as the buffer size.
         _dwScreenBufferSize = _dwWindowSize;
+    }
+
+    if (codePage != 0)
+    {
+        _uCodePage = codePage;
     }
 }
 
