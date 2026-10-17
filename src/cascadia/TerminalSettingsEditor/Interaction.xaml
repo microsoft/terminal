@@ -152,6 +152,18 @@
                       Style="{StaticResource ComboBoxSettingStyle}" />
         </local:SettingsCard>
 
+        <!--  Enable Tab Drag and Drop  -->
+        <local:SettingsCard x:Name="EnableTabDragDrop"
+                            x:Uid="Globals_EnableTabDragDrop"
+                            Description="{x:Bind ViewModel.TabDragDropDescription, Mode=OneWay}">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE7C2;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsEnabled="{x:Bind ViewModel.CanEnableTabDragDrop}"
+                          IsOn="{x:Bind ViewModel.EnableTabDragDrop, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
+
         <!--  Section: Mouse & scrolling  -->
         <local:SettingsExpander x:Uid="Interaction_Section_MouseScrolling"
                                 IsExpanded="True">
