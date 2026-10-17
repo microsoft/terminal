@@ -472,7 +472,8 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));
+            const auto tabIndex = realArgs.TabIndex() ? std::min(realArgs.TabIndex().Value(), _tabs.Size()) : static_cast<uint32_t>(-1);
+            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs(), tabIndex));
             args.Handled(true);
         }
     }
