@@ -312,6 +312,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
+        SafeDispatcherTimer _shiftTrackerTimer;
+        bool _leftShiftDown{ false };
+        bool _rightShiftDown{ false };
+        bool _dualShiftActive{ false };
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
@@ -400,6 +404,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _KeyHandler(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e, const bool keyDown);
         bool _KeyHandler(WORD vkey, WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, bool keyDown);
+        void _ShiftTrackerTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
+        void _CheckAndReleaseStuckShiftKeys(::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
         static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
