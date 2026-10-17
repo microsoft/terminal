@@ -19,6 +19,7 @@ colspan
 COMDLG
 commandlinetoargv
 COPYFROMRESOURCE
+CPINFOEXW
 cstdint
 CXICON
 CYICON

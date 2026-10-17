@@ -66,6 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         til::CoordType _rows = 120;
         til::CoordType _cols = 30;
+        uint32_t _codePage = 0;
         uint64_t _initialParentHwnd{ 0 };
         hstring _commandline{};
         hstring _startingDirectory{};
@@ -75,6 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
         bool _receivedFirstByte{ false };
+        bool _codePageFallbackWarningPending{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
         wil::unique_hfile _pipe;

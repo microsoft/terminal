@@ -1621,6 +1621,8 @@ namespace winrt::TerminalApp::implementation
                                                                             winrt::guid(),
                                                                             profile.Guid());
 
+            valueSet.Insert(L"codePage", Windows::Foundation::PropertyValue::CreateUInt32(settingsInternal->CodePage()));
+
             if (inheritCursor)
             {
                 valueSet.Insert(L"inheritCursor", Windows::Foundation::PropertyValue::CreateBoolean(true));

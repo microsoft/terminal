@@ -65,9 +65,6 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount() const noexcept
     const auto pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!gci.GetLineSelection());
 
-    SetConsoleCPInfo(TRUE);
-    SetConsoleCPInfo(FALSE);
-
     // Initialize input buffer.
     try
     {
