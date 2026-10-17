@@ -1336,6 +1336,96 @@ class CodepointWidthDetectorTests
         }
     }
 
+    TEST_METHOD(GraphemeExtendSpacingMarks)
+    {
+        struct Test
+        {
+            std::wstring_view text;
+            std::vector<int> advances;
+            std::vector<int> widths;
+        };
+
+        const std::array tests{
+            // Spacing marks with Grapheme_Extend=Y are zero-width just like non-spacing marks. Otherwise, a vowel sign
+            // and its canonical decomposition, which differ only in whether such a mark is spelled out, would measure
+            // differently. Each of the following pairs is canonically equivalent and must have the same width.
+            Test{ L"\u0B95\u0BCA", { 2 }, { 2 } },
+            Test{ L"\u0B95\u0BC6\u0BBE", { 3 }, { 2 } },
+            Test{ L"\u0B95\u0BCC", { 2 }, { 2 } },
+            Test{ L"\u0B95\u0BC6\u0BD7", { 3 }, { 2 } },
+            Test{ L"\u0B94", { 1 }, { 1 } },
+            Test{ L"\u0B92\u0BD7", { 2 }, { 1 } },
+            Test{ L"\u0995\u09CB", { 2 }, { 2 } },
+            Test{ L"\u0995\u09C7\u09BE", { 3 }, { 2 } },
+            Test{ L"\u0D15\u0D4A", { 2 }, { 2 } },
+            Test{ L"\u0D15\u0D46\u0D3E", { 3 }, { 2 } },
+            Test{ L"\u0C95\u0CCB", { 2 }, { 1 } },
+            Test{ L"\u0C95\u0CC6\u0CC2\u0CD5", { 4 }, { 1 } },
+            Test{ L"\u0D9A\u0DDC", { 2 }, { 2 } },
+            Test{ L"\u0D9A\u0DD9\u0DCF", { 3 }, { 2 } },
+            Test{ L"\u1B06", { 1 }, { 1 } },
+            Test{ L"\u1B05\u1B35", { 2 }, { 1 } },
+            Test{ L"\U0001D15E", { 2 }, { 1 } },
+            Test{ L"\U0001D157\U0001D165", { 4 }, { 1 } },
+            // Every other spacing mark keeps its width, and so do the half-width katakana sound marks (gc=Lm).
+            Test{ L"\u0B95\u0BBE", { 2 }, { 1 } },
+            Test{ L"\u0B95\u0BBF", { 2 }, { 2 } },
+            Test{ L"\u0915\u093F", { 2 }, { 2 } },
+            Test{ L"\u0E19\u0E49\u0E33", { 3 }, { 2 } },
+            Test{ L"\uFF76\uFF9E", { 2 }, { 2 } },
+            Test{ L"\u0BAA\u0BBE\u0B9F\u0BAE\u0BCD", { 2, 1, 2 }, { 1, 1, 1 } },
+            Test{ L"\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD", { 1, 2, 2 }, { 1, 2, 1 } },
+            // On their own they behave like a lone non-spacing mark.
+            Test{ L"\u0BBE", { 1 }, { 0 } },
+            Test{ L"\u0301", { 1 }, { 0 } },
+        };
+
+        CodepointWidthDetector cwd;
+        cwd.Reset(TextMeasurementMode::Graphemes);
+
+        std::vector<int> actualAdvances;
+        std::vector<int> actualWidths;
+
+        for (const auto& test : tests)
+        {
+            actualAdvances.clear();
+            actualWidths.clear();
+
+            for (GraphemeState state;;)
+            {
+                const auto ok = cwd.GraphemeNext(state, test.text);
+                actualAdvances.emplace_back(state.len);
+                actualWidths.emplace_back(state.width);
+                if (!ok)
+                {
+                    break;
+                }
+            }
+
+            VERIFY_ARE_EQUAL(test.advances, actualAdvances, test.text.data());
+            VERIFY_ARE_EQUAL(test.widths, actualWidths, test.text.data());
+
+            actualAdvances.clear();
+            actualWidths.clear();
+
+            for (GraphemeState state;;)
+            {
+                const auto ok = cwd.GraphemePrev(state, test.text);
+                actualAdvances.emplace_back(state.len);
+                actualWidths.emplace_back(state.width);
+                if (!ok)
+                {
+                    break;
+                }
+            }
+
+            std::reverse(actualAdvances.begin(), actualAdvances.end());
+            std::reverse(actualWidths.begin(), actualWidths.end());
+
+            VERIFY_ARE_EQUAL(test.advances, actualAdvances, test.text.data());
+            VERIFY_ARE_EQUAL(test.widths, actualWidths, test.text.data());
+        }
+    }
     TEST_METHOD(AmbiguousWidthPolicy)
     {
         const auto measureWidth = [](CodepointWidthDetector& cwd, const std::wstring_view text) {

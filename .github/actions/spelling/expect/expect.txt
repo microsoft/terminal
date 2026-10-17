@@ -1808,7 +1808,7 @@ VFT
 vga
 vgaoem
 viewkind
-VIRAMA
+virama
 VIRTTERM
 vkey
 VKKEYSCAN
