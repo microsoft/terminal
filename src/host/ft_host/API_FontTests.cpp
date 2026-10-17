@@ -169,39 +169,19 @@ void FontTests::TestFontScenario()
     cfiePost.cbSize = sizeof(cfiePost);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
 
-    // Ensure that the two values we attempted to set did accurately round-trip through the API.
-    // The other unspecified values may have been adjusted/updated by GDI.
-    if (0 != NoThrowString(cfieSet.FaceName).CompareNoCase(cfiePost.FaceName))
-    {
-        Log::Comment(L"We cannot test changing fonts on systems that do not have alternatives available. Skipping test.");
-        Log::Result(WEX::Logging::TestResults::Result::Skipped);
-        return;
-    }
-    VERIFY_ARE_EQUAL(cfieSet.dwFontSize.Y, cfiePost.dwFontSize.Y);
-
-    // Ensure that the entire structure we received matches what we expect to usually get for this Lucida Console Size 12 ask.
-    CONSOLE_FONT_INFOEX cfieFullExpected = { 0 };
-    cfieFullExpected.cbSize = sizeof(cfieFullExpected);
-    wcscpy_s(cfieFullExpected.FaceName, L"Lucida Console");
-
-    if (!OneCoreDelay::IsIsWindowPresent())
-    {
-        // On OneCore Windows without GDI, this is what we expect to get.
-        cfieFullExpected.dwFontSize.X = 8;
-        cfieFullExpected.dwFontSize.Y = 12;
-        cfieFullExpected.FontFamily = 4;
-        cfieFullExpected.FontWeight = 0;
-    }
-    else
-    {
-        // On client Windows with GDI, this is what we expect to get.
-        cfieFullExpected.dwFontSize.X = 7;
-        cfieFullExpected.dwFontSize.Y = 12;
-        cfieFullExpected.FontFamily = 54;
-        cfieFullExpected.FontWeight = 400;
-    }
-
+    VERIFY_IS_GREATER_THAN(cfiePost.dwFontSize.X, 0);
+    VERIFY_IS_GREATER_THAN(cfiePost.dwFontSize.Y, 0);
+    auto cfieFullExpected = cfieSet;
+    cfieFullExpected.dwFontSize = cfiePost.dwFontSize;
     VERIFY_ARE_EQUAL(cfieFullExpected, cfiePost);
+    VERIFY_ARE_EQUAL(cfiePost.dwFontSize, OneCoreDelay::GetConsoleFontSize(hConsoleOutput, cfiePost.nFont));
+
+    Log::Comment(L"3. Ensure that a fully specified cell size round-trips unchanged.");
+    cfieSet.dwFontSize = { 8, 12 };
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSet));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
+    VERIFY_ARE_EQUAL(cfieSet, cfiePost);
+    VERIFY_ARE_EQUAL(cfieSet.dwFontSize, OneCoreDelay::GetConsoleFontSize(hConsoleOutput, cfiePost.nFont));
 }
 
 void FontTests::TestLongFontNameScenario()

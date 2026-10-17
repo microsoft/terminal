@@ -68,8 +68,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection,
                              Windows::System::DispatcherQueue dispatcher) :
-        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _dispatcher{ dispatcher }
     {
         static const auto textMeasurementInit = [&]() {
@@ -948,6 +946,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _colorGlyphs = _settings.EnableColorGlyphs();
             _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
             _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
+            _desiredFont.SetFaceName(std::wstring{ std::wstring_view{ _settings.FontFace() } });
+            _desiredFont.SetWeight(_settings.FontWeight().Weight);
+            _desiredFont.SetCodePage(CP_UTF8);
+            _desiredFont.SetCellWidth(_cellWidth);
+            _desiredFont.SetCellHeight(_cellHeight);
+            _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
+            _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
             _runtimeOpacity = std::nullopt;
             _runtimeFocusedOpacity = std::nullopt;
 
@@ -1128,8 +1133,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto newDpi = static_cast<int>(lrint(_compositionScale * USER_DEFAULT_SCREEN_DPI));
 
-        _terminal->SetFontInfo(_actualFont);
-
         if (_renderEngine)
         {
             static constexpr auto cloneMap = [](const auto& map) {
@@ -1155,11 +1158,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
         }
+
+        _terminal->SetFontInfo(_actualFont);
     }
 
     void ControlCore::_raiseFontSizeChanged()
     {
-        const auto actualNewSize = _actualFont.GetSize();
+        const auto actualNewSize = _actualFont.GetCellSizeInPhysicalPx();
         FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
@@ -1171,20 +1176,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Returns true if you need to call _refreshSizeUnderLock().
     bool ControlCore::_setFontSizeUnderLock(float fontSize)
     {
-        // Make sure we have a non-zero font size
+        const auto before = _actualFont.GetCellSizeInPhysicalPx();
+
         const auto newSize = std::max(fontSize, 1.0f);
-        const auto fontFace = _settings.FontFace();
-        const auto fontWeight = _settings.FontWeight();
-        _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
-        _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
 
-        _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
-        _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
-        _desiredFont.SetCellSize(_cellWidth, _cellHeight);
+        _desiredFont.SetFontSizeInPt(newSize);
 
-        const auto before = _actualFont.GetSize();
         _updateFont();
-        const auto after = _actualFont.GetSize();
+        const auto after = _actualFont.GetCellSizeInPhysicalPx();
         return before != after;
     }
 
@@ -1247,7 +1246,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Don't resize below the visible minimum. A 1-cell viewport can hang
         // TextBuffer::Reflow on a wide glyph (GH#19996). The buffer also
         // doesn't like being size 0.
-        const auto cell = _actualFont.GetSize();
+        const auto cell = _actualFont.GetCellSizeInPhysicalPx();
         cx = std::max(cx, cell.width * MINIMUM_VISIBLE_CELLS);
         cy = std::max(cy, cell.height * MINIMUM_VISIBLE_CELLS);
 
@@ -1525,7 +1524,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
     {
-        const auto fontSize = _actualFont.GetSize();
+        const auto fontSize = _actualFont.GetCellSizeInPhysicalPx();
         return {
             static_cast<float>(fontSize.width),
             static_cast<float>(fontSize.height)
@@ -1539,7 +1538,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
-        const auto fontSize = _actualFont.GetSize();
+        const auto fontSize = _actualFont.GetCellSizeInPhysicalPx();
         const auto scale = 1.0f / _compositionScale;
         return {
             fontSize.width * scale,
