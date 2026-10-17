@@ -193,6 +193,31 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
     using EnumMapper::TypeDescription;
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MicaStyle)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "mica", ValueType::Mica },
+        pair_type{ "micaAlt", ValueType::MicaAlt },
+    };
+
+    // Override mapping parser to add boolean parsing (useMica used to be a bool)
+    ::winrt::Microsoft::Terminal::Settings::Model::MicaStyle FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Mica : ValueType::None;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+    using EnumMapper::TypeDescription;
+};
+
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
 // value type (unsigned int) and return type (FontWeight struct). JSON_ENUM_MAPPER
 // expects that the value type _is_ the return type.
