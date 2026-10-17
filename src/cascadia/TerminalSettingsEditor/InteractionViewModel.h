@@ -35,6 +35,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, EnableColorSelection);
 
+        bool EnableTabDragDrop() const;
+        void EnableTabDragDrop(bool value);
+        bool CanEnableTabDragDrop() const noexcept;
+        winrt::hstring TabDragDropDescription() const;
+
     private:
         Model::GlobalAppSettings _GlobalSettings;
         Model::WindowSettings _WindowSettings;

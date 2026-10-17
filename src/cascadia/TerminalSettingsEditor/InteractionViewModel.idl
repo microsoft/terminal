@@ -33,5 +33,9 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableColorSelection);
+
+        Boolean EnableTabDragDrop;
+        Boolean CanEnableTabDragDrop { get; };
+        String TabDragDropDescription { get; };
     }
 }
