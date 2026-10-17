@@ -1,0 +1,90 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="TerminalApp.OverviewPane"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:TerminalApp"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             AllowFocusOnInteraction="True"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             IsTabStop="True"
+             KeyDown="_OnKeyDown"
+             PreviewKeyDown="_OnPreviewKeyDown"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <Storyboard x:Key="BackgroundFadeIn">
+                <DoubleAnimation Storyboard.TargetName="BackgroundOverlay"
+                                 Storyboard.TargetProperty="Opacity"
+                                 From="0.0"
+                                 To="1.0"
+                                 Duration="0:0:0.2">
+                    <DoubleAnimation.EasingFunction>
+                        <QuadraticEase EasingMode="EaseOut" />
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+
+            <Storyboard x:Key="BackgroundFadeOut">
+                <DoubleAnimation Storyboard.TargetName="BackgroundOverlay"
+                                 Storyboard.TargetProperty="Opacity"
+                                 From="1.0"
+                                 To="0.0"
+                                 Duration="0:0:0.15">
+                    <DoubleAnimation.EasingFunction>
+                        <QuadraticEase EasingMode="EaseIn" />
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid x:Name="RootGrid"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+
+        <!--  Semi-transparent dark overlay  -->
+        <Border x:Name="BackgroundOverlay"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Background="{ThemeResource SmokeFillColorDefaultBrush}" />
+
+        <!--  Zoom-animated wrapper around the scrollable content  -->
+        <Grid x:Name="ContentWrapper"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <CompositeTransform x:Name="ContentTransform" />
+            </Grid.RenderTransform>
+
+            <ScrollViewer x:Name="PreviewScrollViewer"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+
+                <!--  WrapGrid-style layout using ItemsControl with WrapGrid panel  -->
+                <ItemsControl x:Name="PreviewGrid"
+                              Margin="12"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <!--  ItemWidth, ItemHeight, and MaximumRowsOrColumns are owned by  -->
+                            <!--  OverviewPane.cpp (_ComputeAdaptiveLayout / _ApplyAdaptiveLayout) —  -->
+                            <!--  they are reassigned on every UpdateTabContent and on every resize.  -->
+                            <WrapGrid HorizontalChildrenAlignment="Center"
+                                      Orientation="Horizontal"
+                                      VerticalChildrenAlignment="Center" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

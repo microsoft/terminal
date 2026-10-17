@@ -466,6 +466,9 @@
     <value>Toggle focus mode</value>
     <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
   </data>
+  <data name="ToggleOverviewCommandKey" xml:space="preserve">
+    <value>Toggle overview mode</value>
+  </data>
   <data name="EnableFocusModeCommandKey" xml:space="preserve">
     <value>Enable focus mode</value>
   </data>

@@ -604,6 +604,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleOverview(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        ToggleOverview();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleSetFocusMode(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
