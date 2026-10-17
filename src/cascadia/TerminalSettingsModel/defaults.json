@@ -625,6 +625,7 @@
         { "command": { "action": "movePane", "index": 8 }, "id": "Terminal.MovePaneToTab8" },
         { "command": { "action": "movePane", "window": "new" }, "id": "Terminal.MovePaneToNewWindow" },
         { "command": "restartConnection", "id": "Terminal.RestartConnection" },
+        { "command": "resetTerminalState", "id": "Terminal.ResetTerminalState" },
         { "command": { "action": "splitPane", "type": "snippets" }, "id": "Terminal.OpenSnippetsPane", "name": { "key": "SnippetsPaneCommandName" } },
 
         // Clipboard Integration

@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::RenameTab, USES_RESOURCE(L"ResetTabNameCommandKey") },
                 { ShortcutAction::RenameWindow, USES_RESOURCE(L"ResetWindowNameCommandKey") },
                 { ShortcutAction::ResetFontSize, USES_RESOURCE(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::ResetTerminalState, USES_RESOURCE(L"ResetTerminalStateCommandKey") },
                 { ShortcutAction::RestartConnection, USES_RESOURCE(L"RestartConnectionKey") },
                 { ShortcutAction::ResizePane, USES_RESOURCE(L"ResizePaneCommandKey") },
                 { ShortcutAction::RestoreLastClosed, USES_RESOURCE(L"RestoreLastClosedCommandKey") },
