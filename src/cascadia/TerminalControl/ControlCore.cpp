@@ -242,18 +242,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             });
 
         // Scrollbar updates are also expensive (XAML), so we'll throttle them as well.
-        shared->updateScrollBar = std::make_shared<ThrottledFunc<Control::ScrollPositionChangedArgs>>(
+        // The callback runs on _dispatcher (the UI thread), so handlers may update XAML directly.
+        shared->updateScrollBar = std::make_shared<ThrottledFunc<int, int, int>>(
             _dispatcher,
             til::throttled_func_options{
                 .delay = std::chrono::milliseconds{ 8 },
                 .trailing = true,
             },
-            [weakThis = get_weak()](const auto& update) {
+            [weakThis = get_weak()](const int viewTop, const int viewHeight, const int bufferSize) {
                 if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
                     // GH#20219: re-evaluate if we're hovering over a hyperlink after scrolling
                     core->_refreshHoveredCell();
-                    core->ScrollPositionChanged.raise(*core, update);
+                    core->ScrollPositionChanged.raise(*core, winrt::make<ScrollPositionChangedArgs>(viewTop, viewHeight, bufferSize));
                 }
             });
     }
@@ -758,6 +759,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             const auto lock = _terminal->LockForWriting();
             _terminal->UserScrollViewport(viewTop);
+
+            // Terminal::UserScrollViewport doesn't notify us, so update the scrollbar here.
+            // Do it under the lock, like output does, so that the newest position wins.
+            const auto visible = _terminal->GetViewport();
+            _terminalScrollPositionChanged(visible.Top(), visible.Height(), _terminal->GetBufferHeight());
         }
 
         // GH#20219: re-evaluate if we're hovering over a hyperlink after scrolling
@@ -1678,21 +1684,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // Start the throttled update of our scrollbar.
-        auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
-                                                            viewHeight,
-                                                            bufferSize) };
-
         if (_inUnitTests) [[unlikely]]
         {
-            ScrollPositionChanged.raise(*this, update);
+            ScrollPositionChanged.raise(*this, winrt::make<ScrollPositionChangedArgs>(viewTop, viewHeight, bufferSize));
         }
         else
         {
+            // This runs for every line of output: queue plain values, not event args.
             const auto shared = _shared.lock_shared();
             if (shared->updateScrollBar)
             {
-                shared->updateScrollBar->Run(update);
+                shared->updateScrollBar->Run(viewTop, viewHeight, bufferSize);
             }
         }
     }
@@ -2721,27 +2723,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
-        const auto viewHeight = ViewportSize().Height;
-        const auto bufferSize = BufferHeight();
-
-        // UserScrollViewport, to update the Terminal about where the viewport should be
-        // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
+        // UserScrollViewport also updates the scrollbar.
         if (tgt.has_value())
         {
             UserScrollViewport(tgt->start.y);
-            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
         }
         else
         {
             if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
             {
                 UserScrollViewport(BufferHeight());
-                _terminalScrollPositionChanged(BufferHeight(), viewHeight, bufferSize);
             }
             else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
             {
                 UserScrollViewport(0);
-                _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
         }
     }

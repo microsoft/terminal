@@ -513,8 +513,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto currentOffset = _core->ScrollOffset();
                 const auto newValue = numRows + currentOffset;
 
-                // Update the Core's viewport position, and raise a
-                // ScrollPositionChanged event to update the scrollbar
+                // Update the Core's viewport position, which also
+                // updates the scrollbar
                 UpdateScrollbar(newValue);
 
                 // Use this point as our new scroll anchor.
@@ -690,8 +690,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewportSize().Height : _rowsToScroll };
         const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
-        // Update the Core's viewport position, and raise a
-        // ScrollPositionChanged event to update the scrollbar
+        // Update the Core's viewport position, which also
+        // updates the scrollbar
         UpdateScrollbar(newValue);
 
         if (isLeftButtonPressed)
@@ -705,15 +705,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Update the scroll position in such a way that should update the
     //   scrollbar. For example, when scrolling the buffer with the mouse or
-    //   touch input. This will both update the Core's Terminal's buffer
-    //   location, then also raise our own ScrollPositionChanged event.
-    //   UserScrollViewport _won't_ raise the core's ScrollPositionChanged
-    //   event, because it's assumed that's already being called from a context
-    //   that knows about the change to the scrollbar. So we need to raise the
-    //   event on our own.
-    // - The hosting control should make sure to listen to our own
-    //   ScrollPositionChanged event and use that as an opportunity to update
-    //   the location of the scrollbar.
+    //   touch input. This scrolls the Core, which updates the scrollbar through
+    //   its throttled ScrollPositionChanged event.
+    // - May be called off the UI thread (auto-scroll runs on a render timer).
     // Arguments:
     // - newValue: The new top of the viewport
     // Return Value:
@@ -726,18 +720,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _internalScrollbarPosition = std::clamp(newValue, 0.0f, static_cast<float>(_core->BufferHeight()));
 
         // If the new scrollbar position, rounded to an int, is at a different
-        // row, then actually update the scroll position in the core, and raise
-        // a ScrollPositionChanged to inform the control.
+        // row, then actually update the scroll position in the core.
         const auto viewTop = std::lround(_internalScrollbarPosition);
         if (viewTop != _core->ScrollOffset())
         {
             _core->UserScrollViewport(viewTop);
-
-            // _core->ScrollOffset() is now set to newValue
-            ScrollPositionChanged.raise(*this,
-                                        winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                               _core->ViewportSize().Height,
-                                                                               _core->BufferHeight()));
         }
     }
 

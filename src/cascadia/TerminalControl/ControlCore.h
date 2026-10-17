@@ -313,7 +313,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             std::unique_ptr<til::throttled_func<>> outputIdle;
             std::unique_ptr<til::throttled_func<bool>> focusChanged;
-            std::shared_ptr<ThrottledFunc<Control::ScrollPositionChangedArgs>> updateScrollBar;
+            // viewTop, viewHeight, bufferSize
+            std::shared_ptr<ThrottledFunc<int, int, int>> updateScrollBar;
         };
 
         void _setupDispatcherAndCallbacks();

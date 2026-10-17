@@ -305,8 +305,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
-
         bool _isInternalScrollBarUpdate;
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
@@ -424,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
 
         winrt::Windows::Foundation::Point _toPosInDips(const Core::Point terminalCellPos);
-        void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+        void _applyScrollBarUpdate(const ScrollBarUpdate& update);
 
         void _pasteTextWithBroadcast(const winrt::hstring& text);
 
@@ -475,7 +473,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
 
             til::event_revoker interactivityOpenHyperlink;
-            til::event_revoker interactivityScrollPositionChanged;
             til::event_revoker PasteFromClipboard;
             til::event_revoker ContextMenuRequested;
         } _revokers{};
