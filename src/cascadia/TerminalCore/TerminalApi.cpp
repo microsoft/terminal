@@ -103,7 +103,7 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
 CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
 {
     _assertLocked();
-    return _defaultCursorShape;
+    return _defaultCursorShape.value_or(CursorType::Legacy);
 }
 
 bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height)
