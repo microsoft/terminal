@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     template<typename T>
     struct IInheritable
     {
-	    public:
+    public:
         // Method Description:
         // - Create a new instance of T, but set its parent to this instance
         // Arguments:
