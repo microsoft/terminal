@@ -2731,6 +2731,11 @@
           "description": "When set to true, the tabs are moved into the titlebar and the titlebar disappears. When set to false, the titlebar sits above the tabs.",
           "type": "boolean"
         },
+        "showPaneTitlebar": {
+          "default": false,
+          "description": "Displays a titlebar above each terminal pane. Double-click a pane title to rename it.",
+          "type": "boolean"
+        },
         "showTerminalTitleInTitlebar": {
           "default": true,
           "description": "When set to true, titlebar displays the title of the selected tab. When set to false, titlebar displays \"Windows Terminal\".",

@@ -339,6 +339,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.CanDragTabs(canDragDrop);
         _tabView.TabDragStarting({ get_weak(), &TerminalPage::_TabDragStarted });
         _tabView.TabDragCompleted({ get_weak(), &TerminalPage::_TabDragCompleted });
+        _InitializePaneDocking();
 
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
@@ -2105,6 +2106,30 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
+        const auto item = hostingTab.TabViewItem();
+        item.AllowDrop(true);
+        item.DragOver([weakTab, weakThis](auto&&, const DragEventArgs& args) {
+            const auto page = weakThis.get();
+            const auto tab = weakTab.get();
+            if (page && tab && page->_IsPaneDrag(args) && tab != page->_stashed.draggedTab &&
+                tab != page->_dockHoverTab.get())
+            {
+                page->_dockHoverTab = tab->get_weak();
+                page->_dockHoverTimer.Stop();
+                page->_dockHoverTimer.Start();
+            }
+        });
+        item.DragLeave([weakTab, weakThis](auto&& sender, const DragEventArgs& args) {
+            const auto page = weakThis.get();
+            const auto tab = weakTab.get();
+            const auto header = sender.template as<FrameworkElement>();
+            if (page && tab && tab == page->_dockHoverTab.get() &&
+                !PaneDockingOverlay::Contains({ 0, 0, static_cast<float>(header.ActualWidth()), static_cast<float>(header.ActualHeight()) }, args.GetPosition(header)))
+            {
+                page->_dockHoverTimer.Stop();
+                page->_dockHoverTab = {};
+            }
+        });
         // PropertyChanged is the generic mechanism by which the Tab
         // communicates changes to any of its observable properties, including
         // the Title
@@ -2120,7 +2145,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else if (propertyName == L"Content")
                 {
-                    if (*tab == page->_GetFocusedTab())
+                    if (!page->_dockCommitting && *tab == page->_GetFocusedTab())
                     {
                         const auto children = page->_tabContent.Children();
 
@@ -3805,7 +3830,7 @@ namespace winrt::TerminalApp::implementation
             // serialize the actual profile's GUID along with the content guid.
             const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
-            auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
+            auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control, _currentWindowSettings().ShowPaneTitlebar()) };
             return std::make_shared<Pane>(paneContent);
         }
 
@@ -3875,7 +3900,7 @@ namespace winrt::TerminalApp::implementation
             control.RestoreFromPath(path);
         }
 
-        auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
+        auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control, _currentWindowSettings().ShowPaneTitlebar()) };
 
         auto resultPane = std::make_shared<Pane>(paneContent);
 
@@ -3883,7 +3908,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto newControl = _CreateNewControlAndContent(controlSettings, debugConnection);
             // Split (auto) with the debug tap.
-            auto debugContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, newControl) };
+            auto debugContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, newControl, _currentWindowSettings().ShowPaneTitlebar()) };
             auto debugPane = std::make_shared<Pane>(debugContent);
 
             // Since we're doing this split directly on the pane (instead of going through Tab,
@@ -5939,9 +5964,195 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_InitializePaneDocking()
+    {
+        _paneDockingOverlay = std::make_unique<PaneDockingOverlay>();
+        const auto overlay = _paneDockingOverlay->Root();
+        Grid::SetRow(overlay, 2);
+        Root().Children().InsertAt(3, overlay);
+        _tabContent.AllowDrop(true);
+        _tabContent.DragOver({ get_weak(), &TerminalPage::_DockDragOver });
+        overlay.DragOver({ get_weak(), &TerminalPage::_DockDragOver });
+        overlay.Drop({ get_weak(), &TerminalPage::_DockDrop });
+        overlay.DragLeave([weakThis = get_weak()](auto&&, auto&& args) {
+            if (const auto page = weakThis.get())
+            {
+                const auto root = page->_paneDockingOverlay->Root();
+                if (!PaneDockingOverlay::Contains({ 0, 0, static_cast<float>(root.ActualWidth()), static_cast<float>(root.ActualHeight()) }, args.GetPosition(root)))
+                {
+                    page->_paneDockingOverlay->ClearPreview();
+                }
+            }
+        });
+        _dockHoverTimer = DispatcherTimer{};
+        _dockHoverTimer.Interval(400ms);
+        _dockHoverTimer.Tick([weakThis = get_weak()](const IInspectable& sender, const IInspectable&) {
+            sender.as<DispatcherTimer>().Stop();
+            if (const auto page = weakThis.get(); page && !page->_paneDragToken.empty())
+            {
+                page->_PreviewDockTab(page->_dockHoverTab.get());
+            }
+        });
+    }
+
+    bool TerminalPage::_IsPaneDrag(const DragEventArgs& args) const
+    {
+        const auto source = _stashed.draggedTab;
+        uint32_t index{};
+        const auto token = args.DataView().Properties().TryLookup(L"WindowsTerminal.PaneDrag");
+        return !_paneDragToken.empty() && source && source->GetRootPane() && !source->IsZoomed() &&
+               _tabs.IndexOf(*source, index) &&
+               winrt::unbox_value_or<winrt::hstring>(token, L"") == _paneDragToken;
+    }
+
+    void TerminalPage::_PreviewDockTab(const winrt::com_ptr<Tab>& tab)
+    {
+        const auto source = _stashed.draggedTab;
+        uint32_t index{};
+        if (!tab || !source || !source->GetRootPane() || source->IsZoomed() || tab == source ||
+            tab == _dockDestination.get() || tab->IsZoomed() || !tab->GetRootPane() || !_tabs.IndexOf(*tab, index))
+        {
+            return;
+        }
+        _dockDestination = tab->get_weak();
+        for (const auto& existing : _tabs)
+        {
+            existing.Focus(FocusState::Unfocused);
+        }
+        _tabContent.Children().Clear();
+        _tabContent.Children().Append(tab->Content());
+        _tabContent.UpdateLayout();
+        _paneDockingOverlay->Show(tab->GetRootPane(), source->GetRootPane());
+    }
+
+    void TerminalPage::_DockDragOver(const IInspectable&, const DragEventArgs& args)
+    {
+        if (!_IsPaneDrag(args))
+        {
+            return;
+        }
+        if (!_dockDestination.get())
+        {
+            uint32_t index{};
+            if (_tabs.IndexOf(*_stashed.draggedTab, index))
+            {
+                for (uint32_t offset = 1; offset < _tabs.Size(); ++offset)
+                {
+                    const auto candidate = (index + _tabs.Size() - offset) % _tabs.Size();
+                    if (const auto tab = _GetTabImpl(_tabs.GetAt(candidate)); tab && !tab->IsZoomed())
+                    {
+                        _PreviewDockTab(tab);
+                        break;
+                    }
+                }
+            }
+        }
+        const auto destination = _dockDestination.get();
+        uint32_t index{};
+        if (!destination || destination->IsZoomed() || !_tabs.IndexOf(*destination, index))
+        {
+            _paneDockingOverlay->Hide();
+            args.AcceptedOperation(DataPackageOperation::None);
+            args.Handled(true);
+            return;
+        }
+        _paneDockingOverlay->Show(destination->GetRootPane(), _stashed.draggedTab->GetRootPane());
+        const auto hit = _paneDockingOverlay->DragOver(args.GetPosition(_paneDockingOverlay->Root()));
+        args.AcceptedOperation(hit ? DataPackageOperation::Move : DataPackageOperation::None);
+        args.DragUIOverride().IsContentVisible(false);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_DockDrop(const IInspectable&, const DragEventArgs& args)
+    {
+        if (!_IsPaneDrag(args))
+        {
+            return;
+        }
+        args.AcceptedOperation(DataPackageOperation::None);
+        args.Handled(true);
+        const auto source = _stashed.draggedTab;
+        const auto destination = _dockDestination.get();
+        const auto hit = _paneDockingOverlay->DragOver(args.GetPosition(_paneDockingOverlay->Root()));
+        uint32_t index{};
+        if (!destination || destination->IsZoomed() || !_tabs.IndexOf(*destination, index) || !hit ||
+            !destination->GetRootPane()->Contains(hit->pane))
+        {
+            return;
+        }
+        const auto layout = hit->pane->CalculateDockLayout(source->GetRootPane(), hit->direction);
+        if (!layout)
+        {
+            return;
+        }
+        _dockHoverTimer.Stop();
+        _dockCommitting = true;
+        _dockConsumed = true;
+        auto cleanup = wil::scope_exit([&] {
+            _dockCommitting = false;
+            _rearranging = false;
+            _rearrangeFrom.reset();
+            _rearrangeTo.reset();
+            _paneDockingOverlay->Hide();
+        });
+        std::shared_ptr<Pane> incoming;
+        try
+        {
+            // DetachRoot revokes the source tab's subscriptions and removes
+            // its empty tab without shutting down the detached connections.
+            incoming = source->DetachRoot();
+            destination->DockPane(incoming, hit->pane, hit->direction, *layout);
+            _tabView.SelectedItem(destination->TabViewItem());
+            _UpdatedSelectedTab(*destination);
+            args.AcceptedOperation(DataPackageOperation::Move);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // Keep the sessions reachable if adoption failed before the
+            // incoming tree became part of the destination.
+            if (incoming && !destination->GetRootPane()->Contains(incoming))
+            {
+                incoming->WalkTree([](const auto& pane) { pane->Detached.raise(pane); });
+                _CreateNewTabFromPane(incoming);
+            }
+        }
+    }
+
+    void TerminalPage::_EndPaneDrag(const bool reordered)
+    {
+        if (_dockHoverTimer)
+        {
+            _dockHoverTimer.Stop();
+        }
+        if (_paneDockingOverlay)
+        {
+            _paneDockingOverlay->Hide();
+        }
+        uint32_t index{};
+        if (!_dockConsumed && !reordered && _preDragSelection && _tabs.IndexOf(_preDragSelection, index))
+        {
+            _tabView.SelectedItem(_preDragSelection.TabViewItem());
+        }
+        if (!_dockConsumed)
+        {
+            if (const auto selected = _GetTabByTabViewItem(_tabView.SelectedItem()); selected && selected.Content())
+            {
+                _UpdatedSelectedTab(selected);
+            }
+        }
+        _paneDragToken = {};
+        _dockDestination = {};
+        _dockHoverTab = {};
+        _preDragSelection = nullptr;
+    }
+
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
+        _EndPaneDrag(false);
+        _dockConsumed = false;
+        _preDragSelection = _GetFocusedTab();
         // Get the tab impl from this event.
         const auto eventTab = e.Tab();
         const auto tabBase = _GetTabByTabViewItem(eventTab);
@@ -5952,6 +6163,11 @@ namespace winrt::TerminalApp::implementation
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;
+            if (!tabImpl->IsZoomed() && _tabs.Size() > 1)
+            {
+                _paneDragToken = winrt::hstring{ ::Microsoft::Console::Utils::GuidToString(::Microsoft::Console::Utils::CreateGuid()) };
+                e.Data().Properties().Insert(L"WindowsTerminal.PaneDrag", winrt::box_value(_paneDragToken));
+            }
 
             // Stash the offset from where we started the drag to the
             // tab's origin. We'll use that offset in the future to help
@@ -6092,6 +6308,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
                                             winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs /*e*/)
     {
+        if (_dockConsumed)
+        {
+            return;
+        }
+        // Releasing over the compass background cancels docking, rather than
+        // invoking the tab strip's usual tear-out-to-new-window behavior.
+        POINT cursor{};
+        if (_hostingHwnd && GetCursorPos(&cursor) && ScreenToClient(*_hostingHwnd, &cursor))
+        {
+            const auto scale = static_cast<float>(XamlRoot().RasterizationScale());
+            const auto bounds = _tabContent.TransformToVisual(*this).TransformBounds(
+                { 0, 0, static_cast<float>(_tabContent.ActualWidth()), static_cast<float>(_tabContent.ActualHeight()) });
+            if (PaneDockingOverlay::Contains(bounds, { cursor.x / scale, cursor.y / scale }))
+            {
+                return;
+            }
+        }
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
 

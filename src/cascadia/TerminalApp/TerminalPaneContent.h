@@ -35,7 +35,8 @@ namespace winrt::TerminalApp::implementation
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                             const std::shared_ptr<TerminalSettingsCache>& cache,
-                            const winrt::Microsoft::Terminal::Control::TermControl& control);
+                            const winrt::Microsoft::Terminal::Control::TermControl& control,
+                            bool showPaneTitlebar = false);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Microsoft::Terminal::Control::TermControl GetTermControl();
@@ -71,6 +72,16 @@ namespace winrt::TerminalApp::implementation
         // See BasicPaneEvents for most generic event definitions
 
     private:
+        static constexpr float PaneTitlebarHeight = 25.0f;
+        winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        winrt::Windows::UI::Xaml::Controls::Border _titlebar{ nullptr };
+        winrt::Windows::UI::Xaml::Controls::TextBlock _title{ nullptr };
+        winrt::hstring _paneTitleOverride;
+        bool _showPaneTitlebar{ false };
+        void _initializePaneTitlebar();
+        void _renamePane();
+        safe_void_coroutine _updatePaneTitlebar();
+
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };

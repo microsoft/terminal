@@ -22,12 +22,116 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                              const std::shared_ptr<TerminalSettingsCache>& cache,
-                                             const winrt::Microsoft::Terminal::Control::TermControl& control) :
+                                             const winrt::Microsoft::Terminal::Control::TermControl& control,
+                                             const bool showPaneTitlebar) :
         _control{ control },
         _cache{ cache },
         _profile{ profile }
     {
+        _showPaneTitlebar = showPaneTitlebar;
+        _initializePaneTitlebar();
         _setupControlEvents();
+    }
+
+    void TerminalPaneContent::_initializePaneTitlebar()
+    {
+        using namespace winrt::Windows::UI::Xaml::Controls;
+        _root = Grid{};
+        RowDefinition titleRow;
+        titleRow.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Auto));
+        _root.RowDefinitions().Append(titleRow);
+        _root.RowDefinitions().Append(RowDefinition{});
+        _titlebar = Border{};
+        _titlebar.Height(PaneTitlebarHeight);
+        _titlebar.Visibility(_showPaneTitlebar ? Visibility::Visible : Visibility::Collapsed);
+        _titlebar.Background(_control.BackgroundBrush());
+        _title = TextBlock{};
+        _title.Text(_control.Title());
+        _title.HorizontalAlignment(HorizontalAlignment::Center);
+        _title.VerticalAlignment(VerticalAlignment::Center);
+        _title.TextTrimming(TextTrimming::CharacterEllipsis);
+        _title.Margin({ 4, 0, 4, 0 });
+        _titlebar.Child(_title);
+        _titlebar.DoubleTapped([weak = get_weak()](auto&&, auto&& args) {
+            if (const auto self = weak.get())
+            {
+                self->_renamePane();
+                args.Handled(true);
+            }
+        });
+        MenuFlyout menu;
+        MenuFlyoutItem rename;
+        rename.Text(RS_(L"RenamePaneText"));
+        rename.Click([weak = get_weak()](auto&&, auto&&) {
+            if (const auto self = weak.get())
+            {
+                self->_renamePane();
+            }
+        });
+        menu.Items().Append(rename);
+        MenuFlyoutItem close;
+        close.Text(RS_(L"ClosePaneText"));
+        close.Click([weak = get_weak()](auto&&, auto&&) {
+            if (const auto self = weak.get())
+            {
+                self->CloseRequested.raise(*self, nullptr);
+            }
+        });
+        menu.Items().Append(close);
+        _titlebar.ContextFlyout(menu);
+        _root.Children().Append(_titlebar);
+        Grid::SetRow(_control, 1);
+        _root.Children().Append(_control);
+    }
+
+    void TerminalPaneContent::_renamePane()
+    {
+        using namespace winrt::Windows::UI::Xaml::Controls;
+        TextBox editor;
+        editor.Text(_title.Text());
+        editor.FontSize(_title.FontSize());
+        auto finish = [weak = get_weak()](const TextBox& input, const bool commit) {
+            if (const auto self = weak.get(); self && self->_titlebar.Child() == input)
+            {
+                if (commit)
+                {
+                    self->_paneTitleOverride = input.Text();
+                }
+                self->_titlebar.Child(self->_title);
+                self->_updatePaneTitlebar();
+                self->Focus();
+            }
+        };
+        editor.KeyDown([finish](auto&& sender, auto&& args) {
+            if (args.Key() == winrt::Windows::System::VirtualKey::Enter || args.Key() == winrt::Windows::System::VirtualKey::Escape)
+            {
+                finish(sender.template as<TextBox>(), args.Key() == winrt::Windows::System::VirtualKey::Enter);
+                args.Handled(true);
+            }
+        });
+        editor.LostFocus([finish](auto&& sender, auto&&) { finish(sender.template as<TextBox>(), true); });
+        _titlebar.Child(editor);
+        editor.Focus(FocusState::Programmatic);
+        editor.SelectAll();
+    }
+
+    safe_void_coroutine TerminalPaneContent::_updatePaneTitlebar()
+    {
+        const auto lifetime = get_strong();
+        if (!_root.Dispatcher().HasThreadAccess())
+        {
+            co_await winrt::resume_foreground(_root.Dispatcher());
+        }
+        _title.Text(_paneTitleOverride.empty() ? _control.Title() : _paneTitleOverride);
+        _titlebar.Visibility(_showPaneTitlebar ? Visibility::Visible : Visibility::Collapsed);
+        if (const auto color = _control.TabColor())
+        {
+            _titlebar.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush{ color.Value() });
+        }
+        else
+        {
+            _titlebar.Background(_control.BackgroundBrush());
+        }
     }
 
     void TerminalPaneContent::_setupControlEvents()
@@ -51,7 +155,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::Windows::UI::Xaml::FrameworkElement TerminalPaneContent::GetRoot()
     {
-        return _control;
+        return _root;
     }
     winrt::Microsoft::Terminal::Control::TermControl TerminalPaneContent::GetTermControl()
     {
@@ -59,7 +163,9 @@ namespace winrt::TerminalApp::implementation
     }
     winrt::Windows::Foundation::Size TerminalPaneContent::MinimumSize()
     {
-        return _control.MinimumSize();
+        auto size = _control.MinimumSize();
+        size.Height += _showPaneTitlebar ? PaneTitlebarHeight : 0;
+        return size;
     }
     void TerminalPaneContent::Focus(winrt::Windows::UI::Xaml::FocusState reason)
     {
@@ -152,10 +258,12 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::_controlTitleChanged(const IInspectable&, const IInspectable&)
     {
+        _updatePaneTitlebar();
         TitleChanged.raise(*this, nullptr);
     }
     void TerminalPaneContent::_controlTabColorChanged(const IInspectable&, const IInspectable&)
     {
+        _updatePaneTitlebar();
         TabColorChanged.raise(*this, nullptr);
     }
     void TerminalPaneContent::_controlSetTaskbarProgress(const IInspectable&, const IInspectable&)
@@ -308,8 +416,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings,
-                                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& /*windowSettings*/)
+                                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
+        _showPaneTitlebar = windowSettings.ShowPaneTitlebar();
+        _updatePaneTitlebar();
         // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
         const auto profile{ settings.FindProfile(_profile.Guid()) };
         _profile = profile ? profile : settings.ProfileDefaults();
@@ -336,7 +446,8 @@ namespace winrt::TerminalApp::implementation
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)
     {
-        return _control.SnapDimensionToGrid(direction == PaneSnapDirection::Width, sizeToSnap);
+        const auto titleHeight = direction == PaneSnapDirection::Height && _showPaneTitlebar ? PaneTitlebarHeight : 0.0f;
+        return _control.SnapDimensionToGrid(direction == PaneSnapDirection::Width, sizeToSnap - titleHeight) + titleHeight;
     }
     Windows::Foundation::Size TerminalPaneContent::GridUnitSize()
     {

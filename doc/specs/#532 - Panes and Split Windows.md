@@ -62,6 +62,36 @@ As additional panes are created, panes will continue to subdivide the space of
 their parent. It's up to the parent pane to control the sizing and display of
 it's children.
 
+### Drag-and-drop docking
+
+`PaneDockingOverlay.h/.cpp` owns the docking compass, directional hit testing, and
+animated insertion preview. It is a sibling of the selected tab's content, not a
+child of a pane grid, so splitting and collapsing panes do not discard the overlay.
+`TerminalPage` coordinates same-window tab drags using a per-drag token and cleans
+up the overlay on drop, cancellation, or tab closure.
+
+The transfer payload is an existing `Pane` subtree. `Pane::CalculateDockLayout`
+uses both subtrees' minimum sizes and the prospective borders for validation and
+preview geometry. The validated layout is retained before detaching XAML elements,
+whose measured sizes can reset during reparenting.
+`Tab::DetachRoot` removes the source tab and raises each pane's `Detached` event
+to revoke its old tab-owned subscriptions without closing its content.
+`Tab::DockPane` uses the existing `SplitPane` operation to adopt the subtree,
+assign destination-local pane IDs, and restore its active pane without recreating
+terminal controls or connections. The empty source tab has no root left to shut
+down.
+
+This boundary permits future pane-titlebar drag sources to use the same overlay
+and subtree operations. Promoting a pane to a new tab would be a separate tab-strip
+drop target; it is not a fifth compass direction. Neither pane-titlebar dragging
+nor cross-window transfers are implemented by tab docking.
+
+Hovering another tab's header for 400 ms previews that destination. Dropping away
+from a directional target cancels docking and restores the original selection.
+Zoomed panes are not eligible docking destinations. The optional
+`showPaneTitlebar` global setting remains disabled by default; its titlebars can
+be renamed or closed, but do not yet initiate drags.
+
 ### Example
 
 We'll start by taking the terminal and creating a single vertical split. There

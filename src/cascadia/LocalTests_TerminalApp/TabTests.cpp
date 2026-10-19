@@ -11,6 +11,8 @@
 #include "../TerminalApp/Tab.h"
 #include "../TerminalApp/CommandPalette.h"
 #include "../TerminalApp/ContentManager.h"
+#include "../TerminalApp/PaneDockingOverlay.h"
+#include "../TerminalApp/BasicPaneEvents.h"
 #include "CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -39,6 +41,27 @@ namespace winrt
 
 namespace TerminalAppLocalTests
 {
+    struct DockingTestContent : winrt::implements<DockingTestContent, IPaneContent, ISnappable>, winrt::TerminalApp::implementation::BasicPaneEvents
+    {
+        Grid root;
+        bool closed{ false };
+        FrameworkElement GetRoot() const { return root; }
+        void UpdateSettings(const CascadiaSettings&, const WindowSettings&) {}
+        winrt::Windows::Foundation::Size MinimumSize() const { return { 20, 20 }; }
+        winrt::hstring Title() const { return L"Docking test"; }
+        uint64_t TaskbarState() const { return 0; }
+        uint64_t TaskbarProgress() const { return 0; }
+        bool ReadOnly() const { return false; }
+        winrt::hstring Icon() const { return L""; }
+        winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const { return nullptr; }
+        winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush() const { return nullptr; }
+        INewContentArgs GetNewTerminalArgs(BuildStartupKind) const { return NewTerminalArgs{}; }
+        void Focus(FocusState) {}
+        void Close() { closed = true; }
+        float SnapDownToGrid(PaneSnapDirection, float size) const { return size; }
+        winrt::Windows::Foundation::Size GridUnitSize() const { return { 1, 1 }; }
+    };
+
     // TODO:microsoft/terminal#3838:
     // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
     // an updated TAEF that will let us install framework packages when the test
@@ -96,6 +119,11 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
         TEST_METHOD(TestClampSwitchToTab);
+        TEST_METHOD(DockingZoneGeometry);
+        TEST_METHOD(DockingPreservesPaneTree);
+        TEST_METHOD(DockingNestedTarget);
+        TEST_METHOD(DockingDetachedTarget);
+        TEST_METHOD(DockingRejectsInvalidTargets);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -120,6 +148,136 @@ namespace TerminalAppLocalTests
     {
         const auto result = RunOnUIThread(function);
         VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::DockingZoneGeometry()
+    {
+        using winrt::Windows::Foundation::Point;
+        using winrt::Windows::Foundation::Rect;
+        using winrt::Windows::Foundation::Size;
+        constexpr SplitDirection directions[]{ SplitDirection::Up, SplitDirection::Left, SplitDirection::Right, SplitDirection::Down };
+        for (const auto size : { Size{ 12, 12 }, Size{ 84, 84 }, Size{ 1000, 800 }, Size{ 40, 240 } })
+        {
+            const Rect pane{ 10, 20, size.Width, size.Height };
+            const Point center{ pane.X + size.Width / 2, pane.Y + size.Height / 2 };
+            for (const auto direction : directions)
+            {
+                const auto zone = PaneDockingOverlay::ZoneBounds(pane, direction);
+                VERIFY_IS_TRUE(zone.Width > 0 && zone.Height > 0);
+                VERIFY_IS_TRUE(zone.X >= pane.X && zone.Y >= pane.Y);
+                VERIFY_IS_TRUE(zone.X + zone.Width <= pane.X + pane.Width);
+                VERIFY_IS_TRUE(zone.Y + zone.Height <= pane.Y + pane.Height);
+                VERIFY_IS_FALSE(PaneDockingOverlay::Contains(zone, center));
+                const Point hit{ zone.X + zone.Width / 2, zone.Y + zone.Height / 2 };
+                VERIFY_IS_TRUE(PaneDockingOverlay::Contains(zone, hit));
+                for (const auto other : directions)
+                {
+                    if (other != direction)
+                    {
+                        VERIFY_IS_FALSE(PaneDockingOverlay::Contains(PaneDockingOverlay::ZoneBounds(pane, other), hit));
+                    }
+                }
+            }
+        }
+        VERIFY_IS_FALSE(PaneDockingOverlay::Contains(Rect{ 0, 0, 10, 10 }, Point{ 10, 5 }));
+        VERIFY_IS_FALSE(PaneDockingOverlay::Contains(Rect{ 0, 0, 10, 10 }, Point{ 5, 10 }));
+    }
+
+    void TabTests::DockingPreservesPaneTree()
+    {
+        TestOnUIThread([] {
+            for (const auto direction : { SplitDirection::Up, SplitDirection::Left, SplitDirection::Right, SplitDirection::Down })
+            {
+                const auto firstContent = winrt::make_self<DockingTestContent>();
+                const auto secondContent = winrt::make_self<DockingTestContent>();
+                const auto first = std::make_shared<Pane>(*firstContent, true);
+                const auto second = std::make_shared<Pane>(*secondContent);
+                const auto incoming = std::make_shared<Pane>(first, second, SplitState::Vertical, 0.5f);
+                const auto source = winrt::make_self<winrt::TerminalApp::implementation::Tab>(incoming);
+                source->Initialize();
+                const auto target = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+                const auto destination = winrt::make_self<winrt::TerminalApp::implementation::Tab>(target);
+                destination->Initialize();
+                target->GetRootElement().Measure({ 1200, 800 });
+                target->GetRootElement().Arrange({ 0, 0, 1200, 800 });
+                const auto layout = target->CalculateDockLayout(incoming, direction);
+                VERIFY_IS_TRUE(layout.has_value());
+                const auto detached = source->DetachRoot();
+                VERIFY_IS_TRUE(detached == incoming);
+                VERIFY_IS_NULL(source->GetRootPane());
+                destination->DockPane(detached, target, direction, *layout);
+                VERIFY_ARE_EQUAL(3, destination->GetRootPane()->GetLeafPaneCount());
+                VERIFY_IS_TRUE(destination->GetRootPane()->Contains(incoming));
+                VERIFY_IS_TRUE(first->GetContent() == *firstContent);
+                VERIFY_IS_TRUE(second->GetContent() == *secondContent);
+                VERIFY_IS_FALSE(firstContent->closed);
+                VERIFY_IS_FALSE(secondContent->closed);
+                destination->Shutdown();
+                VERIFY_IS_TRUE(firstContent->closed);
+                VERIFY_IS_TRUE(secondContent->closed);
+            }
+        });
+    }
+
+    void TabTests::DockingNestedTarget()
+    {
+        TestOnUIThread([] {
+            for (const auto direction : { SplitDirection::Up, SplitDirection::Left, SplitDirection::Right, SplitDirection::Down })
+            {
+                const auto target = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+                const auto sibling = std::make_shared<Pane>(winrt::make<DockingTestContent>());
+                const auto root = std::make_shared<Pane>(target, sibling, SplitState::Horizontal, 0.5f);
+                const auto destination = winrt::make_self<winrt::TerminalApp::implementation::Tab>(root);
+                destination->Initialize();
+                root->GetRootElement().Measure({ 1200, 800 });
+                root->GetRootElement().Arrange({ 0, 0, 1200, 800 });
+                const auto incoming = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+                const auto layout = target->CalculateDockLayout(incoming, direction);
+                VERIFY_IS_TRUE(layout.has_value());
+                destination->DockPane(incoming, target, direction, *layout);
+                VERIFY_ARE_EQUAL(3, root->GetLeafPaneCount());
+                VERIFY_IS_TRUE(root->Contains(sibling));
+                VERIFY_IS_TRUE(root->Contains(incoming));
+                destination->Shutdown();
+            }
+        });
+    }
+
+    void TabTests::DockingDetachedTarget()
+    {
+        TestOnUIThread([] {
+            const auto target = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+            const auto destination = winrt::make_self<winrt::TerminalApp::implementation::Tab>(target);
+            destination->Initialize();
+            const auto incoming = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+            Grid host;
+            host.Children().Append(target->GetRootElement());
+            host.Measure({ 1200, 800 });
+            host.Arrange({ 0, 0, 1200, 800 });
+            const auto layout = target->CalculateDockLayout(incoming, SplitDirection::Right);
+            VERIFY_IS_TRUE(layout.has_value());
+            host.Children().Clear();
+            destination->DockPane(incoming, target, SplitDirection::Right, *layout);
+            VERIFY_ARE_EQUAL(2, target->GetLeafPaneCount());
+            destination->Shutdown();
+        });
+    }
+
+    void TabTests::DockingRejectsInvalidTargets()
+    {
+        TestOnUIThread([] {
+            const auto target = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+            const auto incoming = std::make_shared<Pane>(winrt::make<DockingTestContent>(), true);
+            target->GetRootElement().Measure({ 1200, 800 });
+            target->GetRootElement().Arrange({ 0, 0, 1200, 800 });
+            VERIFY_IS_FALSE(target->CalculateDockLayout(target, SplitDirection::Right).has_value());
+            VERIFY_IS_FALSE(target->CalculateDockLayout(incoming, SplitDirection::Automatic).has_value());
+            target->GetRootElement().Measure({ 1, 1 });
+            target->GetRootElement().Arrange({ 0, 0, 1, 1 });
+            VERIFY_IS_FALSE(target->CalculateDockLayout(incoming, SplitDirection::Down).has_value());
+            target->Shutdown();
+            incoming->Shutdown();
+        });
     }
 
     void TabTests::EnsureTestsActivate()
