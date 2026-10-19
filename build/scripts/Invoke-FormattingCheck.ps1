@@ -33,4 +33,5 @@ function Invoke-CheckBadCodeFormatting() {
 
 }
 
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Invoke-CheckBadCodeFormatting
