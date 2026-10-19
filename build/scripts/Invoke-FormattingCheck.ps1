@@ -13,7 +13,9 @@ function Invoke-CheckBadCodeFormatting() {
     if ($LASTEXITCODE -eq 1) {
 
         # Write the list of files that need updating to the log
-        git diff-index --name-only HEAD
+        git diff-index --name-only HEAD | ForEach-Object {
+            Write-Host ("::warning file={0},title=Format::File failed code formatting check" -f ($_))
+        }
 
         throw "code formatting bad, run Invoke-CodeFormat on branch"
     }
