@@ -323,6 +323,11 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    bool TerminalPage::_tabDragDropEnabled() const
+    {
+        return CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -333,7 +338,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop();
+        const auto canDragDrop = _tabDragDropEnabled();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -4150,6 +4155,10 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_currentWindowSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
+
+        const auto canDragDrop = _tabDragDropEnabled();
+        _tabView.CanReorderTabs(canDragDrop);
+        _tabView.CanDragTabs(canDragDrop);
 
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))

@@ -67,6 +67,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(Boolean, EnableTabDragDrop);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
         // ---- Color schemes ----
