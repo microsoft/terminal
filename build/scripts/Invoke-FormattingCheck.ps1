@@ -14,7 +14,12 @@ function Invoke-CheckBadCodeFormatting() {
 
         # Write the list of files that need updating to the log
         git diff-index --name-only HEAD | ForEach-Object {
-            Write-Host ("::warning file={0},line=1,title=Format::{0} is improperly formatted" -f ($_))
+            $line = 1
+            $diffHeader = & git diff HEAD -- "$_" | Select-String "^@@" | Select -First 1 -Expand Line
+            If ($diffHeader -Match "\+(\d+)") {
+                $line = [int]$Matches[1]
+            }
+            Write-Host ("::warning file={0},line={1},title=Format::{0} is improperly formatted" -f ($_, $line))
         }
 
         throw "code formatting bad, run Invoke-CodeFormat on branch"
