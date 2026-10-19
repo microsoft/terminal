@@ -15,7 +15,7 @@ function Invoke-CheckBadCodeFormatting() {
         # Write the list of files that need updating to the log
         git diff-index --name-only HEAD | ForEach-Object {
             $line = 1
-            $diffHeader = & git diff HEAD -- "$_" | Select-String "^@@" | Select -First 1 -Expand Line
+            $diffHeader = & git diff -U0 HEAD -- "$_" | Select-String "^@@" | Select -First 1 -Expand Line
             If ($diffHeader -Match "\+(\d+)") {
                 $line = [int]$Matches[1]
             }
