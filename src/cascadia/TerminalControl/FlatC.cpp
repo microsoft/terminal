@@ -24,27 +24,30 @@
 
 #pragma warning(disable : 4100)
 
-using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::Core;
-using CKS = ::Microsoft::Terminal::Core::ControlKeyStates;
-
-static CKS getControlKeyState() noexcept
+namespace MT
 {
+    namespace Control = winrt::Microsoft::Terminal::Control;
+    namespace Core = winrt::Microsoft::Terminal::Core;
+}
+
+static auto getControlKeyState() noexcept
+{
+    using ControlKeyStates = ::Microsoft::Terminal::Core::ControlKeyStates;
     struct KeyModifier
     {
         int vkey;
-        CKS flags;
+        ControlKeyStates flags;
     };
 
     constexpr std::array<KeyModifier, 5> modifiers{ {
-        { VK_RMENU, CKS::RightAltPressed },
-        { VK_LMENU, CKS::LeftAltPressed },
-        { VK_RCONTROL, CKS::RightCtrlPressed },
-        { VK_LCONTROL, CKS::LeftCtrlPressed },
-        { VK_SHIFT, CKS::ShiftPressed },
+        { VK_RMENU, ControlKeyStates::RightAltPressed },
+        { VK_LMENU, ControlKeyStates::LeftAltPressed },
+        { VK_RCONTROL, ControlKeyStates::RightCtrlPressed },
+        { VK_LCONTROL, ControlKeyStates::LeftCtrlPressed },
+        { VK_SHIFT, ControlKeyStates::ShiftPressed },
     } };
 
-    CKS flags;
+    ControlKeyStates flags;
 
     for (const auto& mod : modifiers)
     {
@@ -60,16 +63,16 @@ static CKS getControlKeyState() noexcept
     return flags;
 }
 
-static MouseButtonState MouseButtonStateFromWParam(WPARAM wParam)
+static MT::Control::MouseButtonState MouseButtonStateFromWParam(WPARAM wParam)
 {
-    MouseButtonState state{};
-    WI_UpdateFlag(state, MouseButtonState::IsLeftButtonDown, WI_IsFlagSet(wParam, MK_LBUTTON));
-    WI_UpdateFlag(state, MouseButtonState::IsMiddleButtonDown, WI_IsFlagSet(wParam, MK_MBUTTON));
-    WI_UpdateFlag(state, MouseButtonState::IsRightButtonDown, WI_IsFlagSet(wParam, MK_RBUTTON));
+    MT::Control::MouseButtonState state{};
+    WI_UpdateFlag(state, MT::Control::MouseButtonState::IsLeftButtonDown, WI_IsFlagSet(wParam, MK_LBUTTON));
+    WI_UpdateFlag(state, MT::Control::MouseButtonState::IsMiddleButtonDown, WI_IsFlagSet(wParam, MK_MBUTTON));
+    WI_UpdateFlag(state, MT::Control::MouseButtonState::IsRightButtonDown, WI_IsFlagSet(wParam, MK_RBUTTON));
     return state;
 }
 
-static Point PointFromLParam(LPARAM lParam)
+static MT::Core::Point PointFromLParam(LPARAM lParam)
 {
     return { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 }
@@ -106,7 +109,7 @@ public:
     }
 };
 
-struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, IControlSettings, ICoreSettings, IControlAppearance, ICoreAppearance, ICoreScheme>
+struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Control::IControlSettings, MT::Core::ICoreSettings, MT::Control::IControlAppearance, MT::Core::ICoreAppearance, MT::Core::ICoreScheme>
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
@@ -369,7 +372,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
         _settingsBridge = winrt::make_self<BasicTerminalSettings>();
         _connection = winrt::make_self<CallbackBasedConnection>();
-        _interactivity = winrt::make_self<implementation::ControlInteractivity>(*_settingsBridge, nullptr, *_connection, dispatcher);
+        _interactivity = winrt::make_self<MT::Control::implementation::ControlInteractivity>(*_settingsBridge, nullptr, *_connection, dispatcher);
         _core = _interactivity->Core();
 
         _core->ScrollPositionChanged({ this, &HwndTerminal::_scrollPositionChanged });
@@ -588,8 +591,8 @@ private:
     };
     winrt::com_ptr<CallbackBasedConnection> _connection;
     winrt::com_ptr<BasicTerminalSettings> _settingsBridge;
-    winrt::com_ptr<implementation::ControlInteractivity> _interactivity{ nullptr };
-    winrt::com_ptr<implementation::ControlCore> _core{ nullptr };
+    winrt::com_ptr<MT::Control::implementation::ControlInteractivity> _interactivity{ nullptr };
+    winrt::com_ptr<MT::Control::implementation::ControlCore> _core{ nullptr };
     bool _initialized{ false };
     bool _focused{ false };
     winrt::com_ptr<HwndTerminalAutomationPeer> _uiaProvider;
@@ -599,7 +602,7 @@ private:
     TsfDataProvider _tsfDataProvider{ this };
     Microsoft::Console::TSF::Handle _tsfHandle;
 
-    void _scrollPositionChanged(const winrt::Windows::Foundation::IInspectable& i, const ScrollPositionChangedArgs& update)
+    void _scrollPositionChanged(const winrt::Windows::Foundation::IInspectable& i, const MT::Control::ScrollPositionChangedArgs& update)
     {
         if (_scrollCallback)
         {
