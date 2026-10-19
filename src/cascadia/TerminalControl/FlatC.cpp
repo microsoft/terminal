@@ -736,7 +736,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     }
 
     IFACEMETHODIMP add_ShutdownStarting(
-        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_Windows__CSystem__CDispatcherQueueShutdownStartingEventArgs*,
+        ::ABI::Windows::Foundation::ITypedEventHandler<::ABI::Windows::System::DispatcherQueue*, ::ABI::Windows::System::DispatcherQueueShutdownStartingEventArgs*>*,
         EventRegistrationToken*)
     {
         return E_FAIL;
@@ -749,7 +749,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     }
 
     IFACEMETHODIMP add_ShutdownCompleted(
-        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_IInspectable*,
+        ::ABI::Windows::Foundation::ITypedEventHandler<::ABI::Windows::System::DispatcherQueue*, ::IInspectable*>*,
         EventRegistrationToken*)
     {
         return E_FAIL;
