@@ -3,7 +3,7 @@
 
 #include "pch.h"
 
-#include "FlatC.h"
+#include "HwndTerminal.h"
 #include "winrt/Microsoft.Terminal.Control.h"
 #include "winrt/Microsoft.Terminal.Core.h"
 #include "../TerminalCore/ControlKeyStates.hpp"
