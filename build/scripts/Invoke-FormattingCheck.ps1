@@ -19,7 +19,7 @@ function Invoke-CheckBadCodeFormatting() {
             If ($diffHeader -Match "\+(\d+)") {
                 $line = [int]$Matches[1]
             }
-            Write-Host ("::warning file={0},line={1},title=Format::{0} is improperly formatted" -f ($_, $line))
+            Write-Host ("::error file={0},line={1},title=Format::{0} is improperly formatted" -f ($_, $line))
         }
 
         throw "code formatting bad, run Invoke-CodeFormat on branch"
