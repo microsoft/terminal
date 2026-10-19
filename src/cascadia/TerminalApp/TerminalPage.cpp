@@ -2108,28 +2108,31 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
         const auto item = hostingTab.TabViewItem();
         item.AllowDrop(true);
-        item.DragOver([weakTab, weakThis](auto&&, const DragEventArgs& args) {
-            const auto page = weakThis.get();
-            const auto tab = weakTab.get();
-            if (page && tab && page->_IsPaneDrag(args) && tab != page->_stashed.draggedTab &&
-                tab != page->_dockHoverTab.get())
-            {
-                page->_dockHoverTab = tab->get_weak();
-                page->_dockHoverTimer.Stop();
-                page->_dockHoverTimer.Start();
-            }
-        });
-        item.DragLeave([weakTab, weakThis](auto&& sender, const DragEventArgs& args) {
-            const auto page = weakThis.get();
-            const auto tab = weakTab.get();
-            const auto header = sender.template as<FrameworkElement>();
-            if (page && tab && tab == page->_dockHoverTab.get() &&
-                !PaneDockingOverlay::Contains({ 0, 0, static_cast<float>(header.ActualWidth()), static_cast<float>(header.ActualHeight()) }, args.GetPosition(header)))
-            {
-                page->_dockHoverTimer.Stop();
-                page->_dockHoverTab = {};
-            }
-        });
+        // TabView's reorder handling can consume these routed drag events.
+        item.AddHandler(UIElement::DragOverEvent(), winrt::box_value(DragEventHandler{ [weakTab, weakThis](auto&&, const DragEventArgs& args) {
+                            const auto page = weakThis.get();
+                            const auto tab = weakTab.get();
+                            if (page && tab && page->_IsPaneDrag(args) && tab != page->_stashed.draggedTab &&
+                                tab != page->_dockHoverTab.get())
+                            {
+                                page->_dockHoverTab = tab->get_weak();
+                                page->_dockHoverTimer.Stop();
+                                page->_dockHoverTimer.Start();
+                            }
+                        } }),
+                        true);
+        item.AddHandler(UIElement::DragLeaveEvent(), winrt::box_value(DragEventHandler{ [weakTab, weakThis](auto&& sender, const DragEventArgs& args) {
+                            const auto page = weakThis.get();
+                            const auto tab = weakTab.get();
+                            const auto header = sender.template as<FrameworkElement>();
+                            if (page && tab && tab == page->_dockHoverTab.get() &&
+                                !PaneDockingOverlay::Contains({ 0, 0, static_cast<float>(header.ActualWidth()), static_cast<float>(header.ActualHeight()) }, args.GetPosition(header)))
+                            {
+                                page->_dockHoverTimer.Stop();
+                                page->_dockHoverTab = {};
+                            }
+                        } }),
+                        true);
         // PropertyChanged is the generic mechanism by which the Tab
         // communicates changes to any of its observable properties, including
         // the Title
@@ -6015,6 +6018,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
         _dockDestination = tab->get_weak();
+        _tabView.SelectedItem(tab->TabViewItem());
         for (const auto& existing : _tabs)
         {
             existing.Focus(FocusState::Unfocused);

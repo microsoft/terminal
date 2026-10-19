@@ -86,7 +86,8 @@ and subtree operations. Promoting a pane to a new tab would be a separate tab-st
 drop target; it is not a fifth compass direction. Neither pane-titlebar dragging
 nor cross-window transfers are implemented by tab docking.
 
-Hovering another tab's header for 400 ms previews that destination. Dropping away
+Hovering another tab's header for 400 ms selects and previews that destination,
+including during tab reordering. Dropping away
 from a directional target cancels docking and restores the original selection.
 Zoomed panes are not eligible docking destinations. The optional
 `showPaneTitlebar` global setting remains disabled by default; its titlebars can
