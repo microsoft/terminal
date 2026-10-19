@@ -26,25 +26,25 @@
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Core;
-using ControlKeyStates = ::Microsoft::Terminal::Core::ControlKeyStates;
+using CKS = ::Microsoft::Terminal::Core::ControlKeyStates;
 
-static ControlKeyStates getControlKeyState() noexcept
+static CKS getControlKeyState() noexcept
 {
     struct KeyModifier
     {
         int vkey;
-        ControlKeyStates flags;
+        CKS flags;
     };
 
     constexpr std::array<KeyModifier, 5> modifiers{ {
-        { VK_RMENU, ControlKeyStates::RightAltPressed },
-        { VK_LMENU, ControlKeyStates::LeftAltPressed },
-        { VK_RCONTROL, ControlKeyStates::RightCtrlPressed },
-        { VK_LCONTROL, ControlKeyStates::LeftCtrlPressed },
-        { VK_SHIFT, ControlKeyStates::ShiftPressed },
+        { VK_RMENU, CKS::RightAltPressed },
+        { VK_LMENU, CKS::LeftAltPressed },
+        { VK_RCONTROL, CKS::RightCtrlPressed },
+        { VK_LCONTROL, CKS::LeftCtrlPressed },
+        { VK_SHIFT, CKS::ShiftPressed },
     } };
 
-    ControlKeyStates flags;
+    CKS flags;
 
     for (const auto& mod : modifiers)
     {
@@ -736,7 +736,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     }
 
     IFACEMETHODIMP add_ShutdownStarting(
-        ::ABI::Windows::Foundation::ITypedEventHandler<ABI::Windows::System::DispatcherQueue*, ABI::Windows::System::DispatcherQueueShutdownStartingEventArgs*>*,
+        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_Windows__CSystem__CDispatcherQueueShutdownStartingEventArgs*,
         EventRegistrationToken*)
     {
         return E_FAIL;
@@ -749,7 +749,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     }
 
     IFACEMETHODIMP add_ShutdownCompleted(
-        ::ABI::Windows::Foundation::ITypedEventHandler<ABI::Windows::System::DispatcherQueue*, IInspectable*>*,
+        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_IInspectable*,
         EventRegistrationToken*)
     {
         return E_FAIL;
