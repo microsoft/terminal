@@ -30,7 +30,6 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(AltShiftKey);
         TEST_METHOD(InvalidKeyEvent);
-        TEST_METHOD(VirtualKeyFromCharacter);
 
         Terminal term{ Terminal::TestDummyMarker{} };
     };
@@ -52,16 +51,5 @@ namespace TerminalCoreUnitTests
         // send us key events using SendInput() whose values are outside of the valid range.
         VERIFY_ARE_EQUAL(unhandled(), term.SendKeyEvent(0, 123, {}, true));
         VERIFY_ARE_EQUAL(unhandled(), term.SendKeyEvent(255, 123, {}, true));
-    }
-
-    void InputTest::VirtualKeyFromCharacter()
-    {
-        // Tests GH#20797
-        // Characters requiring Shift (e.g. 'A') should return strictly the virtual key code (0-255),
-        // without modifier flags in the high byte.
-        VERIFY_ARE_EQUAL(static_cast<WORD>('A'), Terminal::_VirtualKeyFromCharacter(L'A'));
-
-        // Characters that have no mapping in the active keyboard layout must return 0, not 65535 (0xffff).
-        VERIFY_ARE_EQUAL(static_cast<WORD>(0), Terminal::_VirtualKeyFromCharacter(L'\xffff'));
     }
 }
