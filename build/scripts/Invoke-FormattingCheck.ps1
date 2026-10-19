@@ -14,7 +14,7 @@ function Invoke-CheckBadCodeFormatting() {
 
         # Write the list of files that need updating to the log
         git diff-index --name-only HEAD | ForEach-Object {
-            Write-Host ("::warning file={0},title=Format::File failed code formatting check" -f ($_))
+            Write-Host ("::warning file={0},line=1,title=Format::{0} is improperly formatted" -f ($_))
         }
 
         throw "code formatting bad, run Invoke-CodeFormat on branch"
