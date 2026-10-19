@@ -875,13 +875,13 @@ WORD Terminal::_VirtualKeyFromScanCode(const WORD scanCode) noexcept
 // Method Description:
 // - Returns any virtual key code that produces the given character.
 // Arguments:
-// - scanCode: The keyboard's scan code.
+// - ch: The character to find a virtual key code for.
 // Return Value:
 // - The virtual key code. 0 if no mapping can be found.
 WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
 {
-    const auto vkey = LOWORD(VkKeyScanW(ch));
-    return vkey == -1 ? 0 : vkey;
+    const auto vkey = VkKeyScanW(ch);
+    return vkey == -1 ? 0 : LOBYTE(vkey);
 }
 
 // Method Description:
