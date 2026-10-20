@@ -262,11 +262,13 @@ namespace Microsoft.Terminal.Wpf
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)
         {
-            // TerminalContainer forwards this event from native code, which runs it on our dispatcher.
-            this.scrollbar.Minimum = 0;
-            this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
-            this.scrollbar.Value = e.viewTop;
-            this.scrollbar.ViewportSize = e.viewHeight;
+            this.Dispatcher.InvokeAsync(() =>
+            {
+                this.scrollbar.Minimum = 0;
+                this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
+                this.scrollbar.Value = e.viewTop;
+                this.scrollbar.ViewportSize = e.viewHeight;
+            });
         }
 
         private void Scrollbar_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
