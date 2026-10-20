@@ -731,7 +731,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     {
         RETURN_HR_IF(E_INVALIDARG, !result || !callback);
         callback->AddRef(); // Retain on transition to managed
-        *result = _callouts.pDispatcherTryEnqueueWork(_callouts.context, static_cast<int>(priority), callback);
+        *result = _callouts.pfnDispatcherTryEnqueueWork(_callouts.context, static_cast<int>(priority), callback);
         return S_OK;
     }
 
@@ -764,7 +764,7 @@ struct CalloutBasedDispatcherQueue : public winrt::implements<CalloutBasedDispat
     IFACEMETHODIMP get_HasThreadAccess(boolean* result)
     {
         RETURN_HR_IF(E_INVALIDARG, !result);
-        *result = _callouts.pDispatcherHasThreadAccess(_callouts.context);
+        *result = _callouts.pfnDispatcherHasThreadAccess(_callouts.context);
         return S_OK;
     }
 
@@ -789,7 +789,7 @@ extern "C" void __stdcall AvoidBuggyTSFConsoleFlags()
 __declspec(dllexport) HRESULT __stdcall CreateTerminal(HWND parentHwnd, _In_ TerminalDispatcherCallouts dispatcherCallouts, _Out_ void** hwnd, _Out_ PTERM* terminal)
 {
     winrt::Windows::System::DispatcherQueue localDispatcherQueue{ nullptr };
-    if (dispatcherCallouts.pDispatcherTryEnqueueWork != nullptr)
+    if (dispatcherCallouts.pfnDispatcherTryEnqueueWork != nullptr)
     {
         auto dispatcher = winrt::make<CalloutBasedDispatcherQueue>(std::move(dispatcherCallouts));
         winrt::copy_from_abi(localDispatcherQueue, winrt::get_abi(dispatcher));

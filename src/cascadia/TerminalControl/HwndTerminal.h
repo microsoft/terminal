@@ -14,13 +14,13 @@ typedef struct _TerminalTheme
 } TerminalTheme;
 
 typedef void* PTERM;
-typedef void(__stdcall* PSCROLLCB)(int, int, int);
-typedef void(__stdcall* PWRITECB)(const wchar_t*);
+typedef void(__stdcall* PSCROLLCB)(int viewTop, int viewHeight, int bufferHeight);
+typedef void(__stdcall* PWRITECB)(const wchar_t* data);
 
 typedef struct _TerminalDispatcherCallouts
 {
-    bool(__stdcall* pDispatcherTryEnqueueWork)(void*, int, void*);
-    bool(__stdcall* pDispatcherHasThreadAccess)(void*);
+    bool(__stdcall* pfnDispatcherTryEnqueueWork)(void* context, int priority, void* work);
+    bool(__stdcall* pfnDispatcherHasThreadAccess)(void* context);
     // Context which will be passed back to the above function pointers.
     void* context;
 } TerminalDispatcherCallouts;
