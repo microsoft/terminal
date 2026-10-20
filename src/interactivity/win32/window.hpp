@@ -178,6 +178,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         WORD _resizingWindow = 0; // > 0 if we should ignore WM_SIZE messages
         bool _fInDPIChange = false;
+        bool _scrollBarsDisabled = false;
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
                                                    _Out_ til::rect* const prc);

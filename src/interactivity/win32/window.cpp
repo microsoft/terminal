@@ -32,7 +32,7 @@
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
-#define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
+#define CONSOLE_WINDOW_FLAGS WS_OVERLAPPEDWINDOW
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
 // Window class name
@@ -382,10 +382,14 @@ void Window::_CloseWindow() const
 
     if (SUCCEEDED_NTSTATUS(status))
     {
-        ShowWindow(hWnd, wShowWindow);
+        // Set up the scrollbars before showing the window.
+        // This matches the way CM_UPDATE_SCROLL_BARS works, which we
+        // could SendMessage() here, but... this saves a whopping 2us. Yay~
+        _resizingWindow++;
+        UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
+        _resizingWindow--;
 
-        auto& siAttached = GetScreenInfo();
-        siAttached.UpdateScrollBars();
+        ShowWindow(hWnd, wShowWindow);
     }
 
     return status;
@@ -792,16 +796,9 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
 void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
 {
-    // If this is the main buffer, make sure we enable both of the scroll bars.
-    // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
-    if (!state.isAltBuffer)
-    {
-        EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
-    }
-
     SCROLLINFO si{
         .cbSize = sizeof(SCROLLINFO),
-        .fMask = static_cast<UINT>(state.isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+        .fMask = SIF_ALL,
     };
 
     si.nMax = state.maxSize.width;
@@ -813,6 +810,12 @@ void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
     si.nPage = state.viewport.height();
     si.nPos = state.viewport.top;
     SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
+
+    if (_scrollBarsDisabled != state.isAltBuffer)
+    {
+        EnableScrollBar(_hWnd, SB_BOTH, state.isAltBuffer ? ESB_DISABLE_BOTH : ESB_ENABLE_BOTH);
+        _scrollBarsDisabled = state.isAltBuffer;
+    }
 }
 
 // Routine Description:
