@@ -1355,7 +1355,7 @@ pvar
 pwch
 PWDDMCONSOLECONTEXT
 pws
-pwstr
+PWSTR
 pwsz
 pythonw
 QUERYOPEN
