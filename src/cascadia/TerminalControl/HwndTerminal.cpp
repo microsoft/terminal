@@ -4,19 +4,20 @@
 #include "pch.h"
 
 #include "HwndTerminal.h"
+#include "HwndTerminalAutomationPeer.hpp"
+
 #include "winrt/Microsoft.Terminal.Control.h"
 #include "winrt/Microsoft.Terminal.Core.h"
+
+#include "../inc/ControlProperties.h"
+#include "../inc/cppwinrt_utils.h"
+#include "../inc/DefaultSettings.h"
 #include "../TerminalCore/ControlKeyStates.hpp"
 #include "../types/inc/colorTable.hpp"
-#include "../inc/DefaultSettings.h"
-#include "../inc/cppwinrt_utils.h"
 #include "../../tsf/Handle.h"
-#include "../inc/ControlProperties.h"
 
 #include "ControlCore.h"
 #include "ControlInteractivity.h"
-
-#include "HwndTerminalAutomationPeer.hpp"
 
 #include <windows.system.h>
 #include <windowsx.h>
