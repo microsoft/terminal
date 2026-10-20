@@ -364,7 +364,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
         if (RegisterTermClass(hInstance))
         {
             _hwnd.reset(CreateWindowExW(
-                0,
+                WS_EX_NOREDIRECTIONBITMAP,
                 term_window_class,
                 nullptr,
                 WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
