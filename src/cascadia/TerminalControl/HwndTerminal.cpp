@@ -526,6 +526,14 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
     HRESULT SendCharEvent(wchar_t ch, WORD scanCode, WORD flags)
     {
+        if (ch == UNICODE_TAB)
+        {
+            // Due to quirks in Core's other UI adapters, Terminal does not expect
+            // to receive Tab in WM_CHAR. I feel like this belongs somewhere in
+            // Interactivity, and do not currently know why Interactivity doesn't
+            // handle keyboard input.
+            return S_OK;
+        }
         auto modifiers{ getControlKeyState() };
         if (WI_IsFlagSet(flags, ENHANCED_KEY))
         {
