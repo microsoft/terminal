@@ -40,9 +40,9 @@ static wil::unique_process_heap_string _InboxConsoleHostPath()
     wil::unique_process_heap_string windowsDirectory;
     wil::GetWindowsDirectoryW<wil::unique_process_heap_string>(windowsDirectory);
 #if defined(BUILD_WOW6432)
-    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", WindowsDirectory, L"\\SysNative", L"\\conhost.exe");
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", windowsDirectory, L"\\SysNative", L"\\conhost.exe");
 #else
-    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", WindowsDirectory, L"\\System32", L"\\conhost.exe");
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", windowsDirectory, L"\\System32", L"\\conhost.exe");
 #endif
 }
 
