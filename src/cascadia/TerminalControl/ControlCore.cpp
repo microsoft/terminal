@@ -3047,7 +3047,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             throw winrt::hresult_error(E_INVALIDARG);
         }
         auto pixelSize = _renderEngine->GetViewportInPixels(Viewport::FromDimensions({ 0, 0 }, til::size{ static_cast<til::CoordType>(width), static_cast<til::CoordType>(height) }));
-        SizeOrScaleChanged(static_cast<float>(pixelSize.Width()), static_cast<float>(pixelSize.Height()), _compositionScale);
-        newSizeInPixels = RenderedSize();
+        SizeOrScaleChanged(static_cast<float>(pixelSize.Width()) / _compositionScale, static_cast<float>(pixelSize.Height()) / _compositionScale, _compositionScale);
+        auto newSize = RenderedSize();
+        newSizeInPixels = {
+            newSize.Width * _compositionScale,
+            newSize.Height * _compositionScale,
+        };
     }
 }

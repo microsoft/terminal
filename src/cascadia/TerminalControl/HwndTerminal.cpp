@@ -365,8 +365,6 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
         return DefWindowProcW(hwnd, uMsg, wParam, lParam);
     }
 
-    wil::unique_hwnd _hwnd;
-
     HwndTerminal(HWND parentHwnd, winrt::Windows::System::DispatcherQueue dispatcher)
     {
         HINSTANCE hInstance = wil::GetModuleInstanceHandle();
@@ -395,6 +393,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
         _core->ScrollPositionChanged({ this, &HwndTerminal::_scrollPositionChanged });
         _interactivity->ScrollPositionChanged({ this, &HwndTerminal::_scrollPositionChanged });
+        // TODO GH#20827 Hook up the clipboard stuff
     }
 
     /*( PUBLIC API )*/
@@ -431,6 +430,8 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
     HRESULT TriggerResizeWithDimension(_In_ til::size dimensions, _Out_ til::size* dimensionsInPixels)
     {
+        wil::assign_to_opt_param(dimensionsInPixels, til::size{});
+
         if (!_initialized)
             return S_FALSE;
 
@@ -553,7 +554,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
         {
             modifiers |= ::Microsoft::Terminal::Core::ControlKeyStates::EnhancedKey;
         }
-        _core->SendCharEvent(ch, scanCode, getControlKeyState());
+        _core->SendCharEvent(ch, scanCode, modifiers);
         return S_OK;
     }
 
@@ -576,6 +577,11 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
         _core->EnablePainting();
 
         _initialized = true;
+    }
+
+    HWND GetWindowHandle() const noexcept
+    {
+        return _hwnd.get();
     }
 
 #pragma region HwndTerminal Accessibility
@@ -640,6 +646,7 @@ private:
     winrt::com_ptr<HwndTerminalAutomationPeer> _uiaProvider;
     winrt::com_ptr<MT::Control::implementation::ControlInteractivity> _interactivity{ nullptr };
     winrt::com_ptr<MT::Control::implementation::ControlCore> _core{ nullptr };
+    wil::unique_hwnd _hwnd;
     TsfDataProvider _tsfDataProvider{ this };
     Microsoft::Console::TSF::Handle _tsfHandle;
 
@@ -846,7 +853,7 @@ __declspec(dllexport) HRESULT __stdcall CreateTerminal(HWND parentHwnd, _In_ Ter
     }
     auto inner = new HwndTerminal{ parentHwnd, localDispatcherQueue };
     *terminal = inner;
-    *hwnd = inner->_hwnd.get();
+    *hwnd = inner->GetWindowHandle();
     inner->Initialize();
     return S_OK;
 }
