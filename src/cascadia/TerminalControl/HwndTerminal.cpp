@@ -447,11 +447,8 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
     HRESULT GetSelection(const wchar_t** out)
     {
-        auto strings = _core->SelectedText(true);
-        auto concatenated = std::accumulate(std::begin(strings), std::end(strings), std::wstring{}, [](auto&& l, auto&& r) {
-            return l + r;
-        });
-        auto returnText = wil::make_cotaskmem_string_nothrow(concatenated.c_str());
+        auto selection = _core->SelectedText(true);
+        auto returnText = wil::make_cotaskmem_string_nothrow(selection.c_str(), selection.size());
         *out = returnText.release();
         return S_OK;
     }
