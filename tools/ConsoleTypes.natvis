@@ -145,6 +145,14 @@
         </Expand>
     </Type>
 
+    <Type Name="CSSLengthPercentage">
+        <DisplayString Condition="_referenceFrame == 0">[empty]</DisplayString>
+        <DisplayString Condition="_referenceFrame == 1" Optional="true">{_value*72,g}pt / {_value*96,g}px</DisplayString>
+        <DisplayString Condition="_referenceFrame == 2 &amp;&amp; _value &lt;= 1" Optional="true">{_value*100,g}%</DisplayString>
+        <DisplayString Condition="_referenceFrame == 2 &amp;&amp; _value &gt; 1" Optional="true">{_value,g}</DisplayString>
+        <DisplayString Condition="_referenceFrame == 3" Optional="true">{_value,g}ch</DisplayString>
+    </Type>
+
     <Type Name="Microsoft::Console::Render::Atlas::Buffer&lt;*&gt;">
         <DisplayString>{{ size={_size} }}</DisplayString>
         <Expand>
