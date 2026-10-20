@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.Wpf
         public delegate void ScrollCallback(int viewTop, int viewHeight, int bufferSize);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate void WriteCallback([In, MarshalAs(UnmanagedType.LPWStr)] string data);
+        public delegate void WriteCallback([In] IntPtr data, int size);
 
         public struct DispatcherCallouts
         {

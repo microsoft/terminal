@@ -84,7 +84,7 @@ struct CallbackBasedConnection : public winrt::implements<CallbackBasedConnectio
     {
         if (_pfnWriteCallback)
         {
-            _pfnWriteCallback(reinterpret_cast<const wchar_t*>(d.data()));
+            _pfnWriteCallback(reinterpret_cast<const wchar_t*>(d.data()), gsl::narrow_cast<int>(d.size()));
         }
     }
 

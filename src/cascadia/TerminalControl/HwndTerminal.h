@@ -15,7 +15,7 @@ typedef struct _TerminalTheme
 
 typedef void* PTERM;
 typedef void(__stdcall* PSCROLLCB)(int viewTop, int viewHeight, int bufferHeight);
-typedef void(__stdcall* PWRITECB)(const wchar_t* data);
+typedef void(__stdcall* PWRITECB)(const wchar_t* data, int size);
 
 typedef struct _TerminalDispatcherCallouts
 {

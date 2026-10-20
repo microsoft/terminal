@@ -453,9 +453,10 @@ namespace Microsoft.Terminal.Wpf
             this.TerminalScrolled?.Invoke(this, (viewTop, viewHeight, bufferSize));
         }
 
-        private void OnWrite(string data)
+        private void OnWrite(IntPtr data, int size)
         {
-            this.Connection?.WriteInput(data);
+            string str = Marshal.PtrToStringUni(data, size);
+            this.Connection?.WriteInput(str);
         }
     }
 }
