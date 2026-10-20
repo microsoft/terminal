@@ -33,6 +33,8 @@ namespace MT
 
 static auto getControlKeyState() noexcept
 {
+    // The console codebase has a history of not trusting the control key states that come in on the window.
+    // We have not documented why.
     using ControlKeyStates = ::Microsoft::Terminal::Core::ControlKeyStates;
     struct KeyModifier
     {
@@ -179,6 +181,12 @@ struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Cont
         return static_cast<winrt::Microsoft::Terminal::Core::CursorStyle>(_theme.CursorStyle);
     }
 
+    // TODO GH#20827 Prevent the control from resizing the connection until we have connection callbacks hooked up
+    bool ScrollToZoom() const
+    {
+        return false;
+    }
+
 public:
     void SetTheme(TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi)
     {
@@ -188,7 +196,13 @@ public:
     }
 
 private:
-    TerminalTheme _theme;
+    TerminalTheme _theme{
+        0xFF0C0C0C,
+        0xFFCCCCCC,
+        0xFFFFFFFF,
+        static_cast<uint32_t>(winrt::Microsoft::Terminal::Core::CursorStyle::FilledBox),
+        {}
+    };
     winrt::hstring _fontFace{ L"Cascadia Mono" };
     float _fontSize = 12.0f;
 };
@@ -309,23 +323,23 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
             _interactivity->TouchMoved(PointFromLParam(lParam));
             return 0;
         case WM_POINTERUP:
-            if (!IS_POINTER_INCONTACT_WPARAM(wParam))
-            {
-                break;
-            }
             _interactivity->TouchReleased();
             ReleaseCapture();
             return 0;
         case WM_MOUSEWHEEL:
         case WM_MOUSEHWHEEL:
         {
+            // FYI wheel messages are in screen coordinates unlike all other mouse messages.
             winrt::Microsoft::Terminal::Core::Point delta{ 0, GET_WHEEL_DELTA_WPARAM(wParam) };
             if (uMsg == WM_MOUSEHWHEEL)
             {
                 std::swap(delta.X, delta.Y);
             }
 
-            if (_interactivity->MouseWheel(getControlKeyState(), delta, PointFromLParam(lParam), MouseButtonStateFromWParam(wParam)))
+            POINT point{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+            ScreenToClient(_hwnd.get(), &point);
+            MT::Core::Point corePoint{ point.x, point.y };
+            if (_interactivity->MouseWheel(getControlKeyState(), delta, corePoint, MouseButtonStateFromWParam(wParam)))
             {
                 return 0;
             }
@@ -510,8 +524,13 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
         return S_OK;
     }
 
-    HRESULT SendCharEvent(wchar_t ch, WORD flags, WORD scanCode)
+    HRESULT SendCharEvent(wchar_t ch, WORD scanCode, WORD flags)
     {
+        auto modifiers{ getControlKeyState() };
+        if (WI_IsFlagSet(flags, ENHANCED_KEY))
+        {
+            modifiers |= ::Microsoft::Terminal::Core::ControlKeyStates::EnhancedKey;
+        }
         _core->SendCharEvent(ch, scanCode, getControlKeyState());
         return S_OK;
     }

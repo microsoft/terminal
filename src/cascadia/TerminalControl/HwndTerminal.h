@@ -9,7 +9,7 @@ typedef struct _TerminalTheme
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
     COLORREF DefaultSelectionBackground;
-    uint32_t CursorStyle; // This will be converted to DispatchTypes::CursorStyle (size_t), but C# cannot marshal an enum type and have it fit in a size_t.
+    uint32_t CursorStyle; // This will be converted to Terminal::CursorStyle, but C# cannot marshal an enum type and have it fit in a size_t.
     COLORREF ColorTable[16];
 } TerminalTheme;
 
@@ -32,7 +32,7 @@ typedef struct _TerminalDispatcherCallouts
     XX(IsSelectionActive, bool*, out)                                                                          \
     XX(RegisterScrollCallback, PSCROLLCB, callback)                                                            \
     XX(RegisterWriteCallback, PWRITECB, callback)                                                              \
-    XX(SendCharEvent, wchar_t, ch, WORD, flags, WORD, scanCode)                                                \
+    XX(SendCharEvent, wchar_t, ch, WORD, scanCode, WORD, flags)                                                \
     XX(SendKeyEvent, WORD, vkey, WORD, scanCode, WORD, flags, bool, keyDown)                                   \
     XX(SendOutput, LPCWSTR, data)                                                                              \
     XX(SetTheme, TerminalTheme, theme, LPCWSTR, fontFamily, til::CoordType, fontSize, int, newDpi)             \
