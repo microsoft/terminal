@@ -34,11 +34,16 @@ NTSYSCALLAPI NTSTATUS NTAPI NtSetSystemInformation(SYSTEM_INFORMATION_CLASS Clas
 
 // Function Description:
 // - Returns the path to conhost.exe as a process heap string.
+//   For 32-bit builds, use SysNative to avoid WOW64 redirection.
 static wil::unique_process_heap_string _InboxConsoleHostPath()
 {
-    wil::unique_process_heap_string systemDirectory;
-    wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
-    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+    wil::unique_process_heap_string windowsDirectory;
+    wil::GetWindowsDirectoryW<wil::unique_process_heap_string>(windowsDirectory);
+#if defined(BUILD_WOW6432)
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", WindowsDirectory, L"\\SysNative", L"\\conhost.exe");
+#else
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", WindowsDirectory, L"\\System32", L"\\conhost.exe");
+#endif
 }
 
 // Function Description:
@@ -244,17 +249,6 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
                                                          nullptr));
     wil::unique_process_information pi;
     {
-        // wow64 disabled filesystem redirection scope
-#if defined(BUILD_WOW6432)
-        PVOID RedirectionFlag;
-        RETURN_IF_NTSTATUS_FAILED(RtlWow64EnableFsRedirectionEx(
-            WOW64_FILE_SYSTEM_DISABLE_REDIRECT,
-            &RedirectionFlag));
-        auto resetFsRedirection = wil::scope_exit([&] {
-            RtlWow64EnableFsRedirectionEx(RedirectionFlag, &RedirectionFlag);
-        });
-#endif
-
         // Call create process
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(
             hToken,
