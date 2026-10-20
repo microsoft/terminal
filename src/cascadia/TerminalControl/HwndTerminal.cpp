@@ -514,7 +514,24 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
             }
         }
 
-        _core->TrySendKeyEvent(vkey, scanCode, getControlKeyState(), keyDown);
+        auto handled = _core->TrySendKeyEvent(vkey, scanCode, getControlKeyState(), keyDown);
+        if (keyDown)
+        {
+            if (handled)
+            {
+                til::at(_suppressedScanCodes, _suppressedScanCodeIndex++ & 3) = scanCode;
+            }
+        }
+        else
+        {
+            for (auto& c : _suppressedScanCodes)
+            {
+                if (c == scanCode)
+                {
+                    c = 0;
+                }
+            }
+        }
 
         if (vkey && keyDown && _uiaProvider)
         {
@@ -526,14 +543,11 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
 
     HRESULT SendCharEvent(wchar_t ch, WORD scanCode, WORD flags)
     {
-        if (ch == UNICODE_TAB)
+        if (std::find(_suppressedScanCodes.begin(), _suppressedScanCodes.end(), scanCode) != _suppressedScanCodes.end())
         {
-            // Due to quirks in Core's other UI adapters, Terminal does not expect
-            // to receive Tab in WM_CHAR. I feel like this belongs somewhere in
-            // Interactivity, and do not currently know why Interactivity doesn't
-            // handle keyboard input.
             return S_OK;
         }
+
         auto modifiers{ getControlKeyState() };
         if (WI_IsFlagSet(flags, ENHANCED_KEY))
         {
@@ -631,6 +645,9 @@ private:
 
     bool _initialized{ false };
     bool _focused{ false };
+
+    std::array<WORD, 4> _suppressedScanCodes{};
+    size_t _suppressedScanCodeIndex;
 
     void _scrollPositionChanged(const winrt::Windows::Foundation::IInspectable& i, const MT::Control::ScrollPositionChangedArgs& update)
     {
