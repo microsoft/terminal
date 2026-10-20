@@ -86,11 +86,6 @@ namespace Microsoft.Terminal.Wpf
         internal event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
 
         /// <summary>
-        /// Event that is fired when the user engages in a mouse scroll over the terminal hwnd.
-        /// </summary>
-        internal event EventHandler<int> UserScrolled;
-
-        /// <summary>
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
         /// on user action.
         /// </summary>

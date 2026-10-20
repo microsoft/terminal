@@ -29,7 +29,6 @@ namespace Microsoft.Terminal.Wpf
             this.InitializeComponent();
 
             this.termContainer.TerminalScrolled += this.TermControl_TerminalScrolled;
-            this.termContainer.UserScrolled += this.TermControl_UserScrolled;
             this.scrollbar.MouseWheel += this.Scrollbar_MouseWheel;
 
             this.GotFocus += this.TerminalControl_GotFocus;
@@ -242,13 +241,9 @@ namespace Microsoft.Terminal.Wpf
 
         private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            this.TermControl_UserScrolled(sender, e.Delta);
-        }
-
-        private void TermControl_UserScrolled(object sender, int delta)
-        {
+            // WPF scrollbars do not natively support wheel events, apparently, so we do this ourselves.
             var lineDelta = 120 / SystemParameters.WheelScrollLines;
-            this.accumulatedDelta += delta;
+            this.accumulatedDelta += e.Delta;
 
             if (this.accumulatedDelta < lineDelta && this.accumulatedDelta > -lineDelta)
             {
@@ -267,13 +262,11 @@ namespace Microsoft.Terminal.Wpf
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)
         {
-            this.Dispatcher.InvokeAsync(() =>
-            {
-                this.scrollbar.Minimum = 0;
-                this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
-                this.scrollbar.Value = e.viewTop;
-                this.scrollbar.ViewportSize = e.viewHeight;
-            });
+            // TerminalContainer forwards this event from native code, which runs it on our dispatcher.
+            this.scrollbar.Minimum = 0;
+            this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
+            this.scrollbar.Value = e.viewTop;
+            this.scrollbar.ViewportSize = e.viewHeight;
         }
 
         private void Scrollbar_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
