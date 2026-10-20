@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<EnumEntry> ConfirmOnCloseList { get; };
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CloseOnMiddleClick);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
