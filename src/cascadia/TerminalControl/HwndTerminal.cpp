@@ -594,18 +594,20 @@ private:
         Microsoft::Console::Render::Renderer* GetRenderer() override;
         HwndTerminal* _terminal;
     };
+
     winrt::com_ptr<CallbackBasedConnection> _connection;
     winrt::com_ptr<BasicTerminalSettings> _settingsBridge;
-    winrt::com_ptr<MT::Control::implementation::ControlInteractivity> _interactivity{ nullptr };
-    winrt::com_ptr<MT::Control::implementation::ControlCore> _core{ nullptr };
-    bool _initialized{ false };
-    bool _focused{ false };
-    winrt::com_ptr<HwndTerminalAutomationPeer> _uiaProvider;
     PSCROLLCB _scrollCallback{};
 
     // Keep these ordered as-is for proper destruction.
+    winrt::com_ptr<HwndTerminalAutomationPeer> _uiaProvider;
+    winrt::com_ptr<MT::Control::implementation::ControlInteractivity> _interactivity{ nullptr };
+    winrt::com_ptr<MT::Control::implementation::ControlCore> _core{ nullptr };
     TsfDataProvider _tsfDataProvider{ this };
     Microsoft::Console::TSF::Handle _tsfHandle;
+
+    bool _initialized{ false };
+    bool _focused{ false };
 
     void _scrollPositionChanged(const winrt::Windows::Foundation::IInspectable& i, const MT::Control::ScrollPositionChangedArgs& update)
     {
