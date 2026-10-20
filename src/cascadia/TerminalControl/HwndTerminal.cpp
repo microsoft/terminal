@@ -114,6 +114,7 @@ struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Cont
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+
     BasicTerminalSettings()
     {
         const auto campbellSpan = Microsoft::Console::Utils::CampbellColorTable();
@@ -121,6 +122,7 @@ struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Cont
             return color;
         });
     }
+
     ~BasicTerminalSettings() = default;
 
     void GetColorTable(winrt::com_array<::winrt::Microsoft::Terminal::Core::Color>& table) noexcept
@@ -137,22 +139,27 @@ struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Cont
     {
         return _theme.DefaultForeground;
     }
+
     til::color DynamicDefaultBackground() const
     {
         return _theme.DefaultBackground;
     }
+
     til::color DynamicSelectionBackground() const
     {
         return til::color{ _theme.DefaultSelectionBackground };
     }
+
     winrt::hstring DynamicFontFace() const
     {
         return _fontFace;
     }
+
     float DynamicFontSize() const
     {
         return _fontSize;
     }
+
     winrt::Microsoft::Terminal::Core::CursorStyle DynamicCursorShape() const
     {
         return static_cast<winrt::Microsoft::Terminal::Core::CursorStyle>(_theme.CursorStyle);
