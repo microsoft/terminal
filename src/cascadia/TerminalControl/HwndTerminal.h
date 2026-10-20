@@ -26,19 +26,19 @@ typedef struct _TerminalDispatcherCallouts
 } TerminalDispatcherCallouts;
 
 #define TERMINAL_API_TABLE(XX)                                                                                 \
-    XX(SendOutput, LPCWSTR, data)                                                                              \
-    XX(RegisterScrollCallback, PSCROLLCB, callback)                                                            \
-    XX(TriggerResize, _In_ til::CoordType, width, _In_ til::CoordType, height, _Out_ til::size*, dimensions)   \
-    XX(TriggerResizeWithDimension, _In_ til::size, dimensions, _Out_ til::size*, dimensionsInPixels)           \
     XX(CalculateResize, _In_ til::CoordType, width, _In_ til::CoordType, height, _Out_ til::size*, dimensions) \
     XX(DpiChanged, int, newDpi)                                                                                \
-    XX(UserScroll, int, viewTop)                                                                               \
     XX(GetSelection, const wchar_t**, out)                                                                     \
     XX(IsSelectionActive, bool*, out)                                                                          \
-    XX(SetTheme, TerminalTheme, theme, LPCWSTR, fontFamily, til::CoordType, fontSize, int, newDpi)             \
+    XX(RegisterScrollCallback, PSCROLLCB, callback)                                                            \
     XX(RegisterWriteCallback, PWRITECB, callback)                                                              \
+    XX(SendCharEvent, wchar_t, ch, WORD, flags, WORD, scanCode)                                                \
     XX(SendKeyEvent, WORD, vkey, WORD, scanCode, WORD, flags, bool, keyDown)                                   \
-    XX(SendCharEvent, wchar_t, ch, WORD, flags, WORD, scanCode)
+    XX(SendOutput, LPCWSTR, data)                                                                              \
+    XX(SetTheme, TerminalTheme, theme, LPCWSTR, fontFamily, til::CoordType, fontSize, int, newDpi)             \
+    XX(TriggerResize, _In_ til::CoordType, width, _In_ til::CoordType, height, _Out_ til::size*, dimensions)   \
+    XX(TriggerResizeWithDimension, _In_ til::size, dimensions, _Out_ til::size*, dimensionsInPixels)           \
+    XX(UserScroll, int, viewTop)
 
 extern "C" {
 #define API_NAME(name) Terminal##name
