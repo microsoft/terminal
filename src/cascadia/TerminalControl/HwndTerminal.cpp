@@ -110,11 +110,25 @@ public:
     }
 };
 
-struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Control::IControlSettings, MT::Core::ICoreSettings, MT::Control::IControlAppearance, MT::Core::ICoreAppearance, MT::Core::ICoreScheme>
+struct BaseDefaultTerminalSettings
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+#define BASE_PROPERTY(type, name, ...) \
+    auto name()                        \
+    {                                  \
+        return type{ __VA_ARGS__ };    \
+    }
 
+    CONTROL_SETTINGS(BASE_PROPERTY);
+    CORE_SETTINGS(BASE_PROPERTY);
+    CONTROL_APPEARANCE_SETTINGS(BASE_PROPERTY);
+    CORE_APPEARANCE_SETTINGS(BASE_PROPERTY);
+#undef BASE_PROPERTY
+};
+
+struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Control::IControlSettings, MT::Core::ICoreSettings, MT::Control::IControlAppearance, MT::Core::ICoreAppearance, MT::Core::ICoreScheme>, public BaseDefaultTerminalSettings
+{
     BasicTerminalSettings()
     {
         const auto campbellSpan = Microsoft::Console::Utils::CampbellColorTable();
@@ -135,53 +149,35 @@ struct BasicTerminalSettings : winrt::implements<BasicTerminalSettings, MT::Cont
         table = winrt::com_array(colorTable.begin(), colorTable.end());
     }
 
-    til::color DynamicDefaultForeground() const
+    til::color DefaultForeground() const
     {
         return _theme.DefaultForeground;
     }
 
-    til::color DynamicDefaultBackground() const
+    til::color DefaultBackground() const
     {
         return _theme.DefaultBackground;
     }
 
-    til::color DynamicSelectionBackground() const
+    til::color SelectionBackground() const
     {
         return til::color{ _theme.DefaultSelectionBackground };
     }
 
-    winrt::hstring DynamicFontFace() const
+    winrt::hstring FontFace() const
     {
         return _fontFace;
     }
 
-    float DynamicFontSize() const
+    float FontSize() const
     {
         return _fontSize;
     }
 
-    winrt::Microsoft::Terminal::Core::CursorStyle DynamicCursorShape() const
+    winrt::Microsoft::Terminal::Core::CursorStyle CursorShape() const
     {
         return static_cast<winrt::Microsoft::Terminal::Core::CursorStyle>(_theme.CursorStyle);
     }
-
-#define DYNAMIC_PROPERTY(type, name, ...)                                              \
-    auto name()                                                                        \
-    {                                                                                  \
-        return [](auto t) {                                                            \
-            if constexpr (std::bool_constant<requires { t->Dynamic##name(); }>::value) \
-            {                                                                          \
-                return t->Dynamic##name();                                             \
-            }                                                                          \
-            return type{ __VA_ARGS__ };                                                \
-        }(this);                                                                       \
-    }
-
-    CONTROL_SETTINGS(DYNAMIC_PROPERTY);
-    CORE_SETTINGS(DYNAMIC_PROPERTY);
-    CONTROL_APPEARANCE_SETTINGS(DYNAMIC_PROPERTY);
-    CORE_APPEARANCE_SETTINGS(DYNAMIC_PROPERTY);
-#undef DYNAMIC_PROPERTY
 
 public:
     void SetTheme(TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi)
