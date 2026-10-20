@@ -367,7 +367,7 @@ struct HwndTerminal : public Microsoft::Console::Types::IControlAccessibilityInf
                 WS_EX_NOREDIRECTIONBITMAP,
                 term_window_class,
                 nullptr,
-                WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE,
+                WS_CHILD | WS_VISIBLE,
                 0,
                 0,
                 0,
