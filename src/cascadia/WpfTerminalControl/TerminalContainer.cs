@@ -371,20 +371,15 @@ namespace Microsoft.Terminal.Wpf
                         NativeMethods.SetFocus(this.hwnd);
                         break;
                     case NativeMethods.WindowMessage.WM_SYSKEYDOWN: // fallthrough
-                    case NativeMethods.WindowMessage.WM_KEYDOWN:
-                        {
-                            // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-                            UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
-                            break;
-                        }
-
+                    case NativeMethods.WindowMessage.WM_KEYDOWN: // fallthrough
                     case NativeMethods.WindowMessage.WM_SYSKEYUP: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYUP:
                         {
                             // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
                             UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
-                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, scanCode, flags, false);
+
+                            // WM_KEYUP and WM_SYSKEYUP have the lowest bit set compared to their DOWN friends.
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, (msg & 0x1) == 0);
                             break;
                         }
 
