@@ -27,7 +27,7 @@ variables:
     value: false
   # Stub values for the packaging tasks later.
   - name: XES_APPXMANIFESTVERSION
-    value: 0.1.0.0
+    value: 0.0.1.0
   - name: XES_PACKAGEVERSIONNUMBER
     value: 0.0.0.1
 
@@ -158,3 +158,4 @@ stages:
         parameters:
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
+          packageSymbols: false

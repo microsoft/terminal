@@ -27,6 +27,9 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: packageSymbols
+    type: boolean
+    default: true
   - name: signingIdentity
     type: object
     default: {}
@@ -89,7 +92,7 @@ jobs:
       msbuildArgs: >-
         /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
         /p:NoBuild=true
-        /p:IncludeSymbols=true
+        /p:IncludeSymbols=${{ parameters.packageSymbols }}
         /t:Terminal\wpf\WpfTerminalControl:Pack
       msbuildArchitecture: x64
       platform: Any CPU
