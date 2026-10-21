@@ -274,8 +274,7 @@ void TerminalApiTest::RepeatedAltBufferEntryKeepsLiveSize()
     VERIFY_SUCCEEDED(term.UserResize({ 120, 40 }));
     VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Width(), 120);
 
-    // A repeated ?1049h must rebuild the alt buffer at the live size, not the
-    // stale main-buffer viewport size.
+    // Activating the alternate screen buffer a second time must not change its size.
     term.UseAlternateScreenBuffer(TextAttribute{});
     VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Width(), 120);
     VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Height(), 40);
