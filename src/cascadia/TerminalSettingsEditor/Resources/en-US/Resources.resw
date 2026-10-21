@@ -916,7 +916,7 @@
     <comment>Header for the cursor blink interval setting in the Cursor section.</comment>
   </data>
   <data name="Profile_CursorBlinkInterval.Description" xml:space="preserve">
-    <value>Use the Windows setting, disable blinking, or set a custom interval. Applications can still request a steady cursor or hide it.</value>
+    <value>Use the Windows setting, disable blinking, or set a custom interval.</value>
     <comment>Description for the cursor blink interval override.</comment>
   </data>
   <data name="Profile_CursorBlinkMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -928,7 +928,7 @@
     <comment>Cursor blinking option that follows the system blink interval, including disabled blinking.</comment>
   </data>
   <data name="Profile_CursorBlinkModeDisabled.Content" xml:space="preserve">
-    <value>Disabled (steady cursor)</value>
+    <value>Disabled</value>
     <comment>Cursor blinking option that disables blinking without changing cursor visibility.</comment>
   </data>
   <data name="Profile_CursorBlinkModeCustom.Content" xml:space="preserve">
