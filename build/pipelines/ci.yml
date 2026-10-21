@@ -159,3 +159,10 @@ stages:
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
           packageSymbols: false
+          beforeBuildSteps:
+            # Lay down empty PDB files for every DLL, as NuGet will try to find them before
+            # considering how IncludeSymbols is not set.
+            - pwsh: |-
+                Get-ChildItem -Recurse bin -Filter *.dll | ForEach-Object {
+                  Set-Content -Value $null ($_.FullName -Replace 'dll$','pdb')
+                }

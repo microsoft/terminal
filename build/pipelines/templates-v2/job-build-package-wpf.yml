@@ -70,8 +70,6 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - ${{ parameters.beforeBuildSteps }}
-
   - template: steps-download-bin-dir-artifact.yml
     parameters:
       buildPlatforms:
@@ -84,6 +82,8 @@ jobs:
       artifactStem: ${{ parameters.artifactStem }}
 
   - template: .\steps-restore-nuget.yml
+
+  - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
     displayName: Build solution OpenConsole.slnx for WPF Control (Pack)
