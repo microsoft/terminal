@@ -13,39 +13,82 @@ namespace Microsoft.Terminal.Wpf
     public enum CursorStyle : uint
     {
         /// <summary>
-        /// Cursor will be rendered as a blinking block.
+        /// Cursor will be rendered as a quarter-block, like the original Windows Console.
         /// </summary>
-        BlinkingBlock = 0,
+        Vintage = 0,
+
+        /// <summary>
+        /// Cursor will be rendered as a vertical bar.
+        /// </summary>
+        Bar = 1,
+
+        /// <summary>
+        /// Cursor will be rendered as a one-pixel underline.
+        /// </summary>
+        Underscore = 2,
+
+        /// <summary>
+        /// Cursor will be rendered as a double underline.
+        /// </summary>
+        DoubleUnderscore = 3,
+
+        /// <summary>
+        /// Cursor will be rendered as a filled rectangle covering a full cell.
+        /// </summary>
+        FilledBox = 4,
+
+        /// <summary>
+        /// Cursor will be rendered as an empty rectangle outlining a full cell.
+        /// </summary>
+        EmptyBox = 5,
+
+        /// <summary>
+        /// This definition is included for backwards compatibility.
+        /// </summary>
+        BlinkingBar = Bar,
+
+        /// <summary>
+        /// This definition is included for backwards compatibility.
+        /// </summary>
+        BlinkingUnderline = Underscore,
+
+        /// <summary>
+        /// This definition is included for backwards compatibility.
+        /// </summary>
+        BlinkingDoubleUnderline = DoubleUnderscore,
+
+        /// <summary>
+        /// This definition is included for backwards compatibility.
+        /// </summary>
+        BlinkingBlock = FilledBox,
+
+        /// <summary>
+        /// This definition is included for backwards compatibility.
+        /// </summary>
+        BlinkingBox = EmptyBox,
 
         /// <summary>
         /// Currently identical to <see cref="CursorStyle.BlinkingBlock"/>
         /// </summary>
-        BlinkingBlockDefault = 1,
-
-        /// <summary>
-        /// Cursor will be rendered as a block that does not blink.
-        /// </summary>
-        SteadyBlock = 2,
-
-        /// <summary>
-        /// Cursor will be rendered as a blinking underline.
-        /// </summary>
-        BlinkingUnderline = 3,
-
-        /// <summary>
-        /// Cursor will be rendered as an underline that does not blink.
-        /// </summary>
-        SteadyUnderline = 4,
-
-        /// <summary>
-        /// Cursor will be rendered as a vertical blinking bar.
-        /// </summary>
-        BlinkingBar = 5,
+        BlinkingBlockDefault = BlinkingBlock,
 
         /// <summary>
         /// Cursor will be rendered as a vertical bar that does not blink.
+        /// Note: Steady cursors are not currently supported.
         /// </summary>
-        SteadyBar = 6,
+        SteadyBar = BlinkingBar,
+
+        /// <summary>
+        /// Cursor will be rendered as an underline that does not blink.
+        /// Note: Steady cursors are not currently supported.
+        /// </summary>
+        SteadyUnderline = BlinkingUnderline,
+
+        /// <summary>
+        /// Cursor will be rendered as a block that does not blink.
+        /// Note: Steady cursors are not currently supported.
+        /// </summary>
+        SteadyBlock = BlinkingBlock,
     }
 
     /// <summary>

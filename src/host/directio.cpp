@@ -439,7 +439,10 @@ CATCH_RETURN();
         // clippedRectangle.Top/Left() cannot be negative due to the previous Clamp() call.
         auto totalOffset = offsetY * bufferStride + offsetX;
 
-        if (bufferStride <= 0 || targetBuffer.size() < gsl::narrow_cast<size_t>(clippedRectangle.Height() * bufferStride))
+        // NOTE: totalOffset points to the first cell (i.e. .x is possibly >0). The requiredSize is not simply
+        // `offset + height * stride` then, since that may extend beyond the end of a valid, fully allocated buffer.
+        const auto requiredSize = totalOffset + (clippedRectangle.Height() - 1) * bufferStride + width;
+        if (bufferStride <= 0 || targetBuffer.size() < requiredSize)
         {
             return E_INVALIDARG;
         }
@@ -530,9 +533,12 @@ CATCH_RETURN();
         // clippedRectangle.Top/Left() cannot be negative due to the previous Clamp() call.
         const auto offsetY = clippedRectangle.Top() - requestRectangle.Top();
         const auto offsetX = clippedRectangle.Left() - requestRectangle.Left();
-        auto totalOffset = offsetY * bufferStride + offsetX;
+        auto totalOffset = gsl::narrow_cast<size_t>(offsetY) * bufferStride + offsetX;
 
-        if (bufferStride <= 0 || buffer.size() < gsl::narrow_cast<size_t>(clippedRectangle.Height() * bufferStride))
+        // NOTE: totalOffset points to the first cell (i.e. .x is possibly >0). The requiredSize is not simply
+        // `offset + height * stride` then, since that may extend beyond the end of a valid, fully allocated buffer.
+        const auto requiredSize = totalOffset + gsl::narrow_cast<size_t>(clippedRectangle.Height() - 1) * bufferStride + width;
+        if (bufferStride < requestRectangle.Width() || buffer.size() < requiredSize)
         {
             return E_INVALIDARG;
         }

@@ -82,8 +82,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
-
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);
         BOOL GetClientRectangle(_Out_ til::rect* lpRect);
@@ -107,14 +105,12 @@ namespace Microsoft::Console::Interactivity::Win32
         void _CloseWindow() const;
 
         static ATOM s_atomWindowClass;
-        Settings* _pSettings;
+        Settings* _pSettings{ nullptr };
 
-        HWND _hWnd;
+        HWND _hWnd{ nullptr };
 
         Render::GdiEngine* pGdiEngine = nullptr;
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
-#endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const til::size sizeNew);
@@ -142,7 +138,7 @@ namespace Microsoft::Console::Interactivity::Win32
                                                const WPARAM wParam,
                                                const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
-        WRL::ComPtr<WindowUiaProvider> _pUiaProvider;
+        WRL::ComPtr<WindowUiaProvider> _pUiaProvider{ nullptr };
 
         // Dynamic Settings helpers
         [[nodiscard]] static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
@@ -159,11 +155,11 @@ namespace Microsoft::Console::Interactivity::Win32
         // Full screen
         void _RestoreFullscreenPosition(const RECT& rcWork);
         void _SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork);
-        bool _fIsInFullscreen;
-        bool _fWasMaximizedBeforeFullscreen;
+        bool _fIsInFullscreen{ false };
+        bool _fWasMaximizedBeforeFullscreen{ false };
         RECT _rcWindowBeforeFullscreen;
         RECT _rcWorkBeforeFullscreen;
-        UINT _dpiBeforeFullscreen;
+        UINT _dpiBeforeFullscreen{ 0 };
 
         // math helpers
         void _CalculateWindowRect(const til::size coordWindowInChars,

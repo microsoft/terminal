@@ -1,0 +1,40 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ProfileViewModel.idl";
+import "ColorSchemeViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ProfilesPageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ProfilesPageViewModel();
+
+        Windows.Foundation.Collections.IObservableVector<ProfileViewModel> Profiles { get; };
+
+        // The profile whose properties should be used as the source when the
+        // user clicks the SplitButton's primary "+" action. null means "create
+        // a new empty profile" (i.e. the default state).
+        ProfileViewModel SelectedSourceProfile { get; };
+        String SelectedSourceProfileLabel { get; };
+        Windows.UI.Xaml.Controls.IconElement SelectedSourceProfileIcon { get; };
+        Boolean HasSelectedSourceProfile { get; };
+        void SelectSourceProfile(ProfileViewModel profile);
+
+        void RequestOpenDefaults();
+        void RequestOpenColorSchemes();
+        void RequestAddProfile(Guid sourceProfile);
+        void RequestOpenProfile(ProfileViewModel profile);
+
+        event Windows.Foundation.TypedEventHandler<Object, IInspectable> OpenDefaultsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, IInspectable> OpenColorSchemesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Guid> AddProfileRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ProfileViewModel> OpenProfileRequested;
+    }
+
+    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
+    {
+        Profiles();
+        ProfilesPageViewModel ViewModel { get; };
+    }
+}

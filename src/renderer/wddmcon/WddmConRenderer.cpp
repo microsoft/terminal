@@ -215,7 +215,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_FALSE since we do nothing.
 
-[[nodiscard]] HRESULT WddmConEngine::Present() noexcept
+[[nodiscard]] HRESULT WddmConEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }
@@ -249,8 +249,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                      const til::point coord,
-                                                     const bool /*trimLeft*/,
-                                                     const bool /*lineWrapped*/) noexcept
+                                                     const bool /*trimLeft*/) noexcept
 {
     try
     {

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Extensions.idl";
+import "ActionsViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -15,13 +16,30 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    interface IInheritableViewModel
+    {
+        Boolean HasSetting(String name);
+        void ClearSetting(String name);
+        Object SettingOverrideSource(String name);
+    }
+
+    // This is used to pass data between pages during navigation.
+    runtimeclass NavigateToPageArgs
+    {
+        IHostedInWindow WindowRoot { get; };
+        IInspectable ViewModel { get; };
+        String ElementToFocus { get; };
+    }
+
     enum BreadcrumbSubPage
     {
         None = 0,
         Profile_Appearance,
+        Profile_UnfocusedAppearance,
         Profile_Terminal,
         Profile_Advanced,
         ColorSchemes_Edit,
+        Actions_Edit,
         NewTabMenu_Folder,
         Extensions_Extension
     };
@@ -35,9 +53,11 @@ namespace Microsoft.Terminal.Settings.Editor
 
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
     {
-        MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings,
+                 Microsoft.Terminal.Settings.Model.WindowSettings windowSettings);
 
-        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings,
+                            Microsoft.Terminal.Settings.Model.WindowSettings windowSettings);
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
         event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> > ShowLoadWarningsDialog;
 
@@ -47,6 +67,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
         ExtensionsViewModel ExtensionsVM { get; };
+        ActionsViewModel ActionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }

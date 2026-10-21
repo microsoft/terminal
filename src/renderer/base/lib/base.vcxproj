@@ -19,7 +19,6 @@
     <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\RenderSettings.cpp" />
     <ClCompile Include="..\renderer.cpp" />
-    <ClCompile Include="..\thread.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -39,7 +38,6 @@
     <ClInclude Include="..\FontCache.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\renderer.hpp" />
-    <ClInclude Include="..\thread.hpp" />
   </ItemGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

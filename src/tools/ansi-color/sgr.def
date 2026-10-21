@@ -1,6 +1,6 @@
 :: Complete matrix of SGR parameters available
 :: This definition also demonstrates the various configuration changes
-:: which are used to control the way the table is generated
+:: which are used to control the way that the table is generated
 :: Requires 97 columns to display correctly
 __DATA__
 :: Select Graphic Rendition (SGR) parameters

@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring ToString()
         {
-            return hstring{ fmt::format(FMT_COMPILE(L"{}, {}, {}"), Name(), Author(), Version()) };
+            return til::hstring_format(FMT_COMPILE(L"{}, {}, {}"), Name(), Author(), Version());
         }
 
         hstring Name() const;

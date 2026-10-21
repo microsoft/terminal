@@ -12,7 +12,11 @@ namespace Microsoft::Console::Render::Atlas
 #ifdef NDEBUG
 #define ATLAS_DEBUG__IS_DEBUG 0
 #else
+#ifdef __INSIDE_WINDOWS
+#define ATLAS_DEBUG__IS_DEBUG 0
+#else
 #define ATLAS_DEBUG__IS_DEBUG 1
+#endif
 #endif
 
     // If set to 1, this will cause the entire viewport to be invalidated at all times.

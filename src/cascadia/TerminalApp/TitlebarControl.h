@@ -17,6 +17,9 @@ namespace winrt::TerminalApp::implementation
         void ReleaseButtons();
         float CaptionButtonWidth();
 
+        bool Focused();
+        void Focused(bool focused);
+
         IInspectable Content();
         void Content(IInspectable content);
 

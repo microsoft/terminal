@@ -40,6 +40,10 @@ public:
         dcsDataString.clear();
     }
 
+    void UnknownSequence() noexcept override
+    {
+    }
+
     bool EncounteredWin32InputModeSequence() const noexcept override
     {
         return false;

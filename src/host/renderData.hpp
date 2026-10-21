@@ -1,16 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- renderData.hpp
-
-Abstract:
-- This method provides an interface for rendering the final display based on the current console state
-
-Author(s):
-- Michael Niksa (miniksa) Nov 2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -20,41 +9,43 @@ class RenderData final :
     public Microsoft::Console::Render::IRenderData
 {
 public:
+    void UpdateSystemMetrics();
+
+    //
+    // BEGIN IRenderData
+    //
+
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     til::point GetTextBufferEndPosition() const noexcept override;
     TextBuffer& GetTextBuffer() const noexcept override;
     const FontInfo& GetFontInfo() const noexcept override;
-
+    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
+    const til::point_span* GetSearchHighlightFocused() const noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
-
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
 
-    til::point GetCursorPosition() const noexcept override;
-    bool IsCursorVisible() const noexcept override;
-    bool IsCursorOn() const noexcept override;
-    ULONG GetCursorHeight() const noexcept override;
-    CursorType GetCursorStyle() const noexcept override;
+    Microsoft::Console::Render::TimerDuration GetBlinkInterval() noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    bool IsCursorDoubleWidth() const override;
-
-    const bool IsGridLineDrawingAllowed() noexcept override;
-
-    const std::wstring_view GetConsoleTitle() const noexcept override;
-
-    const std::wstring GetHyperlinkUri(uint16_t id) const override;
-    const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
-
-    const std::vector<size_t> GetPatternId(const til::point location) const override;
+    bool IsGridLineDrawingAllowed() noexcept override;
+    std::wstring_view GetConsoleTitle() const noexcept override;
+    std::wstring GetHyperlinkUri(uint16_t id) const override;
+    std::wstring GetHyperlinkCustomId(uint16_t id) const override;
+    std::vector<size_t> GetPatternId(const til::point location) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
-    const bool IsSelectionActive() const override;
-    const bool IsBlockSelection() const noexcept override;
+    bool IsSelectionActive() const override;
+    bool IsBlockSelection() const override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    std::span<const til::point_span> GetSearchHighlights() const noexcept override;
-    const til::point_span* GetSearchHighlightFocused() const noexcept override;
-    const til::point GetSelectionAnchor() const noexcept override;
-    const til::point GetSelectionEnd() const noexcept override;
-    const bool IsUiaDataInitialized() const noexcept override { return true; }
+    til::point GetSelectionAnchor() const noexcept override;
+    til::point GetSelectionEnd() const noexcept override;
+    bool IsUiaDataInitialized() const noexcept override;
+
+    //
+    // END IRenderData
+    //
+
+private:
+    std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
 };

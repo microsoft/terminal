@@ -175,7 +175,7 @@ void Undo(HWND hControlWindow);
 //
 // Macros
 //
-#define AttrToRGB(Attr) (gpStateInfo->ColorTable[(Attr)&0x0F])
+#define AttrToRGB(Attr) (gpStateInfo->ColorTable[(Attr) & 0x0F])
 #define ScreenTextColor(pStateInfo) \
     (AttrToRGB(LOBYTE(pStateInfo->ScreenAttributes) & 0x0F))
 #define ScreenBkColor(pStateInfo) \

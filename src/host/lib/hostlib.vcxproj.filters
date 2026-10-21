@@ -144,7 +144,7 @@
     <ClCompile Include="..\PtySignalInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\CursorBlinker.cpp">
+    <ClCompile Include="..\AccessibilityNotifier.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -281,10 +281,10 @@
     <ClInclude Include="..\history.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\CursorBlinker.hpp">
+    <ClInclude Include="..\IIoProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IIoProvider.hpp">
+    <ClInclude Include="..\AccessibilityNotifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

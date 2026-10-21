@@ -35,9 +35,13 @@ parameters:
   - name: signingIdentity
     type: object
     default: {}
+  - name: outerTemplateContext
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
+  templateContext: ${{ parameters.outerTemplateContext }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
   ${{ if eq(parameters.codeSign, true) }}:

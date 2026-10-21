@@ -5,6 +5,10 @@ Licensed under the MIT license.
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define OB_FILE_OBJECT_TYPE 1
 
 typedef struct _PORT_MESSAGE {
@@ -124,3 +128,7 @@ NTSTATUS NtAlpcQueryInformationMessage(
     ULONG Length,
     PULONG ReturnLength
 );
+
+#ifdef __cplusplus
+}
+#endif

@@ -60,7 +60,8 @@
             "enum": [
               "audible",
               "window",
-              "taskbar"
+              "taskbar",
+              "notification"
             ]
           }
         },
@@ -70,6 +71,7 @@
             "audible",
             "taskbar",
             "window",
+            "notification",
             "all",
             "none"
           ]
@@ -267,12 +269,13 @@
           "type": "string"
         },
         "adjustIndistinguishableColors": {
-          "default": "never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "default": "automatic",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. When set to \"automatic\", this behaves like \"indexed\" while high contrast mode is enabled in Windows, and like \"never\" otherwise. Other possible values are \"never\" and \"always\".",
           "enum": [
             "never",
             "indexed",
-            "always"
+            "always",
+            "automatic"
           ],
           "type": "string"
         },
@@ -282,6 +285,10 @@
         },
         "experimental.pixelShaderPath": {
           "description": "Use to set a path to a pixel shader to use with the Terminal when unfocused. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        },
+        "experimental.pixelShaderImagePath": {
+          "description": "Use to set a path to an image that's made available to the `experimental.pixelShaderPath` shader in texture register t1 when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
         "useAcrylic": {
@@ -374,6 +381,16 @@
           },
           "additionalProperties": false
         },
+        "builtinGlyphs": {
+          "default": true,
+          "description": "When set to true, the terminal renders box drawing, block element, Powerline and legacy computing characters itself instead of using the font.",
+          "type": "boolean"
+        },
+        "colorGlyphs": {
+          "default": true,
+          "description": "When set to true, Emoji are displayed in full color. When set to false, they are displayed in the text's foreground color.",
+          "type": "boolean"
+        },
         "cellWidth": {
           "$ref": "#/$defs/CSSLengthPercentage",
           "description": "Override the width of the terminal's cells. The override works similar to CSS' letter-spacing. It defaults to the natural glyph advance width of the primary font rounded to the nearest pixel."
@@ -439,6 +456,7 @@
         "openTabColorPicker",
         "openTabRenamer",
         "openWindowRenamer",
+        "openWorkspace",
         "paste",
         "prevTab",
         "quakeMode",
@@ -477,6 +495,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "toggleSplitOrientation",
+        "workspaces",
         "wt",
         "unbound"
       ],
@@ -1719,6 +1738,28 @@
         }
       ]
     },
+    "OpenWorkspaceAction": {
+      "description": "Arguments corresponding to an openWorkspace Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "openWorkspace"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the workspace to open. If omitted, the workspaces UI will be shown so the user can pick one."
+            }
+          }
+        }
+      ]
+    },
     "FocusPaneAction": {
       "description": "Arguments corresponding to a focusPane Action",
       "allOf": [
@@ -1765,7 +1806,7 @@
       ]
     },
     "ExportBufferAction": {
-      "description": "Arguments corresponding to a exportBuffer Action",
+      "description": "Arguments corresponding to an exportBuffer Action",
       "allOf": [
         {
           "$ref": "#/$defs/ShortcutAction"
@@ -1870,13 +1911,10 @@
             },
             "queryUrl": {
               "type": "string",
-              "description": "URL of the web page to launch, %s is replaced with the selected text"
+              "description": "URL of the web page to launch, %s is replaced with the selected text. If omitted, the \"searchWebDefaultQueryUrl\" setting is used."
             }
           }
         }
-      ],
-      "required": [
-        "queryUrl"
       ]
     },
     "AdjustOpacityAction": {
@@ -2038,6 +2076,26 @@
         "unfocusedFrame": {
           "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
           "$ref": "#/$defs/ThemeColor"
+        },
+        "showWorkspacesButton": {
+          "description": "When set to true, the workspaces button will be shown in the tab row.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "SettingsTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the Settings UI",
+      "properties": {
+        "theme": {
+          "description": "Which UI theme the Settings UI should use, instead of the window's `applicationTheme`.",
+          "enum": [
+            "light",
+            "dark",
+            "system"
+          ],
+          "type": "string"
         }
       }
     },
@@ -2055,6 +2113,9 @@
               "system"
             ]
           }
+        },
+        "settings": {
+          "$ref": "#/$defs/SettingsTheme"
         },
         "tab": {
           "$ref": "#/$defs/TabTheme"
@@ -2207,6 +2268,9 @@
               "$ref": "#/$defs/RenameWindowAction"
             },
             {
+              "$ref": "#/$defs/OpenWorkspaceAction"
+            },
+            {
               "$ref": "#/$defs/FocusPaneAction"
             },
             {
@@ -2242,7 +2306,7 @@
           "$ref": "#/$defs/Icon"
         },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is an object, the key property of the object will be used to lookup a localized string resource for the command",
           "type": [
             "string",
             "object",
@@ -2302,8 +2366,15 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "The ID of the command this keybinding should execute.",
-          "type": "string"
+          "description": "The ID of the command this keybinding should execute (or null to disable a default).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -2351,6 +2422,11 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
+        "enableTabDragDrop": {
+          "default": true,
+          "description": "When set to true, tabs can be reordered and torn out into new windows by dragging them. When set to false, dragging tabs is disabled (they can still be moved with the \"moveTab\" actions). Dragging is always disabled when running as administrator.",
+          "type": "boolean"
+        },
         "compatibility.enableUnfocusedAcrylic": {
           "default": true,
           "description": "When set to true, unfocused windows can have acrylic instead of opaque.",
@@ -2359,11 +2435,6 @@
         "centerOnLaunch": {
           "default": false,
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
-          "type": "boolean"
-        },
-        "warning.inputService": {
-          "default": true,
-          "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
           "type": "boolean"
         },
         "copyOnSelect": {
@@ -2400,6 +2471,14 @@
             "console"
           ]
         },
+        "compatibility.ambiguousWidth": {
+          "default": "narrow",
+          "description": "Controls the cell width of East Asian Ambiguous characters.",
+          "enum": [
+            "narrow",
+            "wide"
+          ]
+        },
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
@@ -2425,6 +2504,11 @@
           "description": "When set to true, adds preset \"Color Selection\" actions (keybindings) to allow colorizing selected text via keystroke, similar to the legacy conhost EnableColorSelection feature (such as alt+6 to color the selection red).",
           "type": "boolean"
         },
+        "experimental.enableShellCompletionMenu": {
+          "default": false,
+          "description": "When set to true, shells can send a list of completions (for example, from PowerShell) for the Terminal to display in a menu. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "boolean"
+        },
         "disableAnimations": {
           "default": false,
           "description": "When set to `true`, visual animations will be disabled across the application.",
@@ -2436,9 +2520,21 @@
           "type": "boolean"
         },
         "warning.multiLinePaste": {
-          "default": true,
-          "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
-          "type": "boolean"
+          "default": "automatic",
+          "description": "Controls when a warning is displayed before pasting text that contains a newline. \"automatic\" warns only if the application hasn't enabled bracketed paste mode. If your shell doesn't support bracketed paste, we recommend \"always\" for security reasons. true and false are accepted as synonyms for \"automatic\" and \"never\" respectively.",
+          "oneOf": [
+            {
+              "enum": [
+                "automatic",
+                "always",
+                "never"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
         },
         "defaultProfile": {
           "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
@@ -2455,10 +2551,23 @@
           },
           "type": "array"
         },
+        "safeUriSchemes": {
+          "description": "Specifies a list of URI schemes that are considered safe. No confirmation will be required to open URIs with these schemes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "searchWebDefaultQueryUrl": {
+          "default": "https://www.bing.com/search?q=%22%s%22",
+          "description": "The URL to open when the \"searchWeb\" action doesn't specify a \"queryUrl\". The placeholder \"%s\" will be replaced with the selected text.",
+          "type": "string"
+        },
         "rendering.graphicsAPI": {
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
           "enum": [
+            "automatic",
             "direct2d",
             "direct3d11"
           ]
@@ -2471,9 +2580,15 @@
           "description": "When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.",
           "type": "boolean"
         },
-        "experimental.input.forceVT": {
-          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+        "debugFeatures": {
+          "default": false,
+          "description": "When set to true, enables features that are useful for troubleshooting or developing the Terminal.",
           "type": "boolean"
+        },
+        "experimental.input.forceVT": {
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" profile setting.",
+          "deprecated": true
         },
         "experimental.useBackgroundImageForWindow": {
           "default": false,
@@ -2500,10 +2615,11 @@
         },
         "firstWindowPreference": {
           "default": "defaultProfile",
-          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "description": "Defines how the terminal behaves when it starts. \"defaultProfile\" launches one tab using the default profile. \"persistedLayout\" saves the window layout on close and restores it on open. \"persistedLayoutAndContent\" saves both the layout and the tab content on close and restores them on open. \"persistedWindowLayout\" is a deprecated compatibility alias for \"persistedLayoutAndContent\".",
           "enum": [
             "defaultProfile",
-            "persistedWindowLayout"
+            "persistedLayout",
+            "persistedLayoutAndContent"
           ],
           "type": "string"
         },
@@ -2520,14 +2636,14 @@
           "type": "string"
         },
         "rowsToScroll": {
-          "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
-          "maximum": 999,
-          "minimum": 0,
           "type": [
             "integer",
             "string"
           ],
+          "description": "[Deprecated] This setting no longer has any effect. However, you can customize the number of lines to scroll using the \"rowsToScroll\" argument on the \"scrollUp\" and \"scrollDown\" actions.",
+          "default": "system",
+          "minimum": 0,
+          "maximum": 999,
           "deprecated": true
         },
         "minimizeToNotificationArea": {
@@ -2573,8 +2689,20 @@
           "$ref": "#/$defs/NewTabMenu"
         },
         "language": {
-          "default": "",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
+          "default": null
+        },
+        "defaultInputScope": {
+          "default": "default",
+          "description": "Sets the default input mode of the input method editor (IME). When set to \"alphanumericHalfWidth\", IME-based languages default to English input.",
+          "enum": [
+            "default",
+            "alphanumericHalfWidth"
+          ],
           "type": "string"
         },
         "theme": {
@@ -2614,7 +2742,7 @@
           "type": "boolean"
         },
         "snapToGridOnResize": {
-          "default": false,
+          "default": true,
           "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize smoothly",
           "type": "boolean"
         },
@@ -2634,24 +2762,35 @@
           "type": "string"
         },
         "warning.confirmCloseAllTabs": {
+          "deprecated": true,
+          "description": "[Deprecated] Use \"warning.confirmOnClose\" instead.",
           "default": true,
-          "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
         },
+        "warning.confirmOnClose": {
+          "default": "automatic",
+          "description": "Controls when a confirmation dialog appears before closing tabs or windows.",
+          "enum": [
+            "never",
+            "automatic",
+            "always"
+          ],
+          "type": "string"
+        },
         "useTabSwitcher": {
+          "description": "[Deprecated] Replaced with the \"tabSwitcherMode\" setting.",
           "default": true,
-          "description": "Deprecated. Please use \"tabSwitcherMode\" instead.",
           "oneOf": [
             {
               "type": "boolean"
             },
             {
+              "type": "string",
               "enum": [
                 "mru",
                 "inOrder",
                 "disabled"
-              ],
-              "type": "string"
+              ]
             }
           ],
           "deprecated": true
@@ -2708,12 +2847,12 @@
       "type": "object",
       "properties": {
         "acrylicOpacity": {
+          "type": "number",
+          "description": "[Deprecated] Replaced with the \"opacity\" setting.",
           "default": 0.5,
-          "description": "[deprecated] Please use `opacity` instead.",
-          "deprecated": true,
-          "maximum": 1,
           "minimum": 0,
-          "type": "number"
+          "maximum": 1,
+          "deprecated": true
         },
         "antialiasingMode": {
           "default": "grayscale",
@@ -2739,6 +2878,16 @@
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
           "type": "boolean"
         },
+        "compatibility.input.forceVT": {
+          "default": false,
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+          "type": "boolean"
+        },
+        "compatibility.kittyKeyboardMode": {
+          "default": true,
+          "description": "When set to true, applications can enable the Kitty keyboard protocol for more detailed keyboard input reporting. When set to false, requests to enable it are ignored.",
+          "type": "boolean"
+        },
         "compatibility.allowDECRQCRA": {
           "default": false,
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
@@ -2747,6 +2896,11 @@
         "compatibility.allowOSC52": {
           "default": true,
           "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC777": {
+          "default": false,
+          "description": "When set to true, applications can send OSC 777 escape sequences to trigger desktop toast notifications with a custom title and body.",
           "type": "boolean"
         },
         "unfocusedAppearance": {
@@ -2858,6 +3012,10 @@
           "description": "Executable used in the profile.",
           "type": "string"
         },
+        "connectionType": {
+          "$ref": "#/$defs/ProfileGuid",
+          "description": "Identifies a special type of connection for this profile, such as Azure Cloud Shell. This is set automatically and shouldn't be changed."
+        },
         "cursorColor": {
           "oneOf": [
             {
@@ -2910,27 +3068,37 @@
           "type": "boolean"
         },
         "experimental.autoMarkPrompts": {
-          "deprecated": true,
-          "description": "This has been replaced by autoMarkPrompts in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"autoMarkPrompts\" setting.",
+          "deprecated": true
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.showMarksOnScrollbar": {
-          "deprecated": true,
-          "description": "This has been replaced by showMarksOnScrollbar in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"showMarksOnScrollbar\" setting.",
+          "deprecated": true
         },
         "showMarksOnScrollbar": {
           "default": false,
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
+        "experimental.rainbowSuggestions": {
+          "type": "boolean",
+          "description": "Enables displaying command suggestions in the terminal in RGB (all the colors of the rainbow!).",
+          "default": false
+        },
         "experimental.rightClickContextMenu": {
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"rightClickContextMenu\" setting.",
+          "deprecated": true
+        },
+        "rightClickContextMenu": {
           "default": false,
-          "description": "When true, right-click shows a context menu; otherwise, it pastes from the clipboard or copies selection.",
+          "description": "When set to true, right-clicking displays a context menu. When set to false, right-clicking copies the selected text, or pastes if there's no selection.",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {
@@ -2942,24 +3110,34 @@
           "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
+        "experimental.pixelShaderImagePath": {
+          "description": "Use to set a path to an image that's made available to the `experimental.pixelShaderPath` shader in texture register t1. This is an experimental feature, and its continued existence is not guaranteed.",
+          "type": "string"
+        },
         "fontFace": {
-          "default": "Cascadia Mono",
-          "description": "[deprecated] Define 'face' within the 'font' object instead.",
           "type": "string",
+          "description": "[Deprecated] Replaced with the \"face\" setting within the \"font\" object.",
+          "default": "Cascadia Mono",
           "deprecated": true
         },
         "fontSize": {
-          "default": 12,
-          "description": "[deprecated] Define 'size' within the 'font' object instead.",
-          "minimum": 1,
           "type": "number",
+          "description": "[Deprecated] Replaced with the \"size\" setting within the \"font\" object.",
+          "default": 12,
+          "minimum": 1,
           "deprecated": true
         },
         "fontWeight": {
+          "description": "[Deprecated] Replaced with the \"weight\" setting within the \"font\" object.",
           "default": "normal",
-          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
           "oneOf": [
             {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 990
+            },
+            {
+              "type": "string",
               "enum": [
                 "thin",
                 "extra-light",
@@ -2972,13 +3150,7 @@
                 "extra-bold",
                 "black",
                 "extra-black"
-              ],
-              "type": "string"
-            },
-            {
-              "maximum": 990,
-              "minimum": 100,
-              "type": "integer"
+              ]
             }
           ],
           "deprecated": true
@@ -3047,12 +3219,13 @@
           ]
         },
         "adjustIndistinguishableColors": {
-          "default": "never",
-          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. Other possible values are \"never\" and \"always\".",
+          "default": "automatic",
+          "description": "Setting to adjust the foreground color to make it more visible, based on the background color. When set to \"indexed\", we will only adjust the colors if they came from the color scheme. When set to \"automatic\", this behaves like \"indexed\" while high contrast mode is enabled in Windows, and like \"never\" otherwise. Other possible values are \"never\" and \"always\".",
           "enum": [
             "never",
             "indexed",
-            "always"
+            "always",
+            "automatic"
           ],
           "type": "string"
         },
@@ -3089,7 +3262,10 @@
         },
         "answerbackMessage": {
           "description": "The response that is sent when an ENQ control character is received.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
@@ -3140,6 +3316,11 @@
             "msys2",
             "mingw"
           ],
+          "type": "string"
+        },
+        "dragDropDelimiter": {
+          "default": " ",
+          "description": "The delimiter used when dropping multiple files onto the terminal.",
           "type": "string"
         }
       }

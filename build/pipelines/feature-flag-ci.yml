@@ -31,7 +31,8 @@ stages:
         - template: ./templates-v2/job-build-project.yml
           parameters:
             pool: # This only runs in CI
-                name: SHINE-OSS-L
+              name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS18-Latest
             buildPlatforms: [x64]
             buildConfigurations: [Release]
             buildEverything: true

@@ -78,7 +78,7 @@ HRESULT CTerminalHandoff::s_StopListening()
 // - server - PTY process handle to track for lifetime/cleanup
 // - client - Process handle to client so we can track its lifetime and exit appropriately
 // Return Value:
-// - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
+// - E_NOT_VALID_STATE if an event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
 HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo)

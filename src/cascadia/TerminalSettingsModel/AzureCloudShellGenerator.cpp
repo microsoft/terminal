@@ -8,7 +8,6 @@
 
 #include "../../inc/DefaultSettings.h"
 #include "DynamicProfileUtils.h"
-#include <LibraryResources.h>
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;

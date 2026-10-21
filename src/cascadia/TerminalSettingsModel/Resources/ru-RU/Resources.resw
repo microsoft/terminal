@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Переместить вкладку {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Переместить вкладку в окно "{0}"</value>
@@ -182,10 +182,10 @@
     <value>Переместить вкладку в новое окно</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>вперед</value>
+    <value>вперед (вправо)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>назад</value>
+    <value>назад (влево)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Закрыть все вкладки после текущей вкладки</value>
@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Сбросить имя окна</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Открыть рабочую область "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Открыть рабочую область</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Переименовать окно...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>Перезапустить подключение</value>
+    <value>Перезапустить сеанс</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Открыть временную память</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Открыть текущую рабочую папку</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Рабочие области...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Закрыть вкладку</value>
@@ -821,10 +831,10 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Закрыть выделение</value>
+    <value>Отменить выбор</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Одна строка</value>
+    <value>Одинарная линия</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>С последовательностями управления</value>
@@ -941,7 +951,7 @@
     <value>Фон</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Режим соответствия</value>
+    <value>Режим сопоставления</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
     <value>Начальный каталог</value>

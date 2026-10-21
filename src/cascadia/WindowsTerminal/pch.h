@@ -32,6 +32,7 @@ Abstract:
 #include <shellscalingapi.h>
 #include <windowsx.h>
 #include <ShObjIdl.h>
+#include <shlobj_core.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -95,3 +96,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "Tab.h"
 
-#include <LibraryResources.h>
-
 #include "CommandPaletteItems.h"
 
 using namespace winrt;

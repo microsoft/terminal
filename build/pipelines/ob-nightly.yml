@@ -28,7 +28,7 @@ extends:
     official: true
     branding: Canary
     buildTerminal: true
-    pgoBuildMode: None # BODGY - OneBranch is on VS 17.10, which is known to be the worst
+    pgoBuildMode: Optimize
     codeSign: true
     signingIdentity:
       serviceName: $(SigningServiceName)

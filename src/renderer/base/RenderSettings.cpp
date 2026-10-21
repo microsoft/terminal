@@ -59,11 +59,6 @@ void RenderSettings::RestoreDefaultSettings() noexcept
 void RenderSettings::SetRenderMode(const Mode mode, const bool enabled) noexcept
 {
     _renderMode.set(mode, enabled);
-    // If blinking is disabled, make sure blinking content is not faint.
-    if (mode == Mode::BlinkAllowed && !enabled)
-    {
-        _blinkShouldBeFaint = false;
-    }
 }
 
 // Routine Description:
@@ -187,8 +182,6 @@ void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexc
 // - The color values of the attribute's foreground and background.
 std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    _blinkIsInUse = _blinkIsInUse || attr.IsBlinking();
-
     const auto fgTextColor = attr.GetForeground();
     const auto bgTextColor = attr.GetBackground();
 
@@ -296,35 +289,7 @@ COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) c
     return ul;
 }
 
-// Routine Description:
-// - Increments the position in the blink cycle, toggling the blink rendition
-//   state on every second call, potentially triggering a redraw of the given
-//   renderer if there are blinking cells currently in view.
-// Arguments:
-// - renderer: the renderer that will be redrawn.
-void RenderSettings::ToggleBlinkRendition(Renderer* renderer) noexcept
-try
+void RenderSettings::ToggleBlinkRendition() noexcept
 {
-    if (GetRenderMode(Mode::BlinkAllowed))
-    {
-        // This method is called with the frequency of the cursor blink rate,
-        // but we only want our cells to blink at half that frequency. We thus
-        // have a blink cycle that loops through four phases...
-        _blinkCycle = (_blinkCycle + 1) % 4;
-        // ... and two of those four render the blink attributes as faint.
-        _blinkShouldBeFaint = _blinkCycle >= 2;
-        // Every two cycles (when the state changes), we need to trigger a
-        // redraw, but only if there are actually blink attributes in use.
-        if (_blinkIsInUse && _blinkCycle % 2 == 0)
-        {
-            // We reset the _blinkIsInUse flag before redrawing, so we can
-            // get a fresh assessment of the current blink attribute usage.
-            _blinkIsInUse = false;
-            if (renderer)
-            {
-                renderer->TriggerRedrawAll();
-            }
-        }
-    }
+    _blinkShouldBeFaint = !_blinkShouldBeFaint;
 }
-CATCH_LOG()

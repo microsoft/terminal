@@ -315,6 +315,9 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 public:
     TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
+
+    void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t>) override {}
+
     virtual void WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
     virtual void WriteCtrlKey(const INPUT_RECORD& event) override;
@@ -679,11 +682,9 @@ void InputEngineTest::CursorPositioningTest()
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
-    VERIFY_IS_NOT_NULL(inputEngine.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    inputEngine->CaptureNextCursorPositionReport();
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
@@ -898,7 +899,7 @@ void InputEngineTest::AltCtrlDTest()
 
 void InputEngineTest::AltIntermediateTest()
 {
-    // Tests GH#1209. When we process a alt+key combination where the key just
+    // Tests GH#1209. When we process an alt+key combination where the key just
     // so happens to be an intermediate character, we should make sure that an
     // immediately subsequent ctrl character is handled correctly.
 
@@ -968,7 +969,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
 
-    // First, expect a alt+backspace.
+    // First, expect an alt+backspace.
     testState.vExpectedInput.push_back(inputRec);
 
     std::wstring seq = L"\x1b\x7f";
@@ -983,7 +984,7 @@ void InputEngineTest::AltBackspaceEnterTest()
     inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(OneCoreSafeMapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
     inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
 
-    // Then, expect a enter
+    // Then, expect an enter
     testState.vExpectedInput.push_back(inputRec);
 
     seq = L"\x0d";
@@ -1194,8 +1195,10 @@ void InputEngineTest::SGRMouseTest_Scroll()
     // NOTE: scrolling events do NOT send a mouse up event
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                             EXPECTED OUTPUT
-        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED } },
-        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED } },
+        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollLeft,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_HWHEELED } },
+        {   { CsiMouseButtonCodes::ScrollRight,   0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_HWHEELED } },
     };
     // clang-format on
     VerifySGRMouseData(testData);

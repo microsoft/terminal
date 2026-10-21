@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "TextMenuFlyout.h"
 
-#include <LibraryResources.h>
-
 #include "TextMenuFlyout.g.cpp"
 
 using namespace ::winrt::Windows::UI::Xaml;
@@ -162,7 +160,13 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         IInspectable target = Target();
         if (!target)
         {
-            target = FocusManager::GetFocusedElement(XamlRoot());
+            auto root = XamlRoot();
+            if (!root)
+            {
+                return;
+            }
+            target = FocusManager::GetFocusedElement(root);
+
             if (!target)
             {
                 return;

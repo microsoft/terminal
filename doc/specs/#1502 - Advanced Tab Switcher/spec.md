@@ -141,7 +141,7 @@ Pressing the `openTabSwitcher` keychord again will not close the switcher, it'll
 
 We'll provide a setting that will allow the list of tabs to be presented in either _in-order_ (how the tabs are ordered on the tab bar), or _Most Recently Used Order_ (MRU). MRU means that the tab that the terminal most recently visited will be on the top of the list, and the tab that the terminal has not visited for the longest time will be on the bottom.
 
-There will be an argument for the `openTabSwitcher` action called `displayOrder`. This can be either `inOrder` or `mruOrder`. Making the setting an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
+There will be an argument for the `openTabSwitcher` action called `displayOrder`. This can be either `inOrder` or `mruOrder`. Using an argument passed into `openTabSwitcher` would allow the user to have one keybinding to open an MRU Tab Switcher, and different one for the In-Order Tab Switcher. For example:
 ```
   {"keys": ["ctrl+tab"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"mruOrder"}}
   {"keys": ["ctrl+shift+p"], "command": {"action": "openTabSwitcher", "anchor":"ctrl", "displayOrder":"inOrder"}}

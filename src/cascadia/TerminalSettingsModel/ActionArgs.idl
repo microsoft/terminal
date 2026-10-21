@@ -10,7 +10,8 @@ namespace Microsoft.Terminal.Settings.Model
         None = 0,
         FilePath,
         FolderPath,
-        ColorScheme
+        ColorScheme,
+        SplitSize
     };
 
     struct ArgDescriptor
@@ -416,6 +417,12 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         RenameWindowArgs(String name);
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass OpenWorkspaceArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        OpenWorkspaceArgs(String name);
         String Name { get; };
     };
 

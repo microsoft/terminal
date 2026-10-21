@@ -56,9 +56,10 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme der Com
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-– Eine komplett neue Erweiterungsseite, die anzeigt, was in Ihrem Terminal installiert ist
-– Die Befehlspalette wird jetzt sowohl in Ihrer Muttersprache als auch auf Englisch angezeigt
-– Neue VT-Features wie synchronisiertes Rendering, neue Farbschemas, Konfiguration für schnelle Mausaktionen wie Zoomen und mehr
+– Endlich die Möglichkeit, nach beliebigen Einstellungen zu suchen!
+– Ein neuer nativer Editor für Tastenkombinationen, Aktionen und Einträge in der Befehlspalette.
+– Neue Community-Übersetzungen für Serbisch und Ukrainisch
+– Unterstützung für das „Kitty“-Tastaturprotokoll für hochauflösende Eingabecodierung
 
 Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>

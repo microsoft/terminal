@@ -4,7 +4,6 @@
 
 ```mermaid
 graph TD
-    RenderThread["RenderThread (base/thread.cpp)<br><small>calls Renderer::PaintFrame() x times per sec</small>"]
     Renderer["Renderer (base/renderer.cpp)<br><small>breaks the text buffer down into GDI-oriented graphics<br>primitives (#quot;change brush to color X#quot;, #quot;draw string Y#quot;, ...)</small>"]
     RenderEngineBase[/"RenderEngineBase<br>(base/RenderEngineBase.cpp)<br><small>abstracts 24 LOC 👻</small>"\]
     GdiEngine["GdiEngine (gdi/...)"]
@@ -18,8 +17,6 @@ graph TD
         BackendD3D.cpp["BackendD3D.cpp<br><small>Custom, performant text renderer<br>with our own glyph cache</small>"]
     end
 
-    RenderThread --> Renderer
-    Renderer -->|owns| RenderThread
     Renderer -.-> RenderEngineBase
     %% Mermaid.js has no support for backwards arrow at the moment
     RenderEngineBase <-.->|extends| GdiEngine

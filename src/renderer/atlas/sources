@@ -1,0 +1,46 @@
+!include ..\..\project.inc
+
+TARGETNAME = ConRenderAtlas
+TARGETTYPE = LIBRARY
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = pch.h
+
+MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201 /wd4505
+
+FXC_FLAGS               = /nologo /Emain /WX /all_resources_bound /Zi
+FXC_PROFILE_VERSION     = 4_0
+
+# Release flags for the shader compiler
+!if $(FREEBUILD)
+FXC_FLAGS               = $(FXC_FLAGS) /O3 /Zsb /Qstrip_debug /Qstrip_reflect
+!endif
+
+INCLUDES = \
+    $(INCLUDES); \
+    ..\..\inc; \
+    ..\..\..\oss\stb; \
+    $(OBJ_PATH)\$(O); \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
+    $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
+
+SOURCES = \
+    $(SOURCES) \
+    AtlasEngine.api.cpp \
+    AtlasEngine.cpp \
+    AtlasEngine.r.cpp \
+    Backend.cpp \
+    BackendD2D.cpp \
+    BackendD3D.cpp \
+    BuiltinGlyphs.cpp \
+    dwrite_helpers.cpp \
+    DWriteTextAnalysis.cpp \
+    stb_rect_pack.cpp \
+    wic.cpp \
+
+# Build rules specified in makefile.inc
+NTTARGETFILE0 = \
+    $(OBJ_PATH)\$(O)\custom_shader_vs.h \
+    $(OBJ_PATH)\$(O)\custom_shader_ps.h \
+    $(OBJ_PATH)\$(O)\shader_vs.h \
+    $(OBJ_PATH)\$(O)\shader_ps.h \

@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "MarkdownPaneContent.h"
-#include <LibraryResources.h>
 #include "MarkdownPaneContent.g.cpp"
 #include <til/io.h>
 

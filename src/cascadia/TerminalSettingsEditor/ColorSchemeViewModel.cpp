@@ -5,7 +5,6 @@
 #include "ColorSchemeViewModel.h"
 #include "ColorSchemeViewModel.g.cpp"
 
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -57,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (IsDefaultScheme())
         {
-            return hstring{ fmt::format(FMT_COMPILE(L"{} ({})"), Name(), RS_(L"ColorScheme_DefaultTag/Text")) };
+            return til::hstring_format(FMT_COMPILE(L"{} ({})"), Name(), RS_(L"ColorScheme_DefaultTag/Text"));
         }
         return Name();
     }

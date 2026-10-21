@@ -255,7 +255,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT GdiEngine::Present() noexcept
+[[nodiscard]] HRESULT GdiEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }
@@ -323,8 +323,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 //#define MAX_POLY_LINES 80
 [[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                  const til::point coord,
-                                                 const bool trimLeft,
-                                                 const bool /*lineWrapped*/) noexcept
+                                                 const bool trimLeft) noexcept
 {
     try
     {

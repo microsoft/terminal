@@ -71,7 +71,7 @@ There are five `type`s of objects in this menu:
   the user to visually space out entries.
 * `"type":"folder"`: This represents a nested menu of entries.
   - The `"name"` property provides a string of text to display for the group.
-  - The `"icon"` property provides a path to a image to use as the icon. This
+  - The `"icon"` property provides a path to an image to use as the icon. This
     property is optional.
   - The `"entries"` property specifies a list of menu entries that will appear
     nested under this entry. This can contain other `"type":"folder"` groups as

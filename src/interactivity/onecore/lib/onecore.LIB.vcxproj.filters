@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\..\host\newdelete.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\AccessibilityNotifier.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\SystemConfigurationProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\host\newdelete.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\AccessibilityNotifier.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\SystemConfigurationProvider.hpp">

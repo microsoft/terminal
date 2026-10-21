@@ -89,7 +89,7 @@ CATCH_RETURN()
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]] HRESULT BgfxEngine::Present() noexcept
+[[nodiscard]] HRESULT BgfxEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }
@@ -117,8 +117,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                   const til::point coord,
-                                                  const bool /*trimLeft*/,
-                                                  const bool /*lineWrapped*/) noexcept
+                                                  const bool /*trimLeft*/) noexcept
 {
     try
     {

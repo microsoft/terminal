@@ -40,3 +40,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalConnectionProvider);
 #include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
+
+#include <LibraryResources.h>

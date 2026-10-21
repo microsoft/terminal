@@ -36,15 +36,14 @@ namespace winrt::TerminalApp::implementation
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void ReloadSettingsThrottled();
         void NotifyRootInitialized();
-
-        bool HasSettingsStartupActions() const noexcept;
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings Settings() const noexcept;
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
-        TerminalApp::TerminalWindow CreateNewWindow();
+        TerminalApp::TerminalWindow CreateNewWindow(const winrt::hstring& windowName);
 
         winrt::TerminalApp::ContentManager ContentManager();
 
@@ -60,9 +59,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _settingsLoadExceptionText;
         HRESULT _settingsLoadedResult = S_OK;
         bool _loadedInitialSettings = false;
-
-        bool _hasSettingsStartupActions{ false };
-        ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
         std::shared_ptr<ThrottledFunc<>> _reloadSettings;
 
@@ -80,7 +76,6 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
-        safe_void_coroutine _DispatchReloadSettings();
 
         void _setupFolderPathEnvVar();
 

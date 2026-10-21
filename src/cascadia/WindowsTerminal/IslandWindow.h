@@ -74,7 +74,7 @@ public:
 
     til::event<winrt::delegate<>> DragRegionClicked;
     til::event<winrt::delegate<>> WindowCloseButtonClicked;
-    til::event<winrt::delegate<void(winrt::Windows::Foundation::Point, int32_t)>> MouseScrolled;
+    til::event<winrt::delegate<void(winrt::Windows::Foundation::Point, winrt::Microsoft::Terminal::Core::Point)>> MouseScrolled;
     til::event<winrt::delegate<void(bool)>> WindowActivated;
     til::event<winrt::delegate<void()>> NotifyNotificationIconPressed;
     til::event<winrt::delegate<void()>> NotifyWindowHidden;

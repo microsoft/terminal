@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "CodeBlock.h"
-#include <LibraryResources.h>
 
 #include "CodeBlock.g.cpp"
 #include "RequestRunCommandsArgs.g.cpp"

@@ -32,6 +32,10 @@
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonForegroundPressed"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
+                    <StaticResource x:Key="CaptionButtonForegroundUnfocusedColor"
+                                    ResourceKey="TextFillColorDisabled" />
+                    <SolidColorBrush x:Key="CaptionButtonForegroundUnfocused"
+                                     Color="{ThemeResource CaptionButtonForegroundUnfocusedColor}" />
                     <SolidColorBrush x:Key="CaptionButtonBackground"
                                      Color="Transparent" />
                     <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
@@ -66,6 +70,10 @@
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
                     <StaticResource x:Key="CaptionButtonForegroundPressed"
                                     ResourceKey="SystemControlForegroundBaseHighBrush" />
+                    <StaticResource x:Key="CaptionButtonForegroundUnfocusedColor"
+                                    ResourceKey="TextFillColorDisabled" />
+                    <SolidColorBrush x:Key="CaptionButtonForegroundUnfocused"
+                                     Color="{ThemeResource CaptionButtonForegroundUnfocusedColor}" />
                     <SolidColorBrush x:Key="CaptionButtonBackground"
                                      Color="Transparent" />
                     <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
@@ -103,6 +111,10 @@
                                      Color="{ThemeResource SystemColorHighlightTextColor}" />
                     <SolidColorBrush x:Key="CaptionButtonForegroundPressed"
                                      Color="{ThemeResource SystemColorHighlightTextColor}" />
+                    <SolidColorBrush x:Key="CaptionButtonForegroundUnfocused"
+                                     Color="{ThemeResource SystemColorButtonTextColor}" />
+                    <StaticResource x:Key="CaptionButtonForegroundUnfocusedColor"
+                                    ResourceKey="SystemColorButtonTextColor" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver"
                                      Color="{ThemeResource SystemColorHighlightColor}" />
                     <SolidColorBrush x:Key="CloseButtonForegroundPointerOver"
@@ -189,12 +201,33 @@
                                                                     Duration="0:0:0.1" />
                                                 </Storyboard>
                                             </VisualTransition>
+
+                                            <VisualTransition From="PointerOver"
+                                                              To="Unfocused">
+                                                <Storyboard>
+                                                    <ColorAnimation Storyboard.TargetName="ButtonBaseElement"
+                                                                    Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)"
+                                                                    To="{ThemeResource CaptionButtonBackgroundColor}"
+                                                                    Duration="0:0:0.15" />
+                                                    <ColorAnimation Storyboard.TargetName="ButtonIcon"
+                                                                    Storyboard.TargetProperty="(UIElement.Foreground).(SolidColorBrush.Color)"
+                                                                    To="{ThemeResource CaptionButtonForegroundUnfocusedColor}"
+                                                                    Duration="0:0:0.1" />
+                                                </Storyboard>
+                                            </VisualTransition>
                                         </VisualStateGroup.Transitions>
 
                                         <VisualState x:Name="Normal">
                                             <VisualState.Setters>
                                                 <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackground}" />
                                                 <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource CaptionButtonForeground}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+
+                                        <VisualState x:Name="Unfocused">
+                                            <VisualState.Setters>
+                                                <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackground}" />
+                                                <Setter Target="ButtonIcon.Foreground" Value="{ThemeResource CaptionButtonForegroundUnfocused}" />
                                             </VisualState.Setters>
                                         </VisualState>
 

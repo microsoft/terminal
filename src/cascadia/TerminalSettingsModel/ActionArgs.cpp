@@ -40,6 +40,7 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "OpenWorkspaceArgs.g.cpp"
 #include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
@@ -51,7 +52,6 @@
 #include "SelectOutputArgs.g.cpp"
 #include "ColorSelectionArgs.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
 
@@ -60,9 +60,8 @@ namespace winrt
     namespace WARC = ::winrt::Windows::ApplicationModel::Resources::Core;
 }
 
-// Like RS_ and RS_fmt, but they use an ambient boolean named "localized" to
-// determine whether to load the English version of a resource or the localized
-// one.
+// Like RS_ and RS_fmt, but they use an ambient context to determine
+// whether to load the English version of a resource or the localized one.
 #define RS_switchable_(x) RS_switchable_impl(context, USES_RESOURCE(x))
 #define RS_switchable_fmt(x, ...) RS_switchable_fmt_impl(context, USES_RESOURCE(x), __VA_ARGS__)
 
@@ -761,7 +760,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return RS_switchable_(L"NewWindowCommandKey");
         }
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr);
     }
 
     winrt::hstring PrevTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
@@ -772,7 +771,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode));
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode);
     }
 
     winrt::hstring NextTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
@@ -783,7 +782,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode));
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode);
     }
 
     winrt::hstring RenameWindowArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
@@ -795,6 +794,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{ RS_switchable_fmt(L"RenameWindowCommandKey", Name()) };
         }
         return RS_switchable_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring OpenWorkspaceArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    {
+        if (!Name().empty())
+        {
+            return winrt::hstring{ RS_switchable_fmt(L"OpenWorkspaceCommandKey", Name()) };
+        }
+        return RS_switchable_(L"OpenWorkspaceDefaultCommandKey");
     }
 
     winrt::hstring SearchForTextArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

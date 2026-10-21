@@ -23,7 +23,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean NoProfilesModified { get; };
         Boolean NoProfilesAdded { get; };
         Boolean NoSchemesAdded { get; };
-        Boolean DisplayBadge { get; };
 
         // Views
         IVector<ExtensionPackageViewModel> ExtensionPackages { get; };
@@ -41,6 +40,8 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass ExtensionPackageViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Microsoft.Terminal.Settings.Model.ExtensionPackage Package { get; };
+        String DisplayName { get; };
+        String Icon { get; };
         Boolean Enabled;
         String Scope { get; };
         String AccessibleName { get; };

@@ -94,7 +94,7 @@ void InputTests::TestGetMouseButtonsValid()
     }
     else
     {
-        dwButtonsExpected = Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider::s_DefaultNumberOfMouseButtons;
+        dwButtonsExpected = 3;
     }
 
     VERIFY_ARE_EQUAL(dwButtonsExpected, nMouseButtons);
@@ -681,7 +681,7 @@ void InputTests::RawReadUnpacksCoalescedInputRecords()
     SetConsoleMode(hIn, mode);
 
     // flush input queue before attempting to add new events and check
-    // in case any are leftover from previous tests
+    // in case any are left over from previous tests
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));
 
     INPUT_RECORD record;

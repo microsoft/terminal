@@ -47,11 +47,11 @@ public:
 #define _RTL_CONSTANT_STRING_remove_const_macro(s) \
     (const_cast<_RTL_CONSTANT_STRING_remove_const_template_class<sizeof((s)[0])>::T*>(s))
 
-#define RTL_CONSTANT_STRING(s)                                      \
-    {                                                               \
-        sizeof(s) - sizeof((s)[0]),                                 \
-            sizeof(s) / sizeof(_RTL_CONSTANT_STRING_type_check(s)), \
-            _RTL_CONSTANT_STRING_remove_const_macro(s)              \
+#define RTL_CONSTANT_STRING(s)                                  \
+    {                                                           \
+        sizeof(s) - sizeof((s)[0]),                             \
+        sizeof(s) / sizeof(_RTL_CONSTANT_STRING_type_check(s)), \
+        _RTL_CONSTANT_STRING_remove_const_macro(s)              \
     }
 }
 

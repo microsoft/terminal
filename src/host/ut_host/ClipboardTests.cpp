@@ -246,8 +246,8 @@ class ClipboardTests
     TEST_METHOD(CanConvertCharsOutsideKeyboardLayout)
     {
         const std::wstring wstr = L"\xbc"; // ¼ char U+00BC
-        const UINT outputCodepage = CP_JAPANESE;
-        ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP = outputCodepage;
+        const UINT codepage = CP_JAPANESE;
+        ServiceLocator::LocateGlobals().getConsoleInformation().CP = codepage;
         auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                             wstr.size());
 

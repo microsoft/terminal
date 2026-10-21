@@ -633,4 +633,75 @@ void TerminalBufferTests::TestURLPatternDetection()
 
     result = term->GetHyperlinkAtBufferPosition(til::point{ urlEndX + 1, 0 });
     VERIFY_IS_TRUE(result.empty(), L"URL is not detected after the actual URL.");
+
+    Log::Comment(L"Test wrapped URL detection");
+    {
+        // Build a URL longer than the terminal width so it wraps
+        // Terminal is 80 cols wide; pad before + URL must exceed 80
+        constexpr auto WrapBefore = L"WRAP>"sv;
+        const std::wstring longUrl = L"https://www.contoso.com/this-is-a-very-long-path/that-will-wrap-across-multiple-rows-in-the-terminal-buffer";
+        const auto wrapUrlStartX = static_cast<til::CoordType>(WrapBefore.size());
+        const auto totalLen = WrapBefore.size() + longUrl.size();
+        // The URL should wrap to row 1
+        VERIFY_IS_TRUE(totalLen > static_cast<size_t>(TerminalViewWidth), L"URL must exceed terminal width to wrap");
+
+        // Move cursor to row 2 and write the wrapped URL
+        termSm.ProcessString(L"\r\n\r\n");
+        termSm.ProcessString(fmt::format(FMT_COMPILE(L"{}{}"), WrapBefore, longUrl));
+        term->UpdatePatternsUnderLock();
+
+        const auto cursorRow = term->_mainBuffer->GetCursor().GetPosition().y;
+        const auto wrapRow0 = cursorRow - 1; // first row of wrapped text
+        const auto wrapRow1 = cursorRow; // second row
+
+        // Detect from start of URL (first row)
+        result = term->GetHyperlinkAtBufferPosition(til::point{ wrapUrlStartX, wrapRow0 });
+        VERIFY_IS_TRUE(!result.empty(), L"Wrapped URL is detected on the first row.");
+        VERIFY_ARE_EQUAL(result, longUrl, L"Full wrapped URL is returned from first row.");
+
+        // Detect from second row of URL
+        result = term->GetHyperlinkAtBufferPosition(til::point{ 0, wrapRow1 });
+        VERIFY_IS_TRUE(!result.empty(), L"Wrapped URL is detected on the second row.");
+        VERIFY_ARE_EQUAL(result, longUrl, L"Full wrapped URL is returned from second row.");
+
+        // Before the URL on the first row
+        result = term->GetHyperlinkAtBufferPosition(til::point{ wrapUrlStartX - 1, wrapRow0 });
+        VERIFY_IS_TRUE(result.empty(), L"URL is not detected before the wrapped URL.");
+    }
+
+    Log::Comment(L"Test URL detection after scrolling into history");
+    {
+        // Generate enough output to push the URLs into scrollback
+        for (auto i = 0; i < TerminalViewHeight + 8; i++)
+        {
+            termSm.ProcessString(L"filler\r\n");
+        }
+
+        // Write a new URL at the current cursor position
+        constexpr auto ScrollUrl = L"https://www.example.com/scrolled"sv;
+        termSm.ProcessString(ScrollUrl);
+        term->UpdatePatternsUnderLock();
+
+        const auto scrollUrlRow = term->_mainBuffer->GetCursor().GetPosition().y;
+        result = term->GetHyperlinkAtBufferPosition(til::point{ 0, scrollUrlRow });
+        VERIFY_IS_TRUE(!result.empty(), L"URL is detected after scrolling.");
+        VERIFY_ARE_EQUAL(result, ScrollUrl, L"Correct URL is returned after scrolling.");
+    }
+
+    Log::Comment(L"Test viewport-relative interval coordinates");
+    {
+        constexpr auto VpUrl = L"https://www.example.com/viewport"sv;
+        termSm.ProcessString(L"\r\n");
+        termSm.ProcessString(VpUrl);
+        term->UpdatePatternsUnderLock();
+
+        const auto vpUrlRow = term->_mainBuffer->GetCursor().GetPosition().y;
+        const auto visStart = term->_VisibleStartIndex();
+        const auto viewportRow = vpUrlRow - visStart;
+
+        auto interval = term->GetHyperlinkIntervalFromViewportPosition(til::point{ 0, viewportRow });
+        VERIFY_IS_TRUE(interval.has_value(), L"Interval is found via viewport position.");
+        VERIFY_ARE_EQUAL(interval->start.y, viewportRow, L"Interval start row is viewport-relative.");
+        VERIFY_ARE_EQUAL(interval->start.x, 0, L"Interval starts at column 0.");
+    }
 }

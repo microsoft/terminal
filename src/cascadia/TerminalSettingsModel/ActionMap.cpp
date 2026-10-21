@@ -5,7 +5,6 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
-#include <LibraryResources.h>
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"
@@ -117,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::OpenTabColorPicker, USES_RESOURCE(L"OpenTabColorPickerCommandKey") },
                 { ShortcutAction::OpenTabRenamer, USES_RESOURCE(L"OpenTabRenamerCommandKey") },
                 { ShortcutAction::OpenWindowRenamer, USES_RESOURCE(L"OpenWindowRenamerCommandKey") },
+                { ShortcutAction::OpenWorkspace, USES_RESOURCE(L"OpenWorkspaceDefaultCommandKey") },
                 { ShortcutAction::PasteText, USES_RESOURCE(L"PasteTextCommandKey") },
                 { ShortcutAction::PrevTab, USES_RESOURCE(L"PrevTabCommandKey") },
                 { ShortcutAction::QuickFix, USES_RESOURCE(L"QuickFixCommandKey") },
@@ -163,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TogglePaneZoom, USES_RESOURCE(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::ToggleShaderEffects, USES_RESOURCE(L"ToggleShaderEffectsCommandKey") },
                 { ShortcutAction::ToggleSplitOrientation, USES_RESOURCE(L"ToggleSplitOrientationCommandKey") },
+                { ShortcutAction::Workspaces, USES_RESOURCE(L"WorkspacesCommandKey") },
             };
         }();
 
@@ -226,6 +227,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::make<NextTabArgs>();
         case Model::ShortcutAction::OpenSettings:
             return winrt::make<OpenSettingsArgs>();
+        case Model::ShortcutAction::OpenWorkspace:
+            return winrt::make<OpenWorkspaceArgs>();
         case Model::ShortcutAction::SetFocusMode:
             return winrt::make<SetFocusModeArgs>();
         case Model::ShortcutAction::SetFullScreen:
@@ -1115,11 +1118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
             const auto inputString{ inArgs ? inArgs.Input() : L"" };
-            auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
-                                            L"",
-                                            numBackspaces,
-                                            inputString) });
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{:\x7f^{}}{}"), L"", numBackspaces, inputString));
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();

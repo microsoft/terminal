@@ -377,7 +377,7 @@ spec's review.
 * [ ] Enable previewing `sendInput` actions in the Command Palette and `SuggestionsControl`
 * [ ] Enable the `SuggestionsControl` to open top-down (aligned to the bottom of the cursor row) or bottom-up (aligned to the top of the cursor row).
 * [ ] Disable sorting on the `SuggestionsControl` - elements should presumably be pre-sorted by the source.
-* [ ] Expose the recent commands as a accessor on `TermControl`
+* [ ] Expose the recent commands as an accessor on `TermControl`
 * [ ] Add a `suggestions` action which accepts a single option `recentCommands`. These should be fed in MRU order to the `SuggestionsControl`.
 * [ ] Expose the recent directories as an accessor on `TermControl`, and add a `recentDirectories` source.
 
@@ -505,7 +505,7 @@ Here's a sample json schema for the settings discussed here.
 > committing any plans here._
 
 It would be beneficial for the Suggestions UI to display additional context to
-the user. Consider a extension that provides some commands for the user, like a
+the user. Consider an extension that provides some commands for the user, like a
 hypothetical "Docker" extension. The extension author might be able to give the
 commands simplified names, but also want to expose a more detailed description
 of the commands to the user.

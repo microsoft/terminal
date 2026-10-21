@@ -16,6 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings{ settings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth, L"Globals_AmbiguousWidth_", L"Text");
+        INITIALIZE_BINDABLE_ENUM_SETTING(GraphicsAPI, GraphicsAPI, winrt::Microsoft::Terminal::Control::GraphicsAPI, L"Globals_GraphicsAPI_", L"Text");
     }
 
     bool CompatibilityViewModel::DebugFeaturesAvailable() const noexcept
@@ -54,7 +56,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Compatibility::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::CompatibilityViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::CompatibilityViewModel>();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

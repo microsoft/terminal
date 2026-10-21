@@ -66,7 +66,7 @@ default profiles (cmd/powershell) or the dynamically generated profiles.
 
 For modifications to existing profiles, the json stub would need to indicate which profile it wishes to modify. It will
 do this by providing the corresponding guid in the `"updates"` field of the json stub. The reason we use an `"updates"`
-field rather than a `"guid"` field (like the way the user settings are eventually layered onto profiles) is because we
+field rather than a `"guid"` field (like the way that user settings are eventually layered onto profiles) is because we
 do not want to mistakenly create a new profile when the stub was meant to update a profile that did not exist.
 
 Note that currently, we generate a GUID for dynamic profiles using the "initial" name of the profile (i.e. before
@@ -96,7 +96,7 @@ Here is an example of a json file that modifies an existing profile (specificall
 }
 ```
 
-**NOTE**: This will *not* change the way the profile looks in the user's settings file. The Azure cloud shell profile
+**NOTE**: This will *not* change the way that profile looks in the user's settings file. The Azure cloud shell profile
 in their settings file (assuming they have made no changes) will still be as below.
 
 ```js

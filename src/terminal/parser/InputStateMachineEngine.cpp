@@ -89,36 +89,38 @@ static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcep
     return pair.action == code;
 }
 
-InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
     _pDispatch(std::move(pDispatch)),
-    _lookingForDSR(lookingForDSR),
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
-til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) const noexcept
+void InputStateMachineEngine::CaptureNextCursorPositionReport() noexcept
 {
-    uint64_t val = 0;
+    _captureNextCursorPositionReport.store(true, std::memory_order_relaxed);
+}
 
+void InputStateMachineEngine::WaitUntilDA1(DWORD timeout) noexcept
+{
     // atomic_wait() returns false when the timeout expires.
     // Technically we should decrement the timeout with each iteration,
     // but I suspect infinite spurious wake-ups are a theoretical problem.
-    for (;;)
+    while (!_receivedDA1.load(std::memory_order_relaxed))
     {
-        val = _deviceAttributes.load(std::memory_order::relaxed);
-        if (val)
-        {
-            break;
-        }
-
-        if (!til::atomic_wait(_deviceAttributes, val, timeout))
+        if (!til::atomic_wait(_receivedDA1, false, timeout))
         {
             break;
         }
     }
 
-    return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
+    // VtIo first sends a DSR CPR and then a DA1 request.
+    // If we encountered a DA1 response here, the DSR request is definitely done now.
+    _captureNextCursorPositionReport.store(false, std::memory_order_relaxed);
+}
+
+void InputStateMachineEngine::UnknownSequence() noexcept
+{
 }
 
 bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
@@ -383,19 +385,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     //
     // Focus events in conpty are special, so don't flush those through either.
     // See GH#12799, GH#12900 for details
-    if (_pDispatch->IsVtInputEnabled() &&
-        id != CsiActionCodes::Win32KeyboardInput &&
-        id != CsiActionCodes::FocusIn &&
-        id != CsiActionCodes::FocusOut)
-    {
-        return false;
-    }
+    const auto vtInputEnabled = _pDispatch->IsVtInputEnabled();
 
     switch (id)
     {
     case CsiActionCodes::MouseDown:
     case CsiActionCodes::MouseUp:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
+
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
         const auto firstParameter = parameters.at(0).value_or(0);
@@ -413,17 +414,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR)
+        if (_captureNextCursorPositionReport.exchange(false, std::memory_order_relaxed))
         {
             _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
-            // Right now we're only looking for on initial cursor
-            //      position response. After that, only look for F3.
-            _lookingForDSR = false;
             return true;
         }
         // Heuristic: If the hosting terminal used the win32 input mode, chances are high
         // that this is a CPR requested by the terminal application as opposed to a F3 key.
         if (_encounteredWin32InputModeSequence)
+        {
+            return false;
+        }
+        if (vtInputEnabled)
         {
             return false;
         }
@@ -438,6 +440,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetCursorKeysVkey(id, vkey))
         {
@@ -448,6 +454,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     }
     case CsiActionCodes::Generic:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetGenericVkey(parameters.at(0), vkey))
         {
@@ -457,6 +467,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         return true;
     }
     case CsiActionCodes::CursorBackTab:
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
         return true;
     case CsiActionCodes::FocusIn:
@@ -468,10 +482,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::DA_DeviceAttributes:
         // This assumes that InputStateMachineEngine is tightly coupled with VtInputThread and the rest of the ConPTY system (VtIo).
         // On startup, ConPTY will send a DA1 request to get more information about the hosting terminal.
-        // We catch it here and store the information for later retrieval.
-        if (_deviceAttributes.load(std::memory_order_relaxed) == 0)
+        if (!_receivedDA1.load(std::memory_order_relaxed))
         {
-            til::enumset<DeviceAttribute, uint64_t> attributes{ DeviceAttribute::__some__ };
+            til::enumset<DeviceAttribute, uint64_t> attributes;
 
             // The first parameter denotes the conformance level.
             const auto len = parameters.size();
@@ -489,12 +502,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
                 }
             }
 
-            _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
-            til::atomic_notify_all(_deviceAttributes);
-
-            // VtIo first sends a DSR CPR and then a DA1 request.
-            // If we encountered a DA1 response here, the DSR request is definitely done now.
-            _lookingForDSR = false;
+            _pDispatch->SetDeviceAttributes(attributes);
+            _receivedDA1.store(true, std::memory_order_relaxed);
+            til::atomic_notify_all(_receivedDA1);
             return true;
         }
         return false;
@@ -895,6 +905,22 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // scroll intensity is assumed to be constant value
         buttonState |= SCROLL_DELTA_FORWARD;
         eventFlags |= MOUSE_WHEELED;
+        break;
+    }
+    case CsiMouseButtonCodes::ScrollLeft:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_BACKWARD;
+        eventFlags |= MOUSE_HWHEELED;
+        break;
+    }
+    case CsiMouseButtonCodes::ScrollRight:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_FORWARD;
+        eventFlags |= MOUSE_HWHEELED;
         break;
     }
     case CsiMouseButtonCodes::Released:

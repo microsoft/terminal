@@ -29,6 +29,7 @@ namespace TerminalApp
         void ClickButton(CaptionButton button);
         void ReleaseButtons();
         Single CaptionButtonWidth { get; };
+        Boolean Focused { get; set; };
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

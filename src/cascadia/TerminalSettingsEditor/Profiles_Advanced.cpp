@@ -7,7 +7,6 @@
 #include "ProfileViewModel.h"
 
 #include "EnumEntry.h"
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::Foundation;
@@ -26,9 +25,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Advanced::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        _weakWindowRoot = args.WindowRoot();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
@@ -98,7 +98,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             { L"All Files (*.*)", L"*.*" }
         };
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
         auto file = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             try
             {

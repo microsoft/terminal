@@ -10,7 +10,7 @@ extern "C" {
 // This structure is part of an ABI shared with the rest of the operating system.
 typedef struct _PseudoConsole
 {
-    // hSignal is a anonymous pipe used for out of band communication with conhost.
+    // hSignal is an anonymous pipe used for out of band communication with conhost.
     // It's used to send the various PTY_SIGNAL_* messages.
     HANDLE hSignal;
     // The "server handle" in conhost represents the console IPC "pipe" over which all console
@@ -57,6 +57,9 @@ typedef struct _PseudoConsole
 #define PSEUDOCONSOLE_GLYPH_WIDTH_GRAPHEMES 0x08
 #define PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH 0x10
 #define PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE 0x18
+#endif
+#ifndef PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE
+#define PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE 0x20
 #endif
 
 // Implementations of the various PseudoConsole functions.

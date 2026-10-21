@@ -44,9 +44,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings,
+                                                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
         _settings = settings;
+        _windowSettings = windowSettings;
+
+        const auto dispatcher = Dispatcher();
+        const auto weak = get_weak();
 
         // You'd think that `FilterToSendInput(queryString)` would work. It
         // doesn't! That uses the queryString as the current command the user
@@ -54,7 +59,13 @@ namespace winrt::TerminalApp::implementation
         // string.
 
         const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         _allTasks.Clear();
         for (const auto& t : tasks)
@@ -112,7 +123,7 @@ namespace winrt::TerminalApp::implementation
     {
         static const auto key = winrt::box_value(L"SettingsUiTabBrush");
         return ThemeLookup(WUX::Application::Current().Resources(),
-                           _settings.GlobalSettings().CurrentTheme().RequestedTheme(),
+                           _settings.GlobalSettings().CurrentTheme(_windowSettings).RequestedTheme(),
                            key)
             .try_as<winrt::WUX::Media::Brush>();
     }

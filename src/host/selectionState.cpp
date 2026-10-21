@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-
 #include "../types/inc/viewport.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -111,7 +110,7 @@ bool Selection::IsKeyboardMarkSelection() const
 // Routine Description:
 // - Determines whether a mouse event was responsible for initiating this selection.
 // - This primarily refers to mouse drag in QuickEdit mode.
-// - However, it refers to any non-mark-mode selection, whether the mouse actually started it or not.
+// - However, it refers to any non-mark-mode selection, whether or not the mouse actually started it.
 // Arguments:
 // - <none>
 // Return Value:
@@ -183,7 +182,6 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
     cursor.SetSize(_d->ulSavedCursorSize);
     cursor.SetIsVisible(_d->fSavedCursorVisible);
     cursor.SetType(_d->savedCursorType);
-    cursor.SetIsOn(true);
     cursor.SetPosition(_d->coordSavedCursorPosition);
 }
 

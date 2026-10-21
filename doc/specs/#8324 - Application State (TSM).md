@@ -56,7 +56,7 @@ short duration after they're made.
 ## UI/UX Design
 
 This has no direct impact on the UI/UX; however, we may want to add a button to general settings page titled "reset all
-dialogs" or "don't not ask me again about those things that, some time ago, I told you to not ask me about".
+dialogs" or "ask me *again* about those things that, some time ago, I told you to not ask me about".
 
 We do not intend this file to be edited by hand, so it does not have to be user-friendly or serialized with indentation.
 

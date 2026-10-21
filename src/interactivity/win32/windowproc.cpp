@@ -27,17 +27,17 @@ struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
 {
     virtual ~TsfDataProvider() = default;
 
-    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override
+    STDMETHODIMP QueryInterface(REFIID, void**) noexcept override
     {
         return E_NOTIMPL;
     }
 
-    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override
     {
         return 1;
     }
 
-    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override
+    ULONG STDMETHODCALLTYPE Release() noexcept override
     {
         return 1;
     }
@@ -280,6 +280,19 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         {
             gci.Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
         }
+
+        // NOTE: Initializing a TSF on WM_ACTIVATE (or earlier) ensures that we don't get a
+        // redundant, implicit IMM32 TSF client, which would unnecessarily bloat the process.
+        // (It is implicitly created during DefWindowProcW(WM_ACTIVATE).)
+        if (!g.tsf)
+        {
+            // The TSF implementation doesn't care per-se if it's STA or MTA,
+            // but it does require it to be initialized. STA because we're the UI thread.
+            CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+            g.tsf = TSF::Handle::Create();
+            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
+        }
+
         goto CallDefWin;
         break;
     }
@@ -287,17 +300,11 @@ static constexpr TsfDataProvider s_tsfDataProvider;
     case WM_SETFOCUS:
     {
         gci.ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
-
         gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci.GetCursorBlinker().FocusStart();
-
-        HandleFocusEvent(TRUE);
-
-        if (!g.tsf)
+        if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
         {
-            g.tsf = TSF::Handle::Create();
-            g.tsf.AssociateFocus(const_cast<TsfDataProvider*>(&s_tsfDataProvider));
+            renderer->AllowCursorVisibility(Render::InhibitionSource::Host, true);
         }
 
         // set the text area to have focus for accessibility consumers
@@ -306,21 +313,21 @@ static constexpr TsfDataProvider s_tsfDataProvider;
             LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         }
 
+        HandleFocusEvent(TRUE);
         break;
     }
 
     case WM_KILLFOCUS:
     {
         gci.ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
-
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
-        // turn it off when we lose focus.
-        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(false);
-        gci.GetCursorBlinker().FocusEnd();
+        if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
+        {
+            renderer->AllowCursorVisibility(Render::InhibitionSource::Host, false);
+        }
 
         HandleFocusEvent(FALSE);
-
         break;
     }
 
@@ -364,9 +371,9 @@ static constexpr TsfDataProvider s_tsfDataProvider;
     case WM_SETTINGCHANGE:
     {
         LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(hWnd));
-        gci.GetCursorBlinker().SettingsChanged();
-    }
+        gci.renderData.UpdateSystemMetrics();
         __fallthrough;
+    }
 
     case WM_DISPLAYCHANGE:
     {
@@ -782,18 +789,6 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         break;
     }
 
-    case EVENT_CONSOLE_CARET:
-    case EVENT_CONSOLE_UPDATE_REGION:
-    case EVENT_CONSOLE_UPDATE_SIMPLE:
-    case EVENT_CONSOLE_UPDATE_SCROLL:
-    case EVENT_CONSOLE_LAYOUT:
-    case EVENT_CONSOLE_START_APPLICATION:
-    case EVENT_CONSOLE_END_APPLICATION:
-    {
-        NotifyWinEvent(Message, hWnd, (LONG)wParam, (LONG)lParam);
-        break;
-    }
-
     default:
     CallDefWin:
     {
@@ -963,6 +958,11 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
+    if (const auto hwnd = GetWindowHandle())
+    {
+        SetForegroundWindow(hwnd);
+    }
+
     const auto drop = reinterpret_cast<HDROP>(wParam);
     Clipboard::Instance().PasteDrop(drop);
     DragFinish(drop);

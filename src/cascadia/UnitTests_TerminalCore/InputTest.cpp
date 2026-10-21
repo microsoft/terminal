@@ -38,10 +38,10 @@ namespace TerminalCoreUnitTests
     {
         // Tests GH:637
 
-        // Verify that Alt+a generates a lowercase a on the input
+        // Verify that Alt+a generates a lowercase 'a' on the input
         VERIFY_ARE_EQUAL(escChar(L'a'), term.SendCharEvent(L'a', 0, ControlKeyStates::LeftAltPressed));
 
-        // Verify that Alt+shift+a generates a uppercase a on the input
+        // Verify that Alt+shift+a generates an uppercase 'a' on the input
         VERIFY_ARE_EQUAL(escChar(L'A'), term.SendCharEvent(L'A', 0, ControlKeyStates::LeftAltPressed | ControlKeyStates::ShiftPressed));
     }
 

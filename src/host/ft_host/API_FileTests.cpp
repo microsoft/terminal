@@ -670,7 +670,7 @@ void FileTests::TestReadFileBasicEmpty()
     const auto hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
-    DWORD dwMode = 0;
+    DWORD dwMode = ENABLE_PROCESSED_INPUT; // ^Z is only handled when processed input is enabled.
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");

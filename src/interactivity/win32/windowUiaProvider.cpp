@@ -31,51 +31,14 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
+ScreenInfoUiaProvider* WindowUiaProvider::GetScreenInfoProvider() const noexcept
 {
-    auto hr = S_OK;
-
-    // ScreenInfoUiaProvider is responsible for signaling selection
-    // changed events and text changed events
-    if (id == UIA_Text_TextSelectionChangedEventId ||
-        id == UIA_Text_TextChangedEventId)
-    {
-        if (_pScreenInfoProvider)
-        {
-            hr = _pScreenInfoProvider->Signal(id);
-        }
-        else
-        {
-            hr = E_POINTER;
-        }
-        return hr;
-    }
-
-    if (_signalEventFiring.find(id) != _signalEventFiring.end() &&
-        _signalEventFiring[id] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalEventFiring[id] = true;
-    }
-    CATCH_RETURN();
-
-    hr = UiaRaiseAutomationEvent(this, id);
-    _signalEventFiring[id] = false;
-
-    return hr;
+    return _pScreenInfoProvider.Get();
 }
 
 [[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
 {
-    try
-    {
-        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
-    }
-    CATCH_RETURN();
+    return UiaRaiseAutomationEvent(_pScreenInfoProvider.Get(), UIA_AutomationFocusChangedEventId);
 }
 
 #pragma region IRawElementProviderSimple
@@ -188,9 +151,6 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
         RETURN_IF_FAILED(_pScreenInfoProvider.CopyTo(ppProvider));
-
-        // signal that the focus changed
-        LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
@@ -240,8 +200,7 @@ IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_mayben
 
 IFACEMETHODIMP WindowUiaProvider::SetFocus()
 {
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-    return Signal(UIA_AutomationFocusChangedEventId);
+    return S_OK;
 }
 
 IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)

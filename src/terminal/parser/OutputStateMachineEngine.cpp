@@ -24,6 +24,11 @@ OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
 }
 
+void OutputStateMachineEngine::UnknownSequence() noexcept
+{
+    _dispatch->UnknownSequence();
+}
+
 bool OutputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
 {
     return false;
@@ -230,7 +235,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         _dispatch->DeviceAttributes();
         break;
     case EscActionCodes::RIS_ResetToInitialState:
-        _dispatch->HardReset();
+        _dispatch->HardReset(true);
         break;
     case EscActionCodes::SS2_SingleShift:
         _dispatch->SingleShift(2);
@@ -670,7 +675,20 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECPS_PlaySound:
         _dispatch->PlaySounds(parameters);
         break;
+    case CsiActionCodes::KKP_KittyKeyboardSet:
+        _dispatch->SetKittyKeyboardProtocol(parameters.at(0), parameters.at(1));
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardQuery:
+        _dispatch->QueryKittyKeyboardProtocol();
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardPush:
+        _dispatch->PushKittyKeyboardProtocol(parameters.at(0));
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardPop:
+        _dispatch->PopKittyKeyboardProtocol(parameters.at(0));
+        break;
     default:
+        _dispatch->UnknownSequence();
         break;
     }
 
@@ -725,7 +743,7 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
         handler = _dispatch->RestorePresentationState(parameters.at(0));
         break;
     default:
-        handler = nullptr;
+        _dispatch->UnknownSequence();
         break;
     }
 
@@ -846,6 +864,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         }
         break;
     }
+    case OscActionCodes::CurrentWorkingDirectory:
+        _dispatch->SetCurrentWorkingDirectory(string);
+        break;
     case OscActionCodes::Hyperlink:
     {
         std::wstring params;
@@ -888,7 +909,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         _dispatch->DoWTAction(string);
         break;
     }
+    case OscActionCodes::UrxvtAction:
+        _dispatch->DoUrxvtAction(string);
+        break;
     default:
+        _dispatch->UnknownSequence();
         break;
     }
 
@@ -909,6 +934,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
 bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VTParameters /*parameters*/) noexcept
 {
     // The output engine doesn't handle any SS3 sequences.
+    _dispatch->UnknownSequence();
     _ClearLastChar();
     return true;
 }

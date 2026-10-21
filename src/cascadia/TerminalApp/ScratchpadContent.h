@@ -14,7 +14,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         winrt::Windows::Foundation::Size MinimumSize();
 

@@ -1490,19 +1490,25 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             {
                 success = false;
             }
-            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, documentEnd))
-            {
-                resultPos = nextPos;
-                (*pAmountMoved)++;
-            }
-            else if (allowBottomExclusive)
-            {
-                resultPos = documentEnd;
-                (*pAmountMoved)++;
-            }
             else
             {
-                success = false;
+                // Move to the end of the current word (including trailing whitespace),
+                // which is also the start of the next word
+                const auto wordEnd = buffer.GetWordEnd(nextPos, _wordDelimiters, true, documentEnd);
+                if (wordEnd < documentEnd)
+                {
+                    resultPos = wordEnd;
+                    (*pAmountMoved)++;
+                }
+                else if (allowBottomExclusive)
+                {
+                    resultPos = documentEnd;
+                    (*pAmountMoved)++;
+                }
+                else
+                {
+                    success = false;
+                }
             }
             break;
         }
@@ -1520,14 +1526,22 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
                 // to the next branch and move to the previous word!
                 (*pAmountMoved)--;
             }
-            else if (buffer.MoveToPreviousWord(nextPos, _wordDelimiters))
-            {
-                resultPos = nextPos;
-                (*pAmountMoved)--;
-            }
             else
             {
-                resultPos = bufferOrigin;
+                // Move to the beginning of the current word
+                auto copy = buffer.GetWordStart(nextPos, _wordDelimiters, true, documentEnd);
+
+                // Step back one position, then find the start of that word
+                if (!buffer.GetSize().DecrementInBounds(copy, true))
+                {
+                    // can't move behind current word
+                    resultPos = bufferOrigin;
+                }
+                else
+                {
+                    resultPos = buffer.GetWordStart(copy, _wordDelimiters, true, documentEnd);
+                    (*pAmountMoved)--;
+                }
             }
             break;
         }

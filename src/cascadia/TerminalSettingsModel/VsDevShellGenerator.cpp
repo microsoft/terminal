@@ -8,6 +8,16 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+static bool _IsPwshAvailable()
+{
+    // Try to detect if `pwsh.exe` is available in the PATH, if so we want to use that
+    // Allow some extra space in case user put it somewhere odd
+    // We do need to allocate space for the full path even if we don't want to paste the whole thing in
+    wchar_t pwshPath[MAX_PATH] = { 0 };
+    const auto pwshExeName = L"pwsh.exe";
+    return SearchPathW(nullptr, pwshExeName, nullptr, MAX_PATH, pwshPath, nullptr);
+}
+
 void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     try
@@ -21,9 +31,10 @@ void VsDevShellGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupIn
         const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, std::as_bytes(std::span{ seed })) };
         auto profile = winrt::make_self<implementation::Profile>(profileGuid);
         profile->Name(winrt::hstring{ GetProfileName(instance) });
-        profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });
+        auto isPwsh = _IsPwshAvailable();
+        profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance, isPwsh) });
         profile->StartingDirectory(winrt::hstring{ instance.GetInstallationPath() });
-        profile->Icon(winrt::hstring{ GetProfileIconPath() });
+        profile->Icon(winrt::hstring{ GetProfileIconPath(isPwsh) });
         profile->Hidden(hidden);
         profiles.emplace_back(std::move(profile));
     }
@@ -37,20 +48,15 @@ std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsS
     return name;
 }
 
-std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const
+std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance, bool isPwsh) const
 {
     // Build this in stages, so reserve space now
     std::wstring commandLine;
     commandLine.reserve(256);
 
-    // Try to detect if `pwsh.exe` is available in the PATH, if so we want to use that
-    // Allow some extra space in case user put it somewhere odd
-    // We do need to allocate space for the full path even if we don't want to paste the whole thing in
-    wchar_t pwshPath[MAX_PATH] = { 0 };
-    const auto pwshExeName = L"pwsh.exe";
-    if (SearchPathW(nullptr, pwshExeName, nullptr, MAX_PATH, pwshPath, nullptr))
+    if (isPwsh)
     {
-        commandLine.append(pwshExeName);
+        commandLine.append(L"pwsh.exe");
     }
     else
     {

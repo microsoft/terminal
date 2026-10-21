@@ -67,7 +67,7 @@ void FontTests::TestCurrentFontAPIsInvalid()
     }
     else
     {
-        hConsoleOutput = (HANDLE)dwConsoleOutput;
+        hConsoleOutput = ULongToHandle(dwConsoleOutput);
     }
 
     if (strOperation == L"Get")
@@ -107,7 +107,7 @@ void FontTests::TestGetFontSizeInvalid()
     // Need to make sure that last error is cleared so that we can verify that lasterror was set by GetConsoleFontSize
     SetLastError(0);
 
-    auto coordFontSize = OneCoreDelay::GetConsoleFontSize((HANDLE)dwConsoleOutput, 0);
+    auto coordFontSize = OneCoreDelay::GetConsoleFontSize(ULongToHandle(dwConsoleOutput), 0);
     VERIFY_ARE_EQUAL(coordFontSize, c_coordZero, L"Ensure (0,0) coord returned to indicate failure");
     VERIFY_ARE_EQUAL(GetLastError(), (DWORD)ERROR_INVALID_HANDLE, L"Ensure last error was set appropriately");
 }

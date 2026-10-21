@@ -65,15 +65,6 @@ namespace std
     };
 }
 
-template<>
-struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
-{
-    auto format(const winrt::hstring& str, auto& ctx) const
-    {
-        return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
-    }
-};
-
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method
@@ -253,6 +244,39 @@ private:                                                                        
     static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
 #endif
 
+#ifndef ATTACHED_DEPENDENCY_PROPERTY
+#define ATTACHED_DEPENDENCY_PROPERTY(type, name)                                                       \
+public:                                                                                                \
+    static winrt::Windows::UI::Xaml::DependencyProperty name##Property()                               \
+    {                                                                                                  \
+        return _##name##Property;                                                                      \
+    }                                                                                                  \
+    static type Get##name(winrt::Windows::UI::Xaml::DependencyObject const& target)                    \
+    {                                                                                                  \
+        auto&& temp{ target.GetValue(_##name##Property) };                                             \
+        if (temp)                                                                                      \
+        {                                                                                              \
+            return winrt::unbox_value<type>(temp);                                                     \
+        }                                                                                              \
+                                                                                                       \
+        if constexpr (std::is_base_of_v<winrt::Windows::Foundation::IInspectable, type>)               \
+        {                                                                                              \
+            return { nullptr };                                                                        \
+        }                                                                                              \
+        else                                                                                           \
+        {                                                                                              \
+            return {};                                                                                 \
+        }                                                                                              \
+    }                                                                                                  \
+    static void Set##name(winrt::Windows::UI::Xaml::DependencyObject const& target, const type& value) \
+    {                                                                                                  \
+        target.SetValue(_##name##Property, winrt::box_value(value));                                   \
+    }                                                                                                  \
+                                                                                                       \
+private:                                                                                               \
+    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
+#endif
+
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,
 // they require no customization. See
@@ -300,9 +324,11 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     std::vector<wil::com_ptr<T>> result{ gsl::narrow<std::size_t>(count) };
     for (int i = 0; i < count; i++)
     {
-        result[i].attach(pVals[i]);
+        result[i] = pVals[i];
     }
 
+    THROW_IF_FAILED(SafeArrayUnaccessData(safeArray));
+    THROW_IF_FAILED(SafeArrayDestroy(safeArray));
     return result;
 }
 

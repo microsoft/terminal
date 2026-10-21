@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
 #include <WilErrorReporting.h>
 
 // Note: Generate GUID using TlgGuid.exe tool

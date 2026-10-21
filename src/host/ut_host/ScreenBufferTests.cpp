@@ -123,6 +123,9 @@ class ScreenBufferTests
     TEST_METHOD(VtResizePreservingAttributes);
 
     TEST_METHOD(VtSoftResetCursorPosition);
+    TEST_METHOD(VtSoftResetAltBufferCursorState);
+    TEST_METHOD(VtSoftResetCharacterSets);
+    TEST_METHOD(VtRestoreCharacterSets);
 
     TEST_METHOD(VtScrollMarginsNewlineColor);
 
@@ -240,6 +243,7 @@ class ScreenBufferTests
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
     TEST_METHOD(UpdateVirtualBottomWithSetConsoleCursorPosition);
     TEST_METHOD(UpdateVirtualBottomAfterInternalSetViewportSize);
+    TEST_METHOD(ViewportDimensionChangesGenerateVtWindowEvents);
     TEST_METHOD(UpdateVirtualBottomAfterResizeWithReflow);
     TEST_METHOD(DontShrinkVirtualBottomDuringResizeWithReflowAtTop);
     TEST_METHOD(DontChangeVirtualBottomWithOffscreenLinefeed);
@@ -408,7 +412,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
     mainCursor.SetStyle(mainCursorSize, mainCursorType);
-    mainCursor.SetBlinkingAllowed(mainCursorBlinking);
+    mainCursor.SetIsBlinking(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
@@ -423,7 +427,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
-    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinking());
 
     Log::Comment(L"Set the cursor attributes in the alt buffer.");
     auto altCursorPos = til::point{ 5, 3 };
@@ -434,7 +438,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
     altCursor.SetStyle(altCursorSize, altCursorType);
-    altCursor.SetBlinkingAllowed(altCursorBlinking);
+    altCursor.SetIsBlinking(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
     useMain.release();
@@ -448,7 +452,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
-    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinking());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -1508,6 +1512,319 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     stateMachine.ProcessString(L"\x1b[5;10r");
     stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(til::point(1, 1), cursor.GetPosition());
+}
+
+void ScreenBufferTests::VtSoftResetAltBufferCursorState()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    Log::Comment(L"Move cursor on the main buffer.");
+    stateMachine.ProcessString(L"\x1b[4;7H");
+    VERIFY_ARE_EQUAL(til::point(6, 3), si.GetTextBuffer().GetCursor().GetPosition());
+
+    Log::Comment(L"Enter alt buffer, soft reset, and return to main buffer.");
+    stateMachine.ProcessString(L"\x1b[?1049h");
+    VERIFY_IS_TRUE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+    stateMachine.ProcessString(L"\x1b[!p");
+    stateMachine.ProcessString(L"\x1b[?1049l");
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer()._IsAltBuffer());
+
+    Log::Comment(L"Returning from alt buffer should restore the main cursor position.");
+    VERIFY_ARE_EQUAL(til::point(6, 3), gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition());
+}
+
+void ScreenBufferTests::VtSoftResetCharacterSets()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    auto verifyTextTranslation = [&](auto sourceText, std::wstring_view expectedText, auto comment) {
+        tbi.GetCursor().SetPosition({ 0, 0 });
+        stateMachine.ProcessString(sourceText);
+        const auto& row = tbi.GetRowByOffset(0);
+        const auto actualText = row.GetText().substr(0, expectedText.length());
+        VERIFY_ARE_EQUAL(expectedText, actualText, comment);
+    };
+
+    Log::Comment(L"Enable GR translation");
+    stateMachine.ProcessString(L"\x1b%@");
+    auto returnToUTF8 = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b%G"); });
+
+    constexpr auto LS0 = L"\x0f";
+    constexpr auto LS1 = L"\x0e";
+    constexpr auto LS2 = L"\x1bn";
+    constexpr auto LS3 = L"\x1bo";
+    constexpr auto LS3R = L"\x1b|";
+
+    // Confirm that DECSTR resets all character sets back to the defaults.
+
+    Log::Comment(L"Designate different charsets into all the G-sets");
+    stateMachine.ProcessString(L"\x1b(0"); // Special Graphics in G0
+    stateMachine.ProcessString(L"\x1b)&4"); // Cyrillic in G1
+    stateMachine.ProcessString(L"\x1b*\"4"); // Hebrew in G2
+    stateMachine.ProcessString(L"\x1b+\"?"); // Greek in G3
+
+    Log::Comment(L"Invoke G1 into GL and G3 into GR");
+    stateMachine.ProcessString(LS1);
+    stateMachine.ProcessString(LS3R);
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic (G1) in GL");
+    verifyTextTranslation(L"âãäå", L"βγδε", L"Greek (G3) in GR");
+
+    Log::Comment(L"Perform a soft reset");
+    stateMachine.ProcessString(L"\x1b[!p");
+
+    Log::Comment(L"Verify ASCII is in GL, G0, G1; Latin-1 is in GR, G2, G3");
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in GL");
+    verifyTextTranslation(L"âãäå", L"âãäå", L"Latin-1 in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G0");
+
+    // Confirm that DECSTR does not destroy the soft font.
+
+    constexpr auto soft_bcde = L"\xEF62\xEF63\xEF64\xEF65"; // DECDLD private use codepoints
+
+    Log::Comment(L"Download a soft font into charset SP @");
+    stateMachine.ProcessString(L"\x1bP1;1;1{ @~~~~~~~/~~~~~~~\x1b\\");
+
+    Log::Comment(L"Designate it into all the G-sets");
+    stateMachine.ProcessString(L"\x1b( @"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b) @"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b* @"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+ @"); // Designate into G3
+
+    Log::Comment(L"Verify soft font is in GL, GR, and all the G-sets");
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in GL");
+    verifyTextTranslation(L"âãäå", soft_bcde, L"Soft font in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G0");
+
+    Log::Comment(L"Perform a soft reset");
+    stateMachine.ProcessString(L"\x1b[!p");
+
+    Log::Comment(L"Verify ASCII is in GL, G0, G1; Latin-1 is in GR, G2, G3");
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in GL");
+    verifyTextTranslation(L"âãäå", L"âãäå", L"Latin-1 in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G0");
+
+    Log::Comment(L"Verify that the soft font can still be designated");
+    stateMachine.ProcessString(L"\x1b( @"); // Designate into G0 (GL)
+    stateMachine.ProcessString(L"\x1b* @"); // Designate into G2 (GR)
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in GL");
+    verifyTextTranslation(L"âãäå", soft_bcde, L"Soft font in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G0");
+
+    // Confirm that DECSTR uses the soft font as default when it replaces ASCII.
+
+    Log::Comment(L"Perform a soft reset");
+    stateMachine.ProcessString(L"\x1b[!p");
+
+    Log::Comment(L"Verify ASCII is in G0 and G1");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G0");
+
+    Log::Comment(L"Download a soft font into charset B (ASCII)");
+    stateMachine.ProcessString(L"\x1bP1;1;1{B~~~~~~~/~~~~~~~\x1b\\");
+
+    Log::Comment(L"Verify soft font is now in G0 and G1");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G0");
+
+    Log::Comment(L"Designate Special Graphics in all the G-sets");
+    stateMachine.ProcessString(L"\x1b(0"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b)0"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b*0"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+0"); // Designate into G3
+
+    Log::Comment(L"Verify Special Graphics is in GL, GR, and all the G-sets");
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in GL");
+    verifyTextTranslation(L"âãäå", L"␉␌␍␊", L"Special Graphics in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G0");
+
+    Log::Comment(L"Perform a soft reset");
+    stateMachine.ProcessString(L"\x1b[!p");
+
+    Log::Comment(L"Verify soft font is in GL, G0, G1; Latin-1 is in GR, G2, G3");
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in GL");
+    verifyTextTranslation(L"âãäå", L"âãäå", L"Latin-1 in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"âãäå", L"Latin-1 in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G0");
+
+    Log::Comment(L"Erase the soft font");
+    stateMachine.ProcessString(L"\x1bP0;0;2{ @\x1b\\");
+}
+
+void ScreenBufferTests::VtRestoreCharacterSets()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    auto verifyTextTranslation = [&](auto sourceText, std::wstring_view expectedText, auto comment) {
+        tbi.GetCursor().SetPosition({ 0, 0 });
+        stateMachine.ProcessString(sourceText);
+        const auto& row = tbi.GetRowByOffset(0);
+        const auto actualText = row.GetText().substr(0, expectedText.length());
+        VERIFY_ARE_EQUAL(expectedText, actualText, comment);
+    };
+
+    Log::Comment(L"Enable GR translation");
+    stateMachine.ProcessString(L"\x1b%@");
+    auto returnToUTF8 = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b%G"); });
+
+    constexpr auto LS0 = L"\x0f";
+    constexpr auto LS1 = L"\x0e";
+    constexpr auto LS2 = L"\x1bn";
+    constexpr auto LS3 = L"\x1bo";
+    constexpr auto LS2R = L"\x1b}";
+    constexpr auto LS3R = L"\x1b|";
+
+    constexpr auto DECSC = L"\x1b\x37";
+    constexpr auto DECRC = L"\x1b\x38";
+
+    // Confirm that DECRC restores character sets that have been changed.
+
+    Log::Comment(L"Designate different charsets into all the G-sets");
+    stateMachine.ProcessString(L"\x1b(0"); // Special Graphics in G0
+    stateMachine.ProcessString(L"\x1b)&4"); // Cyrillic in G1
+    stateMachine.ProcessString(L"\x1b*\"4"); // Hebrew in G2
+    stateMachine.ProcessString(L"\x1b+\"?"); // Greek in G3
+
+    Log::Comment(L"Invoke G1 into GL and G3 into GR");
+    stateMachine.ProcessString(LS1);
+    stateMachine.ProcessString(LS3R);
+
+    Log::Comment(L"Save the charset state");
+    stateMachine.ProcessString(DECSC);
+
+    Log::Comment(L"Designate ASCII in all the G-sets");
+    stateMachine.ProcessString(L"\x1b(B"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b)B"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b*B"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+B"); // Designate into G3
+
+    Log::Comment(L"Invoke G0 into GL and G2 into GR");
+    stateMachine.ProcessString(LS0);
+    stateMachine.ProcessString(LS2R);
+
+    Log::Comment(L"Verify ASCII is in GL, GR, and all the G-sets");
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in GL");
+    verifyTextTranslation(L"âãäå", L"bcde", L"ASCII in GR");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"bcde", L"ASCII in G0");
+
+    Log::Comment(L"Restore the charset state");
+    stateMachine.ProcessString(DECRC);
+
+    Log::Comment(L"Verify the original charsets are restored");
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in GL (GL = G1)");
+    verifyTextTranslation(L"âãäå", L"βγδε", L"Greek in GR (GR = G3)");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"βγδε", L"Greek in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", L"גדהו", L"Hebrew in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G0");
+
+    // Confirm that DECRC restores a soft font that replaced a standard character set.
+
+    constexpr auto soft_bcde = L"\xEF62\xEF63\xEF64\xEF65"; // DECDLD private use codepoints
+
+    Log::Comment(L"Invoke G2 into GL and G3 into GR");
+    stateMachine.ProcessString(LS2);
+    stateMachine.ProcessString(LS3R);
+
+    Log::Comment(L"Save the charset state");
+    stateMachine.ProcessString(DECSC);
+
+    Log::Comment(L"Designate ASCII in all the G-sets");
+    stateMachine.ProcessString(L"\x1b(B"); // Designate into G0
+    stateMachine.ProcessString(L"\x1b)B"); // Designate into G1
+    stateMachine.ProcessString(L"\x1b*B"); // Designate into G2
+    stateMachine.ProcessString(L"\x1b+B"); // Designate into G3
+
+    Log::Comment(L"Invoke G0 into GL and G2 into GR");
+    stateMachine.ProcessString(LS0);
+    stateMachine.ProcessString(LS2R);
+
+    Log::Comment(L"Download a soft font into charset \"4 (Hebrew)");
+    stateMachine.ProcessString(L"\x1bP1;1;1{\"4~~~~~~~/~~~~~~~\x1b\\");
+
+    Log::Comment(L"Restore the charset state");
+    stateMachine.ProcessString(DECRC);
+
+    Log::Comment(L"Verify original charsets are restored with a soft font replacing Hebrew");
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in GL (GL = G2)");
+    verifyTextTranslation(L"âãäå", L"βγδε", L"Greek in GR (GR = G3)");
+    stateMachine.ProcessString(LS3);
+    verifyTextTranslation(L"bcde", L"βγδε", L"Greek in G3");
+    stateMachine.ProcessString(LS2);
+    verifyTextTranslation(L"bcde", soft_bcde, L"Soft font in G2");
+    stateMachine.ProcessString(LS1);
+    verifyTextTranslation(L"bcde", L"БЦДЕ", L"Cyrillic in G1");
+    stateMachine.ProcessString(LS0);
+    verifyTextTranslation(L"bcde", L"␉␌␍␊", L"Special Graphics in G0");
+
+    Log::Comment(L"Restore everything with a hard reset");
+    stateMachine.ProcessString(L"\033c");
 }
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()
@@ -3829,7 +4146,7 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"Set the cursor position and perform the operation.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
     stateMachine.ProcessString(escapeSequence.str());
 
     // The cursor shouldn't move.
@@ -3911,7 +4228,7 @@ void ScreenBufferTests::InsertReplaceMode()
     Log::Comment(L"Write additional content into a line of text with IRM mode enabled.");
 
     // Set the cursor position partway through the target row.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }));
     // Enable Insert/Replace mode.
     stateMachine.ProcessString(L"\033[4h");
     // Write out some new content.
@@ -3936,7 +4253,7 @@ void ScreenBufferTests::InsertReplaceMode()
     Log::Comment(L"Write additional content into a line of text with IRM mode disabled.");
 
     // Set the cursor position partway through the target row.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }));
     // Disable Insert/Replace mode.
     stateMachine.ProcessString(L"\033[4l");
     // Write out some new content.
@@ -3999,7 +4316,7 @@ void ScreenBufferTests::InsertChars()
     auto insertPos = til::CoordType{ 20 };
 
     // Place the cursor in the center of the line.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
 
     // Save the cursor position. It shouldn't move for the rest of the test.
     const auto& cursor = si.GetTextBuffer().GetCursor();
@@ -4067,7 +4384,7 @@ void ScreenBufferTests::InsertChars()
 
     // Move cursor to right edge.
     insertPos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4116,7 +4433,7 @@ void ScreenBufferTests::InsertChars()
 
     // Move cursor to left edge.
     insertPos = horizontalMarginsActive ? viewportStart : 0;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4199,7 +4516,7 @@ void ScreenBufferTests::DeleteChars()
     auto deletePos = til::CoordType{ 20 };
 
     // Place the cursor in the center of the line.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
 
     // Save the cursor position. It shouldn't move for the rest of the test.
     const auto& cursor = si.GetTextBuffer().GetCursor();
@@ -4267,7 +4584,7 @@ void ScreenBufferTests::DeleteChars()
 
     // Move cursor to right edge.
     deletePos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4316,7 +4633,7 @@ void ScreenBufferTests::DeleteChars()
 
     // Move cursor to left edge.
     deletePos = horizontalMarginsActive ? viewportStart : 0;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4484,7 +4801,7 @@ void ScreenBufferTests::ScrollingWideCharsHorizontally()
     _FillLine(testRow, testChars, testAttr);
 
     Log::Comment(L"Position the cursor at the start of the test row");
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }));
 
     Log::Comment(L"Insert 1 cell at the start of the test row");
     stateMachine.ProcessString(L"\033[@");
@@ -4552,7 +4869,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     const auto cursorPos = til::point{ centerX, centerY };
 
     Log::Comment(L"Set the cursor position and erase the scrollback.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
     stateMachine.ProcessString(L"\x1b[3J");
 
     // The viewport should move to the top of the buffer, while the cursor
@@ -4682,7 +4999,7 @@ void ScreenBufferTests::EraseTests()
     const auto centerY = (viewport.Top() + viewport.BottomExclusive()) / 2;
 
     Log::Comment(L"Set the cursor position and perform the operation.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }));
     stateMachine.ProcessString(escapeSequence.str());
 
     // Get cursor position and viewport range.
@@ -5756,7 +6073,7 @@ void ScreenBufferTests::HardResetBuffer()
     si.SetAttributes(TextAttribute());
     si.ClearTextData();
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, true));
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, 0 }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, 0 }));
     VERIFY_IS_TRUE(isBufferClear());
 
     Log::Comment(L"Write a single line of text to the buffer");
@@ -5983,7 +6300,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
         // Set the position to home; otherwise, it's inherited from the main buffer.
-        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
+        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }));
 
         WriteText(altBuffer.GetTextBuffer());
         VerifyText(altBuffer.GetTextBuffer());
@@ -6890,7 +7207,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6905,7 +7222,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial saved position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6923,7 +7240,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify home position, no delayed wrap, default attributes, and ascii character set.
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
-    VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
     VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains(til::point(0, 0), asciiText, defaultAttrs));
@@ -7023,7 +7340,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     // Place the cursor in the center.
     auto cursorPos = til::point{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
 
     Log::Comment(L"Execute the DECALN escape sequence.");
     stateMachine.ProcessString(L"\x1b#8");
@@ -7059,44 +7376,35 @@ void ScreenBufferTests::TestCursorIsOn()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
-    cursor.SetIsOn(false);
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 }
 
@@ -7338,6 +7646,27 @@ void ScreenBufferTests::UpdateVirtualBottomAfterInternalSetViewportSize()
 
     Log::Comment(L"Confirm that the virtual bottom has aligned with the viewport bottom");
     VERIFY_ARE_EQUAL(si._virtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::ViewportDimensionChangesGenerateVtWindowEvents()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    const auto restoreInputMode = wil::scope_exit([&, inputMode = gci.pInputBuffer->InputMode] {
+        gci.pInputBuffer->InputMode = inputMode;
+        gci.pInputBuffer->Flush();
+    });
+    gci.pInputBuffer->InputMode = ENABLE_WINDOW_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+    auto& si = gci.GetActiveOutputBuffer();
+    const auto dim = si.GetViewport().Dimensions();
+    si.SetViewport(Viewport::FromDimensions({ 0, 1 }, dim), false);
+    VERIFY_ARE_EQUAL(0u, gci.pInputBuffer->GetNumberOfReadyEvents());
+
+    si.SetViewport(Viewport::FromDimensions({}, dim - til::size{ 1, 1 }), false);
+    VERIFY_ARE_EQUAL(1u, gci.pInputBuffer->GetNumberOfReadyEvents());
 }
 
 void ScreenBufferTests::UpdateVirtualBottomAfterResizeWithReflow()
@@ -8158,7 +8487,7 @@ void ScreenBufferTests::DelayedWrapReset()
     stateMachine.ProcessCharacter(L'X');
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
-        VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(startPos, cursor.GetPosition());
     }
 
@@ -8170,7 +8499,7 @@ void ScreenBufferTests::DelayedWrapReset()
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
         const auto actualPos = cursor.GetPosition() - si.GetViewport().Origin();
-        VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(expectedPos, actualPos);
     }
 }
@@ -8301,6 +8630,12 @@ void ScreenBufferTests::EraseColorMode()
 
 void ScreenBufferTests::SimpleMarkCommand()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -8343,6 +8678,12 @@ void ScreenBufferTests::SimpleWrappedCommand()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
+
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
@@ -8409,6 +8750,12 @@ static void _writePrompt(StateMachine& stateMachine, const auto& path)
 
 void ScreenBufferTests::SimplePromptRegions()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();

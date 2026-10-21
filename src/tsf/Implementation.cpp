@@ -27,32 +27,77 @@ static void TfPropertyvalClose(TF_PROPERTYVAL* val)
 }
 using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPropertyvalClose), &TfPropertyvalClose>;
 
-void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
+// The flags passed to ActivateEx don't replace the flags during previous calls.
+// Instead, they're additive. So, if we pass flags that some concurrently running
+// TSF clients don't expect we may blow them up accidentally.
+//
+// Such is the case with WPF (and TSF, which is actually at fault there).
+// If you pass TF_TMAE_CONSOLE it'll instantly crash on Windows 10 on first text input.
+// On Windows 11 it'll at least not crash but still make emoji input completely non-functional.
+//
+// --------
+//
+// In any case, we pass the same flags as conhost v1:
+// - TF_TMAE_NOACTIVATEKEYBOARDLAYOUT: TSF does not sync the current keyboard layout
+//   while this method is called. The keyboard layout will be adjusted when the
+//   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
+// - TF_TMAE_CONSOLE: A text service is activated for console usage.
+//   TSF uses this flag in CInputContextAdapter (adapts TSF3 TIPs to TSF1 or IMM clients),
+//   flags the client as IMM-style, and disables "single character composition" for Korean IMEs.
+//   The latter would cause every syllable to be an "interim character": not marked as composing,
+//   yet still being rewritten by the IME. Since we send any non-composing text to the shell and
+//   can't unsend it, this would break the IME. We could fix that by recognizing `fInterimChar`
+//   and only finalizing the text in front of it of course, and conhost v1 did just that
+//   (see _IsInterimSelection/_MakeInterimString). But it also set TF_TMAE_CONSOLE,
+//   so there were no interim characters in the first place (lol).
+//   To test this, type "gksks" with a Korean IME: 하난 is correct, 하나ㄴ is wrong.
+//
+// ...with the exception of, for the following reason:
+// - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
+//   own candidate "window". The required interface for that is `UIElement` and so it only works
+//   with TIPs (Text Input Panel) that flag themselves as `GUID_TFCAT_TIPCAP_UIELEMENTENABLED`.
+//   We don't support an "UILess" mode (= don't render our own TIP) and so we should not set this flag.
+//   See: https://learn.microsoft.com/en-us/windows/win32/tsf/uiless-mode-overview
+//
+// For TF_TMAE_NOACTIVATEKEYBOARDLAYOUT, I'm 99% sure it doesn't do anything, including in
+// conhost v1. This is because IMM will be initialized on WM_ACTIVATE, which calls ActivateEx(0).
+// Any subsequent ActivateEx() calls will update the flags, _except_ for this one and
+// TF_TMAE_NOACTIVATETIP which are explicitly filtered out.
+//
+// TF_TMAE_NOACTIVATETIP however is important. Without it, TIPs are immediately initialized.
+static std::atomic<DWORD> s_activationFlags{ TF_TMAE_NOACTIVATETIP | TF_TMAE_NOACTIVATEKEYBOARDLAYOUT | TF_TMAE_CONSOLE };
+void Implementation::AvoidBuggyTSFConsoleFlags() noexcept
 {
-    _wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+    s_activationFlags.fetch_and(~static_cast<DWORD>(TF_TMAE_CONSOLE), std::memory_order_relaxed);
 }
 
-void Implementation::Initialize()
+static std::atomic<bool> s_wantsAnsiInputScope{ false };
+void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
 {
-    _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
-    _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
+    s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+}
 
+HRESULT Implementation::Initialize()
+{
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_categoryMgr.addressof())));
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_DisplayAttributeMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_displayAttributeMgr.addressof())));
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
-    _threadMgrEx = wil::CoCreateInstance<ITfThreadMgrEx>(CLSID_TF_ThreadMgr, CLSCTX_INPROC_SERVER);
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_threadMgrEx.addressof())));
 
-    THROW_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, TF_TMAE_CONSOLE));
-    THROW_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
+    RETURN_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, s_activationFlags.load(std::memory_order_relaxed)));
+    RETURN_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
 
     TfEditCookie ecTextStore;
-    THROW_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
+    RETURN_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
 
     _ownerCompositionServices = _context.try_query<ITfContextOwnerCompositionServices>();
 
     _contextSource = _context.query<ITfSource>();
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
-    THROW_IF_FAILED(_documentMgr->Push(_context.get()));
+    RETURN_IF_FAILED(_documentMgr->Push(_context.get()));
+    return S_OK;
 }
 
 void Implementation::Uninitialize() noexcept
@@ -183,6 +228,27 @@ void Implementation::Unfocus(IDataProvider* provider)
 bool Implementation::HasActiveComposition() const noexcept
 {
     return _compositions > 0;
+}
+
+// OnEndComposition() can only request TF_ES_ASYNC, because it runs from within an active
+// edit session. If the composition ended due to a relevant terminal key (arrow keys,
+// Enter, etc.), the terminal will receive and handle that key input synchronously, before
+// we got around to handling the completion asynchronously. This method allows you to
+// synchronously flush it from inside the key handler. GH#20244
+void Implementation::FlushPendingComposition() noexcept
+{
+    // Nothing to flush unless a composition has ended and its edit session is still pending.
+    if (_compositions > 0 || !_editSessionCompositionUpdate.referenceCount || !_context)
+    {
+        return;
+    }
+
+    // NOTE: _request() would reject this, because the pending TF_ES_ASYNC request still
+    // references the proxy. Letting that request run afterwards is harmless, because
+    // _doCompositionUpdate() derives everything from the current state of the context.
+    HRESULT hr = S_OK;
+    LOG_IF_FAILED(_context->RequestEditSession(_clientId, &_editSessionCompositionUpdate, TF_ES_READWRITE | TF_ES_SYNC, &hr));
+    LOG_IF_FAILED(hr);
 }
 
 #pragma region IUnknown
@@ -319,7 +385,7 @@ STDMETHODIMP Implementation::GetWnd(HWND* phwnd) noexcept
 
 STDMETHODIMP Implementation::GetAttribute(REFGUID rguidAttribute, VARIANT* pvarValue) noexcept
 {
-    if (_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
+    if (s_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
     {
         _ansiInputScope.AddRef();
         pvarValue->vt = VT_UNKNOWN;
@@ -587,6 +653,11 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
+            // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
+            // In other words, don't put text that's in the middle between two active compositions into the finalized string.
+            const auto isActiveComposition = composing || activeCompositionEncountered;
+            auto& target = isActiveComposition ? activeComposition : finalizedString;
+
             size_t totalLen = 0;
             for (;;)
             {
@@ -598,17 +669,7 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 ULONG len = bufCap;
                 THROW_IF_FAILED(range->GetText(ec, TF_TF_MOVESTART, buf, len, &len));
 
-                // Since we can't un-finalize finalized text, we only finalize text that's at the start of the document.
-                // In other words, don't put text that's in the middle between two active compositions into the finalized string.
-                if (!composing && !activeCompositionEncountered)
-                {
-                    finalizedString.append(buf, len);
-                }
-                else
-                {
-                    activeComposition.append(buf, len);
-                }
-
+                target.append(buf, len);
                 totalLen += len;
 
                 if (len < bufCap)
@@ -617,8 +678,10 @@ void Implementation::_doCompositionUpdate(TfEditCookie ec)
                 }
             }
 
-            const auto attr = _textAttributeFromAtom(atom);
-            activeCompositionRanges.emplace_back(totalLen, attr);
+            if (isActiveComposition)
+            {
+                activeCompositionRanges.emplace_back(totalLen, _textAttributeFromAtom(atom));
+            }
 
             activeCompositionEncountered |= composing;
         }

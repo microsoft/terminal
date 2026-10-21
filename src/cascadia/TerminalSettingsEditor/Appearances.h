@@ -22,8 +22,6 @@ Author(s):
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
-#include "SettingContainer.h"
-#include <LibraryResources.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -48,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t Key() const noexcept;
         float Value() const noexcept;
         void Value(float v);
+        winrt::hstring AutomationName();
 
         void SetValueDirect(float v);
         bool IsFontFeature() const noexcept;
@@ -79,6 +78,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
+
+        // IInheritableViewModel
+        bool HasSetting(const hstring& name);
+        void ClearSetting(const hstring& name);
+        Windows::Foundation::IInspectable SettingOverrideSource(const hstring& name);
 
         winrt::hstring FontFace() const;
         void FontFace(const winrt::hstring& value);
@@ -123,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring CurrentBackgroundImagePath() const;
         bool UseDesktopBGImage() const;
         void UseDesktopBGImage(const bool useDesktop);
-        bool BackgroundImageSettingsVisible() const;
+        bool BackgroundImageSettingsEnabled() const;
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
         hstring BackgroundImageAlignmentCurrentValue() const;
@@ -137,33 +141,57 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Color SelectionBackgroundPreview() const;
         Windows::UI::Color CursorColorPreview() const;
 
+        hstring ForegroundAccessibleName() const;
+        hstring BackgroundAccessibleName() const;
+        hstring SelectionBackgroundAccessibleName() const;
+        hstring CursorColorAccessibleName() const;
+
         WINRT_PROPERTY(bool, IsDefault, false);
 
-        // These settings are not defined in AppearanceConfig, so we grab them
-        // from the source profile itself. The reason we still want them in the
-        // AppearanceViewModel is so we can continue to have the 'Text' grouping
-        // we currently have in xaml, since that grouping has some settings that
-        // are defined in AppearanceConfig and some that are not.
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontWeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs);
+// Inheritable appearance settings that expose a reset button.
+// Each entry is wired up automatically in two places:
+//   * the projected property accessors generated immediately below, and
+//   * the HasSetting/ClearSetting/SettingOverrideSource dispatch in Appearances.cpp.
+// To add a new inheritable appearance setting, add exactly ONE line here:
+//   * PROJECTED(target, Name) - a standard setting backed by OBSERVABLE_PROJECTED_SETTING.
+//   * CUSTOM(Name)            - a setting whose Name()/Has##Name()/Clear##Name()/
+//                               Name##OverrideSource() accessors are hand-written above
+//                               (e.g. FontFace, FontAxes). It still participates in
+//                               dispatch, but no property is generated for it here.
+// "ColorScheme" is special-cased in the dispatch (it is backed by the Dark/Light
+// scheme names) and so is intentionally not listed here.
+#define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)                 \
+    CUSTOM(FontFace)                                                       \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)            \
+    CUSTOM(LineHeight)                                                     \
+    CUSTOM(CellWidth)                                                      \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)          \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs) \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs)   \
+    CUSTOM(FontAxes)                                                       \
+    CUSTOM(FontFeatures)                                                   \
+    PROJECTED(_appearance, RetroTerminalEffect)                            \
+    PROJECTED(_appearance, CursorShape)                                    \
+    PROJECTED(_appearance, CursorHeight)                                   \
+    PROJECTED(_appearance, DarkColorSchemeName)                            \
+    PROJECTED(_appearance, LightColorSchemeName)                           \
+    PROJECTED(_appearance, BackgroundImagePath)                            \
+    PROJECTED(_appearance, BackgroundImageOpacity)                         \
+    PROJECTED(_appearance, BackgroundImageStretchMode)                     \
+    PROJECTED(_appearance, BackgroundImageAlignment)                       \
+    PROJECTED(_appearance, IntenseTextStyle)                               \
+    PROJECTED(_appearance, AdjustIndistinguishableColors)                  \
+    PROJECTED(_appearance, Foreground)                                     \
+    PROJECTED(_appearance, Background)                                     \
+    PROJECTED(_appearance, SelectionBackground)                            \
+    PROJECTED(_appearance, CursorColor)
 
-        OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, DarkColorSchemeName);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, LightColorSchemeName);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
+#define APPEARANCE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
+#define APPEARANCE_GEN_CUSTOM(name)
+        APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_GEN_PROJECTED, APPEARANCE_GEN_CUSTOM)
+#undef APPEARANCE_GEN_PROJECTED
+#undef APPEARANCE_GEN_CUSTOM
+
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
@@ -188,9 +216,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Appearances : AppearancesT<Appearances>
     {
         Appearances();
+        void BringIntoViewWhenLoaded(hstring elementToFocus);
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _WeakWindowRoot = value; }
 
         Windows::Foundation::Collections::IObservableVector<Editor::Font> FilteredFontList();
         bool ShowAllFonts() const noexcept;
@@ -210,6 +242,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
 
         til::property_changed_event PropertyChanged;
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
@@ -218,12 +251,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
@@ -232,8 +265,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontAxesNames;
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontFeaturesNames;
         std::wstring _fontNameFilter;
+        bool _fontFaceBoxHasUserInput = false;
         bool _ShowAllFonts = false;
-        bool _suppressFontFaceBoxList = false;
 
         static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 

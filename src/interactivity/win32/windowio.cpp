@@ -89,7 +89,7 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     }
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
+    ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId);
 }
 
 // ----------------------------
@@ -129,6 +129,11 @@ void HandleKeyEvent(const HWND hWnd,
     auto ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = WI_IsFlagClear(lParam, KEY_TRANSITION_UP);
     const bool IsCharacterMessage = (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR);
+
+    // If a composition just ended, its text is still queued up inside TSF. Write it to the
+    // input buffer now, so that a key the IME passed on to us can't reach the input buffer
+    // before the text it finalized. GH#20244
+    g.tsf.FlushPendingComposition();
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
@@ -567,7 +572,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     if (!fShiftPressed && !pSelection->IsInSelectingState())
     {
         short sDelta = 0;
-        if (Message == WM_MOUSEWHEEL)
+        if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
         {
             sDelta = GET_WHEEL_DELTA_WPARAM(wParam);
         }
@@ -892,11 +897,14 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
     // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
     *phhook = SetWindowsHookExW(WH_MSGFILTER, DialogHookProc, nullptr, GetCurrentThreadId());
 
-    SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
+    const auto hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    SetConsoleWindowOwner(hwnd, ProcessData);
 
     LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.Initialize(hwnd, gci.GetMSAADelay(), gci.GetUIADelay());
+    an.ApplicationStart(ProcessData->dwProcessId);
 
     return STATUS_SUCCESS;
 }

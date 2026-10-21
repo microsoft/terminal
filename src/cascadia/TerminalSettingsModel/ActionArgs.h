@@ -42,6 +42,7 @@
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "OpenWorkspaceArgs.g.h"
 #include "SearchForTextArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
@@ -60,7 +61,6 @@
 
 #include "TerminalSettingsSerializationHelpers.h"
 
-#include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
 
 #include "ActionArgsMagic.h"
@@ -248,6 +248,10 @@ protected:                                                                  \
     X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
+#define OPEN_WORKSPACE_ARGS(X) \
+    X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")
+
+////////////////////////////////////////////////////////////////////////////////
 #define SEARCH_FOR_TEXT_ARGS(X) \
     X(winrt::hstring, QueryUrl, "queryUrl", false, ArgTypeHint::None, L"")
 
@@ -307,7 +311,7 @@ protected:                                                                  \
 #define SPLIT_PANE_ARGS(X)                                                                                 \
     X(Model::SplitDirection, SplitDirection, "split", false, ArgTypeHint::None, SplitDirection::Automatic) \
     X(SplitType, SplitMode, "splitMode", false, ArgTypeHint::None, SplitType::Manual)                      \
-    X(float, SplitSize, "size", false, ArgTypeHint::None, 0.5f)
+    X(float, SplitSize, "size", false, ArgTypeHint::SplitSize, 0.5f)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -606,7 +610,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -707,7 +711,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -835,7 +839,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -941,6 +945,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
 
+    ACTION_ARGS_STRUCT(OpenWorkspaceArgs, OPEN_WORKSPACE_ARGS);
+
     ACTION_ARGS_STRUCT(SearchForTextArgs, SEARCH_FOR_TEXT_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
@@ -985,7 +991,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_Actions == _Actions;
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -1060,6 +1066,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SetMaximizedArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(RenameWindowArgs);
+    BASIC_FACTORY(OpenWorkspaceArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);

@@ -356,17 +356,6 @@ const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 }
 
 // Method Description:
-// - return a reference to the console's cursor blinker.
-// Arguments:
-// - <none>
-// Return Value:
-// - a reference to the console's cursor blinker.
-Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
-{
-    return _blinker;
-}
-
-// Method Description:
 // - Returns the MIDI audio instance.
 // Arguments:
 // - <none>

@@ -743,7 +743,7 @@ void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _O
 // - Coalescing here means updating a record that already exists in
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
-// redundant/out of date with the most current state).
+// redundant/out-of-date with the most current state).
 bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
 {
     auto& lastEvent = _storage.back();
@@ -758,6 +758,11 @@ bool InputBuffer::_CoalesceEvent(const INPUT_RECORD& inEvent) noexcept
             lastMouse.dwMousePosition = inMouse.dwMousePosition;
             return true;
         }
+    }
+    else if (lastEvent.EventType == WINDOW_BUFFER_SIZE_EVENT && inEvent.EventType == WINDOW_BUFFER_SIZE_EVENT)
+    {
+        lastEvent = inEvent;
+        return true;
     }
     else if (lastEvent.EventType == KEY_EVENT && inEvent.EventType == KEY_EVENT)
     {

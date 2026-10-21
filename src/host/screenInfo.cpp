@@ -7,7 +7,8 @@
 #include "output.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/CodepointWidthDetector.hpp"
-#include "../types/inc/convert.hpp"
+#include "../terminal/adapter/adaptDispatch.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -19,27 +20,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics* pMetrics,
-    _In_ IAccessibilityNotifier* pNotifier,
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
-    OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
-    WheelDelta{ 0 },
-    HWheelDelta{ 0 },
-    _textBuffer{ nullptr },
-    Next{ nullptr },
-    WriteConsoleDbcsLeadByte{ 0, 0 },
-    FillOutDbcsLeadChar{ 0 },
-    ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
-    _pAccessibilityNotifier{ pNotifier },
-    _api{ *this },
-    _stateMachine{ nullptr },
-    _viewport(Viewport::Empty()),
-    _psiAlternateBuffer{ nullptr },
-    _psiMainBuffer{ nullptr },
-    _fAltWindowChanged{ false },
     _PopupAttributes{ popupAttributes },
-    _virtualBottom{ 0 },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
 {
@@ -89,11 +73,10 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         auto pMetrics = ServiceLocator::LocateWindowMetrics();
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
-        const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         // It is possible for pNotifier to be null and that's OK.
         // For instance, the PTY doesn't need to send events. Just pass it along
         // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
-        const auto pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
+        const auto pScreen = new SCREEN_INFORMATION(pMetrics, popupAttributes, fontInfo);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -572,70 +555,6 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
-// Routine Description:
-// - Informs clients whether we have accessibility eventing so they can
-//   save themselves the work of performing math or lookups before calling
-//   `NotifyAccessibilityEventing`.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if we have an accessibility listener. False otherwise.
-bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
-{
-    return _pAccessibilityNotifier;
-}
-
-// NOTE: This method was historically used to notify accessibility apps AND
-// to aggregate drawing metadata to determine whether or not to use PolyTextOut.
-// After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
-// This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::NotifyAccessibilityEventing(const til::CoordType sStartX,
-                                                     const til::CoordType sStartY,
-                                                     const til::CoordType sEndX,
-                                                     const til::CoordType sEndY)
-{
-    if (!_pAccessibilityNotifier)
-    {
-        return;
-    }
-
-    // Fire off a winevent to let accessibility apps know what changed.
-    if (IsActiveScreenBuffer())
-    {
-        const auto coordScreenBufferSize = GetBufferSize().Dimensions();
-        FAIL_FAST_IF(!(sEndX < coordScreenBufferSize.width));
-
-        if (sStartX == sEndX && sStartY == sEndY)
-        {
-            try
-            {
-                const auto cellData = GetCellDataAt({ sStartX, sStartY });
-                const auto charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
-                                                  cellData->TextAttr().GetLegacyAttributes());
-                _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
-                                                                        charAndAttr);
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                return;
-            }
-        }
-        else
-        {
-            _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
-                                                                    MAKELONG(sEndX, sEndY));
-        }
-        auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
-        if (pConsoleWindow)
-        {
-            LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
-            // TODO MSFT 7960168 do we really need this event to not signal?
-            //pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
-        }
-    }
-}
-
 #pragma endregion
 
 #pragma region UI_Refresh
@@ -663,10 +582,7 @@ SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
     WI_ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    if (_pAccessibilityNotifier)
-    {
-        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
-    }
+    ServiceLocator::LocateGlobals().accessibilityNotifier.Layout();
 
     const auto buffer = GetBufferSize();
     const auto isAltBuffer = _IsAltBuffer();
@@ -786,8 +702,7 @@ void SCREEN_INFORMATION::SetViewportSize(const til::size* const pcoordSize)
     else
     {
         // Otherwise, just store the new position and go on.
-        _viewport = Viewport::FromInclusive(NewWindow);
-        Tracing::s_TraceWindowViewport(_viewport);
+        _CommitViewport(Viewport::FromInclusive(NewWindow));
     }
 
     // Update our internal virtual bottom tracker if requested. This helps keep
@@ -1199,8 +1114,7 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const til::size* const pcoordS
         _virtualBottom = srNewViewport.bottom;
     }
 
-    _viewport = newViewport;
-    Tracing::s_TraceWindowViewport(_viewport);
+    _CommitViewport(newViewport);
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.HasPendingCookedRead())
@@ -1239,27 +1153,26 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
     const auto fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
-    const auto oldViewport = Viewport(_viewport);
-
     _InternalSetViewportSize(pcoordSize, fResizeFromTop, fResizeFromLeft);
+}
 
-    // MSFT 13194969, related to 12092729.
-    // If we're in virtual terminal mode, and the viewport dimensions change,
-    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
-    //      probably want the viewport resizes, not just the screen buffer
-    //      resizes. This does change the behavior of the API for v2 callers,
-    //      but only callers who've requested VT mode. In 12092729, we enabled
-    //      sending notifications from window resizes in cases where the buffer
-    //      didn't resize, so this applies the same expansion to resizes using
-    //      the window, not the API.
-    if (IsInVirtualTerminalInputMode())
+void SCREEN_INFORMATION::_CommitViewport(const Viewport& viewport)
+{
+    // VT TUI applications typically use SIGWINCH on UNIX and Windows has no equivalent
+    // for that. So, we just raise WINDOW_BUFFER_SIZE_EVENT as the closest alternative.
+    // With ASB or in ConPTY, viewport will match buffer size, and in that case we rely
+    // on InputBuffer to deduplicate events for us.
+    //
+    // Technically, this is a hack, and it resulted in regressions. Example: GH#281.
+    // But this was changed so long ago, that it's difficult to improve now.
+    // A more ideal solution may have been the introduction of a "VIEWPORT_EVENT".
+    if (IsActiveScreenBuffer() && IsInVirtualTerminalInputMode() && viewport.Dimensions() != _viewport.Dimensions())
     {
-        if ((_viewport.Width() != oldViewport.Width()) ||
-            (_viewport.Height() != oldViewport.Height()))
-        {
-            ScreenBufferSizeChange(GetBufferSize().Dimensions());
-        }
+        ScreenBufferSizeChange(GetBufferSize().Dimensions());
     }
+
+    _viewport = viewport;
+    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:
@@ -1380,12 +1293,6 @@ try
     // Also save the distance to the virtual bottom so it can be restored after the resize
     const auto cursorDistanceFromBottom = _virtualBottom - _textBuffer->GetCursor().GetPosition().y;
 
-    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
-    newTextBuffer->GetCursor().StartDeferDrawing();
-    _textBuffer->GetCursor().StartDeferDrawing();
-    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
-
     TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
 
     // Since the reflow doesn't preserve the virtual bottom, we try and
@@ -1426,8 +1333,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const til::size coordNewScreenSize)
 try
 {
-    _textBuffer->GetCursor().StartDeferDrawing();
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
     return STATUS_SUCCESS;
 }
@@ -1481,15 +1386,14 @@ NT_CATCH_RETURN()
 
     if (SUCCEEDED_NTSTATUS(status))
     {
-        if (HasAccessibilityEventing())
-        {
-            NotifyAccessibilityEventing(0, 0, coordNewScreenSize.width - 1, coordNewScreenSize.height - 1);
-        }
+        SetConptyCursorPositionMayBeWrong();
 
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
+        if (IsActiveScreenBuffer())
         {
-            _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+            auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+            an.RegionChanged({}, { coordNewScreenSize.width - 1, coordNewScreenSize.height - 1 });
+            an.Layout();
         }
 
         if (fDoScrollBarUpdate)
@@ -1500,6 +1404,112 @@ NT_CATCH_RETURN()
     }
 
     return status;
+}
+
+// If we're ConPTY, our copy of the buffer may be out of sync with the terminal,
+// because our VT, resize reflow, etc., implementation may be different.
+// For some operations we set a flag to indicate the cursor position may be wrong.
+// For GetConsoleScreenBufferInfo(Ex) we then fetch the latest position from the terminal.
+// This fixes some of the most glaring out of sync issues. See GH#18725.
+bool SCREEN_INFORMATION::ConptyCursorPositionMayBeWrong() const noexcept
+{
+    return (_conptyCursorPositionGeneration.load(std::memory_order_relaxed) & 1) != 0;
+}
+
+// This should be called whenever we do something that may desynchronize
+// our cursor position from the terminal's, e.g. a buffer resize.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(gci.IsConsoleLocked());
+
+    if (gci.IsInVtIoMode())
+    {
+        // OR in the dirty flag and also increment the generation count.
+        auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        while (!_conptyCursorPositionGeneration.compare_exchange_weak(gen, (gen | 1) + 2, std::memory_order_relaxed))
+        {
+        }
+    }
+}
+
+// This should be called whenever we've synchronized our cursor position again.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
+{
+    // Clear the dirty flag if it's set. This implicitly results in a generation increment.
+    auto gen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((gen & 1) != 0 && _conptyCursorPositionGeneration.compare_exchange_strong(gen, gen + 1, std::memory_order_relaxed))
+    {
+        til::atomic_notify_all(_conptyCursorPositionGeneration);
+    }
+}
+
+// Call this to synchronously wait until the ConPTY cursor position
+// is known to be correct again. To do so, this emits a DSR CPR sequence
+// and waits for a response from the terminal.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
+{
+    auto initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+    if ((initialGen & 1) == 0)
+    {
+        return;
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    {
+        gci.LockConsole();
+        const auto exit = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+        // Double-check, now that we got the lock (= delay = possibly already handled).
+        initialGen = _conptyCursorPositionGeneration.load(std::memory_order_relaxed);
+        if ((initialGen & 1) == 0)
+        {
+            return;
+        }
+
+        auto writer = gci.GetVtWriterForBuffer(this);
+
+        if (!writer || !writer.WriteDSRCPR())
+        {
+            ResetConptyCursorPositionMayBeWrong();
+            return;
+        }
+
+        writer.Submit();
+    }
+
+    // If you were to hold the lock, the ConPTY input thread couldn't
+    // process any input and thus couldn't update the cursor position.
+    assert(!gci.IsConsoleLocked());
+
+    for (;;)
+    {
+        // dirty flag is clear --> exit.
+        const auto currentGen = _conptyCursorPositionGeneration.load(std::memory_order::relaxed);
+        if ((currentGen & 1) == 0)
+        {
+            break;
+        }
+
+        // atomic_wait() returns false when the timeout expires.
+        // To keep the total wait time at ~500ms, we should technically decrement the timeout with
+        // each iteration, but I suspect infinite spurious wake-ups are a theoretical problem.
+        if (!til::atomic_wait(_conptyCursorPositionGeneration, currentGen, 500))
+        {
+            // Essentially ResetConptyCursorPositionMayBeWrong(), but here we explicitly use our initial generation
+            // value to avoid TOCTOU issues (clearing the dirty flag when another thread concurrently set it again).
+            // NOTE: initialGen refers to the current value afterwards and cannot be reused.
+            if (_conptyCursorPositionGeneration.compare_exchange_strong(initialGen, initialGen + 1, std::memory_order_relaxed))
+            {
+                til::atomic_notify_all(_conptyCursorPositionGeneration);
+            }
+            break;
+        }
+    }
 }
 
 // Routine Description:
@@ -1617,9 +1627,8 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 // - TurnOn - true if cursor should be left on, false if should be left off
 // Return Value:
 // - Status
-[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position, const bool TurnOn)
+[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& cursor = _textBuffer->GetCursor();
 
     //
@@ -1651,21 +1660,6 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     if (Position.y > _virtualBottom)
     {
         _virtualBottom = Position.y;
-    }
-
-    // if we have the focus, adjust the cursor state
-    if (gci.Flags & CONSOLE_HAS_FOCUS)
-    {
-        if (TurnOn)
-        {
-            cursor.SetDelay(false);
-            cursor.SetIsOn(true);
-        }
-        else
-        {
-            cursor.SetDelay(true);
-        }
-        cursor.SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
@@ -1716,6 +1710,19 @@ void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
     {
         _makeCursorVisible();
     }
+}
+
+SCREEN_INFORMATION::SnapOnScopeExit SCREEN_INFORMATION::SnapOnOutput() noexcept
+{
+    const auto call =
+        // We don't need to snap-on-output the alt buffer since it doesn't scroll anyway.
+        // More importantly though, in the current architecture the alt buffer gets deallocated
+        // the second we receive a \033[?1049l, which makes our this pointer hazardous to use.
+        _psiMainBuffer == nullptr &&
+        // We only want to snap if the user didn't intentionally scroll away.
+        // The snapping logic could be improved, but it's alright for now.
+        _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
+    return SnapOnScopeExit{ call ? this : nullptr };
 }
 
 void SCREEN_INFORMATION::_makeCursorVisible()
@@ -1780,7 +1787,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
 //     machine with the main buffer it belongs to.
 // TODO: MSFT:19817348 Don't create alt screenbuffer's via an out SCREEN_INFORMATION**
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // - ppsiNewScreenBuffer - a pointer to receive the newly created buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
@@ -1806,7 +1813,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
         altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        altCursor.SetIsBlinking(myCursor.IsBlinking());
         // The new position should match the viewport-relative position of the main buffer.
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
@@ -1887,7 +1894,7 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded. This allows applications to retain one HANDLE, and switch which buffer it points to seamlessly.
 // Parameters:
-// - initAttributes - the attributes the buffer is initialized with.
+// - initAttributes - the attributes for initializing the buffer.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer(const TextAttribute& initAttributes)
@@ -1916,11 +1923,6 @@ void SCREEN_INFORMATION::_handleDeferredResize(SCREEN_INFORMATION& siMain)
 
         ::SetActiveScreenBuffer(*psiNewAltBuffer);
 
-        // Kind of a hack until we have proper signal channels: If the client app wants window size events, send one for
-        // the new alt buffer's size (this is so WSL can update the TTY size when the MainSB.viewportWidth <
-        // MainSB.bufferWidth (which can happen with wrap text disabled))
-        ScreenBufferSizeChange(psiNewAltBuffer->GetBufferSize().Dimensions());
-
         // Tell the VT MouseInput handler that we're in the Alt buffer now
         gci.GetActiveInputBuffer()->GetTerminalInput().UseAlternateScreenBuffer();
     }
@@ -1944,9 +1946,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         ::SetActiveScreenBuffer(*psiMain);
         psiMain->UpdateScrollBars(); // The alt had disabled scrollbars, re-enable them
 
-        // send a _coordScreenBufferSizeChangeEvent for the new Sb viewport
-        ScreenBufferSizeChange(psiMain->GetBufferSize().Dimensions());
-
         auto psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
 
@@ -1955,7 +1954,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         // Copy the alt buffer's output mode back to the main buffer.
         psiMain->OutputMode = psiAlt->OutputMode;
@@ -2141,14 +2140,12 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
     const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
 
-    _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
+    _CommitViewport(Viewport::FromExclusive({ x, y, x + cx, y + cy }));
 
     if (updateBottom)
     {
         UpdateBottom();
     }
-
-    Tracing::s_TraceWindowViewport(_viewport);
 }
 
 // Routine Description:
@@ -2394,19 +2391,6 @@ Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
     const auto bufferWidth = _textBuffer->GetSize().Width();
     const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
     return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
-}
-
-// Method Description:
-// - Returns true if the character at the cursor's current position is wide.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the character at the cursor's current position is wide
-bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
-{
-    const auto& buffer = GetTextBuffer();
-    const auto position = buffer.GetCursor().GetPosition();
-    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 // Method Description:

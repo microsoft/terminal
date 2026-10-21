@@ -24,46 +24,66 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-        private DispatcherTimer blinkTimer;
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
+
+        private DispatcherWrapper dispatcherWrapper;
+
+        // These callbacks are provided to CreateTerminal so that the terminal
+        // core can schedule work items on the same dispatcher queue as WPF.
+        // They must be pinned with GC handles so that they do not get garbage collected.
+        private NativeMethods.DispatcherCallouts dispatcherCallouts;
+        private GCHandle dispatcherTryEnqueueCalloutGCHandle;
+        private GCHandle dispatcherHasThreadAccessCalloutGCHandle;
+
+        private class DispatcherWrapper
+        {
+            private readonly Dispatcher dispatcher;
+
+            public DispatcherWrapper(Dispatcher dispatcher)
+            {
+                this.dispatcher = dispatcher;
+            }
+
+#pragma warning disable IDE0060
+            public bool TryEnqueue(IntPtr context, int priority, IntPtr obj)
+            {
+                var actualPrio = priority switch {
+                    < 0 => DispatcherPriority.Inactive,
+                    0 => DispatcherPriority.Normal,
+                    > 0 => DispatcherPriority.Send,
+                };
+                var task = this.dispatcher.InvokeAsync(() => NativeMethods.InteropQueueHandlerInvoke(obj), actualPrio);
+                return task != null;
+            }
+
+#pragma warning disable IDE0060
+            public bool HasThreadAccess(IntPtr context) => this.dispatcher.CheckAccess();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
         public TerminalContainer()
         {
+            // WPF & TSF can't deal with us setting TF_TMAE_CONSOLE on the UI thread.
+            // It simply crashes on Windows 10 if you use the Emoji picker.
+            // (On later versions of Windows it just doesn't work.)
+            NativeMethods.AvoidBuggyTSFConsoleFlags();
+
+            this.dispatcherWrapper = new DispatcherWrapper(this.Dispatcher);
+            this.dispatcherCallouts = new NativeMethods.DispatcherCallouts { tryEnqueue = this.dispatcherWrapper.TryEnqueue, hasThreadAccess = this.dispatcherWrapper.HasThreadAccess, context = (IntPtr)0 /* unused */ };
+            this.dispatcherTryEnqueueCalloutGCHandle = GCHandle.Alloc(this.dispatcherCallouts.tryEnqueue);
+            this.dispatcherHasThreadAccessCalloutGCHandle = GCHandle.Alloc(this.dispatcherCallouts.hasThreadAccess);
+
             this.MessageHook += this.TerminalContainer_MessageHook;
-            this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
-
-            var blinkTime = NativeMethods.GetCaretBlinkTime();
-
-            if (blinkTime == uint.MaxValue)
-            {
-                return;
-            }
-
-            this.blinkTimer = new DispatcherTimer();
-            this.blinkTimer.Interval = TimeSpan.FromMilliseconds(blinkTime);
-            this.blinkTimer.Tick += (_, __) =>
-            {
-                if (this.terminal != IntPtr.Zero)
-                {
-                    NativeMethods.TerminalBlinkCursor(this.terminal);
-                }
-            };
         }
 
         /// <summary>
         /// Event that is fired when the terminal buffer scrolls from text output.
         /// </summary>
         internal event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
-
-        /// <summary>
-        /// Event that is fired when the user engages in a mouse scroll over the terminal hwnd.
-        /// </summary>
-        internal event EventHandler<int> UserScrolled;
 
         /// <summary>
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
@@ -220,8 +240,8 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TilSize dimensions = new NativeMethods.TilSize
             {
-                X = (int)columns,
-                Y = (int)rows,
+                X = Math.Max((int)columns, 2),
+                Y = Math.Max((int)rows, 2),
             };
 
             NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out var dimensionsInPixels);
@@ -300,7 +320,7 @@ namespace Microsoft.Terminal.Wpf
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
-            NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
+            NativeMethods.CreateTerminal(hwndParent.Handle, this.dispatcherCallouts, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
             this.writeCallback = this.OnWrite;
@@ -314,15 +334,6 @@ namespace Microsoft.Terminal.Wpf
                 NativeMethods.TerminalDpiChanged(this.terminal, (int)dpiScale.PixelsPerInchX);
             }
 
-            if (NativeMethods.GetFocus() == this.hwnd)
-            {
-                this.blinkTimer?.Start();
-            }
-            else
-            {
-                NativeMethods.TerminalSetCursorVisible(this.terminal, false);
-            }
-
             return new HandleRef(this, this.hwnd);
         }
 
@@ -330,6 +341,8 @@ namespace Microsoft.Terminal.Wpf
         protected override void DestroyWindowCore(HandleRef hwnd)
         {
             NativeMethods.DestroyTerminal(this.terminal);
+            this.dispatcherTryEnqueueCalloutGCHandle.Free();
+            this.dispatcherHasThreadAccessCalloutGCHandle.Free();
             this.terminal = IntPtr.Zero;
         }
 
@@ -347,27 +360,12 @@ namespace Microsoft.Terminal.Wpf
             character = (char)vKey;
         }
 
-        private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
-        {
-            e.Handled = true;
-            NativeMethods.SetFocus(this.hwnd);
-        }
-
         private IntPtr TerminalContainer_MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (hwnd == this.hwnd)
             {
                 switch ((NativeMethods.WindowMessage)msg)
                 {
-                    case NativeMethods.WindowMessage.WM_SETFOCUS:
-                        NativeMethods.TerminalSetFocus(this.terminal);
-                        this.blinkTimer?.Start();
-                        break;
-                    case NativeMethods.WindowMessage.WM_KILLFOCUS:
-                        NativeMethods.TerminalKillFocus(this.terminal);
-                        this.blinkTimer?.Stop();
-                        NativeMethods.TerminalSetCursorVisible(this.terminal, false);
-                        break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
@@ -376,11 +374,8 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         {
                             // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-                            NativeMethods.TerminalSetCursorVisible(this.terminal, true);
-
                             UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
                             NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
-                            this.blinkTimer?.Start();
                             break;
                         }
 
@@ -432,11 +427,6 @@ namespace Microsoft.Terminal.Wpf
 
                         this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         break;
-
-                    case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
-                        var delta = (short)(((long)wParam) >> 16);
-                        this.UserScrolled?.Invoke(this, delta);
-                        break;
                 }
             }
 
@@ -458,9 +448,10 @@ namespace Microsoft.Terminal.Wpf
             this.TerminalScrolled?.Invoke(this, (viewTop, viewHeight, bufferSize));
         }
 
-        private void OnWrite(string data)
+        private void OnWrite(IntPtr data, int size)
         {
-            this.Connection?.WriteInput(data);
+            string str = Marshal.PtrToStringUni(data, size);
+            this.Connection?.WriteInput(str);
         }
     }
 }
