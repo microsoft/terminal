@@ -111,6 +111,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         }
 
         settings->_globals = _globals->Copy();
+        // temporary: instantiate a new window settings shim
+        // will be removed when we have real per-window settings
+        settings->_windowSettings = winrt::make_self<implementation::WindowSettings>();
+        settings->_windowSettings->Initialize(settings->_globals);
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
@@ -207,6 +211,19 @@ Model::ActionMap CascadiaSettings::ActionMap() const noexcept
 Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 {
     return *_globals;
+}
+
+Model::WindowSettings CascadiaSettings::WindowSettingsDefaults() const
+{
+    return *_windowSettings;
+}
+
+Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& /*windowName*/) const
+{
+    // In the WIP implementation, we always return the same WindowSettings
+    // object regardless of window name, since per-window settings
+    // storage is not yet implemented.
+    return *_windowSettings;
 }
 
 // Method Description:
@@ -775,7 +792,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(GlobalSettings().DefaultProfile()) :
+               FindProfile(_globals->DefaultProfile()) :
                ProfileDefaults();
 }
 

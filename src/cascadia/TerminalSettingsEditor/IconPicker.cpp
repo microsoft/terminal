@@ -70,6 +70,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProperties();
         InitializeComponent();
 
+        Automation::AutomationProperties::SetName(IconBrowseButton(), RS_(L"IconPicker_IconBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+
         _DeduceCurrentIconType();
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto propertyName{ args.PropertyName() };

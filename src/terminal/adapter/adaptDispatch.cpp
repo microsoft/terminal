@@ -2103,7 +2103,7 @@ void AdaptDispatch::QueryKittyKeyboardProtocol()
 }
 
 // CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
-void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
+void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags) noexcept
 {
     if (_api.IsConPTY())
     {
@@ -2115,7 +2115,7 @@ void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 }
 
 // CSI < count u - Pops one or more entries from the kitty keyboard stack
-void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
+void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count) noexcept
 {
     if (_api.IsConPTY())
     {
@@ -3979,7 +3979,15 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         // with the constructed bit pattern.
         if (ch != AsciiChars::ESC)
         {
-            _fontBuffer->AddSixelData(ch);
+            try
+            {
+                _fontBuffer->AddSixelData(ch);
+            }
+            catch (...)
+            {
+                // Ignore all further content.
+                return false;
+            }
         }
         else if (_fontBuffer->FinalizeSixelData())
         {

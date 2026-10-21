@@ -1,5 +1,7 @@
 aci
+addref
 allcolors
+Affordance
 breadcrumb
 breadcrumbs
 ccmp
@@ -35,6 +37,7 @@ killp
 libfuzzer
 liga
 Llast
+LLMs
 Lmid
 locl
 lol
@@ -49,6 +52,7 @@ mnt
 mru
 neww
 notwrapped
+NPCs
 NTMTo
 overlined
 passthrough
@@ -82,8 +86,10 @@ subpages
 sustainability
 sxn
 Tencent
+TOCTOU
 toolset
 ubuntu
+undershoots
 UEFI
 uiatextrange
 Uids

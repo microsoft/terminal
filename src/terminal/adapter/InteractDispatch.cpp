@@ -27,6 +27,12 @@ InteractDispatch::InteractDispatch() :
 {
 }
 
+void InteractDispatch::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetVtIo()->SetDeviceAttributes(attributes);
+}
+
 // Method Description:
 // - Writes a collection of input to the host. The new input is appended to the
 //      end of the input buffer.

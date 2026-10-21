@@ -116,6 +116,14 @@ try
         }
     }
 
+    if (_api.invalidatedRows.empty() && _api.invalidatedCursorArea.empty() && !RequiresContinuousRedraw())
+    {
+        _api.invalidatedCursorArea = invalidatedAreaNone;
+        _api.invalidatedRows = invalidatedRowsNone;
+        _api.scrollOffset = 0;
+        return S_FALSE;
+    }
+
     _api.dirtyRect = {
         0,
         _api.invalidatedRows.start,

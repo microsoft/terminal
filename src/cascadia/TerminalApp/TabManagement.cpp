@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return S_FALSE;
             }
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -102,11 +102,17 @@ namespace winrt::TerminalApp::implementation
     {
         newTabImpl->Initialize();
 
+        // Push the current settings into the tab on when it's initialized.
+        // _RefreshUIForSettingsReload will also do this when settings are hot
+        // reloaded, but we need this here to make sure we pass our current
+        // window settings to the tab too.
+        newTabImpl->UpdateSettings(_settings, _currentWindowSettings());
+
         // If insert position is not passed, calculate it
         if (insertPosition == -1)
         {
             insertPosition = _tabs.Size();
-            if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
+            if (_currentWindowSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
             {
                 auto currentTabIndex = _GetFocusedTabIndex();
                 if (currentTabIndex.has_value())
@@ -233,7 +239,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto content{ tab.GetActiveContent() })
         {
             const auto& icon{ content.Icon() };
-            const auto theme = _settings.GlobalSettings().CurrentTheme();
+            const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
 
             tab.UpdateIcon(icon, iconStyle);
@@ -244,7 +250,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings.GlobalSettings().TabWidthMode());
+        _tabView.TabWidthMode(_currentWindowSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -257,9 +263,9 @@ namespace winrt::TerminalApp::implementation
         // - there is more than one tab, or the user has chosen to always show tabs
         const auto isVisible = !_isInFocusMode &&
                                (!_isFullscreen || _showTabsFullscreen) &&
-                               (_settings.GlobalSettings().ShowTabsInTitlebar() ||
+                               (_currentWindowSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings.GlobalSettings().AlwaysShowTabs());
+                                _currentWindowSettings().AlwaysShowTabs());
 
         if (_tabView)
         {
@@ -298,11 +304,8 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            uint32_t insertPosition = _tabs.Size();
-            if (_settings.GlobalSettings().NewTabPosition() == NewTabPosition::AfterCurrentTab)
-            {
-                insertPosition = tab.TabViewIndex() + 1;
-            }
+            // Duplicate tabs intentionally ignore NewTabPosition() and always open next to the source tab.
+            const auto insertPosition = tab.TabViewIndex() + 1;
             _CreateNewTabFromPane(_MakePane(nullptr, tab, nullptr), insertPosition);
 
             const auto runtimeTabText{ tab.GetTabText() };
@@ -347,6 +350,10 @@ namespace winrt::TerminalApp::implementation
                     // shell32 file picker manually.
                     std::wstring filename{ tab.Title() };
                     filename = til::clean_filename(filename);
+
+                    // GH#20188: yield before the dialog so that the Enter from the Command Palette doesn't leak into the terminal.
+                    // Low priority, so the Command Palette's close paints first.
+                    co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
                     path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
@@ -562,7 +569,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
-        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
+        const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _currentWindowSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
             auto tabCount = _tabs.Size();
@@ -833,7 +840,7 @@ namespace winrt::TerminalApp::implementation
                 const auto weak = get_weak();
 
                 // Check if we should warn before closing a single pane
-                // (only triggers on Always — Automatic doesn't warn for single pane)
+                // (only triggers on Always. Automatic doesn't warn for single pane)
                 const auto setting = _settings.GlobalSettings().ConfirmOnClose();
                 if (setting == ConfirmOnClose::Always)
                 {
@@ -1131,7 +1138,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
     {
-        if (profile && _settings.GlobalSettings().UseBackgroundImageForWindow())
+        if (profile && _currentWindowSettings().UseBackgroundImageForWindow())
         {
             _SetBackgroundImage(profile.DefaultAppearance());
         }

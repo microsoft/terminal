@@ -45,7 +45,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetNewTerminalArgs(BuildStartupKind kind) const;
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         void MarkAsDefterm();
 

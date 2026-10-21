@@ -49,7 +49,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
-        void WaitUntilCanRender() noexcept override;
+        [[nodiscard]] bool WaitUntilCanRender(HANDLE shutdownEvent) noexcept override;
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 
     protected:

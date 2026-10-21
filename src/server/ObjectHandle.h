@@ -78,8 +78,8 @@ private:
     ACCESS_MASK const _amAccess;
     ULONG const _ulShareAccess;
     ULONG _ulHandleType;
-    PVOID _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
-    std::unique_ptr<INPUT_READ_HANDLE_DATA> _pClientInput;
+    PVOID _pvClientPointer{ nullptr }; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
+    std::unique_ptr<INPUT_READ_HANDLE_DATA> _pClientInput{ nullptr };
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(ConsoleHandleData::HandleType);

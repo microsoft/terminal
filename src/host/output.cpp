@@ -261,6 +261,11 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
+    if (WI_IsFlagClear(gci.pInputBuffer->InputMode, ENABLE_WINDOW_INPUT))
+    {
+        return;
+    }
+
     try
     {
         gci.pInputBuffer->Write(SynthesizeWindowBufferSizeEvent(coordNewSize));

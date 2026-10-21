@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "ControlCore.g.h"
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
@@ -23,6 +22,8 @@
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
+
+#include <functional>
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -76,17 +77,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     };
 
-    struct ControlCore : ControlCoreT<ControlCore>
+    struct ControlCore : winrt::implements<ControlCore, winrt::Windows::Foundation::IInspectable, ICoreState>
     {
     public:
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
-                    TerminalConnection::ITerminalConnection connection);
+                    TerminalConnection::ITerminalConnection connection,
+                    Windows::System::DispatcherQueue dispatcher = nullptr);
         ~ControlCore();
 
         bool Initialize(const float actualWidth,
                         const float actualHeight,
                         const float compositionScale);
+        bool InitializeWithHwnd(const float actualWidth,
+                                const float actualHeight,
+                                const float compositionScale,
+                                const uint64_t hwnd);
         void EnablePainting();
 
         void Detach();
@@ -104,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
-        uint64_t SwapChainHandle() const;
+        HANDLE SwapChainHandle() const;
         void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
@@ -144,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
-        winrt::hstring GetHyperlink(const Core::Point position) const;
+        std::wstring GetHyperlink(const Core::Point position) const;
         winrt::hstring HoveredUriText() const;
         Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
@@ -171,7 +177,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ConnectionState ConnectionState() const;
 
         int ScrollOffset();
-        int ViewHeight() const;
+        Core::Size ViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -262,7 +268,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
+        winrt::Windows::Foundation::Size RenderedSize();
+        void ResizeToDimensions(uint32_t width, uint32_t height, winrt::Windows::Foundation::Size& newSizeInPixels);
+
         void PreviewInput(std::wstring_view input);
+
+        using TimerHandle = ::Microsoft::Console::Render::TimerHandle;
+        TimerHandle RegisterRenderTimer(const char* name, std::function<void()> callback);
+        bool IsRenderTimerRunning(TimerHandle h);
+        void StartRepeatingRenderTimer(TimerHandle h, uint64_t micros);
+        void StopRenderTimer(TimerHandle h);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -298,8 +313,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
-        til::typed_event<> Attached;
         // clang-format on
 
     private:
@@ -315,6 +328,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _setFontSizeUnderLock(float fontSize);
         void _updateFont();
+        void _raiseFontSizeChanged();
         void _refreshSizeUnderLock();
         void _updateSelectionUI();
         bool _shouldTryUpdateSelection(const WORD vkey);
@@ -353,6 +367,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
+        void _refreshHoveredCell();
         void _setOpacity(const float opacity, const bool focused = true);
 
         bool _isBackgroundTransparent();
@@ -406,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Audio stuff.
         MidiAudio _midiAudio;
-        winrt::Windows::System::DispatcherQueueTimer _midiAudioSkipTimer{ nullptr };
+        wil::unique_threadpool_timer _midiAudioSkipTimer{}; // destroyed before _midiAudio
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
@@ -469,6 +484,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    BASIC_FACTORY(ControlCore);
     BASIC_FACTORY(SelectionColor);
 }

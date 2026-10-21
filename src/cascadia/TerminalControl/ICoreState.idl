@@ -39,7 +39,7 @@ namespace Microsoft.Terminal.Control
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
 
         Int32 ScrollOffset { get; };
-        Int32 ViewHeight { get; };
+        Microsoft.Terminal.Core.Size ViewportSize { get; };
         Int32 BufferHeight { get; };
 
         Boolean HasSelection { get; };

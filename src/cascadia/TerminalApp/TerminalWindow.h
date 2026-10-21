@@ -119,7 +119,7 @@ namespace winrt::TerminalApp::implementation
 
         hstring Title();
         void TitlebarClicked();
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down);
 
         void CloseWindow();
         void WindowVisibilityChanged(const bool showOrHide);
@@ -197,14 +197,14 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& exceptionText);
         void _ShowLoadWarningsDialog(const IInspectable& sender, const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
-        bool _IsKeyboardServiceEnabled();
-
         void _RefreshThemeRoutine();
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();
         void _WindowSizeChanged(const IInspectable& sender, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
         void _RenameWindowRequested(const IInspectable& sender, const winrt::TerminalApp::RenameWindowRequestedArgs args);
+
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
 
         winrt::Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _contentStringToActions(const winrt::hstring& content,
                                                                                                                                       const bool replaceFirstWithNewTab);

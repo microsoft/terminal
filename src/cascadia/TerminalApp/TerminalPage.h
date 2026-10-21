@@ -43,7 +43,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettingsCache;
 
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
-    inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
     enum StartupState : int
     {
@@ -200,9 +199,6 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState() const;
 
-        void ShowKeyboardServiceWarning() const;
-        winrt::hstring KeyboardServiceDisabledText();
-
         void IdentifyWindow();
         void ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord);
         void ActionSaveFailed(winrt::hstring message);
@@ -222,7 +218,7 @@ namespace winrt::TerminalApp::implementation
         void WindowActivated(const bool activated);
         bool FocusTab(const winrt::TerminalApp::Tab& tab);
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool extended, const bool down);
 
         void AttachContent(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> args, uint32_t tabIndex);
         void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
@@ -357,6 +353,8 @@ namespace winrt::TerminalApp::implementation
         PaneResources _paneResources;
 
         TerminalApp::ContentManager _manager{ nullptr };
+
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
 
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
@@ -510,7 +508,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
-        void _copyToClipboard(IInspectable, Microsoft::Terminal::Control::WriteToClipboardEventArgs args) const;
+        safe_void_coroutine _copyToClipboard(IInspectable, Microsoft::Terminal::Control::WriteToClipboardEventArgs args) const;
         void _PasteText();
 
         safe_void_coroutine _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
@@ -518,6 +516,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
+        bool _tabDragDropEnabled() const;
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
@@ -608,7 +607,6 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
-        void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
 
