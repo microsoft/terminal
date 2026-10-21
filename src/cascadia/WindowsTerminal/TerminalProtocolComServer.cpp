@@ -11,7 +11,6 @@
 #include "../../types/inc/utils.hpp"
 
 #include <json/json.h>
-#include <til/io.h>
 #include "../TerminalProtocol/ProtocolParsing.h"
 #include "WindowTarget.h"
 
@@ -29,7 +28,6 @@ namespace ProtocolParsing = Microsoft::Terminal::Protocol::Parsing;
 
 namespace Protocol = winrt::Microsoft::Terminal::Protocol;
 
-// Static state, set once before registration and never mutated.
 WindowEmperor* TerminalProtocolComServer::s_emperor = nullptr;
 
 // Returns the CLSID to register/activate the protocol server.
@@ -79,8 +77,7 @@ try
     g_comMtaThread = std::thread([&ready, &regHr]() {
         auto coInit = wil::CoInitializeEx(COINIT_MULTITHREADED);
 
-        // Classic-COM class factory (WRL), marshaled via the OpenConsoleProxy
-        // proxy/stub, not WinRT MBM.
+        // Classic-COM class factory marshaled via the OpenConsoleProxy proxy/stub
         const auto factory = Make<SimpleClassFactory<TerminalProtocolComServer>>();
         if (!factory)
         {
@@ -233,22 +230,14 @@ static std::string _guidStr(const winrt::guid& g)
     return winrt::to_string(winrt::hstring{ ws });
 }
 
-// Allocate a BSTR from a UTF-8 std::string. Throws E_OUTOFMEMORY on allocation
-// failure so the (CATCH_RETURN-wrapped) caller returns a failure HRESULT rather
-// than S_OK with a null out-param.
-static BSTR _bstr(const std::string& utf8)
-{
-    BSTR b = ::SysAllocString(winrt::to_hstring(utf8).c_str());
-    THROW_IF_NULL_ALLOC(b);
-    return b;
-}
-
 // Serialize a Json::Value to a compact BSTR.
 static BSTR _bstrFromJson(const Json::Value& v)
 {
     Json::StreamWriterBuilder wb;
     wb["indentation"] = "";
-    return _bstr(Json::writeString(wb, v));
+    BSTR b = ::SysAllocString(winrt::to_hstring(Json::writeString(wb, v)).c_str());
+    THROW_IF_NULL_ALLOC(b);
+    return b;
 }
 
 static Json::Value _toJson(const Protocol::WindowInfo& w)
@@ -297,20 +286,8 @@ static Json::Value _toJson(const Protocol::ProcessStatus& s)
     v["state"] = winrt::to_string(s.State);
     v["pid"] = static_cast<Json::UInt>(s.Pid);
     v["has_exit_code"] = static_cast<bool>(s.HasExitCode);
-    // Only emit exit_code when it's meaningful; clients gate on has_exit_code,
-    // so omitting it for a still-running process avoids a misleading 0.
     if (s.HasExitCode)
         v["exit_code"] = s.ExitCode;
-    return v;
-}
-
-static Json::Value _toJson(const Protocol::SessionVariable& s)
-{
-    Json::Value v;
-    v["session_id"] = _guidStr(s.SessionId);
-    v["name"] = winrt::to_string(s.Name);
-    v["value"] = winrt::to_string(s.Value);
-    v["exists"] = static_cast<bool>(s.Exists);
     return v;
 }
 
@@ -524,47 +501,6 @@ try
 }
 CATCH_RETURN()
 
-STDMETHODIMP TerminalProtocolComServer::GetSessionVariable(GUID sessionId, BSTR name, BSTR* json)
-try
-{
-    RETURN_HR_IF_NULL(E_POINTER, json);
-    *json = nullptr;
-    RETURN_IF_FAILED(_authorizeCaller());
-    RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
-
-    for (const auto& host : s_emperor->GetWindows())
-    {
-        const auto page = _getPage(host.get());
-        if (!page)
-            continue;
-
-        auto info = page.GetProtocolSessionVariable(winrt::guid{ sessionId }, _hstr(name)).get();
-        if (info.SessionId != winrt::guid{})
-        {
-            *json = _bstrFromJson(_toJson(info));
-            return S_OK;
-        }
-    }
-
-    return E_FAIL;
-}
-CATCH_RETURN()
-
-STDMETHODIMP TerminalProtocolComServer::GetSettings(BSTR* json)
-try
-{
-    RETURN_HR_IF_NULL(E_POINTER, json);
-    *json = nullptr;
-    RETURN_IF_FAILED(_authorizeCaller());
-
-    const std::filesystem::path settingsPath{
-        std::wstring_view{ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::SettingsPath() }
-    };
-    *json = _bstr(til::io::read_file_as_utf8_string_if_exists(settingsPath));
-    return S_OK;
-}
-CATCH_RETURN()
-
 // ============================================================================
 // Mutations
 // ============================================================================
@@ -756,36 +692,6 @@ try
 }
 CATCH_RETURN()
 
-STDMETHODIMP TerminalProtocolComServer::SendInput(GUID sessionId, BSTR text)
-try
-{
-    RETURN_IF_FAILED(_authorizeCaller());
-    RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
-    RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
-
-    const auto textH = _hstr(text);
-
-    // Empty input is a no-op, matching ControlCore::SendInput semantics so
-    // COM clients that send "" don't see surprising E_INVALIDARG failures.
-    if (textH.empty())
-    {
-        return S_OK;
-    }
-
-    for (const auto& host : s_emperor->GetWindows())
-    {
-        const auto page = _getPage(host.get());
-        if (!page)
-            continue;
-
-        if (page.SendProtocolInput(winrt::guid{ sessionId }, textH).get())
-            return S_OK;
-    }
-
-    return E_FAIL;
-}
-CATCH_RETURN()
-
 STDMETHODIMP TerminalProtocolComServer::FocusPane(GUID sessionId)
 try
 {
@@ -800,30 +706,6 @@ try
             continue;
 
         if (page.FocusProtocolPane(winrt::guid{ sessionId }).get())
-            return S_OK;
-    }
-
-    return E_FAIL;
-}
-CATCH_RETURN()
-
-STDMETHODIMP TerminalProtocolComServer::SetSessionVariable(GUID sessionId, BSTR name, BSTR value)
-try
-{
-    RETURN_IF_FAILED(_authorizeCaller());
-    RETURN_HR_IF(E_NOT_VALID_STATE, !s_emperor);
-    RETURN_HR_IF(E_INVALIDARG, winrt::guid{ sessionId } == winrt::guid{});
-
-    const auto nameH = _hstr(name);
-    RETURN_HR_IF(E_INVALIDARG, nameH.empty());
-
-    for (const auto& host : s_emperor->GetWindows())
-    {
-        const auto page = _getPage(host.get());
-        if (!page)
-            continue;
-
-        if (page.SetProtocolSessionVariable(winrt::guid{ sessionId }, nameH, _hstr(value)).get())
             return S_OK;
     }
 

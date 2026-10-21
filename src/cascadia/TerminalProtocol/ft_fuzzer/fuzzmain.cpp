@@ -3,16 +3,12 @@
 //
 // Fuzzing harness for Terminal Protocol server parsing logic.
 // Targets: ParseSplitDirection.
-//
-// Built under the Fuzzing MSBuild configuration with LibFuzzer
-// instrumentation; submittable to OneFuzz via the CI pipeline.
 
 #include "precomp.h"
 #include "ProtocolParsing.h"
 
 namespace ProtocolParsing = Microsoft::Terminal::Protocol::Parsing;
 
-// Core fuzzing logic, called by both LibFuzzer and the manual main().
 static int FuzzOneInput(const uint8_t* data, size_t size)
 {
     if (size == 0)

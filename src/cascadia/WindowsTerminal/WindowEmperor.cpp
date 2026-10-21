@@ -647,7 +647,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     _checkWindowsForNotificationIcon();
     _setupSessionPersistence(_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout());
 
-    // Initialize the protocol server for AI CLI integration.
     _initializeProtocolServer();
 
     // When the settings change, we'll want to update our global hotkeys
@@ -1288,8 +1287,6 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             auto* request = reinterpret_cast<ProtocolWindowRequest*>(lParam);
             if (request && request->Target)
             {
-                // The protocol server is blocked in SendMessage waiting on this,
-                // so don't let an exception escape into the window process.
                 request->CreatedWindowId = 0;
                 try
                 {

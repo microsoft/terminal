@@ -1,15 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-//
-// Shared WinRT type definitions for the Terminal Protocol.
 
 namespace Microsoft.Terminal.Protocol
 {
     struct WindowInfo
     {
         UInt64 WindowId;
-        // The window's name, as accepted by `wt -w <name>`. Empty when the
-        // window is unnamed.
         String Name;
         String Title;
         Boolean IsFocused;
@@ -37,9 +33,6 @@ namespace Microsoft.Terminal.Protocol
         UInt32 Pid;
         Int32 Rows;
         Int32 Columns;
-        // Current working directory of the pane's shell. Populated from the
-        // terminal control's working-directory tracking (OSC 9;9 / shell
-        // integration). Empty when not known.
         String Cwd;
     };
 
@@ -52,24 +45,12 @@ namespace Microsoft.Terminal.Protocol
         Boolean HasExitCode;
     };
 
-    struct SessionVariable
-    {
-        Guid SessionId;
-        String Name;
-        String Value;
-        Boolean Exists;
-    };
-
     struct TabCreationResult
     {
         UInt32 TabId;
         Guid SessionId;
         UInt64 WindowId;
         UInt32 Pid;
-        // True when a window was created but its first tab isn't ready yet. In
-        // that case TabId, SessionId and Pid are not yet meaningful, and the
-        // caller should query the window by WindowId once it has started.
         Boolean Pending;
     };
 }
-

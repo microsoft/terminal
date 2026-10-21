@@ -10,17 +10,10 @@
 #include <wil/win32_helpers.h>
 
 #include "Formatting.h"
-
-// Classic-COM Terminal protocol. Generated from
-// src/host/proxy/ITerminalProtocol.idl; found via the OpenConsoleProxy IntDir
-// added to this project's include path. Marshaled by the OpenConsoleProxy
-// proxy/stub, so activation/marshaling never hits the combase WinRT activation catalog.
 #include "ITerminalProtocol.h"
 
 #include <CLI/CLI.hpp>
-
 #include <wil/resource.h>
-
 #include <array>
 #include <charconv>
 #include <cstdio>
@@ -248,9 +241,8 @@ static HRESULT GetFirstTabId(ITerminalProtocol* server, const std::string& windo
     return S_FALSE;
 }
 
-// Parse a base-10 unsigned 64-bit integer without throwing (unlike std::stoull,
-// which aborts wtcli on non-numeric input). Returns false on empty, non-numeric,
-// trailing-garbage, or overflowing input.
+// Parse a base-10 unsigned 64-bit integer. Returns false on empty, non-numeric
+// or overflowing input.
 static bool TryParseU64(const std::string& s, uint64_t& out)
 {
     if (s.empty())

@@ -354,21 +354,9 @@ namespace winrt::TerminalApp::implementation
         co_return result; // empty SessionId = not found
     }
 
-    IAsyncOperation<Protocol::SessionVariable> TerminalPage::GetProtocolSessionVariable(winrt::guid /*sessionId*/, hstring /*name*/)
-    {
-        // Session variables require per-pane storage not yet ported.
-        co_return Protocol::SessionVariable{};
-    }
-
     // ============================================================================
     // Mutations that return typed structs or bool
     // ============================================================================
-
-    IAsyncOperation<bool> TerminalPage::SetProtocolSessionVariable(winrt::guid /*sessionId*/, hstring /*name*/, hstring /*value*/)
-    {
-        // Session variables require per-pane storage not yet ported.
-        co_return false;
-    }
 
     IAsyncOperation<Protocol::TabCreationResult> TerminalPage::CreateProtocolTab(NewTerminalArgs args, bool background)
     {
@@ -474,39 +462,6 @@ namespace winrt::TerminalApp::implementation
                 continue;
 
             foundPane->Close();
-            co_return true;
-        }
-
-        co_return false;
-    }
-
-    IAsyncOperation<bool> TerminalPage::SendProtocolInput(winrt::guid sessionId, hstring text)
-    {
-        auto strong = get_strong();
-        std::wstring input{ text };
-        std::replace(input.begin(), input.end(), L'\n', L'\r');
-
-        co_await wil::resume_foreground(Dispatcher());
-
-        for (const auto& tab : _tabs)
-        {
-            const auto tabImpl = _GetTabImpl(tab);
-            if (!tabImpl)
-                continue;
-
-            const auto rootPane = tabImpl->GetRootPane();
-            if (!rootPane)
-                continue;
-
-            const auto foundPane = _findPaneBySessionId(rootPane, sessionId);
-            if (!foundPane)
-                continue;
-
-            const auto termControl = foundPane->GetTerminalControl();
-            if (!termControl)
-                co_return false;
-
-            termControl.SendInput(winrt::hstring{ input });
             co_return true;
         }
 

@@ -22,10 +22,7 @@
 class WindowEmperor;
 
 // Classic-COM server for ITerminalProtocol. Marshaled by the OpenConsoleProxy
-// proxy/stub (NOT WinRT Metadata-Based Marshaling), so activation/marshaling
-// never goes through the combase WinRT activation catalog
-// (CWinRTActivationStoreCatalog) implicated in the 0xc0000005 / 0x80010105
-// failures. Complex results cross the wire as JSON (BSTR)
+// proxy/stub. Complex results cross the wire as JSON (BSTR)
 struct __declspec(uuid(__CLSID_TerminalProtocolServer))
 TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::RuntimeClassType::ClassicCom>, ITerminalProtocol>
 {
@@ -35,14 +32,10 @@ TerminalProtocolComServer : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::
     STDMETHODIMP ListTabs(BSTR windowTarget, boolean allWindows, BSTR* json) override;
     STDMETHODIMP ListPanes(BSTR windowTarget, boolean allWindows, unsigned long tabIdFilter, BSTR* json) override;
     STDMETHODIMP GetProcessStatus(GUID sessionId, BSTR* json) override;
-    STDMETHODIMP GetSessionVariable(GUID sessionId, BSTR name, BSTR* json) override;
-    STDMETHODIMP GetSettings(BSTR* json) override;
     STDMETHODIMP CreateTab(BSTR windowTarget, BSTR profile, BSTR commandline, BSTR title, BSTR startingDirectory, boolean suppressAppTitle, boolean background, unsigned long waitTimeoutMs, BSTR* json) override;
     STDMETHODIMP SplitPane(GUID sessionId, BSTR direction, float size, BSTR profile, BSTR commandline, boolean background, BSTR* json) override;
     STDMETHODIMP ClosePane(GUID sessionId) override;
-    STDMETHODIMP SendInput(GUID sessionId, BSTR text) override;
     STDMETHODIMP FocusPane(GUID sessionId) override;
-    STDMETHODIMP SetSessionVariable(GUID sessionId, BSTR name, BSTR value) override;
 
     // Static setup that must be called before s_StartListening().
     static void s_setEmperor(WindowEmperor* emperor) noexcept;
