@@ -29,7 +29,7 @@ variables:
   - name: XES_APPXMANIFESTVERSION
     value: 0.0.1.0
   - name: XES_PACKAGEVERSIONNUMBER
-    value: 0.0.0.1
+    value: 0.0.0.1-ci
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
