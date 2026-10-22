@@ -466,7 +466,8 @@ int main()
         Json::Value result;
         auto hr = CallJson([&](BSTR* j) {
             return server->CreateTab(windowTarget.get(), profile.get(), command.get(), title.get(), cwd.get(), false, true, newTabNoWait ? 0 : NewWindowWaitTimeoutMs, j);
-        }, result);
+        },
+                           result);
         if (FAILED(hr))
         {
             PrintWindowTargetError("CreateTab", hr, newTabWindow);
@@ -513,7 +514,8 @@ int main()
         Json::Value result;
         auto hr = CallJson([&](BSTR* j) {
             return server->SplitPane(sessionId, dirB.get(), static_cast<float>(splitSize), profile.get(), command.get(), true, j);
-        }, result);
+        },
+                           result);
         if (FAILED(hr))
         {
             PrintProtocolError("SplitPane", hr);

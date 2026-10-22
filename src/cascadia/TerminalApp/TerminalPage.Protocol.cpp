@@ -81,7 +81,8 @@ namespace winrt::TerminalApp::implementation
         return [this]() -> IAsyncOperation<uint32_t> {
             co_await wil::resume_foreground(Dispatcher());
             co_return NumberOfTabs();
-        }().get();
+        }()
+                               .get();
     }
 
     // The window's title is the focused tab's title. Reading it walks the XAML
@@ -92,7 +93,8 @@ namespace winrt::TerminalApp::implementation
         return [this]() -> IAsyncOperation<hstring> {
             co_await wil::resume_foreground(Dispatcher());
             co_return Title();
-        }().get();
+        }()
+                               .get();
     }
 
     // Wait until this page has finished its startup actions so the initial
@@ -138,7 +140,8 @@ namespace winrt::TerminalApp::implementation
                 co_return Windows::Foundation::IReference<uint32_t>(idx.value());
             }
             co_return nullptr;
-        }().get();
+        }()
+                               .get();
     }
 
     // ============================================================================
