@@ -11,7 +11,8 @@
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -37,6 +38,7 @@
             <!--  Name  -->
             <local:SettingsExpander x:Name="Name"
                                     x:Uid="Profile_Name"
+                                    search:Scope="Profile"
                                     IsExpanded="True">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
@@ -54,6 +56,7 @@
                     <!--  Commandline  -->
                     <local:SettingsCard x:Name="Commandline"
                                         x:Uid="Profile_Commandline"
+                                        search:Scope="Profile"
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                         <StackPanel Style="{StaticResource SettingControlStackStyle}">
                             <TextBox x:Uid="Profile_CommandlineBox"
@@ -106,12 +109,14 @@
                                                       Target="{x:Bind Profile}" />
                             <CheckBox x:Uid="Profile_Elevate"
                                       VerticalAlignment="Center"
+                                      search:Label="True"
                                       IsChecked="{x:Bind Profile.Elevate, Mode=TwoWay}" />
                         </StackPanel>
                     </local:SettingsCard>
 
                     <!--  Hidden  -->
                     <local:SettingsCard x:Name="Hidden"
+                                        search:Scope="Profile"
                                         ContentAlignment="Left"
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                         <StackPanel Style="{StaticResource SettingControlStackStyle}">
@@ -119,6 +124,7 @@
                                                       Target="{x:Bind Profile}" />
                             <CheckBox x:Uid="Profile_Hidden"
                                       VerticalAlignment="Center"
+                                      search:Label="True"
                                       IsChecked="{x:Bind Profile.Hidden, Mode=TwoWay}" />
                         </StackPanel>
                     </local:SettingsCard>
@@ -126,6 +132,7 @@
                     <!--  Delete Profile  -->
                     <local:SettingsCard x:Name="DeleteProfile"
                                         x:Uid="Profile_DeleteProfile"
+                                        search:Ignore="True"
                                         Visibility="{x:Bind Profile.CanDeleteProfile}">
                         <Button x:Name="DeleteProfileButton"
                                 x:Uid="Profile_DeleteProfileButton"
@@ -225,6 +232,7 @@
 
             <local:SettingsCard x:Name="AppearanceNavigator"
                                 x:Uid="Profile_AppearanceNavigator"
+                                search:Ignore="True"
                                 Click="Appearance_Click"
                                 IsClickEnabled="True">
                 <local:SettingsCard.HeaderIcon>
@@ -245,6 +253,7 @@
             </local:SettingsCard>
             <local:SettingsCard x:Name="TerminalNavigator"
                                 x:Uid="Profile_TerminalNavigator"
+                                search:Ignore="True"
                                 Click="Terminal_Click"
                                 IsClickEnabled="True">
                 <local:SettingsCard.HeaderIcon>
@@ -253,6 +262,7 @@
             </local:SettingsCard>
             <local:SettingsCard x:Name="AdvancedNavigator"
                                 x:Uid="Profile_AdvancedNavigator"
+                                search:Ignore="True"
                                 Click="Advanced_Click"
                                 IsClickEnabled="True">
                 <local:SettingsCard.HeaderIcon>
