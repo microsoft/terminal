@@ -50,7 +50,7 @@ minimalistic
 mkmk
 mnt
 mru
-neww
+newt
 notwrapped
 NPCs
 NTMTo
@@ -77,7 +77,7 @@ rubyw
 runtimes
 servicebus
 slnt
-splitw
+splitp
 ssh
 stakeholders
 submittable

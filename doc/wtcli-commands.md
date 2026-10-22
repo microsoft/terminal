@@ -21,8 +21,8 @@
 | `list-panes` | `lsp` | List panes in a tab. `-w` picks the window (default: current), `-t` the tab (default: its first); `--all` lists every pane in every window. | `wtcli --json list-panes -t 2` |
 | `active-pane` |  | Return metadata for the currently focused pane. Used by other subcommands as the default `-t` target. | `wtcli --json active-pane` |
 | `pane-status` |  | Report pane process state: `pid`, `state` (`running`/`exited`), and `exit_code` when applicable. | `wtcli --json pane-status -t 3` |
-| `new-tab` | `neww` | Create a new tab. `-c` command, `-n` title, `-d` cwd, `-w` window (default: current). Unlike the read-only commands, `-w` here may create the window. | `wtcli --json new-tab -c "pwsh" -n "build" -d C:\src` |
-| `split-pane` | `splitw` | Split a pane. `-d right\|left\|up\|down\|auto` (default `automatic`). `-H`/`-v` are legacy aliases for `down`/`right`. `-s` is size fraction; `-c` is the command to run. | `wtcli --json split-pane -t 3 -d right -s 0.4 -c "tail -f log"` |
+| `new-tab` | `newt` | Create a new tab. `-c` command, `-n` title, `-d` cwd, `-w` window (default: current). Unlike the read-only commands, `-w` here may create the window. | `wtcli --json new-tab -c "pwsh" -n "build" -d C:\src` |
+| `split-pane` | `splitp` | Split a pane. `-d right\|left\|up\|down\|auto` (default `automatic`). `-H`/`-v` are legacy aliases for `down`/`right`. `-s` is size fraction; `-c` is the command to run. | `wtcli --json split-pane -t 3 -d right -s 0.4 -c "tail -f log"` |
 | `kill-pane` | `killp` | Close a pane. | `wtcli kill-pane -t 4` |
 | `focus-pane` | `focusp` | Move focus to the given pane. | `wtcli focus-pane -t 3` |
 

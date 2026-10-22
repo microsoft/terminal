@@ -451,7 +451,7 @@ int main()
     // new-tab
     std::string newTabCommand, newTabTitle, newTabCwd, newTabWindow;
     bool newTabNoWait = false;
-    auto* newTabCmd = app.add_subcommand("new-tab", "Create a new tab")->alias("neww");
+    auto* newTabCmd = app.add_subcommand("new-tab", "Create a new tab")->alias("newt");
     newTabCmd->add_option("-c,--command", newTabCommand, "Command to run");
     newTabCmd->add_option("-n,--title", newTabTitle, "Tab title");
     newTabCmd->add_option("-d,--cwd", newTabCwd, "Starting directory");
@@ -483,7 +483,7 @@ int main()
     std::string splitPaneTarget, splitPaneCommand, splitPaneDirection;
     bool splitHorizontal = false, splitVertical = false;
     double splitSize = 0.5;
-    auto* splitPaneCmd = app.add_subcommand("split-pane", "Split a pane")->alias("splitw");
+    auto* splitPaneCmd = app.add_subcommand("split-pane", "Split a pane")->alias("splitp");
     splitPaneCmd->add_option("-t,--target", splitPaneTarget, "Session ID (GUID)");
     splitPaneCmd->add_option("-d,--direction", splitPaneDirection, "Split direction: right|left|up|down|auto");
     splitPaneCmd->add_flag("-H,--horizontal", splitHorizontal, "Split horizontally (legacy alias for --direction down)");

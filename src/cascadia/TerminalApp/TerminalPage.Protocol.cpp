@@ -268,7 +268,7 @@ namespace winrt::TerminalApp::implementation
 
                     if (const auto termControl = pane->GetTerminalControl())
                     {
-                        info.Rows = termControl.ViewHeight();
+                        info.Rows = termControl.ViewportSize().Height;
                         info.Columns = 0;
                         info.Cwd = termControl.WorkingDirectory();
                     }
