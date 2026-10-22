@@ -319,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<SafeDispatcherTimer> _resizeOverlayTimer;
         Core::Size _lastResizeOverlaySize{};
-        void _ShowResizeOverlay();
+        void _ShowResizeOverlay(bool isFontSizeChange = false);
 
         bool _isBackgroundLight{ false };
         bool _detached{ false };

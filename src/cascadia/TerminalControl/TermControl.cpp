@@ -2332,7 +2332,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Shows an overlay with the current terminal dimensions (columns x rows).
-    void TermControl::_ShowResizeOverlay()
+    void TermControl::_ShowResizeOverlay(const bool isFontSizeChange)
     {
         // Don't show the overlay in the Settings preview control.
         if (!IsEnabled())
@@ -2354,6 +2354,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (isInitialSize)
         {
             return;
+        }
+
+        // Layout changes (such as splitting panes or switching tabs) aren't
+        // interactive window resizes. Only show those during the move/size loop.
+        if (!isFontSizeChange)
+        {
+            const auto hwnd = reinterpret_cast<HWND>(OwningHwnd());
+            if (!hwnd)
+            {
+                return;
+            }
+
+            GUITHREADINFO info{ sizeof(info) };
+            if (!LOG_IF_WIN32_BOOL_FALSE(GetGUIThreadInfo(GetCurrentThreadId(), &info)) ||
+                WI_IsFlagClear(info.flags, GUI_INMOVESIZE) ||
+                info.hwndMoveSize != hwnd)
+            {
+                return;
+            }
         }
 
         ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
@@ -3569,7 +3588,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // _ShowResizeOverlay is shown when the swap chain panel size changes.
         // But changing the font size changes the viewport size as well.
         // So, track that too.
-        _ShowResizeOverlay();
+        _ShowResizeOverlay(true);
     }
 
     void TermControl::_coreRaisedNotice(const IInspectable& /*sender*/,
