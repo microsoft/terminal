@@ -8,6 +8,8 @@
 
 #include "globals.h"
 #include "srvinit.h"
+#include "output.h"
+#include "dbcs.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -91,5 +93,28 @@ class InitTests
         {
             VERIFY_ARE_EQUAL(STATUS_NOT_SUPPORTED, status);
         }
+    }
+
+    TEST_METHOD(TestInitializeConsoleCodePage)
+    {
+        using Microsoft::Console::Interactivity::ServiceLocator;
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto originalCodePage = gci.GetCodePage();
+        const auto restore = wil::scope_exit([&]() {
+            gci.SetCodePage(originalCodePage);
+            InitializeConsoleCodePage();
+        });
+
+        gci.SetCodePage(s_uiOEMTraditionalChineseCP);
+        InitializeConsoleCodePage();
+
+        VERIFY_ARE_EQUAL(s_uiOEMTraditionalChineseCP, gci.CP);
+        VERIFY_ARE_EQUAL(s_uiOEMTraditionalChineseCP, gci.OutputCP);
+        VERIFY_ARE_EQUAL(s_uiOEMTraditionalChineseCP, gci.DefaultCP);
+        VERIFY_ARE_EQUAL(s_uiOEMTraditionalChineseCP, gci.DefaultOutputCP);
+        VERIFY_ARE_EQUAL(2u, gci.CPInfo.MaxCharSize);
+        VERIFY_ARE_EQUAL(2u, gci.OutputCPInfo.MaxCharSize);
+        VERIFY_IS_TRUE(IsDBCSLeadByteConsole(static_cast<char>(0xA4), &gci.CPInfo));
+        VERIFY_IS_TRUE(IsDBCSLeadByteConsole(static_cast<char>(0xA4), &gci.OutputCPInfo));
     }
 };

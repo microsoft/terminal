@@ -91,6 +91,7 @@ Author(s):
 // * IControlSettings.idl or ICoreSettings.idl
 // * ControlProperties.h
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
+    X(uint32_t, CodePage, "codePage")                                                                                                                          \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
