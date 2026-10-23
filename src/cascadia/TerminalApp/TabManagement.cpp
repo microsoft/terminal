@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings()) };
             // GH#11114: GetProfileForArgs can return null if the index is higher
             // than the number of available profiles.
             if (!profile)
