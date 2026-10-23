@@ -39,6 +39,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SetTaskbarProgress);
         TEST_METHOD(SetWorkingDirectory);
+        TEST_METHOD(RepeatedAltBufferEntryKeepsLiveSize);
     };
 };
 
@@ -255,6 +256,28 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
     // This second URL should not change the URL of the original ID!
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(oldAttributes.GetHyperlinkId()), L"test.url");
     VERIFY_ARE_NOT_EQUAL(oldAttributes.GetHyperlinkId(), tbi.GetCurrentAttributes().GetHyperlinkId());
+}
+
+void TerminalApiTest::RepeatedAltBufferEntryKeepsLiveSize()
+{
+    Terminal term{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &term };
+    term.Create({ 100, 30 }, 0, renderer);
+
+    auto settings = winrt::make<MockTermSettings>(0, 30, 100);
+    term.UpdateSettings(settings);
+
+    term.UseAlternateScreenBuffer(TextAttribute{});
+    VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Width(), 100);
+
+    // While the alt buffer is active, a resize only updates _altBufferSize.
+    VERIFY_SUCCEEDED(term.UserResize({ 120, 40 }));
+    VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Width(), 120);
+
+    // Activating the alternate screen buffer a second time must not change its size.
+    term.UseAlternateScreenBuffer(TextAttribute{});
+    VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Width(), 120);
+    VERIFY_ARE_EQUAL(term.GetTextBuffer().GetSize().Height(), 40);
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
