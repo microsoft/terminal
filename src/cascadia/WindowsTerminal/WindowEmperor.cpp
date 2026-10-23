@@ -1826,8 +1826,11 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
 
 void WindowEmperor::_initializeProtocolServer()
 {
-    // Register COM class factory for cross-process access (runs on MTA thread).
-    TerminalProtocolComServer::s_setEmperor(this);
-    SUCCEEDED_LOG(TerminalProtocolComServer::s_StartListening());
-    OutputDebugStringA("WT Protocol Server started\n");
+    if constexpr (Feature_WtCli::IsEnabled())
+    {
+        // Register COM class factory for cross-process access (runs on MTA thread).
+        TerminalProtocolComServer::s_setEmperor(this);
+        SUCCEEDED_LOG(TerminalProtocolComServer::s_StartListening());
+        OutputDebugStringA("WT Protocol Server started\n");
+    }
 }

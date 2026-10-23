@@ -91,6 +91,12 @@ static GUID _portableClsid(const GUID& brandClsid)
 
 static winrt::com_ptr<ITerminalProtocol> ConnectToTerminal(std::string* outVersion = nullptr)
 {
+    if constexpr (!Feature_WtCli::IsEnabled())
+    {
+        fprintf(stderr, "[wtcli] This feature is disabled in this build.\n");
+        return nullptr;
+    }
+
     const auto clsid = _isPackaged() ? CLSID_TerminalProtocol : _portableClsid(CLSID_TerminalProtocol);
     winrt::com_ptr<ITerminalProtocol> server;
     auto hr = CoCreateInstance(clsid, nullptr, CLSCTX_LOCAL_SERVER, __uuidof(ITerminalProtocol), server.put_void());

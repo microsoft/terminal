@@ -101,6 +101,7 @@
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
+      <_FilteredNonWapProjProjectOutput Remove="@(_FilteredNonWapProjProjectOutput)" Condition="'$(WindowsTerminalBranding)' == 'Release' and '%(Filename)' == 'wtcli'" />
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
       <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
       <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
