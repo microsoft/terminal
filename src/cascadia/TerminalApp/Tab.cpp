@@ -199,7 +199,7 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    void Tab::_UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
+    void Tab::UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
     {
         try
         {
@@ -391,7 +391,7 @@ namespace winrt::TerminalApp::implementation
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
-        _UpdateHeaderControlMaxWidth(windowSettings);
+        UpdateHeaderControlMaxWidth(windowSettings);
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](const auto& pane) {

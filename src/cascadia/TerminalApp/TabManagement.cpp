@@ -129,6 +129,13 @@ namespace winrt::TerminalApp::implementation
         newTabImpl->SetDispatch(*_actionDispatch);
         newTabImpl->SetActionMap(_settings.ActionMap());
 
+        // GH#20814: Size the tab header's rename box from this window's tab
+        // width mode at creation time. The renamer's MaxWidth starts out at 0
+        // and is otherwise only updated by UpdateSettings (i.e. on a settings
+        // reload), which leaves the box collapsed until the user first changes
+        // a setting.
+        newTabImpl->UpdateHeaderControlMaxWidth(_currentWindowSettings());
+
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();
 
