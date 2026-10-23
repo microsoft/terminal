@@ -2612,6 +2612,12 @@ void AdaptDispatch::ForwardIndex()
 // - title - The string to set the title to.
 void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
+    if (title.size() > 1000)
+    {
+        // Xterm imposes a limit of 1000 characters on titles
+        // set by an OSC.
+        return;
+    }
     _api.SetWindowTitle(title);
 }
 
