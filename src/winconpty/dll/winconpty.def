@@ -5,6 +5,7 @@ EXPORTS
     ConptyResizePseudoConsole
     ConptyClosePseudoConsole
     ConptyClearPseudoConsole
+    ConptyResetPseudoConsole
     ConptyShowHidePseudoConsole
     ConptyReparentPseudoConsole
     ConptyReleasePseudoConsole
