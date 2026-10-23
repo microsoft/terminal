@@ -10,6 +10,7 @@ namespace TerminalApp
         Int32 ExitCode { get; };
         String ExitMessage { get; };
         String TargetWindow { get; };
+        Boolean Background { get; };
 
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
         String[] Commandline;

@@ -423,6 +423,13 @@
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>
+  <data name="CmdBackgroundDesc" xml:space="preserve">
+    <value>Open new tabs without activating the window or selecting the new tabs.</value>
+  </data>
+  <data name="CmdBackgroundNewTabOnlyError" xml:space="preserve">
+    <value>can only be used with new-tab commands</value>
+    <comment>{Locked="new-tab"} An error message shown after "--background: " when that option is combined with other commands.</comment>
+  </data>
   <data name="CmdPositionDesc" xml:space="preserve">
     <value>Specify the position for the terminal, in "x,y" format.</value>
   </data>

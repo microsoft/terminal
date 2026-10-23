@@ -201,6 +201,10 @@ void AppCommandlineArgs::_buildParser()
                     _loadPersistedLayoutIdx,
                     RS_A(L"CmdSavedLayoutArgDesc"));
 
+    _app.add_flag("--background",
+                  _background,
+                  RS_A(L"CmdBackgroundDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
@@ -1116,6 +1120,19 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
         }
     }
 
+    // --background opens new tabs without selecting them. Other commands act
+    // on the selected tab and may activate the window, so they're rejected.
+    if (_background)
+    {
+        for (const auto& action : _startupActions)
+        {
+            if (action.Action() != ShortcutAction::NewTab)
+            {
+                return _handleExit(_app, CLI::ValidationError{ "--background", RS_A(L"CmdBackgroundNewTabOnlyError") });
+            }
+        }
+    }
+
     // If all the args were successfully parsed, we'll have some commands
     // built in _appArgs, which we'll use when the application starts up.
     return 0;
@@ -1193,9 +1210,15 @@ void AppCommandlineArgs::FullResetState()
     _shouldExitEarly = false;
 
     _windowTarget = {};
+    _background = false;
 }
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept
 {
     return _windowTarget;
+}
+
+bool AppCommandlineArgs::GetBackground() const noexcept
+{
+    return _background;
 }
