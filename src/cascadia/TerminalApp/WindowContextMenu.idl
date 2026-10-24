@@ -1,0 +1,10 @@
+namespace TerminalApp
+{
+    [default_interface] runtimeclass WindowContextMenu : Windows.UI.Xaml.Controls.MenuFlyout
+    {
+        WindowContextMenu();
+        WindowContextMenu(UInt64 parentWindowHandle);
+
+        Windows.UI.Xaml.UIElement TargetElement { get; set; };
+    }
+}

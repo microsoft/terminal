@@ -82,8 +82,6 @@
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
-
-
   <ItemGroup>
     <!-- Manually include the Terminal.Core winmd, so we know where those types
     are defined. We don't want to include it as a project reference, because
@@ -95,17 +93,15 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;comctl32.lib;WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
       <!-- TerminalAppLib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>
