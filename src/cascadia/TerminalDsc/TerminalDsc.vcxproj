@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-1C2D-46EF-B109-22320F070B04}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalDsc</RootNamespace>
+    <ProjectName>TerminalDsc</ProjectName>
+    <TargetName>TerminalDsc</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+    <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
+    <ApplicationType>Windows Store</ApplicationType>
+    <WindowsStoreApp>true</WindowsStoreApp>
+    <WindowsAppContainer>false</WindowsAppContainer>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <VersionInfoFileDescription>Windows Terminal DSC Resource</VersionInfoFileDescription>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet Dependencies">
+    <TerminalCppWinrt>true</TerminalCppWinrt>
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+
+  <!-- Source Files -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Resource\CommandBuilder.h" />
+    <ClInclude Include="Resource\DscResource.h" />
+    <ClInclude Include="Resource\JsonUtils.h" />
+    <ClInclude Include="Resource\Logger.h" />
+    <ClInclude Include="Resource\ManifestGenerator.h" />
+    <ClInclude Include="Resource\ResourceExecutor.h" />
+    <ClInclude Include="Resource\ResourceMetadata.h" />
+    <ClInclude Include="Resource\ResourceRegistry.h" />
+    <ClInclude Include="Resources\Settings\SettingsResource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Resource\CommandBuilder.cpp" />
+    <ClCompile Include="Resource\JsonUtils.cpp" />
+    <ClCompile Include="Resource\Logger.cpp" />
+    <ClCompile Include="Resource\ManifestGenerator.cpp" />
+    <ClCompile Include="Resource\ResourceExecutor.cpp" />
+    <ClCompile Include="Resource\ResourceRegistry.cpp" />
+    <ClCompile Include="Resources\Settings\SettingsResource.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TerminalDsc.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="TerminalDsc.manifest" />
+  </ItemGroup>
+
+  <!-- Deploy the DSC resource manifest next to the executable so a build
+       output directory works as a DSC_RESOURCE_PATH during development. -->
+  <ItemGroup>
+    <CopyFileToFolders Include="microsoft.windowsterminal.settings.dsc.resource.json">
+      <DestinationFolders>$(OutDir)</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+
+  <!-- Dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Manually add a reference to Core here. We need this so MDMERGE will know
+  where the Core types are defined. However, we need to do it exactly like this,
+  because the Core project is a lib not a dll, so it can't be ProjectReference'd
+  like everything else. It does get built into TerminalControl.dll, so we don't
+  need to worry about that. -->
+  <ItemGroup>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
+  <!--
+  BODGY
+
+  The wapproj `GetResolvedWinMD` target tries to get a winmd from every cppwinrt
+  executable we put in the package. But we DON'T produce a winmd. This makes the
+  FastUpToDate check fail every time, and leads to the whole wapproj build
+  running even if you're just f5'ing the package. EVEN AFTER A SUCCESSFUL BUILD.
+
+  Setting GenerateWindowsMetadata=false is enough to tell the build system that
+  we don't produce one, and get it off our backs.
+  -->
+  <ItemDefinitionGroup>
+    <Link>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- Microsoft.Cpp.AppContainerApplication.props (imported above because
+       WindowsStoreApp is true) forces SubSystem=Windows; this is a console
+       application, so put it back after that import. -->
+  <ItemDefinitionGroup>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Generate SxS manifests from the referenced winmds and embed them, so
+       WinRT activation of the settings model works when the executable runs
+       without package identity (development builds, direct invocation). -->
+  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <!-- The settings model loads its localized strings through a merged
+       resources.pri next to the process executable when running unpackaged.
+       Merge one into our output directory so a development build is directly
+       runnable (in the MSIX the package-wide resources.pri covers this). -->
+  <ItemGroup>
+    <TerminalDscPriFiles Include="$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model.Lib\Microsoft.Terminal.Settings.Model.pri" />
+    <TerminalDscPriFiles Include="$(OutDir)Microsoft.Terminal.TerminalConnection.pri" />
+  </ItemGroup>
+  <Target Name="_TerminalDscMergePriFiles" AfterTargets="Build" Inputs="@(TerminalDscPriFiles)" Outputs="$(OutDir)resources.pri">
+    <Exec Command="pwsh.exe -noprofile -c &quot;$(OpenConsoleDir)build\scripts\Merge-PriFiles.ps1&quot; -Path &quot;@(TerminalDscPriFiles, '&quot;, &quot;')&quot; -OutputPath &quot;$(OutDir)resources.pri&quot;" />
+  </Target>
+
+</Project>
