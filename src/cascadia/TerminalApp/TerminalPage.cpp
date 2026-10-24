@@ -3274,13 +3274,23 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
+        const auto strongThis = get_strong();
+
         try
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
-            if (_IsUriSupported(parsed))
+            std::wstring filePath;
+            std::wstring_view launchTarget{ uriString };
+            if (parsed.SchemeName() == L"file")
             {
-                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+                filePath = Utils::FileUriToPath(uriString);
+                launchTarget = filePath;
+            }
+
+            if (_IsUriSupported(parsed, launchTarget))
+            {
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed, launchTarget) };
 
                 if (!shouldLaunch)
                 {
@@ -3302,7 +3312,17 @@ namespace winrt::TerminalApp::implementation
 
                 if (shouldLaunch)
                 {
-                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    SHELLEXECUTEINFOW info{ sizeof(info) };
+                    info.fMask = SEE_MASK_FLAG_NO_UI;
+                    info.hwnd = _hostingHwnd.value_or(nullptr);
+                    info.lpVerb = L"open";
+                    info.lpFile = launchTarget.data();
+                    info.nShow = SW_SHOWNORMAL;
+                    if (!ShellExecuteExW(&info))
+                    {
+                        const auto error = HRESULT_FROM_WIN32(GetLastError());
+                        _ShowCouldNotOpenDialog(winrt::hresult_error{ error }.message(), uriString);
+                    }
                 }
             }
             else
@@ -3343,9 +3363,10 @@ namespace winrt::TerminalApp::implementation
     // - Determines if the given URI is currently supported
     // Arguments:
     // - The parsed URI
+    // - The actual launch target, after converting file URIs to paths
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
@@ -3353,27 +3374,48 @@ namespace winrt::TerminalApp::implementation
         }
         if (parsedUri.SchemeName() == L"file")
         {
-            const auto host = parsedUri.Host();
-            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
-            // and we allow it
-            if (host == L"")
-            {
-                return true;
-            }
-
-            // GH#10188: WSL paths are okay. We'll let those through.
-            if (host == L"wsl$" || host == L"wsl.localhost")
-            {
-                return true;
-            }
-
             // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
             // comparing that value against what is returned by GetComputerNameExW and making sure they match.
             // However, ShellExecute does not seem to be happy with file URIs of the form
             //          file://{hostname}/path/to/file.ext
             // and so while we could do the hostname matching, we do not know how to actually open the URI
             // if its given in that form. So for now we ignore all hostnames other than localhost
-            return false;
+
+            if (til::starts_with(launchTarget, L"\\\\"))
+            {
+                // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
+                const auto serverEnd = launchTarget.find_first_of(L"\\/", 2);
+                const auto server = til::safe_slice_abs(launchTarget, 2, serverEnd);
+                return til::equals_insensitive_ascii(server, L"wsl$") ||
+                       til::equals_insensitive_ascii(server, L"wsl.localhost");
+            }
+            else
+            {
+                // Relative file URIs would be weird, right? Reject them.
+                //
+                // NOTE: std::filesystem::path::is_absolute() would permit paths
+                // like `//foo/` as absolute, which feels overly permissive here.
+                if (launchTarget.size() < 3)
+                {
+                    return false;
+                }
+
+                // This is how STL implemented std::filesystem:_Is_drive_prefix().
+                // I thought it was such a neat trick, that I wanted to use it here.
+                // It's very ugly, but kind of beautiful. Obviously, this only works
+                // in little-endian, but who would do big-endian in this day and age.
+                uint32_t prefix;
+                memcpy(&prefix, launchTarget.data(), sizeof(prefix)); // load from possibly unaligned address
+                prefix &= 0xFFFFFFDFu; // transform lowercase drive letters into uppercase ones
+                prefix -= (static_cast<unsigned int>(L':') << (sizeof(wchar_t) * CHAR_BIT)) | L'A';
+                if (prefix >= 26)
+                {
+                    return false;
+                }
+
+                const auto slash = launchTarget[2];
+                return slash == L'\\' || slash == L'/';
+            }
         }
 
         // In this case, the app manually output a URI other than file:// or
@@ -3383,7 +3425,7 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
         // file URIs pointing to remote locations are *always* considered unsafe.
@@ -3403,10 +3445,9 @@ namespace winrt::TerminalApp::implementation
         if (schemeName == L"file")
         {
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
-            const auto filename = parsedUri.Path();
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
-                if (til::ends_with_insensitive_ascii(filename, e))
+                if (!e.empty() && til::ends_with_insensitive_ascii(launchTarget, e))
                 {
                     return false;
                 }
