@@ -18,6 +18,7 @@
 #include "WindowListRequest.g.h"
 #include "Toast.h"
 
+#include "TmuxSession.h"
 #include "WindowsPackageManagerFactory.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -142,6 +143,8 @@ namespace winrt::TerminalApp::implementation
 
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
+        friend class TmuxSession;
+
     public:
         TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager);
 
@@ -284,6 +287,7 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        std::unique_ptr<TmuxSession> _tmuxSession;
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _mruTabs;
@@ -379,6 +383,19 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Control::IControlSettings settings, const bool inheritCursor);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
+
+        void _TmuxSplitExisting(const std::string& sourcePaneId, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower, bool vertical);
+        void _TmuxNewWindow(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        void _TmuxNewTab(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        void _TmuxOpenFollowerAsTab(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        void _TmuxOpenFollowerAsWindow(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection follower);
+        bool _TmuxClosePane(const std::string& paneId);
+        bool _TmuxSetTabTitleForPane(const std::string& paneId, const winrt::hstring& title);
+        TmuxSession* _TmuxSessionForConnection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection) const;
+        std::string _TmuxPaneIdFromConnection(const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection) const;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _TmuxFocusedConnection() const;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _TmuxAnyConnectionInWindow() const;
+        std::shared_ptr<Pane> _TmuxFindPane(const std::string& paneId) const;
 
         void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
         void _OpenWorkspaceWindow(const winrt::hstring name);
