@@ -2174,12 +2174,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // outside mouse mode, AND the user has RepositionCursorWithMouse turned
         // on, let's try to move the cursor.
         //
-        // We'll only move the cursor if the user has clicked after the last
-        // mark, if there is one. That means the user also needs to set up
-        // shell integration to enable this feature.
+        // We'll only move the cursor while editing a command, and only if the
+        // user has clicked after the last mark. That means the user also needs
+        // to set up shell integration to enable this feature.
         //
         // As noted in GH #8573, there's plenty of edge cases with this
         // approach, but it's good enough to bring value to 90% of use cases.
+
+        const auto& buffer = _terminal->GetTextBuffer();
+        if (buffer.GetCurrentAttributes().GetMarkAttributes() != MarkKind::Command)
+        {
+            return;
+        }
 
         // Does the current buffer line have a mark on it?
         const auto& marks{ _terminal->GetMarkExtents() };
@@ -2187,7 +2193,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto& last{ marks.back() };
             const auto [start, end] = last.GetExtent();
-            const auto& buffer = _terminal->GetTextBuffer();
             const auto cursorPos = buffer.GetCursor().GetPosition();
             const auto bufferSize = buffer.GetSize();
             auto lastNonSpace = buffer.GetLastNonSpaceCharacter();
