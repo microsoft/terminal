@@ -167,7 +167,18 @@ static bool _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const s
         auto cursorPosition = textBuffer.GetCursor().GetPosition();
 
         state.columnBegin = cursorPosition.x;
+        const auto textPositionBefore = state.text.data();
         textBuffer.Replace(cursorPosition.y, textBuffer.GetCurrentAttributes(), state);
+        const auto textPositionAfter = state.text.data();
+
+        // We're at the end of the row and failed to write even a single character into it.
+        // ROW::Write() returns the lineWidth and leaves the text untouched. To prevent a
+        // deadlock, because the text never advances, we need to throw that glyph away.
+        if (textPositionBefore == textPositionAfter && (state.columnBegin == 0 || !wrapAtEOL))
+        {
+            state.text = state.text.substr(textBuffer.GraphemeNext(state.text, 0));
+        }
+
         cursorPosition.x = state.columnEnd;
         wrapped = wrapAtEOL && state.columnEnd >= state.columnLimit;
 
