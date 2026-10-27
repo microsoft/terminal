@@ -498,6 +498,18 @@
     <value>활성 터미널 제목을 응용 프로그램 제목으로 사용</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>탭을 끌어 순서를 변경하거나 새 창으로 분리</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
+    <value>사용하지 않도록 설정해도 "탭 이동" 작업을 사용하여 탭을 이동할 수 있습니다.</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>터미널이 관리자 권한으로 실행 중이므로 탭을 끌어 이동할 수 없습니다. 대신 "탭 이동" 작업을 사용하세요.</value>
+    <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>문자 눈금에 맞게 창 크기 조정</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
