@@ -383,7 +383,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     auto& stateMachine = screenInfo.GetStateMachine();
     // If the given screenInfo is the alternate screen buffer, disabling the alternate screen buffer in this
     // VT payload will cause the pointer to be invalidated. We thus need to get all the information we need now.
-    const auto disableNewlineTranslation = WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
+    auto disableNewlineTranslation = WI_IsFlagSet(screenInfo.OutputMode, DISABLE_NEWLINE_AUTO_RETURN);
     // When switch between the main and alt-buffer SCREEN_INFORMATION::GetActiveBuffer()
     // may change, so get the VtIo reference now, just in case.
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
@@ -419,14 +419,31 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
             write(offset, injection.offset);
             offset = injection.offset;
 
-            static constexpr std::array<std::string_view, 3> mapping{ {
-                { "\x1b[?1004h\x1b[?9001h" }, // RIS: Focus Event Mode + Win32 Input Mode
-                { "\x1b[?1004h" }, // DECSET_FOCUS: Focus Event Mode
-                { "\x1b[?9001h" }, // Win32 Input Mode
-            } };
-            static_assert(static_cast<size_t>(InjectionType::Count) == mapping.size(), "you need to update the mapping array");
+            std::string_view sequence;
+            switch (injection.type)
+            {
+            case InjectionType::RIS:
+                sequence = "\x1b[?1004h\x1b[?9001h";
+                break;
+            case InjectionType::DECSET_FOCUS:
+                sequence = "\x1b[?1004h";
+                break;
+            case InjectionType::W32IM:
+                sequence = "\x1b[?9001h";
+                break;
+            case InjectionType::LNM:
+                // LNM controls the LF/CRLF translation explicitly, so we don't need to do it anymore.
+                //
+                // TODO: Technically speaking, we never need to translate newlines again until
+                //       SetConsoleMode is called and it may be worth caching this information.
+                disableNewlineTranslation = true;
+                continue;
+            default:
+                assert(false);
+                break;
+            }
 
-            writer.WriteUTF8(mapping[static_cast<size_t>(injection.type)]);
+            writer.WriteUTF8(sequence);
         }
 
         write(offset, std::wstring_view::npos);
