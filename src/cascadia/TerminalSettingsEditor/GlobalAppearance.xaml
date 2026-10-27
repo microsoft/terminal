@@ -179,6 +179,16 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingsCard>
 
+        <!--  Show resize overlay  -->
+        <local:SettingsCard x:Name="ShowResizeOverlay"
+                            x:Uid="Globals_ShowResizeOverlay">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE744;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowResizeOverlay, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
+
         <!--  Section: System integration & notifications  -->
         <TextBlock x:Uid="Globals_Section_SystemIntegration"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
