@@ -432,7 +432,8 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
                 sequence = "\x1b[?9001h";
                 break;
             case InjectionType::LNM:
-                // LNM controls the LF/CRLF translation explicitly, so we don't need to do it anymore.
+                // LNM controls the LF/CRLF translation explicitly, so we don't need to do it anymore,
+                // and we MUST not do it anymore, because now `disableNewlineTranslation` is stale.
                 //
                 // TODO: Technically speaking, we never need to translate newlines again until
                 //       SetConsoleMode is called and it may be worth caching this information.
