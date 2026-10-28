@@ -116,6 +116,7 @@ namespace SettingsModelUnitTests
                 "launchMode": "default",
                 "alwaysOnTop": false,
                 "copyOnSelect": false,
+                "closeOnMiddleClick": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
