@@ -603,13 +603,23 @@ SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
     // Fire off an event to let accessibility apps know the layout has changed.
     ServiceLocator::LocateGlobals().accessibilityNotifier.Layout();
 
-    const auto buffer = GetBufferSize();
+    // The scrollbar state always tracks the main buffer, even when an
+    // alt buffer is active. This ensures that switching the alt buffer
+    // on/off doesn't shift the window or its contents around.
+    //
+    // Since we don't handle the deferred main buffer resize (`_fAltWindowChanged`)
+    // this results in some odd behavior when resizing a horizontally scrolling window.
+    // This can be fixed by running the _AdjustScreenBuffer arithmetic here.
+    // However, this complicates the design for a feature that is rarely used nowadays.
+    const auto& mainBuffer = GetMainBuffer();
+    const auto buffer = mainBuffer.GetBufferSize();
     const auto isAltBuffer = _IsAltBuffer();
-    const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
+    const auto maxSizeVer = gci.IsTerminalScrolling() ? mainBuffer._virtualBottom : buffer.BottomInclusive();
     const auto maxSizeHor = buffer.RightInclusive();
+    const auto viewport = mainBuffer._viewport.ToExclusive();
     return ScrollBarState{
         .maxSize = { maxSizeHor, maxSizeVer },
-        .viewport = _viewport.ToExclusive(),
+        .viewport = viewport,
         .isAltBuffer = isAltBuffer,
     };
 }
@@ -908,17 +918,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const til::rect* const prcClientNew
         }
     }
 
-    auto hr = S_FALSE;
-
-    // Only attempt to modify the buffer if something changed. Expensive operation.
-    if (coordBufferSizeOld != coordBufferSizeNew)
-    {
-        LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
-        // Return S_OK, to indicate we succeeded and actually did something.
-        hr = S_OK;
-    }
-
-    return hr;
+    RETURN_IF_NTSTATUS_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
+    return S_OK;
 }
 
 // Routine Description:

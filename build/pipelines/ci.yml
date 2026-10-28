@@ -25,6 +25,11 @@ pr:
 variables:
   - name: runCodesignValidationInjectionBG
     value: false
+  # Stub values for the packaging tasks later.
+  - name: XES_APPXMANIFESTVERSION
+    value: 0.0.1.0
+  - name: XES_PACKAGEVERSIONNUMBER
+    value: 0.0.0.1-ci
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
@@ -65,12 +70,6 @@ stages:
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
 
-  - stage: CodeHealth
-    displayName: Code Health
-    dependsOn: []
-    jobs:
-      - template: ./templates-v2/job-check-code-format.yml
-
   - ${{ each platform in parameters.buildPlatforms }}:
     - stage: Build_${{ platform }}
       displayName: Build ${{ platform }}
@@ -109,3 +108,61 @@ stages:
               platform: ${{ platform }}
               # The tests might be run more than once; log one artifact per attempt.
               outputArtifactStem: -$(System.JobAttempt)
+
+  - stage: Build_AnyCPU
+    displayName: Build Any CPU
+    dependsOn: []
+    jobs:
+      - template: ./templates-v2/job-build-project.yml
+        parameters:
+          jobName: BuildWPF
+          pool:
+            ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+              name: SHINE-INT-L
+            ${{ else }}:
+              name: SHINE-OSS-L
+            demands: ImageOverride -equals SHINE-VS18-Latest
+          buildTerminal: false
+          buildWPFDotNetComponents: true
+          buildPlatforms:
+            - Any CPU
+          buildConfigurations: [Release]
+          keepAllExpensiveBuildOutputs: false
+
+  - stage: Package
+    displayName: Package
+    pool:
+      ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+        name: SHINE-INT-L
+      ${{ else }}:
+        name: SHINE-OSS-L
+      demands: ImageOverride -equals SHINE-VS18-Latest
+    dependsOn:
+      - ${{ each platform in parameters.buildPlatforms }}:
+        - Build_${{ platform }}
+      - Build_AnyCPU
+    jobs:
+      - template: ./templates-v2/job-merge-msix-into-bundle.yml
+        parameters:
+          jobName: Bundle
+          buildConfigurations: [Release]
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          branding: Dev
+
+      - template: ./templates-v2/job-package-conpty.yml
+        parameters:
+          buildConfigurations: [Release]
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+
+      - template: ./templates-v2/job-build-package-wpf.yml
+        parameters:
+          buildConfigurations: [Release]
+          buildPlatforms: ${{ parameters.buildPlatforms }}
+          packageSymbols: false
+          beforeBuildSteps:
+            # Lay down empty PDB files for every DLL, as NuGet will try to find them before
+            # considering how IncludeSymbols is not set.
+            - pwsh: |-
+                Get-ChildItem -Recurse bin -Filter *.dll | ForEach-Object {
+                  Set-Content -Value $null ($_.FullName -Replace 'dll$','pdb')
+                }

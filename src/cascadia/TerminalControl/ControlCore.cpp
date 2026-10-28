@@ -468,6 +468,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+    bool ControlCore::InitializeWithHwnd(const float actualWidth,
+                                         const float actualHeight,
+                                         const float compositionScale,
+                                         const uint64_t hwnd)
+    {
+        _owningHwnd = hwnd;
+
+        auto i = Initialize(actualWidth, actualHeight, compositionScale);
+        if (i)
+        {
+            auto lock = _terminal->LockForWriting();
+            (void)_renderEngine->SetHwnd(reinterpret_cast<HWND>(hwnd));
+        }
+        return i;
+    }
+
     // Method Description:
     // - Tell the renderer to start painting.
     // - !! IMPORTANT !! Make sure that we've attached our swap chain to an
@@ -2170,12 +2186,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // outside mouse mode, AND the user has RepositionCursorWithMouse turned
         // on, let's try to move the cursor.
         //
-        // We'll only move the cursor if the user has clicked after the last
-        // mark, if there is one. That means the user also needs to set up
-        // shell integration to enable this feature.
+        // We'll only move the cursor while editing a command, and only if the
+        // user has clicked after the last mark. That means the user also needs
+        // to set up shell integration to enable this feature.
         //
         // As noted in GH #8573, there's plenty of edge cases with this
         // approach, but it's good enough to bring value to 90% of use cases.
+
+        const auto& buffer = _terminal->GetTextBuffer();
+        if (buffer.GetCurrentAttributes().GetMarkAttributes() != MarkKind::Command)
+        {
+            return;
+        }
 
         // Does the current buffer line have a mark on it?
         const auto& marks{ _terminal->GetMarkExtents() };
@@ -2183,7 +2205,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto& last{ marks.back() };
             const auto [start, end] = last.GetExtent();
-            const auto& buffer = _terminal->GetTextBuffer();
             const auto cursorPos = buffer.GetCursor().GetPosition();
             const auto bufferSize = buffer.GetSize();
             auto lastNonSpace = buffer.GetLastNonSpaceCharacter();
@@ -3016,5 +3037,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::StopRenderTimer(TimerHandle h)
     {
         _renderer->StopTimer(h);
+    }
+
+    winrt::Windows::Foundation::Size ControlCore::RenderedSize()
+    {
+        return { _panelWidth, _panelHeight };
+    }
+
+    void ControlCore::ResizeToDimensions(uint32_t width, uint32_t height, winrt::Windows::Foundation::Size& newSizeInPixels)
+    {
+        if (!_renderEngine)
+        {
+            throw winrt::hresult_error(E_INVALIDARG);
+        }
+        auto pixelSize = _renderEngine->GetViewportInPixels(Viewport::FromDimensions({ 0, 0 }, til::size{ static_cast<til::CoordType>(width), static_cast<til::CoordType>(height) }));
+        SizeOrScaleChanged(static_cast<float>(pixelSize.Width()) / _compositionScale, static_cast<float>(pixelSize.Height()) / _compositionScale, _compositionScale);
+        auto newSize = RenderedSize();
+        newSizeInPixels = {
+            newSize.Width * _compositionScale,
+            newSize.Height * _compositionScale,
+        };
     }
 }

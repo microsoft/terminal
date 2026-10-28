@@ -717,6 +717,8 @@ static constexpr TsfDataProvider s_tsfDataProvider;
 
     case CM_UPDATE_SCROLL_BARS:
     {
+        // NOTE: A similar logic exists in `Window::ActivateAndShow`,
+        // which performs an eager scrollbar update before the window is shown.
         const auto state = ScreenInfo.FetchScrollBarState();
 
         // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
