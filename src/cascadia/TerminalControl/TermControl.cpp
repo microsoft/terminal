@@ -2356,7 +2356,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        // If ShowResizeOverlay setting is not enabled then overlay isn't shown.
         if (!_core->Settings().ShowResizeOverlay())
         {
             return;

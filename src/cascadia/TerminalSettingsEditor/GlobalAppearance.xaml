@@ -183,7 +183,7 @@
         <local:SettingsCard x:Name="ShowResizeOverlay"
                             x:Uid="Globals_ShowResizeOverlay">
             <local:SettingsCard.HeaderIcon>
-                <FontIcon Glyph="&#xE744;" />
+                <FontIcon Glyph="&#xE740;" />
             </local:SettingsCard.HeaderIcon>
             <ToggleSwitch IsOn="{x:Bind ViewModel.ShowResizeOverlay, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />

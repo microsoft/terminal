@@ -2259,12 +2259,8 @@
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
   <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
-    <value>Show size overlay while resizing</value>
-    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) in an overlay while it is being resized.</comment>
-  </data>
-  <data name="Globals_ShowResizeOverlay.Description" xml:space="preserve">
-    <value>When enabled, the number of columns and rows is shown in the middle of the terminal while resizing the window or changing the font size.</value>
-    <comment>A description for what the "Show size overlay while resizing" setting does. Presented near "Globals_ShowResizeOverlay.Header".</comment>
+    <value>Show terminal size when resizing</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
   </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>default</value>
