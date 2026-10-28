@@ -13,9 +13,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace SettingsModelUnitTests
 {
-    // Covers the workspace-persistence APIs added to ApplicationState:
-    //   SaveWorkspace / RemoveWorkspace / RenameWorkspace / TakeWorkspace /
-    //   AllPersistedWorkspaces.
     // All tests operate on a throw-away ApplicationState instance pointed at
     // a temp directory, so they don't touch the real user state.
     class ApplicationStateTests
@@ -29,6 +26,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RenameWorkspaceNoOpForMissingEntry);
         TEST_METHOD(TakeWorkspaceRemovesAndReturns);
         TEST_METHOD(TakeWorkspaceReturnsNullWhenMissing);
+        TEST_METHOD(IgnoreUnknownDismissedMessages);
 
     private:
         static std::filesystem::path _tempRoot()
@@ -55,6 +53,47 @@ namespace SettingsModelUnitTests
             return layout;
         }
     };
+
+    void ApplicationStateTests::IgnoreUnknownDismissedMessages()
+    {
+        Log::Comment(L"GH #16874 - Unknown dismissed message names must not terminate state loading");
+
+        Json::Value json{ Json::objectValue };
+        json["settingsHash"] = "test-hash";
+        json["dismissedMessages"] = Json::Value{ Json::arrayValue };
+        for (const auto name : { "futureMessage", "closeOnExitInfo", "removedMessage", "keyboardServiceWarning", "setAsDefault", "" })
+        {
+            json["dismissedMessages"].append(name);
+        }
+        json["allowedCommandlines"] = Json::Value{ Json::arrayValue };
+        json["allowedCommandlines"].append("test-command");
+
+        auto state = _make();
+        state->FromJson(json, implementation::FileSource::Shared | implementation::FileSource::Local);
+
+        const auto messages = state->DismissedMessages();
+        VERIFY_IS_NOT_NULL(messages);
+        VERIFY_ARE_EQUAL(6u, messages.Size());
+        VERIFY_ARE_EQUAL(InfoBarMessage::IgnoredDeprecatedEntry, messages.GetAt(0));
+        VERIFY_ARE_EQUAL(InfoBarMessage::CloseOnExitInfo, messages.GetAt(1));
+        for (uint32_t i = 2; i < messages.Size(); ++i)
+        {
+            VERIFY_ARE_EQUAL(InfoBarMessage::IgnoredDeprecatedEntry, messages.GetAt(i));
+        }
+
+        // Invalid names must not prevent fields before or after this one from loading.
+        VERIFY_ARE_EQUAL(L"test-hash", state->SettingsHash());
+        VERIFY_ARE_EQUAL(1u, state->AllowedCommandlines().Size());
+        VERIFY_ARE_EQUAL(L"test-command", state->AllowedCommandlines().GetAt(0));
+
+        const auto serialized = state->ToJson(implementation::FileSource::Shared);
+        VERIFY_ARE_EQUAL(6u, serialized["dismissedMessages"].size());
+        VERIFY_ARE_EQUAL("closeOnExitInfo", serialized["dismissedMessages"][1].asString());
+        for (const auto i : { 0, 2, 3, 4, 5 })
+        {
+            VERIFY_ARE_EQUAL("deprecated", serialized["dismissedMessages"][i].asString());
+        }
+    }
 
     void ApplicationStateTests::SaveAndLookupWorkspace()
     {

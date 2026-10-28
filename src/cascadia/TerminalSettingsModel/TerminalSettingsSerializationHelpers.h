@@ -588,6 +588,21 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
 {
+    ValueType FromJson(const Json::Value& json)
+    {
+        const auto name{ Detail::GetStringView(json) };
+        for (const auto& pair : mappings)
+        {
+            if (pair.first == name)
+            {
+                return pair.second;
+            }
+        }
+
+        // Unknown names may come from another version of Terminal. They must not prevent startup.
+        return ValueType::IgnoredDeprecatedEntry;
+    }
+
     JSON_MAPPINGS(4) = {
         pair_type{ "deprecated", ValueType::IgnoredDeprecatedEntry },
         pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
