@@ -16,6 +16,7 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="CodePageUtils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="SegoeFluentIconList.h" />
   </ItemGroup>

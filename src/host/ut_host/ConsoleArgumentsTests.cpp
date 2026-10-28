@@ -28,6 +28,7 @@ public:
     TEST_METHOD(IsVtHandleValidTests);
 
     TEST_METHOD(InitialSizeTests);
+    TEST_METHOD(CodePageArgTests);
 
     TEST_METHOD(HeadlessArgTests);
     TEST_METHOD(SignalHandleTests);
@@ -873,6 +874,42 @@ void ConsoleArgumentsTests::InitialSizeTests()
                                     false, // inheritCursor
                                     false), // runAsComServer
                    false); // successful parse?
+}
+
+void ConsoleArgumentsTests::CodePageArgTests()
+{
+    {
+        std::wstring commandline{ L"OpenConsole.exe --headless --codepage 65001" };
+        const auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(65001u, args.GetCodePage());
+        VERIFY_IS_TRUE(args.IsHeadless());
+    }
+    {
+        std::wstring commandline{ L"OpenConsole.exe --codepage 950" };
+        const auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(950u, args.GetCodePage());
+    }
+    {
+        std::wstring commandline{ L"OpenConsole.exe --codepage" };
+        const auto args = CreateAndParseUnsuccessfully(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(0u, args.GetCodePage());
+    }
+    {
+        std::wstring commandline{ L"OpenConsole.exe --codepage not-a-number" };
+        const auto args = CreateAndParseUnsuccessfully(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(0u, args.GetCodePage());
+    }
+    {
+        std::wstring commandline{ L"OpenConsole.exe --codepage 65535" };
+        const auto args = CreateAndParseUnsuccessfully(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(0u, args.GetCodePage());
+    }
+    {
+        std::wstring commandline{ L"OpenConsole.exe -- cmd.exe /d /c echo --codepage 950" };
+        const auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
+        VERIFY_ARE_EQUAL(0u, args.GetCodePage());
+        VERIFY_ARE_EQUAL(L"cmd.exe /d /c echo --codepage 950", args.GetClientCommandline());
+    }
 }
 
 void ConsoleArgumentsTests::HeadlessArgTests()

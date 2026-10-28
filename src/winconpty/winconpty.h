@@ -63,12 +63,20 @@ typedef struct _PseudoConsole
 #endif
 
 // Implementations of the various PseudoConsole functions.
+HRESULT _GenerateCodePageArgument(const bool supportsCodePageArgument,
+                                  const UINT codePage,
+                                  _Out_writes_(codePageArgumentLength) wchar_t* codePageArgument,
+                                  const size_t codePageArgumentLength,
+                                  _Out_ BOOL* useCodePageArgument);
+
 HRESULT _CreatePseudoConsole(const HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
                              const DWORD dwFlags,
-                             _Inout_ PseudoConsole* pPty);
+                             _Inout_ PseudoConsole* pPty,
+                             const UINT codePage = 0,
+                             _Out_opt_ BOOL* codePageApplied = nullptr);
 
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size);
 HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show);
