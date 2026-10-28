@@ -389,6 +389,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _CopyOnSelect = windowSettings.CopyOnSelect();
         _CopyFormatting = windowSettings.CopyFormatting();
         _FocusFollowMouse = windowSettings.FocusFollowMouse();
+        _ShowResizeOverlay = windowSettings.ShowResizeOverlay();
         _ScrollToZoom = windowSettings.ScrollToZoom();
         _ScrollToChangeOpacity = windowSettings.ScrollToChangeOpacity();
         _GraphicsAPI = windowSettings.GraphicsAPI();

@@ -2746,6 +2746,11 @@
           "description": "When set to true, the window will snap to the nearest character boundary on resize. When false, the window will resize smoothly",
           "type": "boolean"
         },
+        "showResizeOverlay": {
+          "default": true,
+          "description": "When set to true, the terminal shows its size (columns × rows) in an overlay while it is being resized. When false, the overlay is never shown.",
+          "type": "boolean"
+        },
         "tabWidthMode": {
           "default": "equal",
           "description": "Sets the width of the tabs. Possible values include:\n -\"equal\" sizes each tab to the same width\n -\"titleLength\" sizes each tab to the length of its title\n -\"compact\" sizes each tab to the length of its title when focused, and shrinks to the size of only the icon when the tab is unfocused.",
