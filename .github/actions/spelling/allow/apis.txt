@@ -200,6 +200,9 @@ winstamin
 wmemcmp
 wpc
 WSF
+wts
+wtsapi
+wtsmem
 WWH
 wwinmain
 XDocument

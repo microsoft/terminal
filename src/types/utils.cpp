@@ -10,6 +10,9 @@
 #include "inc/colorTable.hpp"
 
 #include <icu.h>
+#include <wtsapi32.h>
+// included again after wtsapi32.h to get wil::unique_wtsmem_ptr
+#include <wil/resource.h>
 
 using namespace Microsoft::Console;
 
@@ -955,10 +958,77 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::b
     return EndianSwap(newGuid);
 }
 
+// Tab drag drop fail-fasts a process whose user isn't the session's logged-on
+// user (e.g. `runas /user:...`).
+// Returns false if it can't tell, so drag drop stays enabled.
+static bool _isRunningAsDifferentSessionUser(HANDLE processToken)
+{
+    try
+    {
+        const auto tokenUser = wil::get_token_information<TOKEN_USER>(processToken);
+
+        DWORD sessionId = 0;
+        THROW_IF_WIN32_BOOL_FALSE(ProcessIdToSessionId(GetCurrentProcessId(), &sessionId));
+
+        // WTS can't return the session user's SID, so resolve it from DOMAIN\user.
+        wil::unique_wtsmem_ptr<wchar_t> userName;
+        wil::unique_wtsmem_ptr<wchar_t> domainName;
+        DWORD userNameBytes = 0;
+        DWORD domainNameBytes = 0;
+#pragma warning(suppress : 26477) // WTS_CURRENT_SERVER_HANDLE expands to NULL rather than nullptr.
+        THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSUserName, wil::out_param(userName), &userNameBytes));
+#pragma warning(suppress : 26477) // WTS_CURRENT_SERVER_HANDLE expands to NULL rather than nullptr.
+        THROW_IF_WIN32_BOOL_FALSE(WTSQuerySessionInformationW(WTS_CURRENT_SERVER_HANDLE, sessionId, WTSDomainName, wil::out_param(domainName), &domainNameBytes));
+
+        // The byte counts include the null terminator. A session without an
+        // interactive user has no user name.
+        if (userNameBytes <= sizeof(wchar_t))
+        {
+            return false;
+        }
+
+        std::wstring account;
+        if (domainNameBytes > sizeof(wchar_t))
+        {
+            account.append(domainName.get());
+            account.push_back(L'\\');
+        }
+        account.append(userName.get());
+
+        BYTE sessionSid[SECURITY_MAX_SID_SIZE];
+        SID_NAME_USE sidUse{};
+        std::wstring referencedDomain;
+        THROW_IF_FAILED(wil::AdaptFixedSizeToAllocatedResult(referencedDomain, [&](PWSTR value, size_t valueLength, gsl::not_null<size_t*> valueLengthNeededWithNull) noexcept -> HRESULT {
+            DWORD sidSize = sizeof(sessionSid);
+            auto domainLength = gsl::narrow_cast<DWORD>(valueLength);
+            if (LookupAccountNameW(nullptr, account.c_str(), &sessionSid[0], &sidSize, value, &domainLength, &sidUse))
+            {
+                // the length excludes the null terminator on success and includes it on failure
+                ++domainLength;
+            }
+            else
+            {
+                RETURN_LAST_ERROR_IF(GetLastError() != ERROR_INSUFFICIENT_BUFFER);
+            }
+            *valueLengthNeededWithNull = domainLength;
+            return S_OK;
+        }));
+
+        return !EqualSid(tokenUser->User.Sid, &sessionSid[0]);
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return false;
+    }
+}
+
 // * Elevated users cannot use the modern drag drop experience. This is
 //   specifically normal users running the Terminal as admin
 // * The Default Administrator, who does not have a split token, CAN drag drop
 //   perfectly fine. So in that case, we want to return false.
+// * Running as a different user than the session's (e.g. `runas`) also breaks
+//   drag drop.
 // * This has to be kept separate from IsRunningElevated, which is exclusively
 //   used for "is this instance running as admin".
 bool Utils::CanUwpDragDrop()
@@ -970,6 +1040,11 @@ bool Utils::CanUwpDragDrop()
         try
         {
             wil::unique_handle processToken{ GetCurrentProcessToken() };
+            if (_isRunningAsDifferentSessionUser(processToken.get()))
+            {
+                return true;
+            }
+
             const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
             const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
             if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
