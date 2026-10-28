@@ -126,6 +126,7 @@ void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
         break;
     case Mode::LineFeed:
         WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        GetStateMachine().InjectSequence(InjectionType::LNM);
         break;
     case Mode::BracketedPaste:
         ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
