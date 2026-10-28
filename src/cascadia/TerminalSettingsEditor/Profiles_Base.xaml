@@ -75,6 +75,20 @@
                         </StackPanel>
                     </local:SettingsCard>
 
+                    <local:SettingsCard x:Name="SshUseTmux"
+                                        x:Uid="Profile_SshUseTmux"
+                                        search:Scope="Profile"
+                                        ContentAlignment="Left"
+                                        Visibility="{x:Bind Profile.IsSshProfile, Mode=OneWay}">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <local:SettingResetButton SettingName="SshUseTmux"
+                                                      Target="{x:Bind Profile}" />
+                            <CheckBox x:Name="SshUseTmuxToggle"
+                                      x:Uid="Profile_SshUseTmuxToggle"
+                                      IsChecked="{x:Bind Profile.SshUseTmux, Mode=TwoWay}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+
                     <!--  Starting Directory  -->
                     <local:SettingsCard x:Uid="Profile_StartingDirectory">
                         <StackPanel Spacing="4">

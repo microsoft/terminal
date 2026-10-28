@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings
                 }
                 else
                 {
-                    defaultSettings->_Commandline = defaultSettings->Commandline() + L" " + newTerminalArgs.Commandline();
+                    defaultSettings->_Commandline = profile.Commandline() + L" " + newTerminalArgs.Commandline();
                 }
             }
             if (!newTerminalArgs.StartingDirectory().empty())
@@ -320,7 +320,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _CellHeight = fontInfo.CellHeight();
         _Padding = profile.Padding();
 
-        _Commandline = profile.Commandline();
+        _Commandline = profile.EvaluatedCommandline();
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 

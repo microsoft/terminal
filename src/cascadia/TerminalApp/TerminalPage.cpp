@@ -23,6 +23,7 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
+#include "../inc/TerminalConnectionHelpers.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "WindowListEntry.g.cpp"
@@ -802,7 +803,7 @@ namespace winrt::TerminalApp::implementation
 
         NewTerminalArgs newTerminalArgs;
 
-        if (const auto conpty = connection.try_as<ConptyConnection>())
+        if (const auto conpty = GetConptyConnection(connection))
         {
             newTerminalArgs.Commandline(conpty.Commandline());
             newTerminalArgs.TabTitle(conpty.StartingTitle());
@@ -1506,6 +1507,14 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
+            if (altPressed && _TryTmuxSplit(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f))
+            {
+                return;
+            }
+            if (!altPressed && !debugTap && _TryTmuxNewTab(newTerminalArgs))
+            {
+                return;
+            }
             const auto newPane = _MakePane(newTerminalArgs);
             // If the newTerminalArgs caused us to open an elevated window
             // instead of creating a pane, it may have returned nullptr. Just do
@@ -1658,6 +1667,10 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
+        if (connection.try_as<TerminalConnection::ConptyConnection>())
+        {
+            return _WrapTmuxConnection(connection, profile, static_cast<uint32_t>(std::max(settings.HistorySize(), 0)));
+        }
         return connection;
     }
 
@@ -1694,7 +1707,7 @@ namespace winrt::TerminalApp::implementation
             // To facilitate restarting defterm connections: grab the original
             // commandline out of the connection and shove that back into the
             // settings.
-            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (const auto& conpty{ TerminalConnection::GetConptyConnection(connection) })
             {
                 controlSettings.DefaultSettings()->Commandline(conpty.Commandline());
             }
@@ -2207,6 +2220,22 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto tabImpl{ _GetFocusedTabImpl() })
         {
+            if (const auto control = tabImpl->GetActiveTerminalControl())
+            {
+                if (const auto source = control.Connection().try_as<TmuxPaneConnection>())
+                {
+                    const auto neighbor = tabImpl->GetRootPane()->NavigateDirection(tabImpl->GetActivePane(), direction, tabImpl->GetMruPanes());
+                    const auto targetControl = neighbor ? neighbor->GetTerminalControl() : nullptr;
+                    const auto target = targetControl ? targetControl.Connection().try_as<TmuxPaneConnection>() : nullptr;
+                    if (target && source->Session() == target->Session())
+                    {
+                        source->Session()->Command("swap-pane -s %" + std::to_string(source->PaneId()) +
+                                                   " -t %" + std::to_string(target->PaneId()));
+                        return true;
+                    }
+                    return false;
+                }
+            }
             _UnZoomIfNeeded();
             return tabImpl->SwapPane(direction);
         }
@@ -2330,10 +2359,24 @@ namespace winrt::TerminalApp::implementation
         }
 
         std::vector<ActionAndArgs> actions;
+        const auto focusedIndex = _GetFocusedTabIndex();
+        std::optional<uint32_t> persistedFocus;
+        uint32_t originalIndex{}, persistedTabs{};
 
         for (auto tab : _tabs)
         {
             auto t = winrt::get_self<implementation::Tab>(tab);
+            const auto index = originalIndex++;
+            // These tabs are reconstructed by the gateway after reattachment.
+            if (_ContainsTmuxPane(t->GetRootPane()))
+            {
+                continue;
+            }
+            if (focusedIndex == index)
+            {
+                persistedFocus = persistedTabs;
+            }
+            ++persistedTabs;
             auto tabActions = t->BuildStartupActions(BuildStartupKind::Persist);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
@@ -2345,12 +2388,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         // if the focused tab was not the last tab, restore that
-        auto idx = _GetFocusedTabIndex();
-        if (idx && idx != tabCount - 1)
+        if (persistedFocus && *persistedFocus != persistedTabs - 1)
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::SwitchToTab);
-            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            SwitchToTabArgs switchToTabArgs{ *persistedFocus };
             action.Args(switchToTabArgs);
 
             actions.emplace_back(std::move(action));
@@ -2592,6 +2634,11 @@ namespace winrt::TerminalApp::implementation
         {
             return false;
         }
+        if (_ContainsTmuxPane(focusedTab->GetRootPane(), true))
+        {
+            _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"TmuxMoveUnsupported"));
+            return false;
+        }
 
         // If there was a windowId in the action, try to move it to the
         // specified window instead of moving it in our tab row.
@@ -2643,6 +2690,11 @@ namespace winrt::TerminalApp::implementation
             // don't attempt to add a pane to it.
             if (!targetTab)
             {
+                return false;
+            }
+            if (_ContainsTmuxPane(targetTab->GetRootPane()))
+            {
+                _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"TmuxMoveUnsupported"));
                 return false;
             }
             auto pane = focusedTab->DetachPane();
@@ -2731,6 +2783,11 @@ namespace winrt::TerminalApp::implementation
         const auto windowId{ args.Window() };
         if (!windowId.empty())
         {
+            if (_ContainsTmuxPane(tab->GetRootPane(), true))
+            {
+                _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"TmuxMoveUnsupported"));
+                return false;
+            }
             // if the windowId is the same as our name, do nothing
             if (windowId == WindowProperties().WindowName() ||
                 windowId == winrt::to_hstring(WindowProperties().WindowId()))
@@ -2964,6 +3021,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto tabImpl{ _GetFocusedTabImpl() })
         {
+            if (_ContainsTmuxPane(tabImpl->GetRootPane(), true))
+            {
+                _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"TmuxOrientationUnsupported"));
+                return;
+            }
             _UnZoomIfNeeded();
             tabImpl->ToggleSplitOrientation();
         }
@@ -2981,6 +3043,18 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto tabImpl{ _GetFocusedTabImpl() })
         {
+            if (const auto control = tabImpl->GetActiveTerminalControl())
+            {
+                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                {
+                    const auto flag = direction == ResizeDirection::Left  ? 'L' :
+                                      direction == ResizeDirection::Right ? 'R' :
+                                      direction == ResizeDirection::Up    ? 'U' :
+                                                                            'D';
+                    connection->ResizeBy(flag);
+                    return true;
+                }
+            }
             _UnZoomIfNeeded();
             return tabImpl->ResizePane(direction);
         }
@@ -3622,7 +3696,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto& connection = control.Connection();
 
-            if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (const auto& conpty{ TerminalConnection::GetConptyConnection(connection) })
             {
                 conpty.ResetSize();
             }
@@ -3851,6 +3925,10 @@ namespace winrt::TerminalApp::implementation
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings()->InitialRows(), controlSettings.DefaultSettings()->InitialCols());
+            if (connection.try_as<TerminalConnection::ConptyConnection>())
+            {
+                connection = _WrapTmuxConnection(connection, profile, static_cast<uint32_t>(std::max(controlSettings.DefaultSettings()->HistorySize(), 0)));
+            }
         }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
@@ -5958,6 +6036,11 @@ namespace winrt::TerminalApp::implementation
         tabImpl.copy_from(winrt::get_self<Tab>(tabBase));
         if (tabImpl)
         {
+            if (_ContainsTmuxPane(tabImpl->GetRootPane(), true))
+            {
+                _stashed.draggedTab = nullptr;
+                return;
+            }
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;

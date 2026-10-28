@@ -96,6 +96,7 @@ Author(s):
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
     X(hstring, AnswerbackMessage, "answerbackMessage")                                                                                                         \
     X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                 \
+    X(bool, SshUseTmux, "ssh.useTmux", false)                                                                                                                  \
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                      \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(hstring, StartingDirectory, "startingDirectory")                                                                                                         \

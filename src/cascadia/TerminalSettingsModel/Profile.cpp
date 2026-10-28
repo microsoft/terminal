@@ -37,6 +37,55 @@ static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMa
 static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
 static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
 
+static std::optional<size_t> _SshExecutableEnd(const winrt::hstring& commandline)
+{
+    const std::wstring_view text{ commandline };
+    const auto first = text.find_first_not_of(L" \t");
+    if (first == text.npos)
+    {
+        return std::nullopt;
+    }
+    const auto quoted = text[first] == L'"';
+    const auto end = quoted ? text.find(L'"', first + 1) : text.find_first_of(L" \t", first);
+    if (quoted && end == text.npos)
+    {
+        return std::nullopt;
+    }
+    const auto token = text.substr(first + (quoted ? 1 : 0), end == text.npos ? text.size() - first : end - first - (quoted ? 1 : 0));
+    const auto expanded = wil::ExpandEnvironmentStringsW<std::wstring>(std::wstring{ token }.c_str());
+    const auto executable = std::filesystem::path{ expanded }.filename().native();
+    if (!til::equals_insensitive_ascii(executable, L"ssh.exe") && !til::equals_insensitive_ascii(executable, L"ssh"))
+    {
+        return std::nullopt;
+    }
+    return end == text.npos ? text.size() : end + (quoted ? 1 : 0);
+}
+
+bool Profile::IsSshProfile() const
+{
+    return _SshExecutableEnd(Commandline()).has_value();
+}
+
+winrt::hstring Profile::EvaluatedCommandline() const
+{
+    const auto commandline = Commandline();
+    if (!SshUseTmux())
+    {
+        return commandline;
+    }
+    const auto executableEnd = _SshExecutableEnd(commandline);
+    if (!executableEnd)
+    {
+        return commandline;
+    }
+    const std::wstring_view text{ commandline };
+    std::wstring evaluated{ text.substr(0, *executableEnd) };
+    evaluated += L" -o \"RemoteCommand=tmux -u -CC new-session -A -s windows-terminal\"";
+    evaluated += text.substr(*executableEnd);
+    evaluated += L" -tt";
+    return winrt::hstring{ evaluated };
+}
+
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
 {

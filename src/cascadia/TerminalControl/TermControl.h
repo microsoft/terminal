@@ -104,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset() const;
         Core::Size ViewportSize() const;
+        Windows::Foundation::Size UnsnappedViewportSize() const;
         int BufferHeight() const;
 
         bool HasSelection() const;

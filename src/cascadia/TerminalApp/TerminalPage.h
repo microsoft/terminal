@@ -17,6 +17,7 @@
 #include "WindowListEntry.g.h"
 #include "WindowListRequest.g.h"
 #include "Toast.h"
+#include "TmuxConnection.h"
 
 #include "WindowsPackageManagerFactory.h"
 
@@ -342,6 +343,31 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
 
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
+
+        struct TmuxTabState
+        {
+            winrt::weak_ref<Tab> tab;
+            ::Microsoft::Terminal::Tmux::Window window;
+            std::map<uint32_t, TerminalApp::IPaneContent> contents;
+        };
+        struct TmuxUiState
+        {
+            std::map<uint32_t, TmuxTabState> windows;
+            bool opened{};
+        };
+        std::map<std::shared_ptr<TmuxSession>, TmuxUiState, std::owner_less<std::shared_ptr<TmuxSession>>> _tmuxSessions;
+        Microsoft::Terminal::TerminalConnection::ITerminalConnection _WrapTmuxConnection(
+            const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection,
+            const Microsoft::Terminal::Settings::Model::Profile& profile,
+            uint32_t historyLimit);
+        void _SyncTmuxWindows(const std::shared_ptr<TmuxSession>& session,
+                              const Microsoft::Terminal::Settings::Model::Profile& profile,
+                              std::vector<::Microsoft::Terminal::Tmux::Window> windows);
+        void _ResizeTmuxWindows(const std::shared_ptr<TmuxSession>& session);
+        bool _TryTmuxSplit(const winrt::com_ptr<Tab>& tab, Microsoft::Terminal::Settings::Model::SplitDirection direction, float size);
+        bool _TryTmuxNewTab(const Microsoft::Terminal::Settings::Model::INewContentArgs& args);
+        static void _KillTmuxPanes(const std::shared_ptr<Pane>& pane);
+        static bool _ContainsTmuxPane(const std::shared_ptr<Pane>& pane, bool includeGateway = false);
 
         struct StashedDragData
         {

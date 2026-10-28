@@ -30,4 +30,15 @@ namespace Microsoft.Terminal.TerminalConnection
         Guid SessionId { get; };
         ConnectionState State { get; };
     };
+
+    // Optional routing for terminal-generated replies, distinct from user input.
+    interface ITerminalResponseHandler
+    {
+        void WriteResponse(Char[] data);
+    };
+
+    interface ITerminalConnectionWrapper
+    {
+        ITerminalConnection UnderlyingConnection { get; };
+    };
 }

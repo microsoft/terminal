@@ -130,6 +130,7 @@ public:
                                                                                                                    const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
+    void ReleaseContentForLayout();
 
     std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
                                      winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType);

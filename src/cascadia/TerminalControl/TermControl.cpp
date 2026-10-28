@@ -2611,6 +2611,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->ViewportSize();
     }
 
+    winrt::Windows::Foundation::Size TermControl::UnsnappedViewportSize() const
+    {
+        const auto size = _core->RenderedSize();
+        const auto cell = _core->FontSizeInDips();
+        if (cell.Width <= 0 || cell.Height <= 0)
+        {
+            return {};
+        }
+        return { size.Width / cell.Width, size.Height / cell.Height };
+    }
+
     int TermControl::BufferHeight() const
     {
         return _core->BufferHeight();

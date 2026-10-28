@@ -332,6 +332,50 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    void Tab::ReplacePaneTree(const std::function<std::shared_ptr<Pane>()>& build)
+    {
+        ASSERT_UI_THREAD();
+        if (IsZoomed())
+        {
+            ExitZoom();
+        }
+        _rootPane->Closed(_rootClosedToken);
+        _rootPane->WalkTree([](const auto& pane) {
+            if (pane->Id())
+            {
+                pane->Detached.raise(pane);
+            }
+        });
+        _contentEvents.clear();
+        Content(nullptr);
+        _rootPane->ReleaseContentForLayout();
+        _activePane = nullptr;
+        _mruPanes.clear();
+        _rootPane = build();
+        _rootPane->WalkTree([&](const auto& pane) {
+            if (pane->_IsLeaf())
+            {
+                pane->Id(_nextPaneId++);
+                if (!_activePane || pane->WasLastFocused())
+                {
+                    _activePane = pane;
+                }
+            }
+        });
+        _activePane->SetActive();
+        _mruPanes.push_back(_activePane->Id().value());
+        _rootClosedToken = _rootPane->Closed([weak = get_weak()](auto&&, auto&&) {
+            if (const auto self = weak.get())
+            {
+                self->Closed.raise(nullptr, nullptr);
+            }
+        });
+        Initialize();
+        Content(_rootPane->GetRootElement());
+        UpdateTitle();
+        _UpdateMenuItemStates();
+    }
+
     // Method Description:
     // - Updates our focus state. If we're gaining focus, make sure to transfer
     //   focus to the last focused terminal control in our tree of controls.

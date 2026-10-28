@@ -919,6 +919,15 @@
     <value>Executable used in the profile.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
+  <data name="Profile_SshUseTmux.Header" xml:space="preserve">
+    <value>tmux control mode</value>
+  </data>
+  <data name="Profile_SshUseTmux.Description" xml:space="preserve">
+    <value>Connect through the persistent windows-terminal tmux session and show its panes as native Terminal panes. Use an SSH connection command line without a positional remote command. Changes apply to new connections.</value>
+  </data>
+  <data name="Profile_SshUseTmuxToggle.Content" xml:space="preserve">
+    <value>Use tmux control mode</value>
+  </data>
   <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>

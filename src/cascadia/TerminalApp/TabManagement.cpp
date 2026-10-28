@@ -65,6 +65,10 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
     try
     {
+        if (_TryTmuxNewTab(newContentArgs))
+        {
+            return S_OK;
+        }
         if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
             const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -298,6 +302,14 @@ namespace winrt::TerminalApp::implementation
     {
         try
         {
+            if (const auto control = tab.GetActiveTerminalControl())
+            {
+                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                {
+                    connection->NewWindow();
+                    return;
+                }
+            }
             // TODO: GH#5047 - We're duplicating the whole profile, which might
             // be a dangling reference to old settings.
             //
@@ -481,6 +493,7 @@ namespace winrt::TerminalApp::implementation
             _SaveWorkspaceIfNeeded();
         }
 
+        _KillTmuxPanes(t->GetRootPane());
         tab.Close();
     }
 
@@ -822,6 +835,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // If specified, detach before closing to directly update the pane structure
+        _KillTmuxPanes(pane);
         pane->Close();
     }
 

@@ -83,6 +83,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean CanDeleteProfile { get; };
         Boolean FocusDeleteButton;
         Boolean IsBaseLayer;
+        Boolean IsSshProfile { get; };
         ProfileSubPage CurrentPage;
         AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
@@ -128,6 +129,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SshUseTmux);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);

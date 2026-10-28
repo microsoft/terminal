@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "../inc/TerminalConnectionHelpers.h"
 #include "ControlCore.h"
 
 // MidiAudio
@@ -343,7 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 newConnection.Resize(height, width);
             }
             // Window owner too.
-            if (auto conpty{ newConnection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ TerminalConnection::GetConptyConnection(newConnection) })
             {
                 conpty.ReparentWindow(_owningHwnd);
             }
@@ -425,7 +426,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_owningHwnd != 0)
             {
-                if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+                if (auto conpty{ TerminalConnection::GetConptyConnection(_connection) })
                 {
                     conpty.ReparentWindow(_owningHwnd);
                 }
@@ -2332,7 +2333,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (!_pendingResponses.empty())
             {
-                _sendInputToConnection(_pendingResponses);
+                if (const auto handler = _connection.try_as<TerminalConnection::ITerminalResponseHandler>())
+                {
+                    handler.WriteResponse(winrt_wstring_to_array_view(_pendingResponses));
+                }
+                else
+                {
+                    _sendInputToConnection(_pendingResponses);
+                }
                 _pendingResponses.clear();
             }
 
@@ -2418,7 +2426,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ TerminalConnection::GetConptyConnection(_connection) })
             {
                 // Since the clearing of ConPTY occurs asynchronously, this call can result weird issues,
                 // where a console application still sees contents that we've already deleted, etc.
@@ -2544,7 +2552,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_initializedTerminal.load(std::memory_order_relaxed))
         {
             // show is true, hide is false
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ TerminalConnection::GetConptyConnection(_connection) })
             {
                 conpty.ShowHide(showOrHide);
             }
@@ -2615,7 +2623,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (owner != _owningHwnd && _connection)
         {
-            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            if (auto conpty{ TerminalConnection::GetConptyConnection(_connection) })
             {
                 conpty.ReparentWindow(owner);
             }

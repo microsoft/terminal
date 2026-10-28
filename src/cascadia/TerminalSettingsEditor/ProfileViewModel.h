@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
+        bool IsSshProfile() const { return !IsBaseLayer() && _profile.IsSshProfile(); }
         Editor::AppearanceViewModel DefaultAppearance() const;
         Editor::AppearanceViewModel UnfocusedAppearance() const;
         bool HasUnfocusedAppearance();
@@ -141,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, ScrollState)                    \
     X(_profile, Padding)                        \
     X(_profile, Commandline)                    \
+    X(_profile, SshUseTmux)                     \
     X(_profile, StartingDirectory)              \
     X(_profile, AntialiasingMode)               \
     X(_profile.DefaultAppearance(), Opacity)    \

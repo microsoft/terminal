@@ -123,6 +123,7 @@ namespace Microsoft.Terminal.Control
         void OpenCWD();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
+        Windows.Foundation.Size UnsnappedViewportSize { get; };
         Windows.Foundation.Size MinimumSize { get; };
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 

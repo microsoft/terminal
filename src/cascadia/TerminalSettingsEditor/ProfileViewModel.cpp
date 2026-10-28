@@ -52,7 +52,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsEnabled");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled", L"IsSshProfile");
+            }
+            else if (viewModelProperty == L"Commandline")
+            {
+                _NotifyChanges(L"IsSshProfile");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -439,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
 #define PROFILE_COUNT(target, name) +1
-    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 35,
                   "The set of inheritable profile settings changed. Update this count, then make "
                   "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
                   "XAML reset buttons.");

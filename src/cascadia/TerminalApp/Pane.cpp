@@ -1022,6 +1022,25 @@ void Pane::Shutdown()
     }
 }
 
+void Pane::ReleaseContentForLayout()
+{
+    _borderFirst.Child(nullptr);
+    _borderSecond.Child(nullptr);
+    _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
+    if (_IsLeaf())
+    {
+        _takePaneContent();
+    }
+    else
+    {
+        _firstChild->Closed(_firstClosedToken);
+        _secondChild->Closed(_secondClosedToken);
+        _firstChild->ReleaseContentForLayout();
+        _secondChild->ReleaseContentForLayout();
+    }
+}
+
 // Method Description:
 // - Get the root UIElement of this pane. There may be a single TermControl as a
 //   child, or an entire tree of grids and panes as children of this element.

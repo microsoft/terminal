@@ -58,6 +58,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
+        INHERITABLE_PROFILE_SETTING(Boolean, SshUseTmux);
+        Boolean IsSshProfile { get; };
+        String EvaluatedCommandline { get; };
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };

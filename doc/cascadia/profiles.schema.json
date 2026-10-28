@@ -3012,6 +3012,11 @@
           "description": "Executable used in the profile.",
           "type": "string"
         },
+        "ssh.useTmux": {
+          "default": false,
+          "description": "For an SSH connection profile, use tmux control mode and reattach to the windows-terminal session. The base SSH command line must not contain a positional remote command. Applies to new connections.",
+          "type": "boolean"
+        },
         "connectionType": {
           "$ref": "#/$defs/ProfileGuid",
           "description": "Identifies a special type of connection for this profile, such as Azure Cloud Shell. This is set automatically and shouldn't be changed."

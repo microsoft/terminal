@@ -284,6 +284,12 @@ namespace winrt::TerminalApp::implementation
 
             const auto& activeTab{ _senderOrFocusedTab(sender) };
 
+            if (_TryTmuxSplit(activeTab, realArgs.SplitDirection(), realArgs.SplitSize()))
+            {
+                args.Handled(true);
+                return;
+            }
+
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
@@ -305,6 +311,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
+            if (const auto control = activeTab->GetActiveTerminalControl())
+            {
+                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                {
+                    connection->ToggleZoom();
+                    args.Handled(true);
+                    return;
+                }
+            }
             // Don't do anything if there's only one pane. It's already zoomed.
             if (activeTab->GetLeafPaneCount() > 1)
             {

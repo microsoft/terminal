@@ -140,6 +140,8 @@
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="DebugTapConnection.h" />
+    <ClInclude Include="TmuxControl.h" />
+    <ClInclude Include="TmuxConnection.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
@@ -250,6 +252,8 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TmuxConnection.cpp" />
+    <ClCompile Include="TmuxIntegration.cpp" />
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>

@@ -99,6 +99,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
+        bool IsSshProfile() const;
+        hstring EvaluatedCommandline() const;
 
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
