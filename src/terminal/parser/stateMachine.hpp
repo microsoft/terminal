@@ -42,9 +42,10 @@ namespace Microsoft::Console::VirtualTerminal
     // parser tells it the positions of any such relevant VT sequences.
     enum class InjectionType : size_t
     {
-        RIS, // All of the below
+        RIS, // Focus Event Mode + Win32 Input Mode
         DECSET_FOCUS, // CSI ? 1004 h
         W32IM, // CSI ? 9001 h
+        LNM, // Let the terminal handle newline translation
 
         Count,
     };
