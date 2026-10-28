@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
     void TmuxSession::_Run(const std::function<void()>& operation)
     {
         std::vector<Event> events;
+        bool notifyWriter{};
         {
             std::lock_guard lock{ _mutex };
             const auto wasActive = _client.Active();
@@ -119,13 +120,17 @@ namespace winrt::TerminalApp::implementation
                     _writes.push_back(std::move(write));
                 }
             }
-            if (!_writes.empty() && !_writer.joinable())
+            notifyWriter = !_writes.empty();
+            if (notifyWriter && !_writer.joinable())
             {
                 _writer = std::thread([this] { _WriteThread(); });
             }
             events = _client.TakeEvents();
         }
-        _writeReady.notify_one();
+        if (notifyWriter)
+        {
+            _writeReady.notify_one();
+        }
         // Never hold the session lock while calling a TermControl. WriteInput
         // is called with the terminal lock held on the other thread.
         _Dispatch(std::move(events));

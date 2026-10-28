@@ -47,30 +47,43 @@ namespace Microsoft::Terminal::Tmux
         return Number(text.substr(1));
     }
 
+    inline void UnescapeAppend(std::string& result, std::string_view text)
+    {
+        while (!text.empty())
+        {
+            const auto escape = text.find('\\');
+            result.append(text.substr(0, escape));
+            if (escape == text.npos)
+            {
+                break;
+            }
+            text.remove_prefix(escape);
+            if (text.size() >= 2 && text[1] == '\\')
+            {
+                result.push_back('\\');
+                text.remove_prefix(2);
+            }
+            else if (text.size() >= 4 &&
+                     text[1] >= '0' && text[1] <= '3' &&
+                     text[2] >= '0' && text[2] <= '7' &&
+                     text[3] >= '0' && text[3] <= '7')
+            {
+                result.push_back(static_cast<char>((text[1] - '0') * 64 + (text[2] - '0') * 8 + text[3] - '0'));
+                text.remove_prefix(4);
+            }
+            else
+            {
+                result.push_back('\\');
+                text.remove_prefix(1);
+            }
+        }
+    }
+
     inline std::string Unescape(const std::string_view text)
     {
         std::string result;
         result.reserve(text.size());
-        for (size_t i = 0; i < text.size(); ++i)
-        {
-            if (text[i] == '\\' && i + 1 < text.size() && text[i + 1] == '\\')
-            {
-                result.push_back('\\');
-                ++i;
-            }
-            else if (text[i] == '\\' && i + 3 < text.size() &&
-                     text[i + 1] >= '0' && text[i + 1] <= '3' &&
-                     text[i + 2] >= '0' && text[i + 2] <= '7' &&
-                     text[i + 3] >= '0' && text[i + 3] <= '7')
-            {
-                result.push_back(static_cast<char>((text[i + 1] - '0') * 64 + (text[i + 2] - '0') * 8 + text[i + 3] - '0'));
-                i += 3;
-            }
-            else
-            {
-                result.push_back(text[i]);
-            }
-        }
+        UnescapeAppend(result, text);
         return result;
     }
 
@@ -264,8 +277,38 @@ namespace Microsoft::Terminal::Tmux
         void Feed(std::string_view bytes)
         {
             static constexpr std::string_view introducer{ "\x1bP1000p" };
-            for (const auto c : bytes)
+            while (!bytes.empty())
             {
+                if (_control && !_exiting)
+                {
+                    const auto end = bytes.find('\n');
+                    const auto fragment = bytes.substr(0, end);
+                    if (fragment.size() > 16 * 1024 * 1024 - _line.size())
+                    {
+                        throw std::runtime_error("Tmux control line exceeds 16 MiB");
+                    }
+                    if (end == bytes.npos)
+                    {
+                        _line.append(fragment);
+                        return;
+                    }
+                    auto line = fragment;
+                    if (!_line.empty())
+                    {
+                        _line.append(fragment);
+                        line = _line;
+                    }
+                    if (!line.empty() && line.back() == '\r')
+                    {
+                        line.remove_suffix(1);
+                    }
+                    _Line(line);
+                    _line.clear();
+                    bytes.remove_prefix(end + 1);
+                    continue;
+                }
+                const auto c = bytes.front();
+                bytes.remove_prefix(1);
                 if (!_control)
                 {
                     if (!_probe.empty() || c == '\x1b')
@@ -303,23 +346,6 @@ namespace Microsoft::Terminal::Tmux
                         _probe = c == '\x1b' ? "\x1b" : "";
                     }
                     continue;
-                }
-                if (c == '\n')
-                {
-                    if (!_line.empty() && _line.back() == '\r')
-                    {
-                        _line.pop_back();
-                    }
-                    _Line(_line);
-                    _line.clear();
-                }
-                else
-                {
-                    if (_line.size() >= 16 * 1024 * 1024)
-                    {
-                        throw std::runtime_error("Tmux control line exceeds 16 MiB");
-                    }
-                    _line.push_back(c);
                 }
             }
         }
@@ -814,7 +840,7 @@ namespace Microsoft::Terminal::Tmux
             return text;
         }
 
-        void _Line(const std::string& line)
+        void _Line(const std::string_view line)
         {
             if (_inReply)
             {
@@ -859,7 +885,7 @@ namespace Microsoft::Terminal::Tmux
                     {
                         throw std::runtime_error("Tmux command response exceeds 64 MiB");
                     }
-                    _reply.push_back(line);
+                    _reply.emplace_back(line);
                 }
                 return;
             }
@@ -889,13 +915,22 @@ namespace Microsoft::Terminal::Tmux
                 }
                 if (auto state = _Pane(pane))
                 {
-                    auto output = Unescape(arguments);
                     if (state->ready)
                     {
-                        _events.push_back({ Event::Kind::Output, pane, std::move(output), {} });
+                        // Batch only bytes already received, preserving pane and
+                        // lifecycle ordering without delaying interactive output.
+                        if (_events.empty() || _events.back().kind != Event::Kind::Output ||
+                            _events.back().pane != pane ||
+                            _events.back().data.size() + arguments.size() > 64 * 1024)
+                        {
+                            _events.push_back({ Event::Kind::Output, pane, {}, {} });
+                            _events.back().data.reserve(arguments.size());
+                        }
+                        UnescapeAppend(_events.back().data, arguments);
                     }
                     else if (state->capturing)
                     {
+                        auto output = Unescape(arguments);
                         if (state->tail.size() + output.size() > 16 * 1024 * 1024)
                         {
                             throw std::runtime_error("Tmux pane initialization exceeds 16 MiB");

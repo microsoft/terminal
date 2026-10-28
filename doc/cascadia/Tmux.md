@@ -107,3 +107,8 @@ writer, and sent without waiting for command acknowledgments. Captures are
 restricted to attach, new panes, and flow-control recovery. Inventory refreshes
 are notification-driven and coalesced; neither screen captures nor UI-thread
 dispatches are on the per-keystroke path.
+
+Control records are parsed in spans, and consecutive output for the same pane
+is combined within the received batch before entering the native terminal.
+This adds no timer or wait for more output and preserves ordering across panes,
+snapshots, and session lifecycle events.
