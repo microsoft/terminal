@@ -83,9 +83,9 @@ Unicode, literal backslashes, and wrapped lines. Subsequent output streams
 directly into each pane.
 
 Native split, directional pane resize, and zoom actions issue the corresponding
-tmux commands. Window resizes use per-window sizes where supported, otherwise the
-smallest requested global client size. Changes made
-by other tmux clients are reflected through control notifications.
+tmux commands. Window resizes use per-window sizes where supported; otherwise,
+they use the smallest requested global client size. Changes made by other tmux
+clients are reflected through control notifications.
 
 For applications to *choose* 256-color/truecolor output, their remote environment
 and terminfo must advertise it. For example, configure tmux's `default-terminal`
