@@ -7,6 +7,7 @@
 #include <CoreWindow.h>
 #include <ScopedResourceLoader.h>
 #include <WtExeUtils.h>
+#include <til/env.h>
 #include <til/hash.h>
 #include <wil/token_helpers.h>
 #include <winrt/TerminalApp.h>
@@ -366,6 +367,39 @@ AppHost* WindowEmperor::_mostRecentWindow() const noexcept
     }
 
     return mostRecent;
+}
+
+// Returns the window hosting the terminal session a commandline was run from,
+// as identified by WT_SESSION in the given environment block, if any.
+AppHost* WindowEmperor::_windowForCallerSession(const winrt::hstring& environment) const
+{
+    if (environment.empty())
+    {
+        return nullptr;
+    }
+
+    try
+    {
+        til::env env{ environment.c_str() };
+        const auto& variables = env.as_map();
+        const auto it = variables.find(L"WT_SESSION");
+        if (it == variables.end() || it->second.size() != 36)
+        {
+            return nullptr;
+        }
+
+        const winrt::guid sessionId{ Utils::GuidFromPlainString(it->second.c_str()) };
+        for (const auto& w : _windows)
+        {
+            if (w->Logic().HostsSession(sessionId))
+            {
+                return w.get();
+            }
+        }
+    }
+    CATCH_LOG();
+
+    return nullptr;
 }
 
 // GH#20053: The shell resolves taskbar grouping identity as: per-window AUMID >
@@ -852,14 +886,25 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
+        // GH#10561: When run from inside a terminal, "the current window" is
+        // the window hosting that terminal, rather than the most recent one.
         switch (windowingBehavior)
         {
         case WindowingMode::UseAnyExisting:
-            window = _mostRecentWindow();
+            window = _windowForCallerSession(args.CurrentEnvironment());
+            if (!window)
+            {
+                window = _mostRecentWindow();
+            }
             break;
         case WindowingMode::UseExisting:
-            _dispatchCommandlineCurrentDesktop(std::move(args));
-            return;
+            window = _windowForCallerSession(args.CurrentEnvironment());
+            if (!window)
+            {
+                _dispatchCommandlineCurrentDesktop(std::move(args));
+                return;
+            }
+            break;
         default:
             break;
         }
