@@ -2509,6 +2509,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        if (!_core->Settings().ShowResizeOverlay())
+        {
+            return;
+        }
+
         ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), size.Width, size.Height));
         ResizeOverlay().Visibility(Visibility::Visible);
 

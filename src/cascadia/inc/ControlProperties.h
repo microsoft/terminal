@@ -42,6 +42,7 @@
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \
     X(bool, CopyOnSelect, false)                                                                                  \
     X(bool, FocusFollowMouse, false)                                                                              \
+    X(bool, ShowResizeOverlay, true)                                                                              \
     X(bool, ScrollToZoom, true)                                                                                   \
     X(bool, ScrollToChangeOpacity, true)                                                                          \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
