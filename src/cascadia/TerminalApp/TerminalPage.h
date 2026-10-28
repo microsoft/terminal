@@ -18,6 +18,7 @@
 #include "WindowListRequest.g.h"
 #include "Toast.h"
 #include "TmuxConnection.h"
+#include "TmuxWindow.h"
 
 #include "WindowsPackageManagerFactory.h"
 
@@ -143,6 +144,8 @@ namespace winrt::TerminalApp::implementation
 
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
+        friend struct TmuxWindow;
+
     public:
         TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager);
 
@@ -343,6 +346,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
 
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
+        winrt::com_ptr<TmuxWindow> _tmuxWindow;
 
         struct TmuxTabState
         {
@@ -365,7 +369,6 @@ namespace winrt::TerminalApp::implementation
                               std::vector<::Microsoft::Terminal::Tmux::Window> windows);
         void _ResizeTmuxWindows(const std::shared_ptr<TmuxSession>& session);
         bool _TryTmuxSplit(const winrt::com_ptr<Tab>& tab, Microsoft::Terminal::Settings::Model::SplitDirection direction, float size);
-        bool _TryTmuxNewTab(const Microsoft::Terminal::Settings::Model::INewContentArgs& args);
         static void _KillTmuxPanes(const std::shared_ptr<Pane>& pane);
         static bool _ContainsTmuxPane(const std::shared_ptr<Pane>& pane, bool includeGateway = false);
 

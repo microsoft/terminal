@@ -142,6 +142,7 @@
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="TmuxControl.h" />
     <ClInclude Include="TmuxConnection.h" />
+    <ClInclude Include="TmuxWindow.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
@@ -254,6 +255,7 @@
     </ClCompile>
     <ClCompile Include="TmuxConnection.cpp" />
     <ClCompile Include="TmuxIntegration.cpp" />
+    <ClCompile Include="TmuxWindow.cpp" />
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>

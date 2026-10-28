@@ -23,6 +23,7 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
+#include "TmuxWindow.h"
 #include "../inc/TerminalConnectionHelpers.h"
 
 #include "LaunchPositionRequest.g.cpp"
@@ -1446,6 +1447,10 @@ namespace winrt::TerminalApp::implementation
     // Shows the dropdown flyout.
     void TerminalPage::_OpenNewTabDropdown()
     {
+        if (_tmuxWindow)
+        {
+            return;
+        }
         _newTabButton.Flyout().ShowAt(_newTabButton);
     }
 
@@ -1507,11 +1512,11 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            if (altPressed && _TryTmuxSplit(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f))
+            if (!altPressed && !debugTap && _tmuxWindow && _tmuxWindow->TryNewTab(newTerminalArgs))
             {
                 return;
             }
-            if (!altPressed && !debugTap && _TryTmuxNewTab(newTerminalArgs))
+            if (altPressed && _TryTmuxSplit(_GetFocusedTabImpl(), SplitDirection::Automatic, 0.5f))
             {
                 return;
             }
@@ -2222,11 +2227,11 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control = tabImpl->GetActiveTerminalControl())
             {
-                if (const auto source = control.Connection().try_as<TmuxPaneConnection>())
+                if (const auto source = TmuxPaneConnection::From(control.Connection()))
                 {
                     const auto neighbor = tabImpl->GetRootPane()->NavigateDirection(tabImpl->GetActivePane(), direction, tabImpl->GetMruPanes());
                     const auto targetControl = neighbor ? neighbor->GetTerminalControl() : nullptr;
-                    const auto target = targetControl ? targetControl.Connection().try_as<TmuxPaneConnection>() : nullptr;
+                    const auto target = targetControl ? TmuxPaneConnection::From(targetControl.Connection()) : nullptr;
                     if (target && source->Session() == target->Session())
                     {
                         source->Session()->Command("swap-pane -s %" + std::to_string(source->PaneId()) +
@@ -2353,7 +2358,7 @@ namespace winrt::TerminalApp::implementation
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
         const auto tabCount = _tabs.Size();
-        if (_startupState != StartupState::Initialized || tabCount == 0)
+        if (_tmuxWindow || _startupState != StartupState::Initialized || tabCount == 0)
         {
             return nullptr;
         }
@@ -2558,6 +2563,10 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        if (_tmuxWindow)
+        {
+            _tmuxWindow->Detach();
+        }
         CloseWindowRequested.raise(*this, nullptr);
     }
 
@@ -3045,7 +3054,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control = tabImpl->GetActiveTerminalControl())
             {
-                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                if (const auto connection = TmuxPaneConnection::From(control.Connection()))
                 {
                     const auto flag = direction == ResizeDirection::Left  ? 'L' :
                                       direction == ResizeDirection::Right ? 'R' :
@@ -4239,7 +4248,7 @@ namespace winrt::TerminalApp::implementation
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
-            _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
+            _tabRow.ShowWorkspacesButton(!_tmuxWindow && (theme.Window() ? theme.Window().ShowWorkspacesButton() : true));
         }
 
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };

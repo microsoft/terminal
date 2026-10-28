@@ -1013,6 +1013,12 @@ For all available options, run 'wt new-tab --help'.</value>
   <data name="TmuxDetached" xml:space="preserve">
     <value>[tmux detached]</value>
   </data>
+  <data name="TmuxNewTabButtonName" xml:space="preserve">
+    <value>New tmux tab</value>
+  </data>
+  <data name="TmuxNewTabToolTip" xml:space="preserve">
+    <value>Create a tab in this window's tmux session</value>
+  </data>
   <data name="TmuxMoveUnsupported" xml:space="preserve">
     <value>Moving or mixing tmux panes between tabs or Terminal windows is not supported by this experimental integration. Use tmux commands on the remote host instead.</value>
   </data>

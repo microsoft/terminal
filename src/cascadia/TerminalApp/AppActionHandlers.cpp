@@ -313,7 +313,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control = activeTab->GetActiveTerminalControl())
             {
-                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                if (const auto connection = TmuxPaneConnection::From(control.Connection()))
                 {
                     connection->ToggleZoom();
                     args.Handled(true);

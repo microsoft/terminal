@@ -81,6 +81,24 @@ namespace winrt::TerminalApp::implementation
         return !_closing && _client.Active();
     }
 
+    void TmuxSession::WindowOwned(const bool value)
+    {
+        _windowOwned = value;
+        if (!value && _gatewayClosed)
+        {
+            Close();
+        }
+    }
+
+    void TmuxSession::CloseGateway()
+    {
+        _gatewayClosed = true;
+        if (!_windowOwned)
+        {
+            Close();
+        }
+    }
+
     void TmuxSession::ForceExit()
     {
         _Run([&] { _client.ForceExit(); });
@@ -395,18 +413,28 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TmuxGatewayConnection::TmuxGatewayConnection(std::shared_ptr<TmuxSession> session) :
-        _session{ std::move(session) }
+    TmuxGatewayConnection::TmuxGatewayConnection(std::shared_ptr<TmuxSession> session, Windows::Foundation::IInspectable window) :
+        _session{ std::move(session) },
+        _window{ std::move(window) }
     {
         _session->PassthroughOutput = [weak = get_weak()](const winrt::array_view<const char16_t> bytes) {
             if (const auto self = weak.get())
             {
-                self->TerminalOutput.raise(bytes);
+                std::lock_guard lock{ self->_callbackMutex };
+                if (!self->_closed)
+                {
+                    self->TerminalOutput.raise(bytes);
+                }
             }
         };
         _session->TerminalOutput = [weak = get_weak()](const std::string_view bytes) {
             if (const auto self = weak.get())
             {
+                std::lock_guard callbackLock{ self->_callbackMutex };
+                if (self->_closed)
+                {
+                    return;
+                }
                 std::wstring text;
                 {
                     std::lock_guard lock{ self->_decodeMutex };
@@ -418,14 +446,23 @@ namespace winrt::TerminalApp::implementation
         _session->StateChanged = [weak = get_weak()] {
             if (const auto self = weak.get())
             {
-                self->StateChanged.raise(*self, nullptr);
+                std::lock_guard lock{ self->_callbackMutex };
+                if (!self->_closed)
+                {
+                    self->StateChanged.raise(*self, nullptr);
+                }
             }
         };
     }
 
     TmuxGatewayConnection::~TmuxGatewayConnection()
     {
-        _session->Close();
+        Close();
+    }
+
+    winrt::com_ptr<TmuxGatewayConnection> TmuxGatewayConnection::From(const ITerminalConnection& connection)
+    {
+        return connection && connection.try_as<ITmuxGatewayIdentity>() ? connection.as<TmuxGatewayConnection>() : nullptr;
     }
 
     safe_void_coroutine TmuxGatewayConnection::final_release(std::unique_ptr<TmuxGatewayConnection> self)
@@ -435,7 +472,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TmuxGatewayConnection::Start() { _session->Start(); }
-    void TmuxGatewayConnection::Close() { _session->Close(); }
+    void TmuxGatewayConnection::Close()
+    {
+        _closed = true;
+        {
+            std::lock_guard lock{ _callbackMutex };
+        }
+        _session->CloseGateway();
+    }
     void TmuxGatewayConnection::Resize(const uint32_t rows, const uint32_t columns) { _session->Transport().Resize(rows, columns); }
     winrt::guid TmuxGatewayConnection::SessionId() const noexcept { return _session->Transport().SessionId(); }
     ConnectionState TmuxGatewayConnection::State() const noexcept { return _session->Transport().State(); }
@@ -469,6 +513,11 @@ namespace winrt::TerminalApp::implementation
         _window{ window },
         _pane{ pane }
     {
+    }
+
+    winrt::com_ptr<TmuxPaneConnection> TmuxPaneConnection::From(const ITerminalConnection& connection)
+    {
+        return connection && connection.try_as<ITmuxPaneIdentity>() ? connection.as<TmuxPaneConnection>() : nullptr;
     }
 
     void TmuxPaneConnection::Start()

@@ -18,6 +18,7 @@
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 #include "DesktopNotification.h"
+#include "TmuxWindow.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
@@ -65,7 +66,13 @@ namespace winrt::TerminalApp::implementation
     HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
     try
     {
-        if (_TryTmuxNewTab(newContentArgs))
+        if (const auto window = TmuxWindow::From(newContentArgs))
+        {
+            _tmuxWindow = window;
+            window->Attach(*this);
+            return S_OK;
+        }
+        if (_tmuxWindow && _tmuxWindow->TryNewTab(newContentArgs))
         {
             return S_OK;
         }
@@ -304,7 +311,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control = tab.GetActiveTerminalControl())
             {
-                if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                if (const auto connection = TmuxPaneConnection::From(control.Connection()))
                 {
                     connection->NewWindow();
                     return;

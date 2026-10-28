@@ -36,9 +36,17 @@ line override takes precedence over the profile's launch mode.
 Manual `tmux -CC` detection remains available even when the profile option is off.
 
 The original tab becomes a gateway. Its Escape key detaches the client without
-killing remote programs; `n` creates a remote window. Default new-tab actions
-from an active tmux tab also create remote windows. Selecting an explicit profile
-still opens that profile.
+killing remote programs; `n` creates a remote window. Each control connection
+opens a separate native Terminal window for that tmux session. Its **+** button
+and normal new-tab shortcuts create remote tmux tabs for that session, even when
+Settings is selected. The tab strip has **+** and **Settings** buttons, without a
+profile dropdown. Different connections have independent windows and transports.
+
+Ordinary Terminal windows keep their default-profile **+** behavior and profile
+dropdown. Explicit profile launches from a tmux window open a separate ordinary
+window instead of mixing local terminals into the tmux session window. Closing
+the gateway does not interrupt its dedicated session window. Closing the dedicated
+window detaches the client; remote programs keep running.
 If an interactive SSH client dies without sending the control-stream terminator,
 `X` leaves the broken gateway so you can reconnect from the outer shell.
 
@@ -99,6 +107,13 @@ Tmux 3.4 also does not export bracketed-paste state. Use a newer server exposing
 changes must currently be made with the remote `tmux select-layout` command.
 Generated tmux tabs are excluded from saved Terminal workspace layouts: the
 gateway profile reconnects once and reconstructs them from the server.
+
+Session-window behavior is isolated in `TmuxWindow.h` and `TmuxWindow.cpp`.
+The controller uses Terminal's existing native window host and in-process startup
+actions rather than replacing the window implementation or opening another SSH
+connection. Protocol parsing remains in `TmuxControl.h`, transport and pane
+connections in `TmuxConnection.*`, and native pane-layout adaptation in
+`TmuxIntegration.cpp`.
 
 ## Input and output
 

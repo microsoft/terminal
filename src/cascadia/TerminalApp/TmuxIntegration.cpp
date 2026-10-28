@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "TerminalSettingsCache.h"
+#include "TmuxWindow.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 using namespace winrt;
@@ -13,7 +14,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Terminal::Tmux;
-using TmuxWindow = ::Microsoft::Terminal::Tmux::Window;
+using TmuxRemoteWindow = ::Microsoft::Terminal::Tmux::Window;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -21,42 +22,12 @@ namespace winrt::TerminalApp::implementation
                                                           const Profile& profile,
                                                           const uint32_t historyLimit)
     {
-        auto session = std::make_shared<TmuxSession>(connection, historyLimit);
-        const auto weakSession = std::weak_ptr{ session };
-        const auto weakPage = get_weak();
-        const auto dispatcher = Dispatcher();
-        session->WindowsChanged = [weakPage, weakSession, dispatcher, profile](std::vector<TmuxWindow> windows) {
-            dispatcher.RunAsync(CoreDispatcherPriority::Normal, [weakPage, weakSession, profile, windows = std::move(windows)]() mutable {
-                try
-                {
-                    if (const auto page = weakPage.get())
-                    {
-                        if (const auto session = weakSession.lock())
-                        {
-                            page->_SyncTmuxWindows(session, profile, std::move(windows));
-                        }
-                    }
-                }
-                CATCH_LOG();
-            });
-        };
-        session->ResizeRequested = [weakPage, weakSession, dispatcher] {
-            dispatcher.RunAsync(CoreDispatcherPriority::Low, [weakPage, weakSession] {
-                if (const auto page = weakPage.get())
-                {
-                    if (const auto session = weakSession.lock())
-                    {
-                        page->_ResizeTmuxWindows(session);
-                    }
-                }
-            });
-        };
-        return winrt::make<TmuxGatewayConnection>(std::move(session));
+        return TmuxWindow::Wrap(*this, connection, profile, historyLimit);
     }
 
     void TerminalPage::_SyncTmuxWindows(const std::shared_ptr<TmuxSession>& session,
                                         const Profile& profile,
-                                        std::vector<TmuxWindow> windows)
+                                        std::vector<TmuxRemoteWindow> windows)
     {
         if (windows.empty() || !session->Active())
         {
@@ -77,14 +48,14 @@ namespace winrt::TerminalApp::implementation
 
         auto& state = _tmuxSessions[session];
         const auto focused = _GetFocusedTab();
-        bool sessionFocused{};
+        bool sessionFocused{ static_cast<bool>(_tmuxWindow) };
         if (const auto control = _GetActiveControl())
         {
-            if (const auto pane = control.Connection().try_as<TmuxPaneConnection>())
+            if (const auto pane = TmuxPaneConnection::From(control.Connection()))
             {
                 sessionFocused = pane->Session() == session;
             }
-            else if (const auto gateway = control.Connection().try_as<TmuxGatewayConnection>())
+            else if (const auto gateway = TmuxGatewayConnection::From(control.Connection()))
             {
                 sessionFocused = gateway->UnderlyingConnection() == session->Transport();
             }
@@ -171,7 +142,7 @@ namespace winrt::TerminalApp::implementation
                 tab->GetRootPane()->WalkTree([&](const auto& pane) {
                     if (const auto control = pane->GetTerminalControl())
                     {
-                        if (const auto connection = control.Connection().template try_as<TmuxPaneConnection>();
+                        if (const auto connection = TmuxPaneConnection::From(control.Connection());
                             connection && connection->PaneId() == window.activePane)
                         {
                             tab->FocusPane(pane->Id().value());
@@ -254,7 +225,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control = tab->GetActiveTerminalControl())
             {
-                if (const auto connection = control.Connection().template try_as<TmuxPaneConnection>())
+                if (const auto connection = TmuxPaneConnection::From(control.Connection()))
                 {
                     if (direction == SplitDirection::Automatic)
                     {
@@ -271,29 +242,6 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    bool TerminalPage::_TryTmuxNewTab(const INewContentArgs& contentArgs)
-    {
-        if (contentArgs)
-        {
-            const auto args = contentArgs.try_as<NewTerminalArgs>();
-            if (!args || !args.Profile().empty() || args.ProfileIndex() ||
-                !args.Commandline().empty() || !args.StartingDirectory().empty() ||
-                !args.TabTitle().empty() || args.ContentId() || args.SessionId() != winrt::guid{})
-            {
-                return false;
-            }
-        }
-        if (const auto control = _GetActiveControl())
-        {
-            if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
-            {
-                connection->NewWindow();
-                return true;
-            }
-        }
-        return false;
-    }
-
     void TerminalPage::_KillTmuxPanes(const std::shared_ptr<Pane>& pane)
     {
         if (pane)
@@ -301,7 +249,7 @@ namespace winrt::TerminalApp::implementation
             pane->WalkTree([](const auto& child) {
                 if (const auto control = child->GetTerminalControl())
                 {
-                    if (const auto connection = control.Connection().try_as<TmuxPaneConnection>())
+                    if (const auto connection = TmuxPaneConnection::From(control.Connection()))
                     {
                         connection->Kill();
                     }
@@ -318,11 +266,11 @@ namespace winrt::TerminalApp::implementation
             {
                 return false;
             }
-            if (control.Connection().template try_as<TmuxPaneConnection>())
+            if (TmuxPaneConnection::From(control.Connection()))
             {
                 return true;
             }
-            const auto gateway = includeGateway ? control.Connection().template try_as<TmuxGatewayConnection>() : nullptr;
+            const auto gateway = includeGateway ? TmuxGatewayConnection::From(control.Connection()) : nullptr;
             return gateway && gateway->InControlMode();
         });
     }

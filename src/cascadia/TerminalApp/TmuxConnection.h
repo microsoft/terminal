@@ -14,6 +14,14 @@ namespace winrt::TerminalApp::implementation
 {
     class TmuxPaneConnection;
 
+    struct __declspec(uuid("3f9f8c52-7221-4f3b-8cf5-15da3fe85271")) ITmuxGatewayIdentity : ::IUnknown
+    {
+    };
+
+    struct __declspec(uuid("97d03528-7854-4eb1-99eb-2f76fd48e85a")) ITmuxPaneIdentity : ::IUnknown
+    {
+    };
+
     class TmuxSession : public std::enable_shared_from_this<TmuxSession>
     {
     public:
@@ -37,6 +45,9 @@ namespace winrt::TerminalApp::implementation
         void PaneResized();
         void AcknowledgeResize() noexcept { _resizeScheduled = false; }
         bool Active() const;
+        bool WindowOwned() const noexcept { return _windowOwned.load(); }
+        void WindowOwned(bool value);
+        void CloseGateway();
 
         std::function<void(std::string_view)> TerminalOutput;
         std::function<void(const winrt::array_view<const char16_t>)> PassthroughOutput;
@@ -60,6 +71,8 @@ namespace winrt::TerminalApp::implementation
         bool _started{}, _closing{};
         std::thread _writer;
         std::atomic<bool> _resizeScheduled{};
+        std::atomic<bool> _windowOwned{};
+        std::atomic<bool> _gatewayClosed{};
 
         void _Run(const std::function<void()>& operation);
         void _Dispatch(std::vector<::Microsoft::Terminal::Tmux::Event> events);
@@ -69,10 +82,11 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TmuxPaneConnection> _Pane(uint32_t pane);
     };
 
-    class TmuxGatewayConnection : public winrt::implements<TmuxGatewayConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnectionWrapper>
+    class TmuxGatewayConnection : public winrt::implements<TmuxGatewayConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnectionWrapper, winrt::cloaked<ITmuxGatewayIdentity>>
     {
     public:
-        explicit TmuxGatewayConnection(std::shared_ptr<TmuxSession> session);
+        explicit TmuxGatewayConnection(std::shared_ptr<TmuxSession> session, Windows::Foundation::IInspectable window = nullptr);
+        static winrt::com_ptr<TmuxGatewayConnection> From(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         ~TmuxGatewayConnection();
         static safe_void_coroutine final_release(std::unique_ptr<TmuxGatewayConnection> self);
         void Initialize(const Windows::Foundation::Collections::ValueSet&) {}
@@ -84,20 +98,25 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalConnection::ConnectionState State() const noexcept;
         Microsoft::Terminal::TerminalConnection::ITerminalConnection UnderlyingConnection() const { return _session->Transport(); }
         bool InControlMode() const { return _session->Active(); }
+        std::shared_ptr<TmuxSession> Session() const { return _session; }
 
         til::event<Microsoft::Terminal::TerminalConnection::TerminalOutputHandler> TerminalOutput;
         til::typed_event<Microsoft::Terminal::TerminalConnection::ITerminalConnection, Windows::Foundation::IInspectable> StateChanged;
 
     private:
         std::shared_ptr<TmuxSession> _session;
+        Windows::Foundation::IInspectable _window;
+        std::atomic<bool> _closed{};
+        std::recursive_mutex _callbackMutex;
         std::mutex _decodeMutex;
         til::u8state _utf8;
     };
 
-    class TmuxPaneConnection : public winrt::implements<TmuxPaneConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnection, Microsoft::Terminal::TerminalConnection::ITerminalResponseHandler>
+    class TmuxPaneConnection : public winrt::implements<TmuxPaneConnection, Microsoft::Terminal::TerminalConnection::ITerminalConnection, Microsoft::Terminal::TerminalConnection::ITerminalResponseHandler, winrt::cloaked<ITmuxPaneIdentity>>
     {
     public:
         TmuxPaneConnection(std::shared_ptr<TmuxSession> session, uint32_t window, uint32_t pane);
+        static winrt::com_ptr<TmuxPaneConnection> From(const Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         void Initialize(const Windows::Foundation::Collections::ValueSet&) {}
         void Start();
         void WriteInput(const winrt::array_view<const char16_t> bytes);
