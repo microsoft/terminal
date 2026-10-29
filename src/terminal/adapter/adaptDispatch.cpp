@@ -2626,16 +2626,7 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // OSC 7 uses file URIs, which may not always work.
 void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
 {
-    // Ensure that the URI has a null terminator.
-    std::wstring path{ uri };
-
-    // PathCreateFromUrlW supports writing to the input pointer,
-    // and the resulting path can never be longer than the URI.
-    const auto ptr = path.data();
-    auto len = gsl::narrow<DWORD>(path.size());
-    THROW_IF_FAILED(PathCreateFromUrlW(ptr, ptr, &len, 0));
-    path.resize(len);
-
+    const auto path = Utils::FileUriToPath(uri);
     if (til::is_legal_path(path))
     {
         _api.SetWorkingDirectory(path);
