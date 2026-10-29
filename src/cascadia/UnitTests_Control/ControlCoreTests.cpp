@@ -236,7 +236,7 @@ namespace ControlUnitTests
         auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
-        VERIFY_ARE_EQUAL(L"Impact", std::wstring_view{ core->_actualFont.GetFaceName() });
+        VERIFY_ARE_EQUAL(L"Impact", std::wstring_view{ core->_desiredFont.GetFaceName() });
     }
 
     void ControlCoreTests::TestClearScrollback()
