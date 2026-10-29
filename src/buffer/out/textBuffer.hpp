@@ -316,9 +316,10 @@ public:
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
     void _commit(const std::byte* row);
-    void _decommit() noexcept;
+    uintptr_t _commitChargeOptimize(uintptr_t rowOffset);
+    void _decommit(til::CoordType keep) noexcept;
     void _construct(const std::byte* until) noexcept;
-    void _destroy() const noexcept;
+    void _destroy(std::byte* it) const noexcept;
     ROW& _getRowByOffsetDirect(size_t offset);
     ROW& _getRow(til::CoordType y) const;
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
@@ -400,9 +401,9 @@ private:
     size_t _bufferOffsetChars = 0;
     size_t _bufferOffsetCharOffsets = 0;
     // The width of the buffer in columns.
-    uint16_t _width = 0;
+    til::CoordType _width = 0;
     // The height of the buffer in rows, excluding the scratchpad row.
-    uint16_t _height = 0;
+    til::CoordType _height = 0;
 
     TextAttribute _currentAttributes;
     til::CoordType _firstRow = 0; // indexes top row (not necessarily 0)

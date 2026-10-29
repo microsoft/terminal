@@ -86,7 +86,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(OverflowTests)
         {
-            const til::point maxCoord = { SHRT_MAX, SHRT_MAX };
+            const til::point maxCoord{ til::CoordTypeMax, til::CoordTypeMax };
 
             // Test SetSelectionAnchor(til::point) and SetSelectionEnd(til::point)
             // Behavior: clamp coord to viewport.
@@ -132,8 +132,8 @@ namespace TerminalCoreUnitTests
             Log::Comment(L"Triple click selection with NO scrollback value");
             ValidateTripleClickSelection(0, { 0, 9 }, { 10, 9 });
 
-            // Test with max scrollback
-            const til::CoordType expected_row = SHRT_MAX - 1;
+            // Test with large scrollback
+            const til::CoordType expected_row = (SHRT_MAX - 1) + 10; // +10 viewport size
             Log::Comment(L"Single click selection with MAXIMUM scrollback value");
             ValidateSingleClickSelection(SHRT_MAX, { 10, expected_row }, { 10, expected_row });
             Log::Comment(L"Double click selection with MAXIMUM scrollback value");
