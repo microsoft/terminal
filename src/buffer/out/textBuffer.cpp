@@ -40,7 +40,8 @@ constexpr T* alignPointer(T* ptr, size_t alignment) noexcept
     return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(ptr) + alignment - 1) & ~(alignment - 1));
 }
 
-static size_t getPageSize() {
+static size_t getPageSize()
+{
     static std::atomic<DWORD> s_pageSize;
 
     const auto s = s_pageSize.load(std::memory_order_relaxed);
@@ -54,7 +55,6 @@ static size_t getPageSize() {
     s_pageSize.store(si.dwPageSize, std::memory_order_relaxed);
     return si.dwPageSize;
 }
-
 
 static std::atomic<uint64_t> s_lastMutationIdInitialValue;
 
