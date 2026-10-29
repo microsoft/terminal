@@ -895,7 +895,7 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
 
     // This clever algorithm is sometimes called the "juggling algorithm" for array rotation.
     // It's not actually novel. Both the Rust stdlib and Microsoft STL use it (and many other).
-    // What's weird is that none list an authorative description for it. Here's one contender:
+    // What's weird is that none list an authoritative description for it. Here's one contender:
     //   Carlo A. Furia, Rotation of Sequences: Algorithms and Proofs
     //   §4.4: Rotation by modular visit
     //   https://arxiv.org/html/1406.5453v3#S4.SS4
