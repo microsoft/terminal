@@ -17,9 +17,11 @@ CLOSEAPP
 cmdletbinding
 colspan
 COMDLG
+combase
 commandlinetoargv
 COPYFROMRESOURCE
 cstdint
+CWin
 CXICON
 CYICON
 dataobject
@@ -80,6 +82,7 @@ lsass
 LSHIFT
 LTGRAY
 MAINWINDOW
+MBM
 medi
 memicmp
 MENUCOMMAND
@@ -200,6 +203,8 @@ winstamin
 wmemcmp
 wpc
 WSF
+wtcli
+wtdcli
 WWH
 wwinmain
 XDocument

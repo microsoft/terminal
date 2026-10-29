@@ -1,0 +1,56 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Protocol
+{
+    struct WindowInfo
+    {
+        UInt64 WindowId;
+        String Name;
+        String Title;
+        Boolean IsFocused;
+        UInt32 TabCount;
+    };
+
+    struct TabInfo
+    {
+        UInt32 TabId;
+        UInt64 WindowId;
+        String Title;
+        Boolean IsActive;
+        UInt32 PaneCount;
+    };
+
+    struct PaneInfo
+    {
+        Guid SessionId;
+        UInt32 TabId;
+        UInt64 WindowId;
+        String Title;
+        String Profile;
+        Boolean IsActive;
+        Boolean IsAgentPane;
+        UInt32 Pid;
+        Int32 Rows;
+        Int32 Columns;
+        String Cwd;
+    };
+
+    struct ProcessStatus
+    {
+        Guid SessionId;
+        String State;
+        UInt32 Pid;
+        Int32 ExitCode;
+        Boolean HasExitCode;
+    };
+
+    struct TabCreationResult
+    {
+        UInt32 TabId;
+        Guid SessionId;
+        UInt64 WindowId;
+        UInt32 Pid;
+        Boolean Pending;
+    };
+}
