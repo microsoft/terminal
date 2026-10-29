@@ -3275,8 +3275,10 @@ namespace winrt::TerminalApp::implementation
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
+
             std::wstring filePath;
-            std::wstring_view launchTarget{ uriString };
+            wil::zwstring_view launchTarget{ uriString.c_str(), uriString.size() };
+
             if (parsed.SchemeName() == L"file")
             {
                 filePath = Utils::FileUriToPath(uriString);
@@ -3311,7 +3313,7 @@ namespace winrt::TerminalApp::implementation
                     info.fMask = SEE_MASK_FLAG_NO_UI;
                     info.hwnd = _hostingHwnd.value_or(nullptr);
                     info.lpVerb = L"open";
-                    info.lpFile = launchTarget.data();
+                    info.lpFile = launchTarget.c_str();
                     info.nShow = SW_SHOWNORMAL;
                     if (!ShellExecuteExW(&info))
                     {
@@ -3358,7 +3360,7 @@ namespace winrt::TerminalApp::implementation
     // - Determines if the given URI is currently supported
     // Arguments:
     // - The parsed URI
-    // - The actual launch target, after converting file URIs to paths
+    // - The original URI, or the decoded filesystem path for file URIs
     // Return value:
     // - True if we support it, false otherwise
     bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget)
@@ -3376,7 +3378,7 @@ namespace winrt::TerminalApp::implementation
             // and so while we could do the hostname matching, we do not know how to actually open the URI
             // if its given in that form. So for now we ignore all hostnames other than localhost
 
-            if (til::starts_with(launchTarget, L"\\\\"))
+            if (til::starts_with(launchTarget, LR"(\\)"))
             {
                 // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
                 const auto serverEnd = launchTarget.find_first_of(L"\\/", 2);
@@ -3420,7 +3422,7 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget) const
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
         // file URIs pointing to remote locations are *always* considered unsafe.
@@ -3439,6 +3441,13 @@ namespace winrt::TerminalApp::implementation
         }
         if (schemeName == L"file")
         {
+            // ShellExecuteW ignores trailing spaces and dots in file paths.
+            const auto beg = launchTarget.find_last_not_of(L" .");
+            if (beg != std::wstring_view::npos)
+            {
+                launchTarget = launchTarget.substr(0, beg + 1);
+            }
+
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
