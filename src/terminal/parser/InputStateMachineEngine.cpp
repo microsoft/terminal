@@ -542,6 +542,19 @@ IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(co
 }
 
 // Routine Description:
+// - Triggers the ApcDispatch action. APC strings received as input, such as
+//   graphics protocol responses, are passed through unmodified.
+// Arguments:
+// - wch - The first character of the string.
+// Return Value:
+// - nullptr, so that the string is buffered and flushed on the terminator
+IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch(const wchar_t /*wch*/) noexcept
+{
+    _expectingStringTerminator = true;
+    return nullptr;
+}
+
+// Routine Description:
 // - Triggers the Ss3Dispatch action to indicate that the listener should handle
 //      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.

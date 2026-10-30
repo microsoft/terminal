@@ -211,6 +211,9 @@ GdiEngine::~GdiEngine()
                                                       const til::CoordType targetRow,
                                                       const til::CoordType viewportLeft) noexcept
 {
+    _underlays.clear();
+    _underlayRow = -1;
+
     XFORM lineTransform = {};
     // The X delta is to account for the horizontal viewport offset.
     lineTransform.eDx = viewportLeft ? -1.0f * viewportLeft * _GetFontSize().width : 0.0f;
@@ -287,6 +290,8 @@ GdiEngine::~GdiEngine()
 
     if (isSettingDefaultBrushes)
     {
+        _defaultBackground = colorBackground;
+
         // Set the color for painting the extra DC background area
         RETURN_HR_IF(E_FAIL, CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));
 

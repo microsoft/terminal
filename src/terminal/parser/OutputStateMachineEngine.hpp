@@ -43,6 +43,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
+        StringHandler ActionApcDispatch(const wchar_t wch) override;
 
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 

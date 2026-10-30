@@ -167,6 +167,12 @@ public:
     void NotifyPaintFrame() noexcept;
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& viewport);
     void TriggerRedrawAll();
+
+    GraphicsStore& GetGraphicsStore();
+    const GraphicsStore* TryGetGraphicsStore() const noexcept;
+    bool EraseGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate);
+    bool AnyGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate) const;
+    bool EraseGraphicsInRows(til::CoordType rowBegin, til::CoordType rowEnd);
     void TriggerScroll();
     void TriggerScroll(const til::point delta);
     void TriggerNewTextNotification(const std::wstring_view newText);
@@ -390,6 +396,8 @@ private:
     // Before TextBuffer was made to use virtual memory it initialized the entire memory arena with the initial
     // attributes right away. To ensure it continues to work the way it used to, this stores these initial attributes.
     TextAttribute _initialAttributes;
+    // Created on demand when the kitty graphics protocol is first used.
+    std::unique_ptr<GraphicsStore> _graphicsStore;
     // ROW ---------------+--+--+
     // (padding)          |  |  v _bufferOffsetChars
     // ROW::_charsBuffer  |  |

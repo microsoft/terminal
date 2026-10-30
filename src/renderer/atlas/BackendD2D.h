@@ -29,6 +29,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         ATLAS_ATTR_COLD void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
         ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y) const;
+        void _drawGraphics(const RenderingPayload& p, int64_t zBegin, int64_t zEnd);
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
         static void _drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept;
@@ -45,6 +46,16 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1StrokeStyle> _dottedStrokeStyle;
         wil::com_ptr<ID2D1StrokeStyle> _dashedStrokeStyle;
         wil::com_ptr<ID2D1Bitmap> _backgroundBitmap;
+        struct GraphicsBitmap
+        {
+            wil::com_ptr<ID2D1Bitmap> bitmap;
+            f32x2 scale{};
+            u64 lastUsedFrame = 0;
+            bool failed = false;
+        };
+        std::unordered_map<u64, GraphicsBitmap> _graphicsBitmaps;
+        std::vector<std::pair<u16, const GraphicsDraw*>> _graphicsQueue;
+        u64 _graphicsFrame = 0;
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
         til::generation_t _backgroundBitmapGeneration;
 
