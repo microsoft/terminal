@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String KeyDisplayString { get; };
         Single Value;
         String AutomationName { get; };
+        String DeleteButtonName { get; };
     }
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, IInheritableViewModel

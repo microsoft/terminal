@@ -55,8 +55,8 @@
                     <muxc:NumberBox Grid.Column="1"
                                     AutomationProperties.Name="{x:Bind KeyDisplayString}"
                                     Value="{x:Bind Value, Mode=TwoWay}" />
-                    <Button x:Uid="Profile_DeleteFontKeyValuePairButton"
-                            Grid.Column="2"
+                    <Button Grid.Column="2"
+                            AutomationProperties.Name="{x:Bind DeleteButtonName}"
                             Click="DeleteFontKeyValuePair_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Tag="{x:Bind (local:FontKeyValuePair)}">
@@ -65,6 +65,10 @@
                     </Button>
                 </Grid>
             </DataTemplate>
+
+            <ItemsPanelTemplate x:Key="FontKeyValuePairItemsPanel">
+                <StackPanel Spacing="8" />
+            </ItemsPanelTemplate>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -463,10 +467,11 @@
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
                         <StackPanel Spacing="16">
-                            <ListView IsItemClickEnabled="False"
-                                      ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
-                                      ItemsSource="{x:Bind Appearance.FontAxes, Mode=OneWay}"
-                                      SelectionMode="None" />
+                            <ItemsControl HorizontalContentAlignment="Stretch"
+                                          IsTabStop="False"
+                                          ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
+                                          ItemsPanel="{StaticResource FontKeyValuePairItemsPanel}"
+                                          ItemsSource="{x:Bind Appearance.FontAxes, Mode=OneWay}" />
                             <muxc:DropDownButton x:Name="AddFontAxisButton"
                                                  x:Uid="Profile_AddFontAxisButton">
                                 <muxc:DropDownButton.Content>
@@ -496,10 +501,11 @@
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
                         <StackPanel Spacing="16">
-                            <ListView IsItemClickEnabled="False"
-                                      ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
-                                      ItemsSource="{x:Bind Appearance.FontFeatures, Mode=OneWay}"
-                                      SelectionMode="None" />
+                            <ItemsControl HorizontalContentAlignment="Stretch"
+                                          IsTabStop="False"
+                                          ItemTemplate="{StaticResource FontKeyValuePairTemplate}"
+                                          ItemsPanel="{StaticResource FontKeyValuePairItemsPanel}"
+                                          ItemsSource="{x:Bind Appearance.FontFeatures, Mode=OneWay}" />
                             <muxc:DropDownButton x:Name="AddFontFeatureButton"
                                                  x:Uid="Profile_AddFontFeatureButton">
                                 <muxc:DropDownButton.Content>
