@@ -159,6 +159,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<implementation::SettingsCardAutomationPeer>(*this);
     }
 
+    // Prevent Button from displaying a hover state when the pointer moves over us.
+    void SettingsCard::OnPointerEntered(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerEntered(e);
+        }
+    }
+
+    void SettingsCard::OnPointerExited(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerExited(e);
+        }
+    }
+
     // Pointer overrides: gate the ButtonBase click pipeline on IsClickEnabled.
     // When IsClickEnabled=false, we do NOT call the base method, so the event
     // is left unhandled and bubbles up the visual tree. This is what lets the
@@ -667,7 +684,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     SettingsCardAutomationPeer::SettingsCardAutomationPeer(const Editor::SettingsCard& owner) :
-        ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>(owner)
+        ButtonAutomationPeerT<SettingsCardAutomationPeer>(owner)
     {
     }
 
@@ -719,12 +736,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (card.IsClickEnabled())
                 {
                     // Only provide Invoke pattern if the card is clickable.
-                    return *this;
+                    return ButtonAutomationPeerT<SettingsCardAutomationPeer>::GetPatternCore(patternInterface);
                 }
             }
             return nullptr;
         }
-        // ButtonBaseAutomationPeer only provides Invoke; everything else returns null.
+        // ButtonAutomationPeer only provides Invoke; everything else returns null.
         return nullptr;
     }
 }
