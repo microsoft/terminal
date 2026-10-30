@@ -10,7 +10,10 @@ namespace Microsoft.Terminal.Settings.Editor
         Vertical
     };
 
-    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Primitives.ButtonBase
+    // Derives from Button (the toolkit uses ButtonBase) so SettingsCardAutomationPeer can
+    // inherit ButtonAutomationPeer's IInvokeProvider. ButtonBase has no public way to raise
+    // Click programmatically, so a ButtonBase-derived card can't support UIA Invoke.
+    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Button
     {
         SettingsCard();
 

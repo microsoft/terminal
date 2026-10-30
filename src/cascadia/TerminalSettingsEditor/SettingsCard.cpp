@@ -165,6 +165,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // SettingsExpander header (a ToggleButton hosting a SettingsCard with
     // IsClickEnabled=false) toggle on a click anywhere across the header row,
     // not just on the chevron. Mirrors the Community Toolkit's SettingsCard.cs.
+    // Entered/Exited are gated too: Button drives CommonStates from IsPointerOver,
+    // which would otherwise show hover visuals on non-clickable cards.
+    void SettingsCard::OnPointerEntered(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerEntered(e);
+        }
+    }
+
+    void SettingsCard::OnPointerExited(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerExited(e);
+        }
+    }
+
     void SettingsCard::OnPointerPressed(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
         if (IsClickEnabled())
@@ -667,7 +685,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     SettingsCardAutomationPeer::SettingsCardAutomationPeer(const Editor::SettingsCard& owner) :
-        ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>(owner)
+        ButtonAutomationPeerT<SettingsCardAutomationPeer>(owner)
     {
     }
 
@@ -718,13 +736,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (card.IsClickEnabled())
                 {
-                    // Only provide Invoke pattern if the card is clickable.
-                    return *this;
+                    // Only provide Invoke pattern if the card is clickable. The base
+                    // ButtonAutomationPeer implements IInvokeProvider.
+                    return ButtonAutomationPeerT<SettingsCardAutomationPeer>::GetPatternCore(patternInterface);
                 }
             }
             return nullptr;
         }
-        // ButtonBaseAutomationPeer only provides Invoke; everything else returns null.
+        // Other patterns aren't supported.
         return nullptr;
     }
 }

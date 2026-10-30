@@ -27,6 +27,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsCard();
 
         void OnApplyTemplate();
+        void OnPointerEntered(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void OnPointerExited(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void OnPointerPressed(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void OnPointerReleased(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void OnKeyDown(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -84,8 +86,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // AutomationPeer for SettingsCard. Mirrors the Community Toolkit's
     // SettingsCardAutomationPeer: only exposes Invoke + Button control type when
-    // the card has IsClickEnabled=true; otherwise reports as a Group.
-    struct SettingsCardAutomationPeer : Windows::UI::Xaml::Automation::Peers::ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>
+    // the card has IsClickEnabled=true; otherwise reports as a Group. IInvokeProvider
+    // comes from ButtonAutomationPeer, whose Invoke() raises the card's Click.
+    struct SettingsCardAutomationPeer : Windows::UI::Xaml::Automation::Peers::ButtonAutomationPeerT<SettingsCardAutomationPeer>
     {
     public:
         SettingsCardAutomationPeer(const Editor::SettingsCard& owner);
