@@ -256,14 +256,18 @@ std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::_enforceQuota(c
     }
 
     std::vector<std::shared_ptr<const GraphicsImage>> evicted;
-    if (_totalBytes <= Quota)
+    const auto overQuota = [&]() {
+        return _totalBytes > Quota || _images.size() > MaxImages;
+    };
+    if (!overQuota())
     {
         return evicted;
     }
 
     // Over the quota, unreferenced images are removed first, followed by the
     // least recently used ones, including those that are still displayed.
-    for (auto it = _images.begin(); it != _images.end() && _totalBytes > Quota;)
+    // The added image is the most recent one, so it's never evicted.
+    for (auto it = _images.begin(); it != _images.end() && overQuota();)
     {
         if (it->get() != added && unreferenced(*it))
         {
@@ -276,7 +280,7 @@ std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::_enforceQuota(c
             ++it;
         }
     }
-    while (!_images.empty() && _totalBytes > Quota)
+    while (_images.size() > 1 && overQuota())
     {
         auto image = std::move(_images.front());
         _images.pop_front();

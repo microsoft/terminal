@@ -187,11 +187,13 @@ namespace Microsoft::Console::Render
         struct GraphicsBitmap
         {
             uint64_t revision = 0;
+            size_t byteSize = 0;
             wil::unique_hbitmap bitmap;
             wil::unique_hdc dc;
         };
-        static constexpr size_t s_graphicsBitmapCacheSize = 4;
+        static constexpr size_t s_graphicsBitmapCacheBytes = 128 * 1024 * 1024;
         std::vector<GraphicsBitmap> _graphicsBitmaps;
+        size_t _graphicsBitmapBytes = 0;
 
         [[nodiscard]] HRESULT _PaintGraphicsStrip(const GraphicsPaintInfo& info, const RECT* clip) noexcept;
 

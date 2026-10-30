@@ -99,6 +99,8 @@ class GraphicsStore
 {
 public:
     static constexpr size_t Quota = 320 * 1024 * 1024;
+    // Limits the bookkeeping cost of many tiny images, which barely count towards the quota.
+    static constexpr size_t MaxImages = 4096;
 
     std::shared_ptr<const GraphicsImage> Find(uint32_t id) const noexcept;
     std::shared_ptr<const GraphicsImage> FindByNumber(uint32_t number) const noexcept;

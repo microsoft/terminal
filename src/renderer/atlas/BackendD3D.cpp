@@ -238,8 +238,9 @@ void BackendD3D::Render(RenderingPayload& p)
             .size = p.s->targetSize,
         };
     }
-    _drawCursorBackground(p);
+    // The cursor is drawn on top of the images below the text.
     _drawGraphics(p, INT32_MIN / 2, 0);
+    _drawCursorBackground(p);
     _drawText(p);
     _drawGraphics(p, 0, int64_t{ INT32_MAX } + 1);
     _debugShowDirty(p);
@@ -2007,15 +2008,21 @@ void BackendD3D::_drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, 
     auto ab = _glyphAtlasBitmaps.lookup(g.key);
     if (!ab)
     {
+        // Images that can't be turned into a bitmap are skipped,
+        // before any space in the atlas is allocated for them.
+        if (!_graphicsBitmap(*g.image))
+        {
+            return;
+        }
+
         stbrp_rect rect{
             .w = width,
             .h = height,
         };
         _drawGlyphAtlasAllocate(p, rect);
 
-        // This must happen after the allocation, because growing the atlas
-        // recreates the render target and releases the cached bitmaps.
-        // Images that can't be turned into a bitmap are skipped.
+        // Growing the atlas recreates the render target and releases
+        // the cached bitmaps, so the bitmap is looked up again.
         const auto entry = _graphicsBitmap(*g.image);
         if (!entry)
         {
@@ -2063,11 +2070,12 @@ const BackendD3D::GraphicsBitmap* BackendD3D::_graphicsBitmap(const GraphicsImag
 {
     auto& entry = _graphicsBitmaps[image.revision];
     entry.lastUsedFrame = _graphicsFrame;
-    if (!entry.bitmap && !CreateGraphicsBitmap(_d2dRenderTarget.get(), image, entry.bitmap.addressof(), entry.scale))
+    // Failures are remembered, so that they aren't retried in every frame.
+    if (!entry.bitmap && !entry.failed)
     {
-        return nullptr;
+        entry.failed = !CreateGraphicsBitmap(_d2dRenderTarget.get(), image, entry.bitmap.addressof(), entry.scale);
     }
-    return &entry;
+    return entry.bitmap ? &entry : nullptr;
 }
 
 // The scaled image strips are cached in the glyph atlas, so the full size

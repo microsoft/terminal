@@ -1128,6 +1128,10 @@ void TextBuffer::ResizeTraditional(til::size newSize)
         CopyRow(srcRow, dstRow, newBuffer);
     }
 
+    // The rows have been copied, so the old ones must be destroyed before their
+    // memory is released, or the resources they own (like images) would leak.
+    _destroy();
+
     // NOTE: Keep this in sync with _reserve().
     _buffer = std::move(newBuffer._buffer);
     _bufferEnd = newBuffer._bufferEnd;
@@ -2938,8 +2942,8 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             if (oldX == 0)
             {
                 ImageSlice::CopyRow(oldRow, newRow);
-                // When a wrapped row is joined onto the previous one, the
-                // graphics of both rows are kept.
+                // When a wrapped row is joined onto the previous one, a placement can only
+                // keep one of its strips on the new row, so the first one is kept.
                 auto& graphics = newRow.GetMutableGraphics();
                 if (newX == 0)
                 {
@@ -2947,7 +2951,13 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 }
                 else
                 {
-                    graphics.insert(graphics.end(), oldRow.GetGraphics().begin(), oldRow.GetGraphics().end());
+                    for (const auto& ref : oldRow.GetGraphics())
+                    {
+                        if (std::ranges::none_of(graphics, [&](const auto& existing) { return existing.placement == ref.placement; }))
+                        {
+                            graphics.emplace_back(ref);
+                        }
+                    }
                 }
             }
 

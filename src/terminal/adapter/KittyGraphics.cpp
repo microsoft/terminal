@@ -350,6 +350,27 @@ namespace
         return true;
     }
 
+    // Reads the dimensions from the IHDR chunk, which must come first in a PNG.
+    bool readPngSize(const std::span<const uint8_t> data, til::size& size) noexcept
+    {
+        static constexpr uint8_t header[]{ 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 13, 'I', 'H', 'D', 'R' };
+        if (data.size() < 24 || memcmp(data.data(), &header[0], sizeof(header)) != 0)
+        {
+            return false;
+        }
+        const auto readU32 = [&](const size_t offset) {
+            return (uint32_t{ data[offset] } << 24) | (uint32_t{ data[offset + 1] } << 16) | (uint32_t{ data[offset + 2] } << 8) | data[offset + 3];
+        };
+        const auto width = readU32(16);
+        const auto height = readU32(20);
+        if (width == 0 || height == 0 || width > MaxImageDimension || height > MaxImageDimension)
+        {
+            return false;
+        }
+        size = { gsl::narrow_cast<til::CoordType>(width), gsl::narrow_cast<til::CoordType>(height) };
+        return true;
+    }
+
     uint32_t premultiply(const uint32_t r, const uint32_t g, const uint32_t b, const uint32_t a) noexcept
     {
         const auto pr = (r * a + 127) / 255;
@@ -669,6 +690,10 @@ void KittyGraphics::_execute()
 void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
 {
     const auto action = control.GetChar('a', L't');
+    if (action == L'T')
+    {
+        _cursorMayMove(control);
+    }
     const auto isQuery = action == L'q';
     const auto requestedId = control.GetUnsigned('i');
     const auto number = control.GetUnsigned('I');
@@ -688,6 +713,12 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     if (isQuery)
     {
         _respond(control, requestedId, nullptr);
+        return;
+    }
+    if (image->ByteSize() > GraphicsStore::Quota)
+    {
+        const Error tooLarge{ L"EFBIG", L"Image is larger than the storage quota" };
+        _respond(control, requestedId, &tooLarge);
         return;
     }
 
@@ -733,6 +764,7 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
 
 void KittyGraphics::_put(const Control& control)
 {
+    _cursorMayMove(control);
     const auto image = _findImage(control);
     if (!image)
     {
@@ -777,7 +809,7 @@ void KittyGraphics::_delete(const Control& control)
             store.RemoveVirtualPlacements(id, placementId);
             buffer.TriggerRedrawAll();
         }
-        if (freeImages && id && !buffer.AnyGraphics([=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; }))
+        if (freeImages && _isImageUnused(buffer, id))
         {
             store.Remove(id);
         }
@@ -1042,6 +1074,10 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
         bytes = std::move(inflated);
     }
 
+    // ConPTY only needs the dimensions of the image to compute the cell footprint,
+    // because the attached terminal is responsible for decoding and displaying it.
+    const auto dimensionsOnly = _dispatcher._api.IsConPTY();
+
     auto image = std::make_shared<GraphicsImage>();
     if (rawFormat)
     {
@@ -1057,6 +1093,11 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
             return nullptr;
         }
         image->size = { gsl::narrow_cast<til::CoordType>(width), gsl::narrow_cast<til::CoordType>(height) };
+        if (dimensionsOnly)
+        {
+            image->revision = GraphicsImage::NextRevision();
+            return image;
+        }
         image->pixels.resize(pixelCount);
         auto src = bytes.data();
         for (auto& pixel : image->pixels)
@@ -1068,7 +1109,7 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     }
     else if (format == 100)
     {
-        if (!decodePng(bytes, image->size, image->pixels))
+        if (dimensionsOnly ? !readPngSize(bytes, image->size) : !decodePng(bytes, image->size, image->pixels))
         {
             error = { L"EBADPNG", L"Failed to decode PNG data" };
             return nullptr;
@@ -1078,13 +1119,6 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     {
         error = { L"EINVAL", L"Unsupported image format" };
         return nullptr;
-    }
-
-    // ConPTY only needs the dimensions of the image to compute the cell footprint,
-    // because the attached terminal is responsible for displaying it.
-    if (_dispatcher._api.IsConPTY())
-    {
-        image->pixels = {};
     }
 
     image->revision = GraphicsImage::NextRevision();
@@ -1138,8 +1172,13 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     {
         rows = geometry.columns ? ceilDiv((cell.width * columns + geometry.offset.x) * h / w, cell.height) : ceilDiv(h + geometry.offset.y, cell.height);
     }
+    // The cursor moves by the footprint computed the same way as in kitty, but the
+    // image is attached to all the rows it's drawn on, which can be more than that.
+    const auto cursorRows = std::clamp<til::CoordType>(rows, 1, MaxCells);
+    const auto destination = geometry.Destination(cell);
+    const auto drawnRows = gsl::narrow_cast<til::CoordType>(std::ceil(destination.bottom / static_cast<float>(cell.height)));
     placement->columns = std::clamp<til::CoordType>(columns, 1, MaxCells);
-    placement->rows = std::clamp<til::CoordType>(rows, 1, MaxCells);
+    placement->rows = std::clamp<til::CoordType>(std::max(cursorRows, drawnRows), 1, MaxCells);
 
     // Placing an image with the same image and placement id replaces it.
     if (placement->placementId)
@@ -1160,7 +1199,7 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
 
     // When the cursor is moved below the image, the content is first scrolled
     // up so that the entire image fits within the margins.
-    const auto overflow = origin.y + placement->rows - 1 - bottomMargin;
+    const auto overflow = origin.y + cursorRows - 1 - bottomMargin;
     if (moveCursor && inMargins && overflow > 0)
     {
         cursor.SetPosition({ origin.x, bottomMargin });
@@ -1197,7 +1236,7 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     if (moveCursor)
     {
         const auto x = origin.x + placement->columns;
-        const auto y = std::clamp(anchorY + placement->rows - 1, page.Top(), page.Bottom() - 1);
+        const auto y = std::clamp(anchorY + cursorRows - 1, page.Top(), page.Bottom() - 1);
         if (x >= page.Width())
         {
             cursor.SetPosition({ page.Width() - 1, y });
@@ -1239,6 +1278,27 @@ void KittyGraphics::_placeVirtual(const Control& control, const std::shared_ptr<
     _dispatcher._pages.ActivePage().Buffer().TriggerRedrawAll();
 }
 
+// ConPTY and the attached terminal compute the same cursor movement, but they
+// can still disagree, for instance if one of them evicted the image. Marking
+// the cursor position as uncertain makes ConPTY resynchronize it if needed.
+void KittyGraphics::_cursorMayMove(const Control& control) const noexcept
+{
+    if (control.GetUnsigned('C') != 1 && control.GetUnsigned('U') != 1 && _dispatcher._api.IsConPTY())
+    {
+        _dispatcher._api.UnknownSequence();
+    }
+}
+
+// An image can be freed once neither placements nor virtual placements use it.
+bool KittyGraphics::_isImageUnused(const TextBuffer& buffer, const uint32_t id) const
+{
+    if (!id || _store().FindVirtualPlacement(id, 0))
+    {
+        return false;
+    }
+    return !buffer.AnyGraphics([=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; });
+}
+
 bool KittyGraphics::_erase(TextBuffer& buffer, const std::function<bool(const GraphicsRowRef&)>& predicate, const bool freeImages)
 {
     std::vector<uint32_t> ids;
@@ -1260,7 +1320,7 @@ bool KittyGraphics::_erase(TextBuffer& buffer, const std::function<bool(const Gr
         auto& store = _store();
         for (const auto id : ids)
         {
-            if (!buffer.AnyGraphics([=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; }))
+            if (_isImageUnused(buffer, id))
             {
                 store.Remove(id);
             }

@@ -779,9 +779,11 @@ try
         return S_OK;
     }
 
+    // The image is clipped to the invalidated area, because blending
+    // it again over pixels that weren't repainted would accumulate.
     LOG_IF_FAILED(_FlushBufferLines());
     LOG_IF_FAILED(ResetLineTransform());
-    return _PaintGraphicsStrip(info, nullptr);
+    return _PaintGraphicsStrip(info, &_psInvalidData.rcPaint);
 }
 CATCH_RETURN();
 
@@ -836,11 +838,16 @@ try
         memcpy(bits, image.pixels.data(), image.pixels.size() * sizeof(uint32_t));
         SelectObject(hdc.get(), bitmap.get());
 
-        if (_graphicsBitmaps.size() >= s_graphicsBitmapCacheSize)
+        // The cache is limited by size rather than by count, so that all the
+        // images on the screen fit, unless they're very large.
+        const auto byteSize = image.ByteSize();
+        while (!_graphicsBitmaps.empty() && _graphicsBitmapBytes + byteSize > s_graphicsBitmapCacheBytes)
         {
+            _graphicsBitmapBytes -= _graphicsBitmaps.front().byteSize;
             _graphicsBitmaps.erase(_graphicsBitmaps.begin());
         }
-        _graphicsBitmaps.emplace_back(GraphicsBitmap{ image.revision, std::move(bitmap), std::move(hdc) });
+        _graphicsBitmaps.emplace_back(GraphicsBitmap{ image.revision, byteSize, std::move(bitmap), std::move(hdc) });
+        _graphicsBitmapBytes += byteSize;
     }
     const auto graphicsDC = _graphicsBitmaps.back().dc.get();
 
@@ -858,19 +865,16 @@ try
         IntersectClipRect(_hdcMemoryContext, points[0].x, points[0].y, points[1].x, points[1].y);
     }
 
+    // AlphaBlend fails if the source rectangle extends past the bitmap,
+    // so the edges are rounded individually and clamped to the image.
+    const auto sourceLeft = std::clamp(lroundf(strip.source.left), 0L, static_cast<LONG>(image.size.width - 1));
+    const auto sourceTop = std::clamp(lroundf(strip.source.top), 0L, static_cast<LONG>(image.size.height - 1));
+    const auto sourceRight = std::clamp(lroundf(strip.source.right), sourceLeft + 1, static_cast<LONG>(image.size.width));
+    const auto sourceBottom = std::clamp(lroundf(strip.source.bottom), sourceTop + 1, static_cast<LONG>(image.size.height));
+
     const auto y = info.targetRow * cellSize.height;
     const BLENDFUNCTION blend{ AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
-    GdiAlphaBlend(_hdcMemoryContext,
-                  strip.target.left,
-                  y + strip.target.top,
-                  strip.target.width(),
-                  strip.target.height(),
-                  graphicsDC,
-                  lroundf(strip.source.left),
-                  lroundf(strip.source.top),
-                  std::max(1L, lroundf(strip.source.right - strip.source.left)),
-                  std::max(1L, lroundf(strip.source.bottom - strip.source.top)),
-                  blend);
+    RETURN_HR_IF(E_FAIL, !GdiAlphaBlend(_hdcMemoryContext, strip.target.left, y + strip.target.top, strip.target.width(), strip.target.height(), graphicsDC, sourceLeft, sourceTop, sourceRight - sourceLeft, sourceBottom - sourceTop, blend));
     return S_OK;
 }
 CATCH_RETURN();

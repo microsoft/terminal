@@ -1943,6 +1943,41 @@ public:
         VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
     }
 
+    TEST_METHOD(KittyGraphicsLifetimeTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& buffer = *_testGetSet->_textBuffer;
+        auto& cursor = buffer.GetCursor();
+        const auto graphicsAt = [&](const til::CoordType y) {
+            return buffer.GetRowByOffset(y).GetGraphics().size();
+        };
+
+        Log::Comment(L"An image offset into its first cell covers every row it's drawn on.");
+        cursor.SetPosition({ 0, 25 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=1,Y=19,C=1,q=2;AAAA\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(26));
+
+        Log::Comment(L"Resizing the buffer doesn't leak the placements of the old rows.");
+        const auto placement = buffer.GetRowByOffset(25).GetGraphics()[0].placement;
+        VERIFY_ARE_EQUAL(3, placement.use_count());
+        buffer.ResizeTraditional({ 100, 600 });
+        VERIFY_ARE_EQUAL(3, placement.use_count());
+
+        Log::Comment(L"Freeing an image keeps it while another virtual placement uses it.");
+        _stateMachine->ProcessString(L"\x1b_Ga=t,i=9,f=24,s=1,v=1,q=2;AAAA\x1b\\");
+        _stateMachine->ProcessString(L"\x1b_Ga=p,U=1,i=9,p=2,c=2,r=1,q=2\x1b\\");
+        cursor.SetPosition({ 0, 30 });
+        _stateMachine->ProcessString(L"\x1b_Ga=p,i=9,p=1,C=1,q=2\x1b\\");
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=9,p=1,q=2\x1b\\");
+        VERIFY_ARE_EQUAL(0u, graphicsAt(30));
+        VERIFY_IS_NOT_NULL(buffer.GetGraphicsStore().Find(9));
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=9,q=2\x1b\\");
+        VERIFY_IS_NULL(buffer.GetGraphicsStore().Find(9));
+    }
+
     TEST_METHOD(RequestDisplayedExtentTests)
     {
         Log::Comment(L"Starting test...");

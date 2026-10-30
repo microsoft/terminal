@@ -839,7 +839,11 @@ void BackendD2D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, 
         // Images that can't be turned into a bitmap are skipped.
         auto& entry = _graphicsBitmaps[g->image->revision];
         entry.lastUsedFrame = _graphicsFrame;
-        if (!entry.bitmap && !CreateGraphicsBitmap(_renderTarget.get(), *g->image, entry.bitmap.addressof(), entry.scale))
+        if (!entry.bitmap && !entry.failed)
+        {
+            entry.failed = !CreateGraphicsBitmap(_renderTarget.get(), *g->image, entry.bitmap.addressof(), entry.scale);
+        }
+        if (!entry.bitmap)
         {
             continue;
         }

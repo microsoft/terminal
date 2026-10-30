@@ -75,6 +75,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::shared_ptr<GraphicsImage> _load(const Control& control, std::vector<uint8_t> data, Error& error) const;
         bool _place(const Control& control, const std::shared_ptr<const GraphicsImage>& image, Error& error);
         void _placeVirtual(const Control& control, const std::shared_ptr<const GraphicsImage>& image);
+        void _cursorMayMove(const Control& control) const noexcept;
+        bool _isImageUnused(const TextBuffer& buffer, uint32_t id) const;
         bool _erase(TextBuffer& buffer, const std::function<bool(const GraphicsRowRef&)>& predicate, bool freeImages);
         std::shared_ptr<const GraphicsImage> _findImage(const Control& control) const;
         GraphicsStore& _store() const;

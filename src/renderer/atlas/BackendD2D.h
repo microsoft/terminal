@@ -51,6 +51,7 @@ namespace Microsoft::Console::Render::Atlas
             wil::com_ptr<ID2D1Bitmap> bitmap;
             f32x2 scale{};
             u64 lastUsedFrame = 0;
+            bool failed = false;
         };
         std::unordered_map<u64, GraphicsBitmap> _graphicsBitmaps;
         std::vector<std::pair<u16, const GraphicsDraw*>> _graphicsQueue;
