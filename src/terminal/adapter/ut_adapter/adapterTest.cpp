@@ -1880,7 +1880,7 @@ public:
         _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=7\x1b\\");
         VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
         _stateMachine->ProcessString(L"\x1b_Ga=p,i=7\x1b\\");
-        _testGetSet->ValidateInputEvent(L"\x1b_Gi=7;ENOENT:Put command refers to a non-existent image\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=7;ENOENT:Put command refers to a nonexistent image\x1b\\");
 
         Log::Comment(L"Chunked transmissions are assembled before the image is loaded.");
         _stateMachine->ProcessString(L"\x1b_Ga=t,i=8,f=24,s=2,v=1,m=1;AAAA\x1b\\");
@@ -1939,7 +1939,7 @@ public:
         VERIFY_ARE_EQUAL(1u, graphicsAt(33));
 
         Log::Comment(L"A hard reset removes all images.");
-        _stateMachine->ProcessString(L"\x1b[r\x1b" L"c");
+        _stateMachine->ProcessString(L"\x1b[r\033c");
         VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
     }
 

@@ -200,12 +200,12 @@ namespace
         }
         // The region only covers pages with the same state, so this also
         // ensures that every page we read from is committed.
-        MEMORY_BASIC_INFORMATION mbi{};
-        if (!VirtualQuery(view.get(), &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT)
+        MEMORY_BASIC_INFORMATION memoryInfo{};
+        if (!VirtualQuery(view.get(), &memoryInfo, sizeof(memoryInfo)) || memoryInfo.State != MEM_COMMIT)
         {
             return false;
         }
-        const uint64_t mappedSize = mbi.RegionSize;
+        const uint64_t mappedSize = memoryInfo.RegionSize;
         if (offset > mappedSize)
         {
             return false;
@@ -712,10 +712,7 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     const auto evicted = store.Add(image);
     if (!evicted.empty())
     {
-        _erase(buffer, [&](const GraphicsRowRef& ref) {
-            return std::ranges::any_of(evicted, [&](const auto& e) { return e == ref.placement->image; });
-        },
-               false);
+        _erase(buffer, [&](const GraphicsRowRef& ref) { return std::ranges::any_of(evicted, [&](const auto& e) { return e == ref.placement->image; }); }, false);
         buffer.TriggerRedrawAll();
     }
 
@@ -739,7 +736,7 @@ void KittyGraphics::_put(const Control& control)
     const auto image = _findImage(control);
     if (!image)
     {
-        const Error error{ L"ENOENT", L"Put command refers to a non-existent image" };
+        const Error error{ L"ENOENT", L"Put command refers to a nonexistent image" };
         _respond(control, control.GetUnsigned('i'), &error);
         return;
     }
@@ -774,10 +771,7 @@ void KittyGraphics::_delete(const Control& control)
         {
             return;
         }
-        _erase(buffer, [=](const GraphicsRowRef& ref) {
-            return ref.placement->image->id == id && (placementId == 0 || ref.placement->placementId == placementId);
-        },
-               freeImages);
+        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id && (placementId == 0 || ref.placement->placementId == placementId); }, freeImages);
         if (store.FindVirtualPlacement(id, placementId))
         {
             store.RemoveVirtualPlacements(id, placementId);
@@ -1152,10 +1146,7 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     {
         const auto id = image->id;
         const auto placementId = placement->placementId;
-        _erase(buffer, [=](const GraphicsRowRef& ref) {
-            return ref.placement->image->id == id && ref.placement->placementId == placementId;
-        },
-               false);
+        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id && ref.placement->placementId == placementId; }, false);
     }
 
     const auto origin = cursor.GetPosition();

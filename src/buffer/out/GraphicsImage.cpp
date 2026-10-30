@@ -10,6 +10,7 @@ static std::atomic<uint64_t> s_graphicsRevision{ 0 };
 // The combining characters used as placeholder row and column numbers, in the
 // order of their values. These are the characters of combining class 230 in
 // Unicode 6.0.0 without decomposition mappings, as defined by the protocol.
+// clang-format off
 static constexpr char32_t s_placeholderDiacritics[]{
     0x0305, 0x030D, 0x030E, 0x0310, 0x0312, 0x033D, 0x033E, 0x033F, 0x0346, 0x034A, 0x034B, 0x034C,
     0x0350, 0x0351, 0x0352, 0x0357, 0x035B, 0x0363, 0x0364, 0x0365, 0x0366, 0x0367, 0x0368, 0x0369,
@@ -37,6 +38,7 @@ static constexpr char32_t s_placeholderDiacritics[]{
     0xFE20, 0xFE21, 0xFE22, 0xFE23, 0xFE24, 0xFE25, 0xFE26, 0x10A0F, 0x10A38, 0x1D185, 0x1D186, 0x1D187,
     0x1D188, 0x1D189, 0x1D1AA, 0x1D1AB, 0x1D1AC, 0x1D1AD, 0x1D242, 0x1D243, 0x1D244,
 };
+// clang-format on
 
 int GraphicsPlaceholder::DiacriticValue(const char32_t ch) noexcept
 {
@@ -66,7 +68,7 @@ GraphicsRect GraphicsGeometry::Destination(const til::size cellSize) const noexc
 
     if (columns > 0 && rows > 0)
     {
-        // The image is letterboxed within the requested area to avoid distortion.
+        // The image is scaled to fit the requested area while keeping its aspect ratio.
         const auto boxWidth = std::max(0.0f, static_cast<float>(columns * cellSize.width) - left);
         const auto boxHeight = std::max(0.0f, static_cast<float>(rows * cellSize.height) - top);
         const auto scale = std::min(boxWidth / srcWidth, boxHeight / srcHeight);

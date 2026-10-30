@@ -300,7 +300,7 @@ void StateMachineTest::ApcDataStringsReceivedByHandler()
     // The APC string is split across writes, and contains characters that
     // aren't valid in a command string, which must be ignored.
     machine.ProcessString(L"\033_Ga=T,f=100;AAAA");
-    machine.ProcessString(L"BB\x7f" L"CC\033\\printed text");
+    machine.ProcessString(L"BB\177CC\033\\printed text");
 
     // The handler receives everything after the first character, terminated by ESC.
     VERIFY_ARE_EQUAL(L"Ga=T,f=100;AAAABBCC\033", engine.apcDataString);
