@@ -86,8 +86,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     // AutomationPeer for SettingsCard. Mirrors the Community Toolkit's
     // SettingsCardAutomationPeer: only exposes Invoke + Button control type when
-    // the card has IsClickEnabled=true; otherwise reports as a Group. IInvokeProvider
-    // comes from ButtonAutomationPeer, whose Invoke() raises the card's Click.
+    // the card has IsClickEnabled=true; otherwise reports as a Group. We have to use
+    // ButtonAutomationPeer to support Invoke.
     struct SettingsCardAutomationPeer : Windows::UI::Xaml::Automation::Peers::ButtonAutomationPeerT<SettingsCardAutomationPeer>
     {
     public:

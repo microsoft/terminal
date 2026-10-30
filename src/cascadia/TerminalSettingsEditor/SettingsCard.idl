@@ -10,9 +10,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Vertical
     };
 
-    // Derives from Button (the toolkit uses ButtonBase) so SettingsCardAutomationPeer can
-    // inherit ButtonAutomationPeer's IInvokeProvider. ButtonBase has no public way to raise
-    // Click programmatically, so a ButtonBase-derived card can't support UIA Invoke.
+    // Unlike the toolkit, we need to derive from Button for proper UIA behavior.
     [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Button
     {
         SettingsCard();

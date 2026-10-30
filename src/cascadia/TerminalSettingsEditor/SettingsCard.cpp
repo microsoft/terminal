@@ -159,14 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<implementation::SettingsCardAutomationPeer>(*this);
     }
 
-    // Pointer overrides: gate the ButtonBase click pipeline on IsClickEnabled.
-    // When IsClickEnabled=false, we do NOT call the base method, so the event
-    // is left unhandled and bubbles up the visual tree. This is what lets the
-    // SettingsExpander header (a ToggleButton hosting a SettingsCard with
-    // IsClickEnabled=false) toggle on a click anywhere across the header row,
-    // not just on the chevron. Mirrors the Community Toolkit's SettingsCard.cs.
-    // Entered/Exited are gated too: Button drives CommonStates from IsPointerOver,
-    // which would otherwise show hover visuals on non-clickable cards.
+    // Prevent Button from displaying a hover state when the pointer moves over us.
     void SettingsCard::OnPointerEntered(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
         if (IsClickEnabled())
@@ -183,6 +176,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    // Pointer overrides: gate the ButtonBase click pipeline on IsClickEnabled.
+    // When IsClickEnabled=false, we do NOT call the base method, so the event
+    // is left unhandled and bubbles up the visual tree. This is what lets the
+    // SettingsExpander header (a ToggleButton hosting a SettingsCard with
+    // IsClickEnabled=false) toggle on a click anywhere across the header row,
+    // not just on the chevron. Mirrors the Community Toolkit's SettingsCard.cs.
     void SettingsCard::OnPointerPressed(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
         if (IsClickEnabled())
@@ -736,14 +735,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (card.IsClickEnabled())
                 {
-                    // Only provide Invoke pattern if the card is clickable. The base
-                    // ButtonAutomationPeer implements IInvokeProvider.
+                    // Only provide Invoke pattern if the card is clickable.
                     return ButtonAutomationPeerT<SettingsCardAutomationPeer>::GetPatternCore(patternInterface);
                 }
             }
             return nullptr;
         }
-        // Other patterns aren't supported.
+        // ButtonAutomationPeer only provides Invoke; everything else returns null.
         return nullptr;
     }
 }
