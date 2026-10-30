@@ -40,7 +40,7 @@ niksa
 nvaccess
 nvda
 osgwiki
-Ottosson
+ottosson
 pabhojwa
 Panos
 paulcam
