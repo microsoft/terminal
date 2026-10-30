@@ -40,7 +40,7 @@ constexpr T* alignPointer(T* ptr, size_t alignment) noexcept
     return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(ptr) + alignment - 1) & ~(alignment - 1));
 }
 
-static size_t getPageSize()
+static size_t getPageSize() noexcept
 {
     static std::atomic<DWORD> s_pageSize;
 
@@ -165,7 +165,7 @@ __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
     _construct(_buffer.get() + next);
 }
 
-uintptr_t TextBuffer::_commitChargeOptimize(uintptr_t rowOffset)
+uintptr_t TextBuffer::_commitChargeOptimize(uintptr_t rowOffset) noexcept
 {
     const auto pageSize = getPageSize();
     const auto cap = gsl::narrow_cast<uintptr_t>(_bufferEnd - _buffer.get());
@@ -939,7 +939,7 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
     if (cycleCount > 0)
     {
         auto& scratch = GetScratchpadRow();
-        const auto resetScratch = wil::scope_exit([&] { scratch.Reset(_currentAttributes); });
+
         for (til::CoordType first = 0; first < cycleCount; ++first)
         {
             copy(get(first), scratch);

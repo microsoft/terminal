@@ -316,7 +316,7 @@ public:
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
     void _commit(const std::byte* row);
-    uintptr_t _commitChargeOptimize(uintptr_t rowOffset);
+    uintptr_t _commitChargeOptimize(uintptr_t rowOffset) noexcept;
     void _decommit(til::CoordType keep) noexcept;
     void _construct(const std::byte* until) noexcept;
     void _destroy(std::byte* it) const noexcept;
