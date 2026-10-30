@@ -62,8 +62,8 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
         _window = std::make_unique<IslandWindow>();
     }
 
-    // Update our own internal state tracking if we're in quake mode or not.
-    _IsQuakeWindowChanged(nullptr, nullptr);
+    // Apply the per-window settings (docking, notification area, etc.) for this window.
+    _WindowSettingsChanged(nullptr, nullptr);
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
@@ -276,7 +276,7 @@ void AppHost::Initialize()
     // properties.
     _revokers.SettingsChanged = _windowLogic.SettingsChanged(winrt::auto_revoke, { this, &AppHost::_HandleSettingsChanged });
 
-    _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
+    _revokers.WindowSettingsChanged = _windowLogic.WindowSettingsChanged(winrt::auto_revoke, { this, &AppHost::_WindowSettingsChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
     _revokers.SummonWindowByIdRequested = _windowLogic.SummonWindowByIdRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowByIdRequested });
     _revokers.FocusTabRequested = _windowLogic.FocusTabRequested(winrt::auto_revoke, { this, &AppHost::_FocusTabRequested });
@@ -620,20 +620,61 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_windowLogic.IsQuakeWindow())
+    if (const auto dockingSettings{ _windowLogic.Docking() })
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
         const auto availableSpace = desktopDimensions + nonClientSize;
 
-        origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
-        };
-        dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
-        };
+        const auto dockWidth = lrintf(static_cast<float>(dockingSettings.Width() * availableSpace.width));
+        const auto dockHeight = lrintf(static_cast<float>(dockingSettings.Height() * availableSpace.height));
+        const auto side = dockingSettings.Side();
+
+        switch (side)
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+            origin = {
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.left + ((availableSpace.width - dockWidth) / 2) - (nonClientSize.width / 2)) : (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                centerOnLaunch ? dockWidth : availableSpace.width,
+                dockHeight
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+            origin = {
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.left + ((availableSpace.width - dockWidth) / 2) - (nonClientSize.width / 2)) : (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                (nearestMonitorInfo.rcWork.bottom - dockHeight + nonClientSize.height)
+            };
+            dimensions = {
+                centerOnLaunch ? dockWidth : availableSpace.width,
+                dockHeight
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.top + ((availableSpace.height - dockHeight) / 2)) : (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                dockWidth,
+                centerOnLaunch ? dockHeight : availableSpace.height
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+            origin = {
+                (nearestMonitorInfo.rcWork.right - dockWidth + (nonClientSize.width / 2)),
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.top + ((availableSpace.height - dockHeight) / 2)) : (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                dockWidth,
+                centerOnLaunch ? dockHeight : availableSpace.height
+            };
+            break;
+        default:
+            break;
+        }
         launchMode = LaunchMode::FocusMode;
     }
     else if (centerOnLaunch)
@@ -1088,10 +1129,13 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _updateTheme();
 }
 
-void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
-                                    const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_WindowSettingsChanged(const winrt::Windows::Foundation::IInspectable&,
+                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+    _window->DockSettings(_windowLogic.Docking(), _windowLogic.CenterOnLaunch());
+    _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.
