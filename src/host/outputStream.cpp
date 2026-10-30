@@ -70,6 +70,11 @@ bool ConhostInternalGetSet::IsConPTY() const noexcept
     return gci.IsInVtIoMode();
 }
 
+std::wstring_view ConhostInternalGetSet::GetTerminalName() const noexcept
+{
+    return L"conhost";
+}
+
 // Routine Description:
 // - Retrieves the state machine for the active output buffer.
 // Arguments:

@@ -114,6 +114,7 @@ public:
     void DeviceAttributes() override {} // DA1
     void SecondaryDeviceAttributes() override {} // DA2
     void TertiaryDeviceAttributes() override {} // DA3
+    void RequestTerminalVersion() override {} // XTVERSION
     void Vt52DeviceAttributes() override {} // VT52 Identify
     void RequestTerminalParameters(const DispatchTypes::ReportingPermission /*permission*/) override {} // DECREQTPARM
 
@@ -185,6 +186,8 @@ public:
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
     void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
+
+    StringHandler KittyGraphicsCommand() override { return nullptr; } // APC G
 
     void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
 };

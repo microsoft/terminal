@@ -38,6 +38,7 @@ public:
         dcsId = 0;
         dcsParams.clear();
         dcsDataString.clear();
+        apcDataString.clear();
     }
 
     void UnknownSequence() noexcept override
@@ -116,6 +117,12 @@ public:
         return [=](const auto ch) { dcsDataString += ch; return true; };
     }
 
+    IStateMachineEngine::StringHandler ActionApcDispatch(const wchar_t wch) override
+    {
+        apcDataString = wch;
+        return [=](const auto ch) { apcDataString += ch; return true; };
+    }
+
     // These will only be populated if ActionCsiDispatch is called.
     uint64_t csiId = 0;
     std::vector<size_t> csiParams;
@@ -136,6 +143,9 @@ public:
     uint64_t dcsId = 0;
     std::vector<size_t> dcsParams;
     std::wstring dcsDataString;
+
+    // These will only be populated if ActionApcDispatch is called.
+    std::wstring apcDataString;
 };
 
 class Microsoft::Console::VirtualTerminal::StateMachineTest
@@ -160,6 +170,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(PassThroughUnhandledSplitAcrossWrites);
 
     TEST_METHOD(DcsDataStringsReceivedByHandler);
+    TEST_METHOD(ApcDataStringsReceivedByHandler);
 
     TEST_METHOD(VtParameterSubspanTest);
 };
@@ -278,6 +289,22 @@ void StateMachineTest::PassThroughUnhandledSplitAcrossWrites()
     machine.ProcessString(L"\\");
     VERIFY_ARE_EQUAL(L"\x1b]99;foo\x1b\\", engine.passedThrough);
     VERIFY_ARE_EQUAL(L"", engine.printed);
+}
+
+void StateMachineTest::ApcDataStringsReceivedByHandler()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // The APC string is split across writes, and contains characters that
+    // aren't valid in a command string, which must be ignored.
+    machine.ProcessString(L"\033_Ga=T,f=100;AAAA");
+    machine.ProcessString(L"BB\x7f" L"CC\033\\printed text");
+
+    // The handler receives everything after the first character, terminated by ESC.
+    VERIFY_ARE_EQUAL(L"Ga=T,f=100;AAAABBCC\033", engine.apcDataString);
+    VERIFY_ARE_EQUAL(L"printed text", engine.printed);
 }
 
 void StateMachineTest::DcsDataStringsReceivedByHandler()

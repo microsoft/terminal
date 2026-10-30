@@ -30,6 +30,7 @@ void BackendD2D::ReleaseResources() noexcept
 {
     _renderTarget.reset();
     _renderTarget4.reset();
+    _graphicsBitmaps.clear();
     // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
     _generation = {};
 }
@@ -49,8 +50,10 @@ void BackendD2D::Render(RenderingPayload& p)
         _renderTarget->Clear();
 #endif
         _drawBackground(p);
+        _drawGraphics(p, INT32_MIN, 0);
         _drawCursorPart1(p);
         _drawText(p);
+        _drawGraphics(p, 0, int64_t{ INT32_MAX } + 1);
         _drawCursorPart2(p);
 #if ATLAS_DEBUG_SHOW_DIRTY
         _debugShowDirty(p);
@@ -85,6 +88,7 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
 
     if (renderTargetChanged)
     {
+        _graphicsBitmaps.clear();
         {
             wil::com_ptr<ID3D11Texture2D> buffer;
             THROW_IF_FAILED(p.swapChain.swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(buffer.addressof())));
@@ -806,6 +810,67 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 appendHorizontalLine(r, pos, nullptr, p.underlineBitmap);
             }
         }
+    }
+}
+
+// Draws the graphics placements with a z-index in the range [zBegin, zEnd).
+void BackendD2D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, const int64_t zEnd)
+{
+    _graphicsQueue.clear();
+    u16 y = 0;
+    for (const auto row : p.rows)
+    {
+        for (const auto& g : row->graphics)
+        {
+            if (g.z >= zBegin && g.z < zEnd)
+            {
+                _graphicsQueue.emplace_back(y, &g);
+            }
+        }
+        ++y;
+    }
+
+    std::stable_sort(_graphicsQueue.begin(), _graphicsQueue.end(), [](const auto& a, const auto& b) {
+        return a.second->z != b.second->z ? a.second->z < b.second->z : a.second->order < b.second->order;
+    });
+
+    for (const auto& [row, g] : _graphicsQueue)
+    {
+        auto& [bitmap, lastUsedFrame] = _graphicsBitmaps[g->image->revision];
+        lastUsedFrame = _graphicsFrame;
+        if (!bitmap)
+        {
+            const D2D1_SIZE_U size{
+                static_cast<UINT32>(g->image->size.width),
+                static_cast<UINT32>(g->image->size.height),
+            };
+            const D2D1_BITMAP_PROPERTIES properties{
+                .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+                .dpiX = 96,
+                .dpiY = 96,
+            };
+            THROW_IF_FAILED(_renderTarget->CreateBitmap(size, g->image->pixels.data(), size.width * 4, &properties, bitmap.addressof()));
+        }
+
+        const auto top = p.s->font->cellSize.y * row;
+        const D2D1_RECT_F dst{
+            static_cast<f32>(g->target.left),
+            static_cast<f32>(top + g->target.top),
+            static_cast<f32>(g->target.right),
+            static_cast<f32>(top + g->target.bottom),
+        };
+        const D2D1_RECT_F src{ g->source.left, g->source.top, g->source.right, g->source.bottom };
+        _renderTarget->DrawBitmap(bitmap.get(), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
+    }
+
+    // Draw calls are made with both ranges in every frame, so this is the point where
+    // the bitmaps that weren't used by either of them can be released.
+    if (zEnd > INT32_MAX)
+    {
+        std::erase_if(_graphicsBitmaps, [&](const auto& entry) {
+            return entry.second.second != _graphicsFrame;
+        });
+        _graphicsFrame++;
     }
 }
 

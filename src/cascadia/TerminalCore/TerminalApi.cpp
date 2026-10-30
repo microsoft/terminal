@@ -33,6 +33,11 @@ bool Terminal::IsConPTY() const noexcept
     return false;
 }
 
+std::wstring_view Terminal::GetTerminalName() const noexcept
+{
+    return L"WindowsTerminal";
+}
+
 Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() noexcept
 {
     return *_stateMachine;

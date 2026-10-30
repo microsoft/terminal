@@ -5,6 +5,7 @@
 
 #include <til/rle.h>
 
+#include "GraphicsImage.hpp"
 #include "ImageSlice.hpp"
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
@@ -161,6 +162,8 @@ public:
     ImageSlice* SetImageSlice(ImageSlice::Pointer imageSlice) noexcept;
     const ImageSlice* GetImageSlice() const noexcept;
     ImageSlice* GetMutableImageSlice() noexcept;
+    const std::vector<GraphicsRowRef>& GetGraphics() const noexcept;
+    std::vector<GraphicsRowRef>& GetMutableGraphics() noexcept;
     uint16_t size() const noexcept;
     til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
@@ -318,6 +321,8 @@ private:
 
     // Stores any image content covering the row.
     ImageSlice::Pointer _imageSlice;
+    // Stores the graphics placements covering the row.
+    std::vector<GraphicsRowRef> _graphics;
 };
 
 #ifdef UNIT_TESTING

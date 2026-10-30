@@ -128,6 +128,7 @@ public:
     virtual void DeviceAttributes() = 0; // DA1
     virtual void SecondaryDeviceAttributes() = 0; // DA2
     virtual void TertiaryDeviceAttributes() = 0; // DA3
+    virtual void RequestTerminalVersion() = 0; // XTVERSION
     virtual void Vt52DeviceAttributes() = 0; // VT52 Identify
     virtual void RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) = 0; // DECREQTPARM
 
@@ -195,6 +196,8 @@ public:
     virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
+
+    virtual StringHandler KittyGraphicsCommand() = 0; // APC G
 
     virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
 };

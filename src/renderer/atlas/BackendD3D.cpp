@@ -230,10 +230,21 @@ void BackendD3D::Render(RenderingPayload& p)
 #endif
 
     _drawBackground(p);
+    // Images with a z-index below INT32_MIN / 2 are drawn below the cells with a non-default background color.
+    if (_drawGraphics(p, INT32_MIN, INT32_MIN / 2))
+    {
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::BackgroundNonDefault),
+            .size = p.s->targetSize,
+        };
+    }
     _drawCursorBackground(p);
+    _drawGraphics(p, INT32_MIN / 2, 0);
     _drawText(p);
+    _drawGraphics(p, 0, int64_t{ INT32_MAX } + 1);
     _debugShowDirty(p);
     _flushQuads(p);
+    _trimGraphicsBitmaps();
 
     if (_customPixelShader)
     {
@@ -837,6 +848,7 @@ void BackendD3D::_resizeGlyphAtlas(const RenderingPayload& p, const u16 u, const
     _d2dRenderTarget4.reset();
     _glyphAtlas.reset();
     _glyphAtlasView.reset();
+    _graphicsBitmaps.clear();
 
     {
         const D3D11_TEXTURE2D_DESC desc{
@@ -1942,6 +1954,125 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
         .size = ab->size,
         .texcoord = ab->texcoord,
     };
+}
+
+// Draws the graphics placements with a z-index in the range [zBegin, zEnd).
+// Placements are ordered by z-index and then by image id.
+bool BackendD3D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, const int64_t zEnd)
+{
+    _graphicsQueue.clear();
+    u16 y = 0;
+    for (const auto row : p.rows)
+    {
+        for (const auto& g : row->graphics)
+        {
+            if (g.z >= zBegin && g.z < zEnd)
+            {
+                _graphicsQueue.emplace_back(y, &g);
+            }
+        }
+        ++y;
+    }
+    if (_graphicsQueue.empty())
+    {
+        return false;
+    }
+
+    // The glyph atlas must be reset before any of its contents are referenced by quads.
+    if (_fontChangedResetGlyphAtlas)
+    {
+        _resetGlyphAtlas(p, 0, 0);
+    }
+
+    std::stable_sort(_graphicsQueue.begin(), _graphicsQueue.end(), [](const auto& a, const auto& b) {
+        return a.second->z != b.second->z ? a.second->z < b.second->z : a.second->order < b.second->order;
+    });
+    for (const auto& [row, g] : _graphicsQueue)
+    {
+        _drawGraphic(p, *g, row);
+    }
+    _d2dEndDrawing();
+    return true;
+}
+
+void BackendD3D::_drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, const u16 y)
+{
+    const auto width = g.target.right - g.target.left;
+    const auto height = g.target.bottom - g.target.top;
+    if (width > _rectPacker.width && width > D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+    {
+        return;
+    }
+
+    auto ab = _glyphAtlasBitmaps.lookup(g.key);
+    if (!ab)
+    {
+        stbrp_rect rect{
+            .w = width,
+            .h = height,
+        };
+        _drawGlyphAtlasAllocate(p, rect);
+        _d2dBeginDrawing();
+
+        // The bitmap's DPI is 96, so that its source rectangle is in pixels.
+        const D2D1_RECT_F dst{
+            static_cast<f32>(rect.x),
+            static_cast<f32>(rect.y),
+            static_cast<f32>(rect.x + rect.w),
+            static_cast<f32>(rect.y + rect.h),
+        };
+        const D2D1_RECT_F src{ g.source.left, g.source.top, g.source.right, g.source.bottom };
+
+        // The area is cleared first, because the atlas may contain stale pixels there.
+        _d2dRenderTarget->PushAxisAlignedClip(&dst, D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dRenderTarget->Clear();
+        _d2dRenderTarget->DrawBitmap(_graphicsBitmap(*g.image), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
+        _d2dRenderTarget->PopAxisAlignedClip();
+
+        ab = _glyphAtlasBitmaps.insert(g.key).first;
+        ab->size.x = static_cast<u16>(rect.w);
+        ab->size.y = static_cast<u16>(rect.h);
+        ab->texcoord.x = static_cast<u16>(rect.x);
+        ab->texcoord.y = static_cast<u16>(rect.y);
+    }
+
+    _appendQuad() = {
+        .shadingType = static_cast<u16>(ShadingType::TextPassthrough),
+        .renditionScale = { 1, 1 },
+        .position = { static_cast<i16>(g.target.left), static_cast<i16>(p.s->font->cellSize.y * y + g.target.top) },
+        .size = ab->size,
+        .texcoord = ab->texcoord,
+    };
+}
+
+ID2D1Bitmap* BackendD3D::_graphicsBitmap(const GraphicsImage& image)
+{
+    auto& entry = _graphicsBitmaps[image.revision];
+    entry.lastUsedFrame = _graphicsFrame;
+    if (!entry.bitmap)
+    {
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(image.size.width),
+            static_cast<UINT32>(image.size.height),
+        };
+        const D2D1_BITMAP_PROPERTIES properties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = 96,
+            .dpiY = 96,
+        };
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, image.pixels.data(), size.width * 4, &properties, entry.bitmap.addressof()));
+    }
+    return entry.bitmap.get();
+}
+
+// The scaled image strips are cached in the glyph atlas, so the full size
+// bitmaps are only needed briefly and are released once they're unused.
+void BackendD3D::_trimGraphicsBitmaps() noexcept
+{
+    std::erase_if(_graphicsBitmaps, [&](const auto& entry) {
+        return entry.second.lastUsedFrame != _graphicsFrame;
+    });
+    _graphicsFrame++;
 }
 
 void BackendD3D::_drawCursorBackground(const RenderingPayload& p)

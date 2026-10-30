@@ -597,6 +597,59 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] HRESULT AtlasEngine::PaintGraphics(const GraphicsPaintInfo& info) noexcept
+try
+{
+    if (!info.image || info.targetRow < 0 || info.targetRow >= _p.s->viewportCellCount.y)
+    {
+        return S_OK;
+    }
+
+    GraphicsStrip strip;
+    if (!ComputeGraphicsStrip(info, { _p.s->font->cellSize.x, _p.s->font->cellSize.y }, _p.s->viewportCellCount.x, strip))
+    {
+        return S_OK;
+    }
+    const f32r sourceRect{ strip.source.left, strip.source.top, strip.source.right, strip.source.bottom };
+    const i32r target{ strip.target.left, strip.target.top, strip.target.right, strip.target.bottom };
+
+    // The cache key depends on everything that affects the scaled pixels,
+    // but not on the position of the strip on the screen.
+    u64 key = info.key * 0x9E3779B97F4A7C15ull;
+    const auto mix = [&](const u64 value) {
+        key = (key ^ value) * 0xBF58476D1CE4E5B9ull;
+        key ^= key >> 31;
+    };
+    mix(info.image->revision);
+    mix(static_cast<u32>(info.rowIndex));
+    mix(std::bit_cast<u32>(sourceRect.left));
+    mix(std::bit_cast<u32>(sourceRect.top));
+    mix(std::bit_cast<u32>(sourceRect.right));
+    mix(std::bit_cast<u32>(sourceRect.bottom));
+    mix((static_cast<u64>(target.right - target.left) << 32) | static_cast<u32>(target.bottom - target.top));
+    // The high bit keeps the keys apart from the revisions of image slices.
+    key |= 1ull << 63;
+
+    const auto row = _p.rows[info.targetRow];
+    for (const auto& g : row->graphics)
+    {
+        if (g.key == key && g.target == target)
+        {
+            return S_OK;
+        }
+    }
+    row->graphics.emplace_back(GraphicsDraw{
+        .image = info.image,
+        .source = sourceRect,
+        .target = target,
+        .z = info.z,
+        .order = info.order,
+        .key = key,
+    });
+    return S_OK;
+}
+CATCH_RETURN()
+
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(const til::rect& rect) noexcept
 {
     return S_OK;

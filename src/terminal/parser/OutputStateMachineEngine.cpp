@@ -533,6 +533,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             _dispatch->TertiaryDeviceAttributes();
         }
         break;
+    case CsiActionCodes::XTVERSION_RequestTerminalVersion:
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->RequestTerminalVersion();
+        }
+        break;
     case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
         _dispatch->RequestTerminalParameters(parameters.at(0));
         break;
@@ -744,6 +750,32 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
         break;
     default:
         _dispatch->UnknownSequence();
+        break;
+    }
+
+    _ClearLastChar();
+
+    return handler;
+}
+
+// Routine Description:
+// - Triggers the ApcDispatch action to indicate that the listener should handle
+//      an APC string. Returns the handler function that is to be used to
+//      process the remaining characters of the string.
+// Arguments:
+// - wch - The first character of the string, identifying the command.
+// Return Value:
+// - the data string handler function or nullptr if the command is not supported
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionApcDispatch(const wchar_t wch)
+{
+    StringHandler handler = nullptr;
+
+    switch (wch)
+    {
+    case L'G':
+        handler = _dispatch->KittyGraphicsCommand();
+        break;
+    default:
         break;
     }
 

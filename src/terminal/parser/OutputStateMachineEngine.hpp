@@ -43,6 +43,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
+        StringHandler ActionApcDispatch(const wchar_t wch) override;
 
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) override;
 
@@ -122,6 +123,7 @@ namespace Microsoft::Console::VirtualTerminal
             DA_DeviceAttributes = VTID("c"),
             DA2_SecondaryDeviceAttributes = VTID(">c"),
             DA3_TertiaryDeviceAttributes = VTID("=c"),
+            XTVERSION_RequestTerminalVersion = VTID(">q"),
             VPA_VerticalLinePositionAbsolute = VTID("d"),
             VPR_VerticalPositionRelative = VTID("e"),
             HVP_HorizontalVerticalPosition = VTID("f"),

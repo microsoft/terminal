@@ -135,6 +135,7 @@ public:
     void UnknownSequence() noexcept override;
     void ReturnResponse(const std::wstring_view response) override;
     bool IsConPTY() const noexcept override;
+    std::wstring_view GetTerminalName() const noexcept override;
     Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() noexcept override;
     BufferState GetBufferAndViewport() noexcept override;
     void SetViewportPosition(const til::point position) noexcept override;

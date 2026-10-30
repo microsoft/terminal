@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "adaptDispatch.hpp"
+#include "KittyGraphics.hpp"
 #include "SixelParser.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../renderer/base/renderer.hpp"
@@ -1481,6 +1482,41 @@ void AdaptDispatch::SecondaryDeviceAttributes()
 void AdaptDispatch::TertiaryDeviceAttributes()
 {
     _ReturnDcsResponse(L"!|00000000");
+}
+
+// Routine Description:
+// - XTVERSION - Reports the name and version of the terminal.
+// Arguments:
+// - <none>
+void AdaptDispatch::RequestTerminalVersion()
+{
+    static const auto version = []() -> std::wstring {
+        // The version is read from the resources of the executable.
+        const auto module = GetModuleHandleW(nullptr);
+        const auto resource = FindResourceW(module, MAKEINTRESOURCEW(VS_VERSION_INFO), RT_VERSION);
+        const auto handle = resource ? LoadResource(module, resource) : nullptr;
+        const auto data = handle ? static_cast<const BYTE*>(LockResource(handle)) : nullptr;
+        const auto size = resource ? SizeofResource(module, resource) : 0;
+        // VS_VERSIONINFO starts with 3 WORDs and the "VS_VERSION_INFO" key,
+        // after which the VS_FIXEDFILEINFO structure is aligned to 32 bits.
+        constexpr size_t offset = (3 * sizeof(WORD) + sizeof(L"VS_VERSION_INFO") + 3) & ~size_t{ 3 };
+        if (!data || size < offset + sizeof(VS_FIXEDFILEINFO))
+        {
+            return L"0.0.0.0";
+        }
+        VS_FIXEDFILEINFO info;
+        memcpy(&info, data + offset, sizeof(info));
+        if (info.dwSignature != VS_FFI_SIGNATURE)
+        {
+            return L"0.0.0.0";
+        }
+        return fmt::format(FMT_COMPILE(L"{}.{}.{}.{}"),
+                           HIWORD(info.dwProductVersionMS),
+                           LOWORD(info.dwProductVersionMS),
+                           HIWORD(info.dwProductVersionLS),
+                           LOWORD(info.dwProductVersionLS));
+    }();
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L">|{} {}"), _api.GetTerminalName(), version));
 }
 
 // Routine Description:
@@ -3051,6 +3087,13 @@ void AdaptDispatch::HardReset(bool erase)
     // Reset the Sixel parser.
     _sixelParser = nullptr;
 
+    // Reset the graphics protocol state and discard all images.
+    if (_kittyGraphics)
+    {
+        _kittyGraphics->Reset();
+    }
+    _pages.ActivePage().Buffer().GetGraphicsStore().Clear();
+
     // Completely reset the TerminalOutput state.
     _termOutput = {};
     // Reset the code page to the default value.
@@ -3231,9 +3274,11 @@ void AdaptDispatch::_EraseAll()
     // Restore the relative cursor position
     cursor.SetYPosition(row + newPageTop);
 
-    // Erase all the rows in the current page.
+    // Erase all the rows in the current page. Graphics aren't affected by
+    // the text erase operations, so they need to be cleared explicitly.
     const auto eraseAttributes = _GetEraseAttributes(page);
     _FillRect(page, { 0, newPageTop, pageWidth, newPageBottom }, whitespace, eraseAttributes);
+    textBuffer.EraseGraphicsInRows(newPageTop, newPageBottom);
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newPageTop, newPageBottom);
@@ -3924,6 +3969,21 @@ ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt macroPa
         _sixelParser->SetDisplayMode(_modes.test(Mode::SixelDisplay));
     }
     return _sixelParser->DefineImage(macroParameter, backgroundSelect, backgroundColor);
+}
+
+// Method Description:
+// - Handles a kitty graphics protocol command (APC G).
+// Arguments:
+// - <none>
+// Return value:
+// - a function to receive the control data and payload of the command.
+ITermDispatch::StringHandler AdaptDispatch::KittyGraphicsCommand()
+{
+    if (!_kittyGraphics)
+    {
+        _kittyGraphics = std::make_shared<KittyGraphics>(*this);
+    }
+    return _kittyGraphics->Command();
 }
 
 // Method Description:
