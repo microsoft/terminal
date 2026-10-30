@@ -42,7 +42,8 @@
 
             <DataTemplate x:Key="FontKeyValuePairTemplate"
                           x:DataType="local:FontKeyValuePair">
-                <Grid ColumnSpacing="8">
+                <Grid AutomationProperties.Name="{x:Bind AutomationName}"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -466,10 +467,6 @@
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
                         <StackPanel Spacing="16">
-                            <!--
-                                A plain ItemsControl (not a ListView) so Tab walks each entry's
-                                controls in order instead of stopping on a non-interactive row.
-                            -->
                             <ItemsControl HorizontalContentAlignment="Stretch"
                                           IsTabStop="False"
                                           ItemTemplate="{StaticResource FontKeyValuePairTemplate}"

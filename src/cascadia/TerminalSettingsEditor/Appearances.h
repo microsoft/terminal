@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t Key() const noexcept;
         float Value() const noexcept;
         void Value(float v);
+        winrt::hstring AutomationName();
         winrt::hstring DeleteButtonName();
 
         void SetValueDirect(float v);

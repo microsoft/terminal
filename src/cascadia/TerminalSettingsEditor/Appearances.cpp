@@ -203,6 +203,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _isFontFeature;
     }
 
+    winrt::hstring FontKeyValuePair::AutomationName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value);
+    }
+
     winrt::hstring FontKeyValuePair::DeleteButtonName()
     {
         return winrt::hstring{ RS_fmt(L"Profile_DeleteFontKeyValuePairButtonNameFormat", std::wstring_view{ KeyDisplayStringRef() }) };
