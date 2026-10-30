@@ -2304,7 +2304,10 @@ size_t BackendD3D::_drawCursorForegroundSlowPath(const CursorRect& c, size_t off
     // There's one special exception to the rule: Emojis. We currently don't really support inverting
     // (or reversing) colored glyphs like that, so we can return early here and avoid cutting them up.
     // It'd be too expensive to check for these rare glyph types inside the _drawCursorForeground() loop.
-    if (static_cast<ShadingType>(it.shadingType) == ShadingType::TextPassthrough)
+    // Images are drawn as passthrough glyphs as well, and the cursor quads themselves can be found in
+    // between the text when images are drawn below the text, so anything that isn't text is skipped too.
+    const auto shadingType = static_cast<ShadingType>(it.shadingType);
+    if (shadingType == ShadingType::TextPassthrough || shadingType < ShadingType::TextDrawingFirst || shadingType > ShadingType::TextDrawingLast)
     {
         return 0;
     }
