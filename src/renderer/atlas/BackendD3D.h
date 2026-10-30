@@ -260,7 +260,13 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y);
         bool _drawGraphics(const RenderingPayload& p, int64_t zBegin, int64_t zEnd);
         void _drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, u16 y);
-        ID2D1Bitmap* _graphicsBitmap(const GraphicsImage& image);
+        struct GraphicsBitmap
+        {
+            wil::com_ptr<ID2D1Bitmap> bitmap;
+            f32x2 scale{};
+            u64 lastUsedFrame = 0;
+        };
+        const GraphicsBitmap* _graphicsBitmap(const GraphicsImage& image);
         void _trimGraphicsBitmaps() noexcept;
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
@@ -303,11 +309,6 @@ namespace Microsoft::Console::Render::Atlas
         til::linear_flat_set<AtlasFontFaceEntry, AtlasFontFaceEntryHashTrait> _glyphAtlasMap;
         til::linear_flat_set<AtlasBitmap, AtlasBitmapHashTrait> _glyphAtlasBitmaps;
 
-        struct GraphicsBitmap
-        {
-            wil::com_ptr<ID2D1Bitmap> bitmap;
-            u64 lastUsedFrame = 0;
-        };
         std::unordered_map<u64, GraphicsBitmap> _graphicsBitmaps;
         std::vector<std::pair<u16, const GraphicsDraw*>> _graphicsQueue;
         u64 _graphicsFrame = 0;

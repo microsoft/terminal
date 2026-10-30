@@ -551,13 +551,36 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
 {
     auto& textBuffer = page.Buffer();
     const auto absoluteDelta = std::min(std::abs(delta), scrollRect.height());
+    const auto fullWidth = scrollRect.width() == page.Width();
+
+    // Like in kitty, only the graphics entirely within the scrolled area move
+    // with it, while those extending beyond the margins stay where they are.
+    std::vector<std::pair<til::CoordType, GraphicsRowRef>> pinnedGraphics;
+    if (fullWidth)
+    {
+        for (auto y = scrollRect.top; y < scrollRect.bottom; y++)
+        {
+            auto& graphics = textBuffer.GetMutableRowByOffset(y).GetMutableGraphics();
+            std::erase_if(graphics, [&](const GraphicsRowRef& ref) {
+                const auto placementTop = y - ref.row;
+                const auto placementBottom = placementTop + ref.placement->rows;
+                if (placementTop >= scrollRect.top && placementBottom <= scrollRect.bottom)
+                {
+                    return false;
+                }
+                pinnedGraphics.emplace_back(y, ref);
+                return true;
+            });
+        }
+    }
+
     if (absoluteDelta < scrollRect.height())
     {
         const auto top = delta > 0 ? scrollRect.top : scrollRect.top + absoluteDelta;
         const auto width = scrollRect.width();
         const auto height = scrollRect.height() - absoluteDelta;
         const auto actualDelta = delta > 0 ? absoluteDelta : -absoluteDelta;
-        if (width == page.Width())
+        if (fullWidth)
         {
             // If the scrollRect is the full width of the buffer, we can scroll
             // more efficiently by rotating the row storage.
@@ -595,6 +618,17 @@ void AdaptDispatch::_ScrollRectVertically(const Page& page, const til::rect& scr
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(eraseRect.top, eraseRect.bottom);
+
+    // Graphics aren't affected by the text erase, so the revealed rows are
+    // cleared explicitly, before the pinned graphics are restored.
+    if (fullWidth)
+    {
+        textBuffer.EraseGraphicsInRows(eraseRect.top, eraseRect.bottom);
+        for (auto& [y, ref] : pinnedGraphics)
+        {
+            textBuffer.GetMutableRowByOffset(y).GetMutableGraphics().emplace_back(std::move(ref));
+        }
+    }
 }
 
 // Routine Description:
@@ -3087,12 +3121,20 @@ void AdaptDispatch::HardReset(bool erase)
     // Reset the Sixel parser.
     _sixelParser = nullptr;
 
-    // Reset the graphics protocol state and discard all images.
+    // Reset the graphics protocol state and discard all images and placements.
     if (_kittyGraphics)
     {
         _kittyGraphics->Reset();
     }
-    _pages.ActivePage().Buffer().GetGraphicsStore().Clear();
+    {
+        auto& textBuffer = _pages.ActivePage().Buffer();
+        if (textBuffer.TryGetGraphicsStore())
+        {
+            textBuffer.GetGraphicsStore().Clear();
+            textBuffer.EraseGraphics([](const GraphicsRowRef&) { return true; });
+            textBuffer.TriggerRedrawAll();
+        }
+    }
 
     // Completely reset the TerminalOutput state.
     _termOutput = {};

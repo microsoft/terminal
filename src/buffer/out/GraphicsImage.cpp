@@ -93,6 +93,10 @@ GraphicsRect GraphicsGeometry::Destination(const til::size cellSize) const noexc
 
 std::shared_ptr<const GraphicsImage> GraphicsStore::Find(const uint32_t id) const noexcept
 {
+    if (id == 0)
+    {
+        return nullptr;
+    }
     for (auto it = _images.rbegin(); it != _images.rend(); ++it)
     {
         if ((*it)->id == id)
@@ -105,6 +109,10 @@ std::shared_ptr<const GraphicsImage> GraphicsStore::Find(const uint32_t id) cons
 
 std::shared_ptr<const GraphicsImage> GraphicsStore::FindByNumber(const uint32_t number) const noexcept
 {
+    if (number == 0)
+    {
+        return nullptr;
+    }
     for (auto it = _images.rbegin(); it != _images.rend(); ++it)
     {
         if ((*it)->number == number)
@@ -115,16 +123,35 @@ std::shared_ptr<const GraphicsImage> GraphicsStore::FindByNumber(const uint32_t 
     return nullptr;
 }
 
-void GraphicsStore::Add(std::shared_ptr<const GraphicsImage> image)
+// Adds an image and enforces the storage quota. Returns the evicted images
+// that are still displayed, whose placements the caller has to remove.
+std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::Add(std::shared_ptr<const GraphicsImage> image)
 {
     Remove(image->id);
-    _enforceQuota(image->ByteSize());
+    const auto added = image.get();
     _totalBytes += image->ByteSize();
     _images.emplace_back(std::move(image));
+    return _enforceQuota(added);
+}
+
+// Marks an image as recently used, so that it's evicted last.
+void GraphicsStore::Touch(const GraphicsImage* image) noexcept
+{
+    const auto it = std::find_if(_images.begin(), _images.end(), [&](const auto& i) { return i.get() == image; });
+    if (it != _images.end() && std::next(it) != _images.end())
+    {
+        auto entry = std::move(*it);
+        _images.erase(it);
+        _images.emplace_back(std::move(entry));
+    }
 }
 
 void GraphicsStore::Remove(const uint32_t id) noexcept
 {
+    if (id == 0)
+    {
+        return;
+    }
     for (auto it = _images.begin(); it != _images.end(); ++it)
     {
         if ((*it)->id == id)
@@ -155,7 +182,10 @@ std::vector<uint32_t> GraphicsStore::Ids() const
     std::vector<uint32_t> ids;
     for (const auto& image : _images)
     {
-        ids.push_back(image->id);
+        if (image->id)
+        {
+            ids.push_back(image->id);
+        }
     }
     for (const auto& placement : _virtualPlacements)
     {
@@ -203,12 +233,37 @@ void GraphicsStore::Clear() noexcept
     _totalBytes = 0;
 }
 
-void GraphicsStore::_enforceQuota(const size_t incoming) noexcept
+std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::_enforceQuota(const GraphicsImage* added)
 {
-    // Images that aren't displayed anywhere are evicted first, oldest first.
-    for (auto it = _images.begin(); it != _images.end() && _totalBytes + incoming > Quota;)
+    // Like kitty, images without an id are discarded once they aren't displayed anymore.
+    // Images that aren't referenced by the buffer are only held by this store.
+    const auto unreferenced = [&](const auto& image) {
+        return image.use_count() == 1 && !FindVirtualPlacement(image->id, 0);
+    };
+    for (auto it = _images.begin(); it != _images.end();)
     {
-        if (it->use_count() == 1)
+        if ((*it)->id == 0 && it->get() != added && unreferenced(*it))
+        {
+            _totalBytes -= (*it)->ByteSize();
+            it = _images.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    std::vector<std::shared_ptr<const GraphicsImage>> evicted;
+    if (_totalBytes <= Quota)
+    {
+        return evicted;
+    }
+
+    // Over the quota, unreferenced images are removed first, followed by the
+    // least recently used ones, including those that are still displayed.
+    for (auto it = _images.begin(); it != _images.end() && _totalBytes > Quota;)
+    {
+        if (it->get() != added && unreferenced(*it))
         {
             _totalBytes -= (*it)->ByteSize();
             RemoveVirtualPlacements((*it)->id, 0);
@@ -219,10 +274,13 @@ void GraphicsStore::_enforceQuota(const size_t incoming) noexcept
             ++it;
         }
     }
-    while (!_images.empty() && _totalBytes + incoming > Quota)
+    while (!_images.empty() && _totalBytes > Quota)
     {
-        _totalBytes -= _images.front()->ByteSize();
-        RemoveVirtualPlacements(_images.front()->id, 0);
+        auto image = std::move(_images.front());
         _images.pop_front();
+        _totalBytes -= image->ByteSize();
+        RemoveVirtualPlacements(image->id, 0);
+        evicted.emplace_back(std::move(image));
     }
+    return evicted;
 }

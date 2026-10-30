@@ -804,12 +804,20 @@ try
     }
 
     const auto& image = *info.image;
-    if (_graphicsRevision != image.revision || !_graphicsDC)
+    if (image.pixels.size() < static_cast<size_t>(image.size.width) * image.size.height)
     {
-        _graphicsDC.reset();
-        _graphicsBitmap.reset();
-        _graphicsRevision = 0;
+        return S_OK;
+    }
 
+    auto cached = std::find_if(_graphicsBitmaps.begin(), _graphicsBitmaps.end(), [&](const auto& entry) {
+        return entry.revision == image.revision;
+    });
+    if (cached != _graphicsBitmaps.end())
+    {
+        std::rotate(cached, std::next(cached), _graphicsBitmaps.end());
+    }
+    else
+    {
         const auto bitmapInfo = BITMAPINFO{
             .bmiHeader = {
                 .biSize = sizeof(BITMAPINFOHEADER),
@@ -828,10 +836,13 @@ try
         memcpy(bits, image.pixels.data(), image.pixels.size() * sizeof(uint32_t));
         SelectObject(hdc.get(), bitmap.get());
 
-        _graphicsBitmap = std::move(bitmap);
-        _graphicsDC = std::move(hdc);
-        _graphicsRevision = image.revision;
+        if (_graphicsBitmaps.size() >= s_graphicsBitmapCacheSize)
+        {
+            _graphicsBitmaps.erase(_graphicsBitmaps.begin());
+        }
+        _graphicsBitmaps.emplace_back(GraphicsBitmap{ image.revision, std::move(bitmap), std::move(hdc) });
     }
+    const auto graphicsDC = _graphicsBitmaps.back().dc.get();
 
     // The strip is computed in device coordinates, so the line transform is
     // reset while drawing it, after converting the clip rectangle as well.
@@ -854,7 +865,7 @@ try
                   y + strip.target.top,
                   strip.target.width(),
                   strip.target.height(),
-                  _graphicsDC.get(),
+                  graphicsDC,
                   lroundf(strip.source.left),
                   lroundf(strip.source.top),
                   std::max(1L, lroundf(strip.source.right - strip.source.left)),

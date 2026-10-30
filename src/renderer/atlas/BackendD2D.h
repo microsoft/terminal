@@ -46,7 +46,13 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1StrokeStyle> _dottedStrokeStyle;
         wil::com_ptr<ID2D1StrokeStyle> _dashedStrokeStyle;
         wil::com_ptr<ID2D1Bitmap> _backgroundBitmap;
-        std::unordered_map<u64, std::pair<wil::com_ptr<ID2D1Bitmap>, u64>> _graphicsBitmaps;
+        struct GraphicsBitmap
+        {
+            wil::com_ptr<ID2D1Bitmap> bitmap;
+            f32x2 scale{};
+            u64 lastUsedFrame = 0;
+        };
+        std::unordered_map<u64, GraphicsBitmap> _graphicsBitmaps;
         std::vector<std::pair<u16, const GraphicsDraw*>> _graphicsQueue;
         u64 _graphicsFrame = 0;
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;

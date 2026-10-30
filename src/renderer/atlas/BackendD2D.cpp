@@ -836,20 +836,12 @@ void BackendD2D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, 
 
     for (const auto& [row, g] : _graphicsQueue)
     {
-        auto& [bitmap, lastUsedFrame] = _graphicsBitmaps[g->image->revision];
-        lastUsedFrame = _graphicsFrame;
-        if (!bitmap)
+        // Images that can't be turned into a bitmap are skipped.
+        auto& entry = _graphicsBitmaps[g->image->revision];
+        entry.lastUsedFrame = _graphicsFrame;
+        if (!entry.bitmap && !CreateGraphicsBitmap(_renderTarget.get(), *g->image, entry.bitmap.addressof(), entry.scale))
         {
-            const D2D1_SIZE_U size{
-                static_cast<UINT32>(g->image->size.width),
-                static_cast<UINT32>(g->image->size.height),
-            };
-            const D2D1_BITMAP_PROPERTIES properties{
-                .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-                .dpiX = 96,
-                .dpiY = 96,
-            };
-            THROW_IF_FAILED(_renderTarget->CreateBitmap(size, g->image->pixels.data(), size.width * 4, &properties, bitmap.addressof()));
+            continue;
         }
 
         const auto top = p.s->font->cellSize.y * row;
@@ -859,8 +851,13 @@ void BackendD2D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, 
             static_cast<f32>(g->target.right),
             static_cast<f32>(top + g->target.bottom),
         };
-        const D2D1_RECT_F src{ g->source.left, g->source.top, g->source.right, g->source.bottom };
-        _renderTarget->DrawBitmap(bitmap.get(), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
+        const D2D1_RECT_F src{
+            g->source.left * entry.scale.x,
+            g->source.top * entry.scale.y,
+            g->source.right * entry.scale.x,
+            g->source.bottom * entry.scale.y,
+        };
+        _renderTarget->DrawBitmap(entry.bitmap.get(), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
     }
 
     // Draw calls are made with both ranges in every frame, so this is the point where
@@ -868,7 +865,7 @@ void BackendD2D::_drawGraphics(const RenderingPayload& p, const int64_t zBegin, 
     if (zEnd > INT32_MAX)
     {
         std::erase_if(_graphicsBitmaps, [&](const auto& entry) {
-            return entry.second.second != _graphicsFrame;
+            return entry.second.lastUsedFrame != _graphicsFrame;
         });
         _graphicsFrame++;
     }

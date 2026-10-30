@@ -102,7 +102,8 @@ public:
 
     std::shared_ptr<const GraphicsImage> Find(uint32_t id) const noexcept;
     std::shared_ptr<const GraphicsImage> FindByNumber(uint32_t number) const noexcept;
-    void Add(std::shared_ptr<const GraphicsImage> image);
+    std::vector<std::shared_ptr<const GraphicsImage>> Add(std::shared_ptr<const GraphicsImage> image);
+    void Touch(const GraphicsImage* image) noexcept;
     void Remove(uint32_t id) noexcept;
     uint32_t NextFreeId() noexcept;
     std::vector<uint32_t> Ids() const;
@@ -114,9 +115,10 @@ public:
     void Clear() noexcept;
 
 private:
-    void _enforceQuota(size_t incoming) noexcept;
+    std::vector<std::shared_ptr<const GraphicsImage>> _enforceQuota(const GraphicsImage* added);
 
-    // Ordered from oldest to newest.
+    // Ordered from least to most recently used. Images without an id are
+    // stored as well, so that they're accounted for in the quota.
     std::deque<std::shared_ptr<const GraphicsImage>> _images;
     std::vector<GraphicsVirtualPlacement> _virtualPlacements;
     size_t _totalBytes = 0;

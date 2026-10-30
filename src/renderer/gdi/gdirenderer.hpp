@@ -183,10 +183,15 @@ namespace Microsoft::Console::Render
         std::vector<GraphicsPaintInfo> _underlays;
         til::CoordType _underlayRow = -1;
         COLORREF _defaultBackground = CLR_INVALID;
-        // The most recently drawn image, which is usually drawn repeatedly.
-        wil::unique_hbitmap _graphicsBitmap;
-        wil::unique_hdc _graphicsDC;
-        uint64_t _graphicsRevision = 0;
+        // The most recently drawn images, least recently used first.
+        struct GraphicsBitmap
+        {
+            uint64_t revision = 0;
+            wil::unique_hbitmap bitmap;
+            wil::unique_hdc dc;
+        };
+        static constexpr size_t s_graphicsBitmapCacheSize = 4;
+        std::vector<GraphicsBitmap> _graphicsBitmaps;
 
         [[nodiscard]] HRESULT _PaintGraphicsStrip(const GraphicsPaintInfo& info, const RECT* clip) noexcept;
 

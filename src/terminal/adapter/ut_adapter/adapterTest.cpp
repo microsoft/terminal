@@ -1895,6 +1895,54 @@ public:
         VERIFY_ARE_EQUAL(2, virtualPlacement->rows);
     }
 
+    TEST_METHOD(KittyGraphicsScrollingTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& buffer = *_testGetSet->_textBuffer;
+        auto& cursor = buffer.GetCursor();
+        const auto graphicsAt = [&](const til::CoordType y) {
+            return buffer.GetRowByOffset(y).GetGraphics().size();
+        };
+
+        // The page starts at row 20, so these margins cover rows 24 to 33.
+        _stateMachine->ProcessString(L"\x1b[5;14r");
+
+        Log::Comment(L"One image inside the margins, and one extending below them.");
+        cursor.SetPosition({ 0, 25 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=2,r=2,C=1,q=2;AAAA\x1b\\");
+        cursor.SetPosition({ 5, 33 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=2,r=3,C=1,q=2;AAAA\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(26));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(35));
+
+        Log::Comment(L"Scrolling the margins only moves the image entirely within them.");
+        _stateMachine->ProcessString(L"\x1b[S");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(24));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(0u, graphicsAt(26));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+        VERIFY_ARE_EQUAL(0, buffer.GetRowByOffset(33).GetGraphics()[0].row);
+        VERIFY_ARE_EQUAL(1u, graphicsAt(35));
+
+        Log::Comment(L"Deleting by id without an id does nothing.");
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=i\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(24));
+
+        Log::Comment(L"Scrolling the whole region removes the images within it.");
+        _stateMachine->ProcessString(L"\x1b[100S");
+        VERIFY_ARE_EQUAL(0u, graphicsAt(24));
+        VERIFY_ARE_EQUAL(0u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+
+        Log::Comment(L"A hard reset removes all images.");
+        _stateMachine->ProcessString(L"\x1b[r\x1b" L"c");
+        VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
+    }
+
     TEST_METHOD(RequestDisplayedExtentTests)
     {
         Log::Comment(L"Starting test...");

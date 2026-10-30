@@ -2938,7 +2938,17 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             if (oldX == 0)
             {
                 ImageSlice::CopyRow(oldRow, newRow);
-                newRow.GetMutableGraphics() = oldRow.GetGraphics();
+                // When a wrapped row is joined onto the previous one, the
+                // graphics of both rows are kept.
+                auto& graphics = newRow.GetMutableGraphics();
+                if (newX == 0)
+                {
+                    graphics = oldRow.GetGraphics();
+                }
+                else
+                {
+                    graphics.insert(graphics.end(), oldRow.GetGraphics().begin(), oldRow.GetGraphics().end());
+                }
             }
 
             const auto& oldAttr = oldRow.Attributes();

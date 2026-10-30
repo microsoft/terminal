@@ -2012,6 +2012,15 @@ void BackendD3D::_drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, 
             .h = height,
         };
         _drawGlyphAtlasAllocate(p, rect);
+
+        // This must happen after the allocation, because growing the atlas
+        // recreates the render target and releases the cached bitmaps.
+        // Images that can't be turned into a bitmap are skipped.
+        const auto entry = _graphicsBitmap(*g.image);
+        if (!entry)
+        {
+            return;
+        }
         _d2dBeginDrawing();
 
         // The bitmap's DPI is 96, so that its source rectangle is in pixels.
@@ -2021,12 +2030,17 @@ void BackendD3D::_drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, 
             static_cast<f32>(rect.x + rect.w),
             static_cast<f32>(rect.y + rect.h),
         };
-        const D2D1_RECT_F src{ g.source.left, g.source.top, g.source.right, g.source.bottom };
+        const D2D1_RECT_F src{
+            g.source.left * entry->scale.x,
+            g.source.top * entry->scale.y,
+            g.source.right * entry->scale.x,
+            g.source.bottom * entry->scale.y,
+        };
 
         // The area is cleared first, because the atlas may contain stale pixels there.
         _d2dRenderTarget->PushAxisAlignedClip(&dst, D2D1_ANTIALIAS_MODE_ALIASED);
         _d2dRenderTarget->Clear();
-        _d2dRenderTarget->DrawBitmap(_graphicsBitmap(*g.image), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
+        _d2dRenderTarget->DrawBitmap(entry->bitmap.get(), &dst, 1, D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC, &src, nullptr);
         _d2dRenderTarget->PopAxisAlignedClip();
 
         ab = _glyphAtlasBitmaps.insert(g.key).first;
@@ -2045,24 +2059,15 @@ void BackendD3D::_drawGraphic(const RenderingPayload& p, const GraphicsDraw& g, 
     };
 }
 
-ID2D1Bitmap* BackendD3D::_graphicsBitmap(const GraphicsImage& image)
+const BackendD3D::GraphicsBitmap* BackendD3D::_graphicsBitmap(const GraphicsImage& image)
 {
     auto& entry = _graphicsBitmaps[image.revision];
     entry.lastUsedFrame = _graphicsFrame;
-    if (!entry.bitmap)
+    if (!entry.bitmap && !CreateGraphicsBitmap(_d2dRenderTarget.get(), image, entry.bitmap.addressof(), entry.scale))
     {
-        const D2D1_SIZE_U size{
-            static_cast<UINT32>(image.size.width),
-            static_cast<UINT32>(image.size.height),
-        };
-        const D2D1_BITMAP_PROPERTIES properties{
-            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
-            .dpiX = 96,
-            .dpiY = 96,
-        };
-        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, image.pixels.data(), size.width * 4, &properties, entry.bitmap.addressof()));
+        return nullptr;
     }
-    return entry.bitmap.get();
+    return &entry;
 }
 
 // The scaled image strips are cached in the glyph atlas, so the full size

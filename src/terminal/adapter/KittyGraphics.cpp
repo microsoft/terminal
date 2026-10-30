@@ -198,8 +198,10 @@ namespace
         {
             return false;
         }
+        // The region only covers pages with the same state, so this also
+        // ensures that every page we read from is committed.
         MEMORY_BASIC_INFORMATION mbi{};
-        if (!VirtualQuery(view.get(), &mbi, sizeof(mbi)))
+        if (!VirtualQuery(view.get(), &mbi, sizeof(mbi)) || mbi.State != MEM_COMMIT)
         {
             return false;
         }
@@ -403,7 +405,20 @@ KittyGraphics::StringHandler KittyGraphics::Command()
     _payload.clear();
     _payloadTooLarge = false;
     return [this](const wchar_t ch) {
-        return _parse(ch);
+        try
+        {
+            return _parse(ch);
+        }
+        catch (...)
+        {
+            // An exception (for instance out of memory) aborts the command,
+            // and the rest of the string is ignored.
+            LOG_CAUGHT_EXCEPTION();
+            _abortLoading();
+            _payload = {};
+            _state = ParseState::Invalid;
+            return false;
+        }
     };
 }
 
@@ -574,16 +589,19 @@ void KittyGraphics::_execute()
         return;
     }
 
+    const auto isTransmission = action == 0 || action == L't' || action == L'T' || action == L'q';
+    const auto isContinuation = _loading && isTransmission && !control.GetUnsigned('i') && !control.GetUnsigned('I');
+
     if (_payloadTooLarge)
     {
         const Error error{ L"EFBIG", L"Image data is too large" };
-        _respond(_loading ? _loadingControl : control, (_loading ? _loadingControl : control).GetUnsigned('i'), &error);
+        const auto& origin = isContinuation ? _loadingControl : control;
+        _respond(origin, origin.GetUnsigned('i'), &error);
         _abortLoading();
         return;
     }
 
-    const auto isTransmission = action == 0 || action == L't' || action == L'T' || action == L'q';
-    if (_loading && isTransmission && !control.GetUnsigned('i') && !control.GetUnsigned('I'))
+    if (isContinuation)
     {
         if (_loadingData.size() + data.size() > MaxDataSize)
         {
@@ -677,17 +695,28 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     image->id = number ? store.NextFreeId() : requestedId;
     image->number = number;
 
+    auto& buffer = _dispatcher._pages.ActivePage().Buffer();
     if (image->id)
     {
         // Re-transmitting an image deletes the existing image and all its placements.
-        auto& buffer = _dispatcher._pages.ActivePage().Buffer();
         const auto id = image->id;
         _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; }, false);
         if (store.FindVirtualPlacement(id, 0))
         {
             buffer.TriggerRedrawAll();
         }
-        store.Add(image);
+    }
+
+    // Images without an id are stored as well, so that they count towards the
+    // quota. Images evicted by the quota are removed from the screen too.
+    const auto evicted = store.Add(image);
+    if (!evicted.empty())
+    {
+        _erase(buffer, [&](const GraphicsRowRef& ref) {
+            return std::ranges::any_of(evicted, [&](const auto& e) { return e == ref.placement->image; });
+        },
+               false);
+        buffer.TriggerRedrawAll();
     }
 
     if (action == L'T')
@@ -714,6 +743,7 @@ void KittyGraphics::_put(const Control& control)
         _respond(control, control.GetUnsigned('i'), &error);
         return;
     }
+    _store().Touch(image.get());
     if (control.GetUnsigned('U') == 1)
     {
         _placeVirtual(control, image);
@@ -740,6 +770,10 @@ void KittyGraphics::_delete(const Control& control)
 
     // Placements identified by their image, which are deleted wherever they are.
     const auto deleteById = [&](const uint32_t id, const uint32_t placementId) {
+        if (id == 0)
+        {
+            return;
+        }
         _erase(buffer, [=](const GraphicsRowRef& ref) {
             return ref.placement->image->id == id && (placementId == 0 || ref.placement->placementId == placementId);
         },
@@ -1050,6 +1084,13 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     {
         error = { L"EINVAL", L"Unsupported image format" };
         return nullptr;
+    }
+
+    // ConPTY only needs the dimensions of the image to compute the cell footprint,
+    // because the attached terminal is responsible for displaying it.
+    if (_dispatcher._api.IsConPTY())
+    {
+        image->pixels = {};
     }
 
     image->revision = GraphicsImage::NextRevision();
