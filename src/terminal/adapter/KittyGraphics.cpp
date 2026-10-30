@@ -350,7 +350,7 @@ namespace
         return true;
     }
 
-    // Reads the dimensions from the IHDR chunk, which must come first in a PNG.
+    // Reads the dimensions from the header chunk, which must come first in a PNG.
     bool readPngSize(const std::span<const uint8_t> data, til::size& size) noexcept
     {
         static constexpr uint8_t header[]{ 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 13, 'I', 'H', 'D', 'R' };
