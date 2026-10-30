@@ -1810,7 +1810,6 @@ vararg
 vclib
 vcxitems
 VERCTRL
-VERSIONINFO
 VERTBAR
 VFT
 vga
@@ -1990,7 +1989,6 @@ xstyler
 XTPOPSGR
 XTPUSHSGR
 xtr
-XTVERSION
 XTWINOPS
 xunit
 xutr

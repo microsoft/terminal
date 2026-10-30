@@ -81,7 +81,6 @@ namespace Microsoft::Console::VirtualTerminal
         void DeviceAttributes() override; // DA1
         void SecondaryDeviceAttributes() override; // DA2
         void TertiaryDeviceAttributes() override; // DA3
-        void RequestTerminalVersion() override; // XTVERSION
         void Vt52DeviceAttributes() override; // VT52 Identify
         void RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) override; // DECREQTPARM
         void ScrollUp(const VTInt distance) override; // SU

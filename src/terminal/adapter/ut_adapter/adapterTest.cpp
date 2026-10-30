@@ -85,11 +85,6 @@ public:
         return false;
     }
 
-    std::wstring_view GetTerminalName() const noexcept override
-    {
-        return L"TestTerminal";
-    }
-
     StateMachine& GetStateMachine() override
     {
         return *_stateMachine;
@@ -1804,19 +1799,6 @@ public:
         _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
-    }
-
-    TEST_METHOD(RequestTerminalVersionTests)
-    {
-        Log::Comment(L"Starting test...");
-
-        _testGetSet->PrepData();
-        _pDispatch->RequestTerminalVersion();
-
-        // The version is read from the test executable, so only its format is checked.
-        const auto& response = _testGetSet->_response;
-        VERIFY_IS_TRUE(response.starts_with(L"\x1bP>|TestTerminal "));
-        VERIFY_IS_TRUE(response.ends_with(L"\x1b\\"));
     }
 
     TEST_METHOD(KittyGraphicsTests)

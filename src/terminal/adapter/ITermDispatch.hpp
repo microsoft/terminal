@@ -128,7 +128,6 @@ public:
     virtual void DeviceAttributes() = 0; // DA1
     virtual void SecondaryDeviceAttributes() = 0; // DA2
     virtual void TertiaryDeviceAttributes() = 0; // DA3
-    virtual void RequestTerminalVersion() = 0; // XTVERSION
     virtual void Vt52DeviceAttributes() = 0; // VT52 Identify
     virtual void RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) = 0; // DECREQTPARM
 

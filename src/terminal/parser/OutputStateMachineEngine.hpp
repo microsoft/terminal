@@ -123,7 +123,6 @@ namespace Microsoft::Console::VirtualTerminal
             DA_DeviceAttributes = VTID("c"),
             DA2_SecondaryDeviceAttributes = VTID(">c"),
             DA3_TertiaryDeviceAttributes = VTID("=c"),
-            XTVERSION_RequestTerminalVersion = VTID(">q"),
             VPA_VerticalLinePositionAbsolute = VTID("d"),
             VPR_VerticalPositionRelative = VTID("e"),
             HVP_HorizontalVerticalPosition = VTID("f"),

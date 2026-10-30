@@ -1519,41 +1519,6 @@ void AdaptDispatch::TertiaryDeviceAttributes()
 }
 
 // Routine Description:
-// - XTVERSION - Reports the name and version of the terminal.
-// Arguments:
-// - <none>
-void AdaptDispatch::RequestTerminalVersion()
-{
-    static const auto version = []() -> std::wstring {
-        // The version is read from the resources of the executable.
-        const auto module = GetModuleHandleW(nullptr);
-        const auto resource = FindResourceW(module, MAKEINTRESOURCEW(VS_VERSION_INFO), RT_VERSION);
-        const auto handle = resource ? LoadResource(module, resource) : nullptr;
-        const auto data = handle ? static_cast<const BYTE*>(LockResource(handle)) : nullptr;
-        const auto size = resource ? SizeofResource(module, resource) : 0;
-        // VS_VERSIONINFO starts with 3 WORDs and the "VS_VERSION_INFO" key,
-        // after which the VS_FIXEDFILEINFO structure is aligned to 32 bits.
-        constexpr size_t offset = (3 * sizeof(WORD) + sizeof(L"VS_VERSION_INFO") + 3) & ~size_t{ 3 };
-        if (!data || size < offset + sizeof(VS_FIXEDFILEINFO))
-        {
-            return L"0.0.0.0";
-        }
-        VS_FIXEDFILEINFO info;
-        memcpy(&info, data + offset, sizeof(info));
-        if (info.dwSignature != VS_FFI_SIGNATURE)
-        {
-            return L"0.0.0.0";
-        }
-        return fmt::format(FMT_COMPILE(L"{}.{}.{}.{}"),
-                           HIWORD(info.dwProductVersionMS),
-                           LOWORD(info.dwProductVersionMS),
-                           HIWORD(info.dwProductVersionLS),
-                           LOWORD(info.dwProductVersionLS));
-    }();
-    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L">|{} {}"), _api.GetTerminalName(), version));
-}
-
-// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.
