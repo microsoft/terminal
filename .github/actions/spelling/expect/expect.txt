@@ -12,7 +12,6 @@ acp
 actctx
 ACTCTXW
 ADDALIAS
-ADDREF
 ADDSTRING
 ADDTOOL
 adml
@@ -169,14 +168,11 @@ chshdng
 CHT
 CInput
 CLASSSTRING
-CLAUDE
 cleartype
 CLICKACTIVE
 clickdown
 CLIENTID
 clipbrd
-CLIPCHILDREN
-CLIPSIBLINGS
 closetest
 cloudconsole
 cloudvault
@@ -338,7 +334,6 @@ dblclk
 Dcd
 DCOMMON
 DComposition
-DDESHARE
 DDevice
 DEADCHAR
 debugtype
@@ -385,6 +380,8 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+decommitted
+decommitting
 DECPCCM
 DECPCTERM
 DECPS
@@ -605,6 +602,7 @@ fte
 Ftm
 Fullscreens
 FUNCTIONCALL
+Furia
 fuzzmain
 fuzzmap
 fuzzwrapper
@@ -1228,7 +1226,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCWCH
 PCWCHAR
 PCWSTR
 pdbs
@@ -1346,7 +1343,6 @@ PSobject
 psp
 PSPCB
 psr
-PSTR
 psz
 ptch
 ptsz
@@ -1799,6 +1795,7 @@ uwa
 uwp
 uwu
 uxtheme
+VADs
 Vanara
 vararg
 vclib
@@ -1992,7 +1989,6 @@ yact
 YCast
 YCENTER
 YCount
-yizz
 YLimit
 YPan
 YSubstantial

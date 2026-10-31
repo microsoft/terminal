@@ -34,6 +34,28 @@ constexpr bool allWhitespace(const std::wstring_view& text) noexcept
     return true;
 }
 
+template<typename T>
+constexpr T* alignPointer(T* ptr, size_t alignment) noexcept
+{
+    return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(ptr) + alignment - 1) & ~(alignment - 1));
+}
+
+static size_t getPageSize()
+{
+    static std::atomic<DWORD> s_pageSize;
+
+    const auto s = s_pageSize.load(std::memory_order_relaxed);
+    if (s)
+    {
+        return s;
+    }
+
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    s_pageSize.store(si.dwPageSize, std::memory_order_relaxed);
+    return si.dwPageSize;
+}
+
 static std::atomic<uint64_t> s_lastMutationIdInitialValue;
 
 // Routine Description:
@@ -60,9 +82,6 @@ TextBuffer::TextBuffer(til::size screenBufferSize,
     _cursor{ cursorSize, *this },
     _isActiveBuffer{ isActiveBuffer }
 {
-    // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
-    screenBufferSize.width = std::max(screenBufferSize.width, 1);
-    screenBufferSize.height = std::max(screenBufferSize.height, 1);
     _reserve(screenBufferSize, defaultAttributes);
 }
 
@@ -70,7 +89,7 @@ TextBuffer::~TextBuffer()
 {
     if (_buffer)
     {
-        _destroy();
+        _destroy(_buffer.get());
     }
 }
 
@@ -91,8 +110,9 @@ TextBuffer::~TextBuffer()
 // memory usage from ~7MB down to just ~2MB at startup in the general case.
 void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes)
 {
-    const auto w = gsl::narrow<uint16_t>(screenBufferSize.width);
-    const auto h = gsl::narrow<uint16_t>(screenBufferSize.height);
+    // Guard against resizing the text buffer to 0 columns/rows, which would break being able to insert text.
+    const auto w = std::clamp(screenBufferSize.width, 1, 0xffff);
+    const auto h = std::clamp(screenBufferSize.height, 1, til::CoordTypeMax / 2);
 
     constexpr auto rowSize = ROW::CalculateRowSize();
     const auto charsBufferSize = ROW::CalculateCharsBufferSize(w);
@@ -103,7 +123,7 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     // 65535*65535 cells would result in an allocSize of 8GiB.
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
-    const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
+    const auto rowCount = gsl::narrow_cast<uint64_t>(h) + 1;
     const auto allocSize = gsl::narrow<size_t>(rowCount * rowStride);
 
     // NOTE: Modifications to this block of code might have to be mirrored over to ResizeTraditional().
@@ -131,42 +151,102 @@ __declspec(noinline) void TextBuffer::_commit(const std::byte* row)
 {
     assert(row >= _commitWatermark);
 
-    const auto rowEnd = row + _bufferRowStride;
-    const auto remaining = gsl::narrow_cast<uintptr_t>(_bufferEnd - _commitWatermark);
-    const auto minimum = gsl::narrow_cast<uintptr_t>(rowEnd - _commitWatermark);
-    const auto ideal = minimum + _bufferRowStride * _commitReadAheadRowCount;
-    const auto size = std::min(remaining, ideal);
+    const auto current = gsl::narrow_cast<uintptr_t>(_commitWatermark - _buffer.get());
+    const auto next = _commitChargeOptimize(row - _buffer.get());
+    const auto size = next - current;
+
+    if (next <= current)
+    {
+        assert(false);
+        return;
+    }
 
     THROW_LAST_ERROR_IF_NULL(VirtualAlloc(_commitWatermark, size, MEM_COMMIT, PAGE_READWRITE));
-
-    _construct(_commitWatermark + size);
+    _construct(_buffer.get() + next);
 }
 
-// Destructs and MEM_DECOMMITs all previously constructed ROWs.
-// You can use this (or rather the Reset() method) to fully clear the TextBuffer.
-void TextBuffer::_decommit() noexcept
+uintptr_t TextBuffer::_commitChargeOptimize(uintptr_t rowOffset)
 {
-    _destroy();
-    VirtualFree(_buffer.get(), 0, MEM_DECOMMIT);
-    _commitWatermark = _buffer.get();
+    const auto pageSize = getPageSize();
+    const auto cap = gsl::narrow_cast<uintptr_t>(_bufferEnd - _buffer.get());
+    // +N for chunked allocations, one of which accounts for the current row itself.
+    auto end = rowOffset + _bufferRowStride * _commitReadAheadRowCount;
+    // Align the end to the next page boundary to ensure we commit full pages.
+    end = (end + pageSize - 1) & ~(pageSize - 1);
+    // Ensure the returned value is aligned to row boundaries.
+    end = (end / _bufferRowStride) * _bufferRowStride;
+    // And ensure it's not past the end of the buffer of course.
+    end = std::min(end, cap);
+    return end;
+}
+
+// Destructs and MEM_DECOMMITs all rows between [rowsToKeep,_commitWatermark).
+// You can use this (or rather the Reset() method) to fully clear the TextBuffer.
+void TextBuffer::_decommit(til::CoordType rowsToKeep) noexcept
+{
+    rowsToKeep = std::clamp(rowsToKeep, 0, _height);
+
+    const auto pageSize = getPageSize();
+    const auto oldWatermark = _commitWatermark;
+    auto destructWatermark = _buffer.get();
+    auto newWatermark = _buffer.get();
+    auto pageWatermark = _buffer.get();
+
+    if (rowsToKeep > 0)
+    {
+        // +1 for the scratchpad row at offset 0.
+        const auto rows = gsl::narrow_cast<uintptr_t>(rowsToKeep) + 1;
+
+        // Offset in bytes to the first row that we were asked to destroy.
+        // We must ensure that the offset is not past the end of the current _commitWatermark,
+        // since we don't want to finish with a watermark that's somehow larger than what we started with.
+        const auto commitBytes = gsl::narrow_cast<uintptr_t>(oldWatermark - _buffer.get());
+        const auto byteOffset = std::min(commitBytes, rows * _bufferRowStride);
+        destructWatermark += byteOffset;
+
+        newWatermark += std::min(commitBytes, _commitChargeOptimize(byteOffset));
+        pageWatermark = alignPointer(newWatermark, pageSize);
+    }
+
+    if (destructWatermark == oldWatermark)
+    {
+        return;
+    }
+
+    // _destroy() takes care to check that the given pointer is valid.
+    _destroy(destructWatermark);
+    _commitWatermark = destructWatermark;
+
+    // MEM_DECOMMIT the memory that we don't need anymore.
+    if (pageWatermark < oldWatermark)
+    {
+        // The analyzer can't know that we're intentionally decommitting memory here.
+#pragma warning(suppress : 6250) // Calling 'VirtualFree' without the MEM_RELEASE flag may free memory but not address descriptors (VADs). This causes address space leaks.
+        VirtualFree(pageWatermark, oldWatermark - pageWatermark, MEM_DECOMMIT);
+    }
+
+    _construct(newWatermark);
 }
 
 // Constructs ROWs between [_commitWatermark,until).
 void TextBuffer::_construct(const std::byte* until) noexcept
 {
+    // _width has been validated to fit into uint16_t during reserve().
+    const auto width = gsl::narrow_cast<uint16_t>(_width);
+
     for (; _commitWatermark < until; _commitWatermark += _bufferRowStride)
     {
         const auto row = reinterpret_cast<ROW*>(_commitWatermark);
         const auto chars = reinterpret_cast<wchar_t*>(_commitWatermark + _bufferOffsetChars);
         const auto indices = reinterpret_cast<uint16_t*>(_commitWatermark + _bufferOffsetCharOffsets);
-        std::construct_at(row, chars, indices, _width, _initialAttributes);
+        std::construct_at(row, chars, indices, width, _initialAttributes);
     }
 }
 
-// Destructs ROWs between [_buffer,_commitWatermark).
-void TextBuffer::_destroy() const noexcept
+// Destructs ROWs between [it,_commitWatermark).
+void TextBuffer::_destroy(std::byte* it) const noexcept
 {
-    for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
+    for (; it < _commitWatermark; it += _bufferRowStride)
     {
         std::destroy_at(reinterpret_cast<ROW*>(it));
     }
@@ -805,71 +885,74 @@ void TextBuffer::_SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept
 
 void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, const til::CoordType delta)
 {
-    if (delta == 0)
+    size = std::clamp(size, 0, _height);
+
+    const auto shift = (delta % _height + _height) % _height;
+    if (size == 0 || shift == 0)
     {
         return;
     }
 
-    // Since the for() loop uses !=, we must ensure that size is positive.
-    // A negative size doesn't make any sense anyways.
-    size = std::max(0, size);
+    // This clever algorithm is sometimes called the "juggling algorithm" for array rotation.
+    // It's not actually novel. Both the Rust stdlib and Microsoft STL use it (and many other).
+    // What's weird is that none list an authoritative description for it. Here's one contender:
+    //   Carlo A. Furia, Rotation of Sequences: Algorithms and Proofs
+    //   §4.4: Rotation by modular visit
+    //   https://arxiv.org/html/1406.5453v3#S4.SS4
+    //
+    // This implementation is a bit special in that it does partial rotations of just `size` elements.
 
-    til::CoordType y = 0;
-    til::CoordType end = 0;
-    til::CoordType step = 0;
+    const auto height = _height;
+    const auto start = (firstRow % height + height) % height;
+    const auto reverseShift = height - shift;
+    const auto get = [=, this](const til::CoordType y) -> ROW& {
+        return GetMutableRowByOffset((start + y) % height);
+    };
+    const auto copy = [this](ROW& src, ROW& dst) {
+        dst.CopyFrom(src);
+        dst.SetScrollbarData(src.GetScrollbarData());
+        src.SetScrollbarData(std::nullopt);
+        ImageSlice::CopyRow(src, dst);
+    };
+    const auto copyByIndex = [&](const til::CoordType src, const til::CoordType dst) {
+        copy(get(src), get(dst));
+    };
 
-    if (delta < 0)
+    // Chains have a safe place to start: a destination that isn't also a source.
+    // Follow it backwards, copying into the slot we just read.
+    const auto chainEnd = std::min(size, reverseShift);
+    for (til::CoordType last = std::max(0, size - shift); last < chainEnd; ++last)
     {
-        // The layout is like this:
-        // delta is -2, size is 3, firstRow is 5
-        // We want 3 rows from 5 (5, 6, and 7) to move up 2 spots.
-        // --- (storage) ----
-        // | 0 begin
-        // | 1
-        // | 2
-        // | 3 A. firstRow + delta (because delta is negative)
-        // | 4
-        // | 5 B. firstRow
-        // | 6
-        // | 7
-        // | 8 C. firstRow + size
-        // | 9
-        // | 10
-        // | 11
-        // - end
-        // We want B to slide up to A (the negative delta) and everything from [B,C) to slide up with it.
-        y = firstRow;
-        end = firstRow + size;
-        step = 1;
-    }
-    else
-    {
-        // The layout is like this:
-        // delta is 2, size is 3, firstRow is 5
-        // We want 3 rows from 5 (5, 6, and 7) to move down 2 spots.
-        // --- (storage) ----
-        // | 0 begin
-        // | 1
-        // | 2
-        // | 3
-        // | 4
-        // | 5 A. firstRow
-        // | 6
-        // | 7
-        // | 8 B. firstRow + size
-        // | 9
-        // | 10 C. firstRow + size + delta
-        // | 11
-        // - end
-        // We want B-1 to slide down to C-1 (the positive delta) and everything from [A, B) to slide down with it.
-        y = firstRow + size - 1;
-        end = firstRow - 1;
-        step = -1;
+        auto src = last;
+        auto dst = last + shift;
+        do
+        {
+            copyByIndex(src, dst);
+            dst = src;
+            src = (src + reverseShift) % height;
+        } while (src < size);
     }
 
-    for (; y != end; y += step)
+    // Cycles have no safe starting slot, so save one row in scratch. A cycle starting
+    // at `r` survives the partial copy iff `r + height - gcd(height, shift) < size`.
+    const auto cycleCount = size - height + std::gcd(height, shift);
+    if (cycleCount > 0)
     {
-        CopyRow(y, y + delta, *this);
+        auto& scratch = GetScratchpadRow();
+        const auto resetScratch = wil::scope_exit([&] { scratch.Reset(_currentAttributes); });
+        for (til::CoordType first = 0; first < cycleCount; ++first)
+        {
+            copy(get(first), scratch);
+            auto dst = first;
+            auto src = (dst + reverseShift) % height;
+            while (src != first)
+            {
+                copyByIndex(src, dst);
+                dst = src;
+                src = (src + reverseShift) % height;
+            }
+            copy(scratch, get(dst));
+        }
     }
 }
 
@@ -989,7 +1072,7 @@ til::point TextBuffer::BufferToScreenPosition(const til::point position) const
 //   and the default current color attributes
 void TextBuffer::Reset() noexcept
 {
-    _decommit();
+    _decommit(0);
     _initialAttributes = _currentAttributes;
 }
 
@@ -998,35 +1081,18 @@ void TextBuffer::Reset() noexcept
 // - rowsToKeep: the number of rows to keep in the buffer.
 void TextBuffer::ClearScrollback(const til::CoordType newFirstRow, const til::CoordType rowsToKeep)
 {
-    // We're already at the top? don't clear anything. There's no scrollback.
-    if (newFirstRow <= 0)
+    if (newFirstRow < 0)
     {
         return;
     }
-    // The new viewport should keep 0 rows? Then just reset everything.
-    if (rowsToKeep <= 0)
-    {
-        _decommit();
-        return;
-    }
 
-    ClearMarksInRange(til::point{ 0, 0 }, til::point{ _width, std::max(0, newFirstRow - 1) });
-
-    // Our goal is to move the viewport to the absolute start of the underlying memory buffer so that we can
-    // MEM_DECOMMIT the remaining memory. _firstRow is used to make the TextBuffer behave like a circular buffer.
-    // The newFirstRow parameter is relative to the _firstRow. The trick to get the content to the absolute start
-    // is to simply add _firstRow ourselves and then reset it to 0. This causes ScrollRows() to write into
-    // the absolute start while reading from relative coordinates. This works because GetRowByOffset()
-    // operates modulo the buffer height and so the possibly-too-large startAbsolute won't be an issue.
-    const auto startAbsolute = _firstRow + newFirstRow;
+    // Move the retained rows to the start of the allocation so the remaining pages can be decommitted.
+    const auto startAbsolute = (_firstRow + newFirstRow) % _height;
+    const auto keep = std::clamp(rowsToKeep, 0, _height);
     _firstRow = 0;
-    ScrollRows(startAbsolute, rowsToKeep, -startAbsolute);
+    ScrollRows(startAbsolute, keep, -startAbsolute);
 
-    const auto end = _estimateOffsetOfLastCommittedRow();
-    for (auto y = rowsToKeep; y <= end; ++y)
-    {
-        GetMutableRowByOffset(y).Reset(_initialAttributes);
-    }
+    _decommit(keep);
 }
 
 // Routine Description:
@@ -1741,7 +1807,7 @@ std::vector<til::point_span> TextBuffer::GetTextSpans(til::point start, til::poi
         const auto rects = GetTextRects(start, end, /*blockSelection*/ true, bufferCoordinates);
         textSpans.reserve(rects.size());
 
-        for (auto rect : rects)
+        for (const auto& rect : rects)
         {
             const til::point first = { rect.left, rect.top };
             const til::point second = { rect.right, rect.bottom };
@@ -3040,7 +3106,7 @@ void TextBuffer::RemoveHyperlinkFromMap(uint16_t id) noexcept
 // - The custom ID if there was one, empty string otherwise
 std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
 {
-    for (auto customIdPair : _hyperlinkCustomIdMap)
+    for (const auto& customIdPair : _hyperlinkCustomIdMap)
     {
         if (customIdPair.second == id)
         {
@@ -3236,7 +3302,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
     bool startedPrompt = false;
     bool startedCommand = false;
     bool startedOutput = false;
-    MarkKind lastMarkKind = MarkKind::Output;
 
     const auto endThisMark = [&](auto x, auto y) {
         if (startedOutput)
@@ -3263,7 +3328,7 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
         // Output attribute.
 
         const auto& row = GetRowByOffset(y);
-        const auto runs = row.Attributes().runs();
+        const auto& runs = row.Attributes().runs();
         x = 0;
         for (const auto& [attr, length] : runs)
         {
@@ -3306,8 +3371,6 @@ MarkExtents TextBuffer::_scrollMarkExtentForRow(const til::CoordType rowOffset,
 
                     endThisMark(lastMarkedText.x, lastMarkedText.y);
                 }
-                // Otherwise, we've changed from any state -> any state, and it doesn't really matter.
-                lastMarkKind = markKind;
             }
             // advance to next run of text
             x = nextX;
@@ -3340,7 +3403,7 @@ std::wstring TextBuffer::_commandForRow(const til::CoordType rowOffset,
         // Command attributes. Collect up all of those, till we get to the next
         // Output attribute.
         const auto& row = GetRowByOffset(y);
-        const auto runs = row.Attributes().runs();
+        const auto& runs = row.Attributes().runs();
         auto x = 0;
         for (const auto& [attr, length] : runs)
         {

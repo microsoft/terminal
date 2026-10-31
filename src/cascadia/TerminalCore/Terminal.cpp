@@ -24,6 +24,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
+constexpr til::CoordType MaxScrollback = til::CoordTypeMax / 2;
+
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal()
 {
@@ -44,10 +46,10 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 {
     viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
     viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
+    scrollbackLines = std::clamp(scrollbackLines, 0, MaxScrollback);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.width,
-                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
@@ -80,8 +82,7 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
                                   Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
+    Create(viewportSize, settings.HistorySize(), renderer);
 
     UpdateSettings(settings);
 }
@@ -322,7 +323,7 @@ try
         return S_OK;
     }
 
-    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, SHRT_MAX);
+    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, MaxScrollback);
     const til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // If the original buffer had _no_ scroll offset, then we should be at the
