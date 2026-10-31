@@ -268,6 +268,29 @@ namespace Microsoft::Console::VirtualTerminal
             VERIFY_IS_NOT_NULL(row.GetImageSlice());
         }
 
+        TEST_METHOD(PlacementAckIncludesPlacementId)
+        {
+            SendApc(L"a=t,f=24,s=1,v=1,i=7,q=1;AAAA");
+            SendApc(L"a=p,i=7,p=3");
+            VERIFY_ARE_EQUAL(std::wstring(L"\x1b_Gi=7,p=3;OK\x1b\\"), _api->response);
+        }
+
+        TEST_METHOD(PlacementOfUnknownImageFails)
+        {
+            SendApc(L"a=p,i=99");
+            VERIFY_IS_TRUE(_api->response.find(L"ENOENT") != std::wstring::npos);
+        }
+
+        TEST_METHOD(DeleteAbortsChunkedUpload)
+        {
+            SendApc(L"a=t,f=24,s=2,v=1,i=7,m=1;/wAA");
+            VERIFY_IS_NULL(_buffer->GetKittyImages().FindImage(7));
+            // A delete in the middle of a chunked upload aborts it.
+            SendApc(L"a=d,d=i,i=7");
+            SendApc(L"m=0;AP8A");
+            VERIFY_IS_NULL(_buffer->GetKittyImages().FindImage(7));
+        }
+
         TEST_METHOD(QueryActionDetectsSupport)
         {
             SendApc(L"i=31,s=1,v=1,a=q,t=d,f=24;AAAA");
@@ -353,6 +376,38 @@ namespace Microsoft::Console::VirtualTerminal
             const auto text = std::wstring(L"before \xDB3B\xDEEE\x0305\x030D after");
             const auto stripped = KittyPlaceholder::StripPlaceholders(text);
             VERIFY_ARE_EQUAL(std::wstring(L"before  after"), stripped);
+        }
+
+        TEST_METHOD(GarbageSweepDoesNotCrash)
+        {
+            // A deterministic pseudo-random sweep of APC payloads. Nothing
+            // here is expected to do anything except leave the parser in a
+            // working state.
+            uint32_t state = 0x12345678;
+            for (auto i = 0; i < 200; ++i)
+            {
+                state = state * 1664525 + 1013904223;
+                std::wstring garbage = L"a=";
+                for (auto j = 0; j < 16; ++j)
+                {
+                    state = state * 1664525 + 1013904223;
+                    garbage += static_cast<wchar_t>(L'!' + (state >> 24) % 90);
+                }
+                SendApc(garbage);
+                VERIFY_IS_TRUE(_api->response.empty() || _api->response.size() < 200);
+            }
+            // The parser must still work afterwards.
+            SendApc(L"a=t,f=24,s=1,v=1,i=7;AAAA");
+            VERIFY_IS_NOT_NULL(_buffer->GetKittyImages().FindImage(7));
+        }
+
+        TEST_METHOD(OversizedImageRejected)
+        {
+            // A single image claiming more than the total memory budget
+            // is rejected outright.
+            SendApc(L"a=t,f=32,s=10000,v=10000,i=5;AAAA");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+            VERIFY_IS_NULL(_buffer->GetKittyImages().FindImage(5));
         }
 
         TEST_METHOD(ForeignApcSequencesIgnored)

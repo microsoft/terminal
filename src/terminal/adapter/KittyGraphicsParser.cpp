@@ -551,6 +551,12 @@ void KittyGraphicsParser::_finishTransmission()
             _respond(false, L"EINVAL:invalid dimensions");
             return;
         }
+        // A single image must not claim more than the entire memory budget.
+        if (static_cast<size_t>(width) * height * sizeof(RGBQUAD) > KittyImages::MaxTotalImageBytes)
+        {
+            _respond(false, L"EINVAL:image too large");
+            return;
+        }
         const auto decoded = Base64Decode(cmd.payloadBase64);
         const auto bytesPerPixel = format == 32 ? 4 : 3;
         const auto expected = static_cast<size_t>(width) * height * bytesPerPixel;
