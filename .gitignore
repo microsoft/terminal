@@ -167,6 +167,11 @@ PublishScripts/
 *.nuget.props
 *.nuget.targets
 
+# Local bootstrap payloads (vcpkg checkout, per-repo nuget.exe)
+.nuget/nuget.exe
+.nuget/vswhere.*/
+dep/vcpkg/
+
 # Microsoft Azure Build Output
 csx/
 *.build.csdef

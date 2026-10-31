@@ -569,6 +569,19 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParam
 }
 
 // Method Description:
+// - Triggers the ApcDispatch action. The input engine has no use for APC
+//   sequences, so it declines them and the state machine falls back to
+//   ignoring the sequence, as it always has.
+// Arguments:
+// - <none>
+// Return Value:
+// - nullptr, always
+IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch() noexcept
+{
+    return nullptr;
+}
+
+// Method Description:
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:

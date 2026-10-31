@@ -106,6 +106,16 @@ public:
         return false;
     }
 
+    bool IsKittyGraphicsProtocolEnabled() const noexcept override
+    {
+        return _kittyGraphicsEnabled;
+    }
+
+    til::size GetFontCellSize() const override
+    {
+        return { 10, 20 };
+    }
+
     void SetSystemMode(const Mode mode, const bool enabled)
     {
         Log::Comment(L"SetSystemMode MOCK called...");
@@ -396,6 +406,7 @@ public:
     bool _isPty = false;
 
     bool _returnResponseResult = false;
+    bool _kittyGraphicsEnabled = false;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 

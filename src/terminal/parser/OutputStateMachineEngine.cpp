@@ -940,6 +940,20 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VT
 }
 
 // Routine Description:
+// - Triggers an APC (Application Programming Command, "ESC _ ... ESC \\")
+//   sequence. The only APC use this engine understands is the Kitty
+//   Graphics Protocol ("ESC _ G ..."), which the dispatch screens for
+//   capability and validity once the first character arrives.
+// Arguments:
+// - <none>
+// Return Value:
+// - the data string handler, or nullptr if APC sequences are not supported
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionApcDispatch()
+{
+    return _dispatch->DefineKittyGraphics();
+}
+
+// Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table
 //      spec: The colors are specified by name or RGB specification as per XParseColor

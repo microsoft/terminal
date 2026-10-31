@@ -31,6 +31,8 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 SOURCES= \
     ..\cursor.cpp    \
     ..\ImageSlice.cpp \
+    ..\KittyImages.cpp \
+    ..\KittyPlaceholder.cpp \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
     ..\OutputCellRect.cpp \

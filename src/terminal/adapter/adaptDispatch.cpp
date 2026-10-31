@@ -5,6 +5,7 @@
 
 #include "adaptDispatch.hpp"
 #include "SixelParser.hpp"
+#include "KittyGraphicsParser.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../renderer/base/renderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
@@ -3051,6 +3052,10 @@ void AdaptDispatch::HardReset(bool erase)
     // Reset the Sixel parser.
     _sixelParser = nullptr;
 
+    // Reset the Kitty Graphics parser and drop all stored images.
+    _kittyGraphicsParser = nullptr;
+    _pages.ActivePage().Buffer().GetKittyImages().Clear();
+
     // Completely reset the TerminalOutput state.
     _termOutput = {};
     // Reset the code page to the default value.
@@ -3924,6 +3929,28 @@ ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt macroPa
         _sixelParser->SetDisplayMode(_modes.test(Mode::SixelDisplay));
     }
     return _sixelParser->DefineImage(macroParameter, backgroundSelect, backgroundColor);
+}
+
+// Method Description:
+// - Kitty Graphics Protocol - handles one complete APC "ESC _ G ..."
+//   sequence: transmission, placement, queries and deletion. Only active
+//   when the capability is enabled for this session; otherwise the APC
+//   content is ignored exactly as any unrecognized APC sequence always
+//   has been.
+// Return Value:
+// - a function to receive the sequence's content, or nullptr
+ITermDispatch::StringHandler AdaptDispatch::DefineKittyGraphics()
+{
+    if (!_api.IsKittyGraphicsProtocolEnabled())
+    {
+        return nullptr;
+    }
+    // The parser is created on demand.
+    if (!_kittyGraphicsParser)
+    {
+        _kittyGraphicsParser = std::make_unique<KittyGraphicsParser>(*this, _api.GetStateMachine());
+    }
+    return _kittyGraphicsParser->BeginSequence();
 }
 
 // Method Description:
@@ -4871,6 +4898,13 @@ void AdaptDispatch::_ReturnOscResponse(const std::wstring_view response) const
     const auto osc = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9D" : L"\x1B]";
     const auto st = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9C" : L"\x1B\\";
     _api.ReturnResponse(fmt::format(FMT_COMPILE(L"{}{}{}"), osc, response, st));
+}
+
+void AdaptDispatch::_ReturnApcResponse(const std::wstring_view response) const
+{
+    const auto apc = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9F" : L"\x1B_";
+    const auto st = _terminalInput.GetInputMode(TerminalInput::Mode::SendC1) ? L"\x9C" : L"\x1B\\";
+    _api.ReturnResponse(fmt::format(FMT_COMPILE(L"{}{}{}"), apc, response, st));
 }
 
 // Routine Description:

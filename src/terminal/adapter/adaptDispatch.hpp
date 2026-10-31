@@ -169,6 +169,8 @@ namespace Microsoft::Console::VirtualTerminal
                                        const DispatchTypes::SixelBackground backgroundSelect,
                                        const VTParameter backgroundColor) override; // SIXEL
 
+        StringHandler DefineKittyGraphics() override; // Kitty Graphics Protocol (APC)
+
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
                                    const DispatchTypes::DrcsEraseControl eraseControl,
@@ -305,6 +307,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReturnCsiResponse(const std::wstring_view response) const;
         void _ReturnDcsResponse(const std::wstring_view response) const;
         void _ReturnOscResponse(const std::wstring_view response) const;
+        void _ReturnApcResponse(const std::wstring_view response) const;
 
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
@@ -317,6 +320,8 @@ namespace Microsoft::Console::VirtualTerminal
         PageManager _pages;
         friend class SixelParser;
         std::shared_ptr<SixelParser> _sixelParser;
+        friend class KittyGraphicsParser;
+        std::unique_ptr<KittyGraphicsParser> _kittyGraphicsParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;

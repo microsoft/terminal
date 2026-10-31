@@ -12,6 +12,7 @@
 #include "../types/inc/utils.hpp"
 #include <til/regex.h>
 #include "search.h"
+#include "KittyPlaceholder.hpp"
 
 // BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
 // initializer list leads to this warning. Can probably be removed in the future.
@@ -730,6 +731,8 @@ void TextBuffer::IncrementCircularBuffer(const TextAttribute& fillAttributes)
     // Prune hyperlinks to delete obsolete references
     _PruneHyperlinks();
 
+    _kittyImages.OnCircularIncrement();
+
     // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     GetMutableRowByOffset(0).Reset(fillAttributes);
     {
@@ -809,6 +812,8 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
     {
         return;
     }
+
+    _kittyImages.OnScrollRows(firstRow, size, delta);
 
     // Since the for() loop uses !=, we must ensure that size is positive.
     // A negative size doesn't make any sense anyways.
@@ -1084,6 +1089,16 @@ bool TextBuffer::IsActiveBuffer() const noexcept
 Microsoft::Console::Render::Renderer* TextBuffer::GetRenderer() noexcept
 {
     return _renderer;
+}
+
+KittyImages& TextBuffer::GetKittyImages() noexcept
+{
+    return _kittyImages;
+}
+
+const KittyImages& TextBuffer::GetKittyImages() const noexcept
+{
+    return _kittyImages;
 }
 
 void TextBuffer::NotifyPaintFrame() noexcept
@@ -1899,7 +1914,7 @@ std::wstring TextBuffer::GetPlainText(const CopyRequest& req) const
         const auto& [rowBeg, rowEnd, addLineBreak] = _RowCopyHelper(req, iRow, row);
 
         // save selected text (exclusive end)
-        selectedText += row.GetText(rowBeg, rowEnd);
+        selectedText += KittyPlaceholder::StripPlaceholders(row.GetText(rowBeg, rowEnd));
 
         if (addLineBreak && iRow != req.end.y)
         {
@@ -2949,6 +2964,12 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
     newBuffer.CopyProperties(oldBuffer);
     newBuffer.CopyHyperlinkMaps(oldBuffer);
+
+    // The Kitty Graphics state travels to the resized buffer. Placement
+    // coordinates are clamped to the new height; reflowed row content
+    // moved elsewhere is not tracked.
+    newBuffer._kittyImages = std::move(oldBuffer._kittyImages);
+    newBuffer._kittyImages.OnResize(newHeight);
 
     assert(newCursorPos.x >= 0 && newCursorPos.x < newWidth);
     assert(newCursorPos.y >= 0 && newCursorPos.y < newHeight);

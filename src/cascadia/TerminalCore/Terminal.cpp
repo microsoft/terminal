@@ -112,6 +112,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
     _getTerminalInput().ForceDisableKittyKeyboardProtocol(!settings.AllowKittyKeyboardMode());
+    _kittyGraphicsEnabled = settings.EnableKittyGraphicsProtocol();
 
     if (settings.TabColor() == nullptr)
     {

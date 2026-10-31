@@ -628,6 +628,7 @@ void StateMachine::_ActionClear() noexcept
     _oscParameter = 0;
 
     _dcsStringHandler = nullptr;
+    _apcStringHandler = nullptr;
 }
 
 // Routine Description:
@@ -657,6 +658,12 @@ void StateMachine::_ActionInterrupt()
         // The ESC signals the end of the data string.
         _dcsStringHandler(AsciiChars::ESC);
         _dcsStringHandler = nullptr;
+    }
+    else if (_state == VTStates::ApcString)
+    {
+        // Same contract for APC strings.
+        _apcStringHandler(AsciiChars::ESC);
+        _apcStringHandler = nullptr;
     }
 }
 
@@ -1049,6 +1056,38 @@ void StateMachine::_EnterSosPmApcString() noexcept
 }
 
 // Routine Description:
+// - Moves the state machine into the ApcString state, if the engine wants
+//   to handle this APC sequence (e.g. the Kitty Graphics Protocol's
+//   "ESC _ G ..." sequences). If the engine has no use for it, falls back
+//   to the same ignore-until-terminator behavior APC sequences have
+//   always had, so foreign APC users are unaffected.
+//   This state is entered:
+//   1. When the Apc character is seen after an Escape entry
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterApcString()
+{
+    const auto success = _SafeExecute([=]() {
+        _apcStringHandler = _engine->ActionApcDispatch();
+        return true;
+    });
+    _trace.DispatchSequenceTrace(success);
+
+    if (_apcStringHandler)
+    {
+        _state = VTStates::ApcString;
+        _cachedSequence.reset();
+        _trace.TraceStateChange(L"ApcString");
+    }
+    else
+    {
+        _EnterSosPmApcString();
+    }
+}
+
+// Routine Description:
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
@@ -1140,7 +1179,11 @@ void StateMachine::_EventEscape(const wchar_t wch)
         {
             _EnterDcsEntry();
         }
-        else if (_isSosIndicator(wch) || _isPmIndicator(wch) || _isApcIndicator(wch))
+        else if (_isApcIndicator(wch))
+        {
+            _EnterApcString();
+        }
+        else if (_isSosIndicator(wch) || _isPmIndicator(wch))
         {
             _EnterSosPmApcString();
         }
@@ -1831,6 +1874,27 @@ void StateMachine::_EventSosPmApcString(const wchar_t /*wch*/) noexcept
 }
 
 // Routine Description:
+// - Processes a character event into an Action that occurs while in the
+//   ApcString state.
+//   Events in this state will:
+//   1. Pass the character through to the engine-provided handler.
+//   2. If the handler rejects a character, ignore the remainder of the
+//      string.
+//   The termination state is handled outside when an ESC is seen.
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventApcString(const wchar_t wch)
+{
+    _trace.TraceOnEvent(L"ApcString");
+    if (!_apcStringHandler(wch))
+    {
+        _EnterDcsIgnore();
+    }
+}
+
+// Routine Description:
 // - Entry to the state machine. Takes characters one by one and processes them according to the state machine rules.
 // Arguments:
 // - wch - New character to operate upon
@@ -1918,6 +1982,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             return _EventDcsPassThrough(wch);
         case VTStates::SosPmApcString:
             return _EventSosPmApcString(wch);
+        case VTStates::ApcString:
+            return _EventApcString(wch);
         default:
             return;
         }
@@ -2073,7 +2139,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 cacheUnusedRun = false;
             }
         }
-        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
+        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore || _state == VTStates::ApcString)
         {
             // There is no need to cache the run if we've reached one of the
             // string processing states in the output engine, since that data

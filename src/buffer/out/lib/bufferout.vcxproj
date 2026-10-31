@@ -13,6 +13,8 @@
   <ItemGroup>
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\ImageSlice.cpp" />
+    <ClCompile Include="..\KittyImages.cpp" />
+    <ClCompile Include="..\KittyPlaceholder.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\OutputCellIterator.cpp" />
     <ClCompile Include="..\OutputCellRect.cpp" />
@@ -33,6 +35,8 @@
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ImageSlice.hpp" />
+    <ClInclude Include="..\KittyImages.hpp" />
+    <ClInclude Include="..\KittyPlaceholder.hpp" />
     <ClInclude Include="..\LineRendition.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />
     <ClInclude Include="..\OutputCellIterator.hpp" />

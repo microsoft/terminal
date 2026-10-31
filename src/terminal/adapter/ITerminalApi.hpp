@@ -54,6 +54,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool IsVtInputEnabled() const = 0;
 
+        // Whether the Kitty Graphics Protocol is enabled for this session
+        // (the experimental.enableKittyGraphicsProtocol setting).
+        virtual bool IsKittyGraphicsProtocolEnabled() const noexcept = 0;
+
+        // The current font's cell size, in pixels, used to size
+        // graphics-protocol placements given only in pixels.
+        virtual til::size GetFontCellSize() const = 0;
+
         enum class Mode : size_t
         {
             AutoWrap,

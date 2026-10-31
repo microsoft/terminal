@@ -1147,8 +1147,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Ask the helper to paint through this specific line.
             _PaintBufferOutputHelper(pEngine, it, screenPosition);
 
-            // Paint any image content on top of the text.
-            const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
+            // Bring any Kitty Graphics placements of this row into its
+            // image slice, then paint the image content on top of the text.
+            auto& mutableRow = const_cast<ROW&>(r);
+            buffer.GetKittyImages().ComposeRow(buffer, mutableRow, row, _pData->GetFontInfo().GetCellSizeInPhysicalPx());
+            const auto imageSlice = mutableRow.GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, _viewport.Left()));

@@ -169,6 +169,8 @@ public:
                                            const DispatchTypes::SixelBackground backgroundSelect,
                                            const VTParameter backgroundColor) = 0; // SIXEL
 
+    virtual StringHandler DefineKittyGraphics() = 0; // Kitty Graphics Protocol (APC)
+
     virtual StringHandler DownloadDRCS(const VTInt fontNumber,
                                        const VTParameter startChar,
                                        const DispatchTypes::DrcsEraseControl eraseControl,

@@ -85,6 +85,8 @@ public:
 
     bool ActionSs3Dispatch(const wchar_t /* wch */, const VTParameters /* parameters */) override { return true; };
 
+    StringHandler ActionApcDispatch() override { return nullptr; };
+
     // ActionCsiDispatch is the only method that's actually implemented.
     bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override
     {

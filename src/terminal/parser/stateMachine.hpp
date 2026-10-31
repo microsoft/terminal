@@ -135,6 +135,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsIntermediate() noexcept;
         void _EnterDcsPassThrough() noexcept;
         void _EnterSosPmApcString() noexcept;
+        void _EnterApcString();
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -156,6 +157,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
         void _EventSosPmApcString(const wchar_t wch) noexcept;
+        void _EventApcString(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
 
@@ -185,7 +187,8 @@ namespace Microsoft::Console::VirtualTerminal
             DcsIntermediate,
             DcsParam,
             DcsPassThrough,
-            SosPmApcString
+            SosPmApcString,
+            ApcString
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
@@ -222,6 +225,7 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _oscParameter;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
+        IStateMachineEngine::StringHandler _apcStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
         til::small_vector<Injection, 8> _injections;

@@ -158,6 +158,8 @@ public:
     void UseMainScreenBuffer() override;
 
     bool IsVtInputEnabled() const noexcept override;
+    bool IsKittyGraphicsProtocolEnabled() const noexcept override;
+    til::size GetFontCellSize() const noexcept override;
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
 
@@ -383,6 +385,7 @@ private:
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
     bool _highContrastMode = false;
+    bool _kittyGraphicsEnabled = false;
 
     FontInfo _fontInfo;
 #pragma region Text Selection

@@ -132,6 +132,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
+        INHERITABLE_SETTING(Boolean, EnableKittyGraphicsProtocol);
         INHERITABLE_SETTING(Boolean, MinimizeToNotificationArea);
         INHERITABLE_SETTING(Boolean, ShowAdminShield);
         INHERITABLE_SETTING(IVector<NewTabMenuEntry>, NewTabMenu);

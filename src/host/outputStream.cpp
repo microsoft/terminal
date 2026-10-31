@@ -438,6 +438,21 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
+// - The Kitty Graphics Protocol is not implemented for the classic console
+//   host; requests are ignored there.
+bool ConhostInternalGetSet::IsKittyGraphicsProtocolEnabled() const noexcept
+{
+    return false;
+}
+
+// Routine Description:
+// - The current font's cell size, in pixels.
+til::size ConhostInternalGetSet::GetFontCellSize() const
+{
+    return _io.GetActiveOutputBuffer().GetCurrentFont().GetCellSizeInPhysicalPx();
+}
+
+// Routine Description:
 // - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:
 // - delta - the number of cycles that the buffer has rotated.

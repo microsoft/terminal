@@ -401,6 +401,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _UseBackgroundImageForWindow = windowSettings.UseBackgroundImageForWindow();
         _TrimBlockSelection = windowSettings.TrimBlockSelection();
         _DetectURLs = windowSettings.DetectURLs();
+        _EnableKittyGraphicsProtocol = windowSettings.EnableKittyGraphicsProtocol();
         _EnableUnfocusedAcrylic = windowSettings.EnableUnfocusedAcrylic();
     }
 

@@ -67,6 +67,9 @@ public:
 
     bool IsVtInputEnabled() const override;
 
+    bool IsKittyGraphicsProtocolEnabled() const noexcept override;
+    til::size GetFontCellSize() const override;
+
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
 

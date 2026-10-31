@@ -133,6 +133,7 @@ namespace Microsoft.Terminal.Core
         Boolean AllowOscNotifications { get; };
         Boolean TrimBlockSelection { get; };
         Boolean DetectURLs { get; };
+        Boolean EnableKittyGraphicsProtocol { get; };
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor { get; };

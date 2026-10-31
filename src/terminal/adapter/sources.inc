@@ -33,6 +33,7 @@ SOURCES= \
     ..\adaptDispatch.cpp \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
+    ..\KittyGraphicsParser.cpp \
     ..\MacroBuffer.cpp \
     ..\PageManager.cpp \
     ..\SixelParser.cpp \

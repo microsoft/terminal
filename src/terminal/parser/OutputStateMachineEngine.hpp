@@ -48,6 +48,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
+        StringHandler ActionApcDispatch() override;
+
         const ITermDispatch& Dispatch() const noexcept;
         ITermDispatch& Dispatch() noexcept;
 

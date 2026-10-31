@@ -181,10 +181,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
-
         bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) noexcept override;
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
+
+        StringHandler ActionApcDispatch() noexcept override;
 
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;

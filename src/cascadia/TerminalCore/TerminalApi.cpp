@@ -364,6 +364,16 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
+bool Terminal::IsKittyGraphicsProtocolEnabled() const noexcept
+{
+    return _kittyGraphicsEnabled;
+}
+
+til::size Terminal::GetFontCellSize() const noexcept
+{
+    return _fontInfo.GetCellSizeInPhysicalPx();
+}
+
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)

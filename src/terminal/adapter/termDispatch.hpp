@@ -159,6 +159,8 @@ public:
                                    const DispatchTypes::SixelBackground /*backgroundSelect*/,
                                    const VTParameter /*backgroundColor*/) override { return nullptr; }; // SIXEL
 
+    StringHandler DefineKittyGraphics() override { return nullptr; }; // Kitty Graphics Protocol (APC)
+
     StringHandler DownloadDRCS(const VTInt /*fontNumber*/,
                                const VTParameter /*startChar*/,
                                const DispatchTypes::DrcsEraseControl /*eraseControl*/,

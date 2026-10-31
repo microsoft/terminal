@@ -50,6 +50,7 @@ filling in the last row, and updating the screen.
 #pragma once
 
 #include "cursor.h"
+#include "KittyImages.hpp"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
 #include "../types/inc/Viewport.hpp"
@@ -313,6 +314,11 @@ public:
     bool ContainsBlinkAttributeInRegion(const Microsoft::Console::Types::Viewport& region) const;
     bool IsGlyphDoubleWidthAt(const til::point at) const;
 
+    // Images and placements received through the Kitty Graphics Protocol.
+    // Empty and inert unless something was transmitted.
+    KittyImages& GetKittyImages() noexcept;
+    const KittyImages& GetKittyImages() const noexcept;
+
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
     void _commit(const std::byte* row);
@@ -342,6 +348,8 @@ private:
     static void _AppendRTFText(std::string& contentBuilder, const std::wstring_view& text);
 
     Microsoft::Console::Render::Renderer* _renderer = nullptr;
+
+    KittyImages _kittyImages;
 
     std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
     std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;

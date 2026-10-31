@@ -45,6 +45,15 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionOscDispatch(const size_t parameter, const std::wstring_view string) = 0;
         virtual bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) = 0;
 
+        // Called once when an Application Program Command (APC,
+        // "ESC _ ... ESC \\") sequence is entered. Returns a handler that
+        // receives the sequence's content one character at a time, with the
+        // end of the sequence signaled by a final synthetic ESC character,
+        // mirroring ActionDcsDispatch's StringHandler contract. Returns
+        // nullptr if the engine has no use for APC sequences, in which case
+        // the content is discarded exactly as it always has been.
+        virtual StringHandler ActionApcDispatch() = 0;
+
     protected:
         IStateMachineEngine() = default;
     };
