@@ -138,4 +138,15 @@ mutually exclusive ids, size mismatches, unsupported media/formats,
 placement geometry and cursor policies, queries and feature queries,
 quiet levels, deletion semantics, re-transmission replacement, Unicode
 Placeholder encoding and stripping, foreign-APC tolerance, and a
-malformed-sequence battery.
+malformed-sequence battery. Buffer-level tests in
+`src/buffer/out/ut_textbuffer/KittyPlacementTests.cpp` cover placement
+tracking through scrolling, buffer rotation and reflow, the storage
+move on resize, and the memory-budget eviction rules.
+
+## Build note
+
+The Windows Store platform does not set a linker TargetMachine for
+static libraries. The WinRT-emitting static libraries in this repo hit
+LNK1112 (x64 objects, x86 default) unless x64 is specified explicitly,
+so `common.build.pre.props` pins MachineX64 alongside the existing
+Win32 pin.
