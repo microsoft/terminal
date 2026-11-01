@@ -123,35 +123,41 @@ void ImageSlice::CopyBlock(const TextBuffer& srcBuffer, const til::rect srcRect,
 
 void ImageSlice::CopyRow(const ROW& srcRow, ROW& dstRow)
 {
-    const auto srcSlice = srcRow.GetImageSlice();
-    dstRow.SetImageSlice(srcSlice ? std::make_unique<ImageSlice>(*srcSlice) : nullptr);
+    for (const auto layer : { ImageSliceLayer::AboveText, ImageSliceLayer::BelowText })
+    {
+        const auto srcSlice = srcRow.GetImageSlice(layer);
+        dstRow.SetImageSlice(layer, srcSlice ? std::make_unique<ImageSlice>(*srcSlice) : nullptr);
+    }
 }
 
 void ImageSlice::CopyCells(const ROW& srcRow, const til::CoordType srcColumn, ROW& dstRow, const til::CoordType dstColumnBegin, const til::CoordType dstColumnEnd)
 {
-    // If there's no image content in the source row, we're essentially copying
-    // a blank image into the destination, which is the same thing as an erase.
-    // Also if the line renditions are different, there's no meaningful way to
-    // copy the image content, so we also just treat that as an erase.
-    const auto srcSlice = srcRow.GetImageSlice();
-    if (!srcSlice || srcRow.GetLineRendition() != dstRow.GetLineRendition()) [[likely]]
+    for (const auto layer : { ImageSliceLayer::AboveText, ImageSliceLayer::BelowText })
     {
-        ImageSlice::EraseCells(dstRow, dstColumnBegin, dstColumnEnd);
-    }
-    else
-    {
-        auto dstSlice = dstRow.GetMutableImageSlice();
-        if (!dstSlice)
+        // If there's no image content in the source row, we're essentially copying
+        // a blank image into the destination, which is the same thing as an erase.
+        // Also if the line renditions are different, there's no meaningful way to
+        // copy the image content, so we also just treat that as an erase.
+        const auto srcSlice = srcRow.GetImageSlice(layer);
+        if (!srcSlice || srcRow.GetLineRendition() != dstRow.GetLineRendition()) [[likely]]
         {
-            dstSlice = dstRow.SetImageSlice(std::make_unique<ImageSlice>(srcSlice->CellSize()));
-            __assume(dstSlice != nullptr);
+            ImageSlice::EraseCells(dstRow, dstColumnBegin, dstColumnEnd);
         }
-        const auto scale = srcRow.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
-        if (dstSlice->_copyCells(*srcSlice, srcColumn << scale, dstColumnBegin << scale, dstColumnEnd << scale))
+        else
         {
-            // If _copyCells returns true, that means the destination was
-            // completely erased, so we can delete this slice.
-            dstRow.SetImageSlice(nullptr);
+            auto dstSlice = dstRow.GetMutableImageSlice(layer);
+            if (!dstSlice)
+            {
+                dstSlice = dstRow.SetImageSlice(layer, std::make_unique<ImageSlice>(srcSlice->CellSize()));
+                __assume(dstSlice != nullptr);
+            }
+            const auto scale = srcRow.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
+            if (dstSlice->_copyCells(*srcSlice, srcColumn << scale, dstColumnBegin << scale, dstColumnEnd << scale))
+            {
+                // If _copyCells returns true, that means the destination was
+                // completely erased, so we can delete this slice.
+                dstRow.SetImageSlice(layer, nullptr);
+            }
         }
     }
 }
@@ -229,15 +235,18 @@ void ImageSlice::EraseCells(TextBuffer& buffer, const til::point at, const til::
 
 void ImageSlice::EraseCells(ROW& row, const til::CoordType columnBegin, const til::CoordType columnEnd)
 {
-    const auto imageSlice = row.GetMutableImageSlice();
-    if (imageSlice) [[unlikely]]
+    for (const auto layer : { ImageSliceLayer::AboveText, ImageSliceLayer::BelowText })
     {
-        const auto scale = row.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
-        if (imageSlice->_eraseCells(columnBegin << scale, columnEnd << scale))
+        const auto imageSlice = row.GetMutableImageSlice(layer);
+        if (imageSlice) [[unlikely]]
         {
-            // If _eraseCells returns true, that means the image was
-            // completely erased, so we can delete this slice.
-            row.SetImageSlice(nullptr);
+            const auto scale = row.GetLineRendition() != LineRendition::SingleWidth ? 1 : 0;
+            if (imageSlice->_eraseCells(columnBegin << scale, columnEnd << scale))
+            {
+                // If _eraseCells returns true, that means the image was
+                // completely erased, so we can delete this slice.
+                row.SetImageSlice(layer, nullptr);
+            }
         }
     }
 }

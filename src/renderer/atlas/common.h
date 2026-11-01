@@ -473,6 +473,7 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             bitmap.active = false;
+            bitmapBelow.active = false;
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
             dirtyTop = y * cellHeight;
@@ -492,6 +493,9 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<u32> colors;
 
         Bitmap bitmap;
+        // Image content of this row that is drawn under the text instead
+        // of over it (Kitty Graphics placements with a negative z-index).
+        Bitmap bitmapBelow;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         til::CoordType dirtyTop = 0;

@@ -18,6 +18,14 @@ Abstract:
 class ROW;
 class TextBuffer;
 
+// Whether a row's image content is painted under or over its text. Kitty
+// Graphics placements with a negative z-index render below the text.
+enum class ImageSliceLayer : uint8_t
+{
+    AboveText,
+    BelowText
+};
+
 class ImageSlice
 {
 public:

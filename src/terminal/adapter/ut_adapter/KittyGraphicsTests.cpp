@@ -268,6 +268,34 @@ namespace Microsoft::Console::VirtualTerminal
             VERIFY_IS_NOT_NULL(row.GetImageSlice());
         }
 
+        TEST_METHOD(NegativeZIndexComposesBelowText)
+        {
+            // The same 10x20 px image in a 1x1 cell, placed with z=-1:
+            // the pixels must land in the below-text layer, not the
+            // default above-text one.
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=10,v=20,i=5,z=-1,p=1;{}"), payload));
+            auto& row = _buffer->GetMutableRowByOffset(0);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, row, 0, { 10, 20 });
+            VERIFY_IS_NULL(row.GetImageSlice(ImageSliceLayer::AboveText));
+            const auto below = row.GetImageSlice(ImageSliceLayer::BelowText);
+            VERIFY_IS_NOT_NULL(below);
+            VerifyPixel(RGBQUAD{ 0, 0, 0, 255 }, below->Pixels()[0]);
+
+            // Re-placing the same placement with z=0 moves the pixels to
+            // the above-text layer. The cursor has advanced past the first
+            // placement, so the re-placement sits on row 1, and row 0 must
+            // be back to no image content on either layer.
+            SendApc(L"a=p,i=5,p=1,z=0,C=1");
+            auto& rowOne = _buffer->GetMutableRowByOffset(1);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, rowOne, 1, { 10, 20 });
+            VERIFY_IS_NOT_NULL(rowOne.GetImageSlice(ImageSliceLayer::AboveText));
+            VERIFY_IS_NULL(rowOne.GetImageSlice(ImageSliceLayer::BelowText));
+            _buffer->GetKittyImages().ComposeRow(*_buffer, row, 0, { 10, 20 });
+            VERIFY_IS_NULL(row.GetImageSlice(ImageSliceLayer::AboveText));
+            VERIFY_IS_NULL(row.GetImageSlice(ImageSliceLayer::BelowText));
+        }
+
         TEST_METHOD(PlacementAckIncludesPlacementId)
         {
             SendApc(L"a=t,f=24,s=1,v=1,i=7,q=1;AAAA");
@@ -393,19 +421,54 @@ namespace Microsoft::Console::VirtualTerminal
             // U+0305 encodes 0 and U+030D encodes 1.
             const auto line0 = L"\x1b[38;5;42m\xDB3B\xDEEE\x0305\x0305\xDB3B\xDEEE\x0305\x030D\x1b[39m";
             const auto line1 = L"\x1b[38;5;42m\xDB3B\xDEEE\x030D\x0305\xDB3B\xDEEE\x030D\x030D\x1b[39m";
-            Send(std::wstring(line0) + L"\r\n" + line1);
+            // The same grid printed again two rows further down: its grid
+            // rows no longer match their screen rows.
+            const auto line2 = L"\x1b[38;5;42m\xDB3B\xDEEE\x0305\x0305\xDB3B\xDEEE\x0305\x030D\x1b[39m";
+            Send(std::wstring(line0) + L"\r\n" + line1 + L"\r\n\r\n" + line2);
 
-            // Both rows must compose an image slice for the placement.
-            for (auto rowY : { 0, 1 })
+            // Both rows must compose an image slice for the placement, and
+            // the misaligned rows must carry pixels too: a placeholder draws
+            // into the very row that holds its text, sampling the strip of
+            // the grid row it encodes. The 10x10 source letterboxed into the
+            // 2x2 cells of 10x20 px leaves the top half of each strip
+            // transparent, so sample below the middle.
+            for (auto rowY : { 0, 1, 3 })
             {
                 auto& row = _buffer->GetMutableRowByOffset(rowY);
                 _buffer->GetKittyImages().ComposeRow(*_buffer, row, rowY, { 10, 20 });
-                VERIFY_IS_NOT_NULL(row.GetImageSlice());
+                const auto slice = row.GetImageSlice();
+                VERIFY_IS_NOT_NULL(slice);
+                const auto width = slice->PixelWidth();
+                VERIFY_ARE_EQUAL(20, width);
+                const auto& pixels = slice->Pixels();
+                // The letterboxed image covers the vertical middle of the
+                // 2-row grid, so the lower half of grid row 0 and the upper
+                // half of grid row 1 are opaque. Every composed row must
+                // carry the pixels of the grid row its placeholders encode.
+                const auto expectOpaqueAtTop = rowY == 1;
+                VERIFY_ARE_EQUAL(expectOpaqueAtTop ? 255 : 0, static_cast<int>(pixels[5 * width + 5].rgbReserved));
+                VERIFY_ARE_EQUAL(expectOpaqueAtTop ? 0 : 255, static_cast<int>(pixels[15 * width + 5].rgbReserved));
             }
         }
 
-        TEST_METHOD(PlaceholdersStrippedFromPlainText)
+        TEST_METHOD(PlaceholderDiacriticsBeyondSeven)
         {
+            // A 10x180 px image in a 1x9 cell grid fills all nine strip
+            // rows, so the placeholder for grid row 8 - encoded with the
+            // ninth diacritic, U+0346 - must carry pixels.
+            // RGB, so 5400 zero bytes, which is exactly 7200 base64 chars.
+            const auto payload = std::wstring(7200, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=10,v=180,i=9,q=2;{}"), payload));
+            SendApc(L"a=p,U=1,i=9,c=1,r=9");
+            Send(L"\x1b[38;5;9m\xDB3B\xDEEE\x0346\x0305\x1b[39m\r\n");
+            auto& row = _buffer->GetMutableRowByOffset(0);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, row, 0, { 10, 20 });
+            const auto slice = row.GetImageSlice();
+            VERIFY_IS_NOT_NULL(slice);
+            VERIFY_ARE_EQUAL(255, static_cast<int>(slice->Pixels()[10].rgbReserved));
+        }
+
+        TEST_METHOD(PlaceholdersStrippedFromPlainText)        {
             const auto text = std::wstring(L"before \xDB3B\xDEEE\x0305\x030D after");
             const auto stripped = KittyPlaceholder::StripPlaceholders(text);
             VERIFY_ARE_EQUAL(std::wstring(L"before  after"), stripped);

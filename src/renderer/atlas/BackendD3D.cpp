@@ -1139,6 +1139,11 @@ void BackendD3D::_drawText(RenderingPayload& p)
             static_cast<u8>(row->lineRendition >= LineRendition::DoubleHeightTop ? 2 : 1),
         };
 
+        if (row->bitmapBelow.revision != 0)
+        {
+            _drawBitmap(p, row, y, row->bitmapBelow);
+        }
+
         for (const auto& m : row->mappings)
         {
             auto x = m.glyphsFrom;
@@ -1212,7 +1217,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
         if (row->bitmap.revision != 0)
         {
-            _drawBitmap(p, row, y);
+            _drawBitmap(p, row, y, row->bitmap);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -1892,9 +1897,8 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     }
 }
 
-void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y)
+void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b)
 {
-    const auto& b = row->bitmap;
     auto ab = _glyphAtlasBitmaps.lookup(b.revision);
     if (!ab)
     {

@@ -972,18 +972,33 @@ std::vector<uint16_t> ROW::GetHyperlinks() const
 
 ImageSlice* ROW::SetImageSlice(ImageSlice::Pointer imageSlice) noexcept
 {
-    _imageSlice = std::move(imageSlice);
-    return GetMutableImageSlice();
+    return SetImageSlice(ImageSliceLayer::AboveText, std::move(imageSlice));
 }
 
 const ImageSlice* ROW::GetImageSlice() const noexcept
 {
-    return _imageSlice.get();
+    return GetImageSlice(ImageSliceLayer::AboveText);
 }
 
 ImageSlice* ROW::GetMutableImageSlice() noexcept
 {
-    const auto ptr = _imageSlice.get();
+    return GetMutableImageSlice(ImageSliceLayer::AboveText);
+}
+
+ImageSlice* ROW::SetImageSlice(const ImageSliceLayer layer, ImageSlice::Pointer imageSlice) noexcept
+{
+    (layer == ImageSliceLayer::BelowText ? _imageSliceBelow : _imageSlice) = std::move(imageSlice);
+    return GetMutableImageSlice(layer);
+}
+
+const ImageSlice* ROW::GetImageSlice(const ImageSliceLayer layer) const noexcept
+{
+    return (layer == ImageSliceLayer::BelowText ? _imageSliceBelow : _imageSlice).get();
+}
+
+ImageSlice* ROW::GetMutableImageSlice(const ImageSliceLayer layer) noexcept
+{
+    const auto ptr = (layer == ImageSliceLayer::BelowText ? _imageSliceBelow : _imageSlice).get();
     if (!ptr)
     {
         return nullptr;

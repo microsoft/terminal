@@ -668,7 +668,8 @@ CATCH_RETURN();
 
 [[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
                                                  const til::CoordType targetRow,
-                                                 const til::CoordType viewportLeft) noexcept
+                                                 const til::CoordType viewportLeft,
+                                                 const ImageSliceLayer /*layer*/) noexcept
 try
 {
     LOG_IF_FAILED(_FlushBufferLines());

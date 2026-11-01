@@ -273,6 +273,10 @@ try
         {
             r->bitmap = {};
         }
+        if (r->bitmapBelow.revision != 0 && !r->bitmapBelow.active)
+        {
+            r->bitmapBelow = {};
+        }
     }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
@@ -553,7 +557,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft) noexcept
+[[nodiscard]] HRESULT AtlasEngine::PaintImageSlice(const ImageSlice& imageSlice, const til::CoordType targetRow, const til::CoordType viewportLeft, const ImageSliceLayer layer) noexcept
 try
 {
     const auto y = clamp<til::CoordType>(targetRow, 0, _p.s->viewportCellCount.y - 1);
@@ -561,7 +565,7 @@ try
     const auto revision = imageSlice.Revision();
     const auto srcWidth = std::max(0, imageSlice.PixelWidth());
     const auto srcCellSize = imageSlice.CellSize();
-    auto& b = row->bitmap;
+    auto& b = layer == ImageSliceLayer::BelowText ? row->bitmapBelow : row->bitmap;
 
     // If this row's ImageSlice has changed we need to update our snapshot.
     // Theoretically another _p.rows[y]->bitmap may have this particular revision already,

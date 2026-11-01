@@ -45,7 +45,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
                                               const til::CoordType targetRow,
-                                              const til::CoordType viewportLeft) noexcept override;
+                                              const til::CoordType viewportLeft,
+                                              const ImageSliceLayer layer) noexcept override;
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 

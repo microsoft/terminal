@@ -161,6 +161,9 @@ public:
     ImageSlice* SetImageSlice(ImageSlice::Pointer imageSlice) noexcept;
     const ImageSlice* GetImageSlice() const noexcept;
     ImageSlice* GetMutableImageSlice() noexcept;
+    ImageSlice* SetImageSlice(const ImageSliceLayer layer, ImageSlice::Pointer imageSlice) noexcept;
+    const ImageSlice* GetImageSlice(const ImageSliceLayer layer) const noexcept;
+    ImageSlice* GetMutableImageSlice(const ImageSliceLayer layer) noexcept;
     uint16_t size() const noexcept;
     til::CoordType GetLastNonSpaceColumn() const noexcept;
     til::CoordType MeasureLeft() const noexcept;
@@ -318,6 +321,7 @@ private:
 
     // Stores any image content covering the row.
     ImageSlice::Pointer _imageSlice;
+    ImageSlice::Pointer _imageSliceBelow;
 };
 
 #ifdef UNIT_TESTING

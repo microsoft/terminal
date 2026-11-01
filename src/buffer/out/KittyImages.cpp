@@ -474,6 +474,7 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
     {
         HashCombine(key, op.placement->imageId);
         HashCombine(key, op.placement->placementId);
+        HashCombine(key, static_cast<uint64_t>(op.placement->z));
         HashCombine(key, (static_cast<uint64_t>(op.stripRow) << 32) | static_cast<uint32_t>(op.columnBegin));
         HashCombine(key, (static_cast<uint64_t>(op.gridRow + 1) << 32) | static_cast<uint32_t>(op.gridColumn + 1));
     }
@@ -497,14 +498,18 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
         return;
     }
 
-    auto slice = row.GetMutableImageSlice();
-    if (!slice || slice->CellSize() != cellSize)
+    // The composed pixels changed. Drop whatever we composed before,
+    // including a layer that no longer has any placements, and start over.
+    if (composed != _composedRows.end())
     {
-        slice = row.SetImageSlice(std::make_unique<ImageSlice>(cellSize));
+        ImageSlice::EraseCells(row, 0, row.size());
     }
 
     // Draw in (z, image id, placement id) order so overlaps behave
     // deterministically: the higher z, then the higher id, ends on top.
+    // Negative-z placements compose into the below-text layer, the rest
+    // into the above-text one; the renderer paints the former under the
+    // glyphs and the latter over them.
     std::sort(ops.begin(), ops.end(), [](const Op& a, const Op& b) {
         if (a.placement->z != b.placement->z)
         {
@@ -517,9 +522,21 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
         return a.placement->placementId < b.placement->placementId;
     });
 
+    ImageSlice* slices[2] = {};
     const auto rowWidth = row.size();
     for (const auto& op : ops)
     {
+        const auto below = op.placement->z < 0;
+        auto& slice = slices[below ? 1 : 0];
+        if (!slice)
+        {
+            const auto layer = below ? ImageSliceLayer::BelowText : ImageSliceLayer::AboveText;
+            slice = row.GetMutableImageSlice(layer);
+            if (!slice || slice->CellSize() != cellSize)
+            {
+                slice = row.SetImageSlice(layer, std::make_unique<ImageSlice>(cellSize));
+            }
+        }
         const auto columnBegin = std::max<til::CoordType>(0, op.columnBegin);
         const auto columnEnd = std::min<til::CoordType>(rowWidth, op.columnEnd);
         if (columnBegin >= columnEnd)
@@ -533,8 +550,14 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
 
         for (til::CoordType y = 0; y < cellSize.height; ++y)
         {
-            // The destination pixel row within this row's slice.
-            const auto localY = (op.placement->y + op.stripRow) * cellSize.height + op.pixelOffsetY + y - rowY * cellSize.height;
+            // The destination pixel row within this row's slice. Direct
+            // placements derive it from the placement's own position,
+            // which can be shifted into neighboring rows by pixel offsets.
+            // Placeholder cells draw into the very row that holds their
+            // text, sampling the strip of the grid row they encode.
+            const auto localY = op.gridRow < 0
+                ? (op.placement->y + op.stripRow) * cellSize.height + op.pixelOffsetY + y - rowY * cellSize.height
+                : y;
             if (localY < 0 || localY >= cellSize.height)
             {
                 continue;
@@ -563,7 +586,13 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
         }
     }
 
-    slice->BumpRevision();
+    for (auto* const composedSlice : slices)
+    {
+        if (composedSlice)
+        {
+            composedSlice->BumpRevision();
+        }
+    }
     if (_composedRows.size() >= MaxComposedRowEntries)
     {
         _composedRows.clear();

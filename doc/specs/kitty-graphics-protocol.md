@@ -49,8 +49,9 @@ Supported:
 - Direct placement (`a=p`, `a=T`) with source-rectangle cropping
   (`x,y,w,h`), cell-rectangle scaling (`c,r` with aspect-ratio
   computation when only one is given), pixel offsets (`X,Y`), z-index
-  acceptance (`z`, used for stacking order among placements), and all
-  three cursor movement policies (`C=0/1/2`).
+  layering (`z`: negative values render under the text, non-negative
+  over it, ties ordered by image id), and all three cursor movement
+  policies (`C=0/1/2`).
 - Unicode Placeholder placement (`U=1`) with the full diacritic encoding:
   row/column/image-id-high-byte diacritics, 8-bit ids via indexed
   foreground colors, 24-bit ids via RGB colors, and the diacritic
@@ -104,9 +105,12 @@ marks out of the clipboard and UIA.
 
 ## Deviations from kitty
 
-- z-index below text: placements always render above text; `z` orders
-  placements among themselves. Negative z-index layering under text is
-  not advertised in feature queries.
+- z-index below text is supported for the common tier: placements with a
+  negative `z` render under the text glyphs (over the cell backgrounds),
+  placements with `z >= 0` render over the text, and `z` orders
+  placements within a layer. The extreme-negative tier of the spec
+  (`z < INT32_MIN/2`, under cells with non-default background colors) is
+  not implemented; all negative values share the under-text layer.
 - Direct placements taller than the buffer are clipped at the buffer
   bottom instead of scrolling the screen.
 - On reflow, direct placement positions are clamped rather than
