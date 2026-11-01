@@ -217,6 +217,77 @@ namespace Microsoft::Console::VirtualTerminal
             VERIFY_IS_TRUE(_api->response.find(L"ENOSYS") != std::wstring::npos);
         }
 
+        TEST_METHOD(FrameChunkAppendsAndSelects)
+        {
+            // Root: 1x1 opaque red. Frame 2: 1x1 opaque blue.
+            SendApc(L"a=t,f=24,s=1,v=1,i=9;/wAA");
+            VERIFY_ARE_EQUAL(L"\x1b_Gi=9;OK\x1b\\", _api->response);
+            SendApc(L"a=f,i=9,z=48;AAD/");
+            VERIFY_ARE_EQUAL(L"\x1b_Gi=9;OK\x1b\\", _api->response);
+            const auto image = _buffer->GetKittyImages().FindImage(9);
+            VERIFY_IS_NOT_NULL(image);
+            VERIFY_ARE_EQUAL(2u, image->frames.size());
+            VERIFY_ARE_EQUAL(48, image->frames[1].gap);
+            VerifyPixel(RGBQUAD{ 0, 0, 255, 255 }, image->pixels[0]);
+
+            // Client-driven animation: show frame 2, then the root again.
+            SendApc(L"a=a,i=9,c=2");
+            VerifyPixel(RGBQUAD{ 255, 0, 0, 255 }, _buffer->GetKittyImages().FindImage(9)->pixels[0]);
+            SendApc(L"a=a,i=9,c=1");
+            VerifyPixel(RGBQUAD{ 0, 0, 255, 255 }, _buffer->GetKittyImages().FindImage(9)->pixels[0]);
+        }
+
+        TEST_METHOD(FrameChunkRectangleBlits)
+        {
+            // Root: 2x1 opaque red. A frame carrying a 1x1 rect of blue at
+            // x=1 edits the root frame in place via r=1.
+            SendApc(L"a=t,f=24,s=2,v=1,i=11;/wAAAP8A");
+            SendApc(L"a=f,i=11,x=1,w=1,h=1,r=1;AAD/");
+            const auto image = _buffer->GetKittyImages().FindImage(11);
+            VERIFY_IS_NOT_NULL(image);
+            VerifyPixel(RGBQUAD{ 0, 0, 255, 255 }, image->pixels[0]);
+            VerifyPixel(RGBQUAD{ 255, 0, 0, 255 }, image->pixels[1]);
+        }
+
+        TEST_METHOD(FrameComposeBlendsAndReplaces)
+        {
+            // Root: 1x1 opaque red. Frame 2: 1x1 blue at half opacity.
+            // Composing frame 2 over frame 1 blends; with C=1 it replaces.
+            SendApc(L"a=t,f=32,s=1,v=1,i=12;/wAA/w==");
+            SendApc(L"a=f,i=12;AAD/gA==");
+            SendApc(L"a=c,i=12,r=2,c=1");
+            auto image = _buffer->GetKittyImages().FindImage(12);
+            VERIFY_IS_NOT_NULL(image);
+            // 50% blue over opaque red: half red, half blue, opaque.
+            VERIFY_ARE_EQUAL(127, static_cast<int>(image->pixels[0].rgbRed));
+            VERIFY_ARE_EQUAL(0, static_cast<int>(image->pixels[0].rgbGreen));
+            VERIFY_ARE_EQUAL(128, static_cast<int>(image->pixels[0].rgbBlue));
+            VERIFY_ARE_EQUAL(255, static_cast<int>(image->pixels[0].rgbReserved));
+
+            SendApc(L"a=c,i=12,r=2,c=1,C=1");
+            image = _buffer->GetKittyImages().FindImage(12);
+            VerifyPixel(RGBQUAD{ 255, 0, 0, 128 }, image->pixels[0]);
+        }
+
+        TEST_METHOD(AnimationControlSetsGapAndState)
+        {
+            SendApc(L"a=t,f=24,s=1,v=1,i=13;/wAA");
+            SendApc(L"a=f,i=13;AP8A");
+            SendApc(L"a=a,i=13,r=2,z=48");
+            SendApc(L"a=a,i=13,s=3,v=5");
+            const auto image = _buffer->GetKittyImages().FindImage(13);
+            VERIFY_IS_NOT_NULL(image);
+            VERIFY_ARE_EQUAL(48, image->frames[1].gap);
+            VERIFY_ARE_EQUAL(3u, image->animState);
+            VERIFY_ARE_EQUAL(5u, image->loops);
+        }
+
+        TEST_METHOD(FrameOfUnknownImageFails)
+        {
+            SendApc(L"a=f,i=99;AAAA");
+            VERIFY_IS_TRUE(_api->response.find(L"ENOENT") != std::wstring::npos);
+        }
+
         TEST_METHOD(ChunkedTransmission)
         {
             // 2x1 RGB split across two chunks: red + green.
@@ -266,6 +337,70 @@ namespace Microsoft::Console::VirtualTerminal
             auto& row = _buffer->GetMutableRowByOffset(0);
             _buffer->GetKittyImages().ComposeRow(*_buffer, row, 0, { 10, 20 });
             VERIFY_IS_NOT_NULL(row.GetImageSlice());
+        }
+
+        TEST_METHOD(UpscalePreservesConstantChannels)
+        {
+            // An 80x40 gradient with a constant blue channel, scaled into
+            // 40x20 cells of 9x21 px: a 4.5x upscale. Every composed pixel
+            // must keep the constant channel exactly constant; averaging
+            // or sampling must not pull in neighboring channels.
+            constexpr auto srcW = 80, srcH = 40;
+            std::string rgb;
+            rgb.reserve(srcW * srcH * 3);
+            for (auto y = 0; y < srcH; ++y)
+            {
+                for (auto x = 0; x < srcW; ++x)
+                {
+                    rgb.push_back(static_cast<char>(x * 252 / (srcW - 1))); // R
+                    rgb.push_back('\0'); // G
+                    rgb.push_back('\x80'); // B
+                }
+            }
+            static constexpr char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            std::wstring payload;
+            payload.reserve((rgb.size() + 2) / 3 * 4);
+            for (size_t i = 0; i < rgb.size(); i += 3)
+            {
+                const auto b0 = static_cast<uint8_t>(rgb[i]);
+                const auto b1 = i + 1 < rgb.size() ? static_cast<uint8_t>(rgb[i + 1]) : 0;
+                const auto b2 = i + 2 < rgb.size() ? static_cast<uint8_t>(rgb[i + 2]) : 0;
+                payload += alphabet[b0 >> 2];
+                payload += alphabet[(b0 << 4 | b1 >> 4) & 0x3F];
+                payload += alphabet[(b1 << 2 | b2 >> 6) & 0x3F];
+                payload += alphabet[b2 & 0x3F];
+            }
+
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s={},v={},i=6,c=40,r=20;{}"), srcW, srcH, payload));
+
+            constexpr til::size cellSize{ 9, 21 };
+            std::set<uint8_t> reds;
+            auto checked = 0;
+            for (auto rowY = 0; rowY < 20; ++rowY)
+            {
+                auto& row = _buffer->GetMutableRowByOffset(rowY);
+                _buffer->GetKittyImages().ComposeRow(*_buffer, row, rowY, cellSize);
+                const auto slice = row.GetImageSlice();
+                if (!slice)
+                {
+                    continue;
+                }
+                for (const auto& pixel : slice->Pixels())
+                {
+                    if (pixel.rgbReserved == 0)
+                    {
+                        continue;
+                    }
+                    VERIFY_ARE_EQUAL(128, static_cast<int>(pixel.rgbBlue));
+                    VERIFY_ARE_EQUAL(0, static_cast<int>(pixel.rgbGreen));
+                    VERIFY_ARE_EQUAL(255, static_cast<int>(pixel.rgbReserved));
+                    reds.insert(pixel.rgbRed);
+                    ++checked;
+                }
+            }
+            // The letterboxed 40x20-cell area is 360x180 px of image.
+            VERIFY_ARE_EQUAL(360 * 180, checked);
+            VERIFY_IS_TRUE(reds.size() > 40);
         }
 
         TEST_METHOD(NegativeZIndexComposesBelowText)
