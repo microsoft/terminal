@@ -2320,8 +2320,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
+    // Method Description:
+    // - Hands the responses collected in _pendingResponses to _drainResponses,
+    //   which writes them from a thread pool thread. Writing them inline, on
+    //   the connection's reader thread, can deadlock: the write blocks on the
+    //   ConPTY input pipe until conhost drains it, while conhost may be
+    //   waiting for this side to drain its output pipe.
+    void ControlCore::_scheduleResponseDrain()
     {
+        {
+            std::lock_guard guard{ _responseQueueMutex };
+            _responseQueue.emplace_back(std::move(_pendingResponses));
+            _pendingResponses.clear();
+            if (_responseDrainScheduled)
+            {
+                return;
+            }
+            _responseDrainScheduled = true;
+        }
+        _drainResponses();
+    }
+
+    // Method Description:
+    // - Writes queued responses to the connection in order, off the
+    //   connection's reader thread. Runs until the queue is empty; another
+    //   _scheduleResponseDrain call starts a new drain if needed.
+    winrt::fire_and_forget ControlCore::_drainResponses()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+
+        for (;;)
+        {
+            std::wstring response;
+            {
+                std::lock_guard guard{ strongThis->_responseQueueMutex };
+                if (strongThis->_responseQueue.empty())
+                {
+                    // Only unschedule while holding the mutex, so a push
+                    // that observes the flag either finds the drain still
+                    // running or starts a new one.
+                    strongThis->_responseDrainScheduled = false;
+                    co_return;
+                }
+                response = std::move(strongThis->_responseQueue.front());
+                strongThis->_responseQueue.pop_front();
+            }
+            strongThis->_sendInputToConnection(response);
+        }
+    }
+
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)    {
         try
         {
             {
@@ -2331,8 +2380,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (!_pendingResponses.empty())
             {
-                _sendInputToConnection(_pendingResponses);
-                _pendingResponses.clear();
+                _scheduleResponseDrain();
             }
 
             // Start the throttled update of where our hyperlinks are.
