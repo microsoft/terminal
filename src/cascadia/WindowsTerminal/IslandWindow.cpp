@@ -495,6 +495,14 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     }
     case WM_ENABLE:
     {
+#ifdef _DEBUG
+        // GH#20873: Capture enable/disable transitions while investigating reports
+        // of the hosting HWND becoming disabled while the terminal remains active.
+        // Do not attempt to re-enable the window here: WM_ENABLE can represent a
+        // legitimate modal disable, and the source of the transition must be identified.
+        OutputDebugStringW(wparam ? L"Windows Terminal: hosting HWND enabled (WM_ENABLE)\n" :
+                                    L"Windows Terminal: hosting HWND disabled (WM_ENABLE)\n");
+#endif
         if (_interopWindowHandle != nullptr)
         {
             // send focus to the child window
