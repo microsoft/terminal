@@ -18,6 +18,7 @@
     <ClCompile Include="..\PageManager.cpp" />
     <ClCompile Include="..\SixelParser.cpp" />
     <ClCompile Include="..\KittyGraphicsParser.cpp" />
+    <ClCompile Include="..\Zlib.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\terminalOutput.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -35,6 +36,7 @@
     <ClInclude Include="..\PageManager.hpp" />
     <ClInclude Include="..\SixelParser.hpp" />
     <ClInclude Include="..\KittyGraphicsParser.hpp" />
+    <ClInclude Include="..\Zlib.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\terminalOutput.hpp" />
     <ClInclude Include="..\ITermDispatch.hpp" />

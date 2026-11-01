@@ -6,6 +6,7 @@
 #include "adaptDispatch.hpp"
 #include "SixelParser.hpp"
 #include "KittyGraphicsParser.hpp"
+#include "Zlib.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../renderer/base/renderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"

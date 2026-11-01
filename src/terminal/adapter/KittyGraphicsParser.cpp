@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include "KittyGraphicsParser.hpp"
+#include "Zlib.hpp"
 
 #include "adaptDispatch.hpp"
 #include "PageManager.hpp"
@@ -470,9 +471,9 @@ const wchar_t* KittyGraphicsParser::_validateTransmit()
     {
         return L"ENOSYS:only direct transmission is supported";
     }
-    if (_cmd.compressed)
+    if (_cmd.compressed && _cmd.compressed != L'z')
     {
-        return L"ENOSYS:compressed transmission is not supported";
+        return L"ENOSYS:only zlib compression is supported";
     }
     const auto format = _cmd.format.value_or(32);
     if (format == 24 || format == 32 || format == 100)
@@ -542,6 +543,29 @@ void KittyGraphicsParser::_finishTransmission()
     til::size size{};
     std::vector<RGBQUAD> pixels;
 
+    const auto decoded = Base64Decode(cmd.payloadBase64);
+    if (!decoded)
+    {
+        _respond(false, L"EINVAL:corrupt base64 payload");
+        return;
+    }
+    // The payload is decompressed before any format interpretation; a
+    // decompressed payload may not exceed the image memory budget.
+    const uint8_t* bytes = decoded->data();
+    size_t byteCount = decoded->size();
+    std::vector<uint8_t> inflated;
+    if (cmd.compressed == L'z')
+    {
+        inflated = Zlib::Inflate(std::span{ bytes, byteCount }, KittyImages::MaxTotalImageBytes).value_or(std::vector<uint8_t>{});
+        if (inflated.empty())
+        {
+            _respond(false, L"EINVAL:failed to decompress payload");
+            return;
+        }
+        bytes = inflated.data();
+        byteCount = inflated.size();
+    }
+
     if (format == 24 || format == 32)
     {
         const auto width = static_cast<til::CoordType>(cmd.dataWidth.value_or(0));
@@ -557,17 +581,16 @@ void KittyGraphicsParser::_finishTransmission()
             _respond(false, L"EINVAL:image too large");
             return;
         }
-        const auto decoded = Base64Decode(cmd.payloadBase64);
         const auto bytesPerPixel = format == 32 ? 4 : 3;
         const auto expected = static_cast<size_t>(width) * height * bytesPerPixel;
-        if (!decoded || decoded->size() != expected)
+        if (byteCount != expected)
         {
             _respond(false, L"EINVAL:payload size does not match dimensions");
             return;
         }
         size = { static_cast<til::CoordType>(width), static_cast<til::CoordType>(height) };
         pixels.resize(static_cast<size_t>(width) * height);
-        const auto* src = decoded->data();
+        const auto* src = bytes;
         for (size_t i = 0; i < pixels.size(); ++i)
         {
             const auto r = src[i * bytesPerPixel + 0];
@@ -579,8 +602,7 @@ void KittyGraphicsParser::_finishTransmission()
     }
     else // PNG
     {
-        const auto decoded = Base64Decode(cmd.payloadBase64);
-        if (!decoded || decoded->empty() || !DecodePng(*decoded, size, pixels))
+        if (byteCount == 0 || !DecodePng(std::vector<uint8_t>(bytes, bytes + byteCount), size, pixels))
         {
             _respond(false, L"EINVAL:failed to decode PNG payload");
             return;

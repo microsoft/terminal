@@ -34,6 +34,7 @@ SOURCES= \
     ..\FontBuffer.cpp \
     ..\InteractDispatch.cpp \
     ..\KittyGraphicsParser.cpp \
+    ..\Zlib.cpp \\
     ..\MacroBuffer.cpp \
     ..\PageManager.cpp \
     ..\SixelParser.cpp \

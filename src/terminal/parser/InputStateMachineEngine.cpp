@@ -5,6 +5,7 @@
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
+#include "ascii.hpp"
 
 #include <til/atomic.h>
 
@@ -569,16 +570,26 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParam
 }
 
 // Method Description:
-// - Triggers the ApcDispatch action. The input engine has no use for APC
-//   sequences, so it declines them and the state machine falls back to
-//   ignoring the sequence, as it always has.
+// - Triggers the ApcDispatch action. Sequences arriving on the input path
+//   are replies the application asked for (Kitty Graphics queries and the
+//   like), so they are routed to the application untouched instead of
+//   being consumed here.
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr, always
-IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch() noexcept
+// - the handler that forwards the raw sequence
+IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch()
 {
-    return nullptr;
+    return [this, content = std::wstring{ L"\x1b_" }](const wchar_t wch) mutable {
+        if (wch == AsciiChars::ESC)
+        {
+            content += L"\x1b\\";
+            _pDispatch->WriteStringRaw(content);
+            return true;
+        }
+        content += wch;
+        return true;
+    };
 }
 
 // Method Description:

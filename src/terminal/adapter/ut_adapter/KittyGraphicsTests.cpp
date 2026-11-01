@@ -211,7 +211,7 @@ namespace Microsoft::Console::VirtualTerminal
         {
             SendApc(L"a=t,t=f,i=5;AAAA");
             VERIFY_IS_TRUE(_api->response.find(L"ENOSYS") != std::wstring::npos);
-            SendApc(L"a=t,o=z,i=5;AAAA");
+            SendApc(L"a=t,o=q,i=5;AAAA");
             VERIFY_IS_TRUE(_api->response.find(L"ENOSYS") != std::wstring::npos);
             SendApc(L"a=t,f=8,s=1,v=1,i=5;AAAA");
             VERIFY_IS_TRUE(_api->response.find(L"ENOSYS") != std::wstring::npos);
@@ -288,6 +288,39 @@ namespace Microsoft::Console::VirtualTerminal
             // A delete in the middle of a chunked upload aborts it.
             SendApc(L"a=d,d=i,i=7");
             SendApc(L"m=0;AP8A");
+            VERIFY_IS_NULL(_buffer->GetKittyImages().FindImage(7));
+        }
+
+        TEST_METHOD(TransmitCompressedRgbaStoresImage)
+        {
+            // A 64x1 RGBA gradient, zlib-compressed by .NET. Exercises the
+            // dynamic-Huffman path of the inflater end to end.
+            const auto payload = L"eJwFwRG0gwAAQNFgEAyCQTAIBsEgGASDYBAMgkEwCAbBIBgEg2AQDIJBMAgGwSAYBINgEAyCQTAIBsEg+BDsnPfvFQSBgThElGSG8gRJ0Ripc2TNZKyvUAyHiblFtXym9gHNiZi5Z3QvZe7fMIKCRfjEjGqW8Qcr6VilP+xMZJ2PcAqFTTnFrXS29QKvsdi1a/zOZd/vCISAg3gklGKO8oVIyTipd2Kt5Ky/SIyGi/kltXqu9oDMkbi5Y3JP5e7PKAKDR7ikjGye8YYq8Xile+os5J2faIqET3mlrXK+9YOuqfhr3/Rdy6//4x9LS53B";
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=32,o=z,s=64,v=1,i=7;{}"), payload));
+            const auto image = _buffer->GetKittyImages().FindImage(7);
+            VERIFY_IS_NOT_NULL(image);
+            VERIFY_ARE_EQUAL(64, image->size.width);
+            VERIFY_ARE_EQUAL(1, image->size.height);
+            VerifyPixel(RGBQUAD{ 0, 0, 0, 255 }, image->pixels[0]);
+            VerifyPixel(RGBQUAD{ 24, 16, 8, 255 }, image->pixels[2]);
+        }
+
+        TEST_METHOD(TransmitZlibStoredBlockStoresImage)
+        {
+            // A zlib stream with a stored (uncompressed) deflate block,
+            // assembled by hand: header, final+stored flag, LEN/NLEN, one
+            // red RGB pixel, Adler-32 of { 0xff, 0, 0 }.
+            const auto payload = L"eJz7z8AAAAMAAQA=";
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,o=z,s=1,v=1,i=7;{}"), payload));
+            const auto image = _buffer->GetKittyImages().FindImage(7);
+            VERIFY_IS_NOT_NULL(image);
+            VerifyPixel(RGBQUAD{ 0, 0, 255, 255 }, image->pixels[0]);
+        }
+
+        TEST_METHOD(CorruptZlibRejected)
+        {
+            SendApc(L"a=t,f=32,o=z,s=1,v=1,i=7;AAAA");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
             VERIFY_IS_NULL(_buffer->GetKittyImages().FindImage(7));
         }
 

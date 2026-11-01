@@ -438,10 +438,10 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - The Kitty Graphics Protocol is enabled for the classic console host as
-//   well; its renderer paints ImageSlices content the same way Sixel does.
-//   Note that over ConPTY, APC sequences are not forwarded to the hosting
-//   terminal, so the protocol is only observable in direct sessions.
+// - The Kitty Graphics Protocol is handled locally in every mode: direct
+//   sessions render it through the console surface, ConPTY sessions
+//   re-emit the composed pixels through the terminal stream, the same way
+//   Sixel content reaches the hosting terminal.
 bool ConhostInternalGetSet::IsKittyGraphicsProtocolEnabled() const noexcept
 {
     return true;
