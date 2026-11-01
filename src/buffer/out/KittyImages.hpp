@@ -33,12 +33,29 @@ public:
     static constexpr til::CoordType MaxDimension = 10000;
     static constexpr uint32_t AutoPlacementId = 0;
 
+    // One animation frame of an image. Frame numbers are 1-based in the
+    // protocol; frame 1 is the root data transmitted with the image itself.
+    // The extra frames start at frame 2.
+    struct Frame
+    {
+        std::vector<RGBQUAD> pixels; // full image size, straight alpha
+        int32_t gap = 0; // ms to wait before the next frame; < 0 is gapless
+    };
+
     struct Image
     {
         uint32_t id = 0;
         uint32_t number = 0; // the client supplied I= key, 0 if none
         til::size size; // in pixels
-        std::vector<RGBQUAD> pixels; // row-major, BGRA, straight alpha
+        std::vector<RGBQUAD> pixels; // row-major, BGRA, straight alpha; the currently displayed frame
+        uint32_t format = 32; // 24, 32 or 100, kept for animation frame data
+        char compressed = 0; // 'z' when the payload arrived zlib compressed
+        uint32_t currentFrame = 1; // 1-based frame number shown in pixels
+        uint32_t animState = 0; // last s= value of a=a, kept for the client
+        uint32_t loops = 0; // last v= value of a=a, kept for the client
+        // Root frame first (a copy of the pixels as transmitted), the extra
+        // animation frames after it; frames[k] is frame number k + 1.
+        std::vector<Frame> frames;
         uint64_t gen = 0; // bumped when the pixel data is replaced
     };
 
@@ -70,8 +87,9 @@ public:
     // Stores a new image. Returns the image, with id filled in when the
     // caller passed 0 (the terminal assigns an unused id).
     // Re-transmitting an existing id replaces the image and deletes its
-    // placements, per the spec.
-    const Image* StoreImage(uint32_t id, uint32_t number, til::size size, std::vector<RGBQUAD>&& pixels);
+    // placements, per the spec. The format and compression are kept so
+    // later animation frame data can be decoded the same way.
+    const Image* StoreImage(uint32_t id, uint32_t number, til::size size, std::vector<RGBQUAD>&& pixels, uint32_t format = 32, char compressed = 0);
     bool HasPlacements(uint32_t imageId) const noexcept;
     // Frees the data of every image without placements. Returns how many.
     size_t DeleteUnreferencedImages();
@@ -83,6 +101,30 @@ public:
     // Adds a placement, or replaces the existing one with the same
     // (imageId, placementId) pair when placementId is non-zero.
     void AddPlacement(Placement placement);
+
+    // Animation frames. Every frame of an image is a full-size pixel
+    // buffer; frame 1 is the root data. StoredFrameGap returns the frame
+    // gap of a frame, 0 when it has none.
+    static constexpr uint32_t MaxFrames = 1024;
+    // Returns the image with its frames ensured to hold `frame` entries,
+    // padding with transparent frames, or nullptr when the frame number is
+    // out of range.
+    Image* EnsureFrames(uint32_t imageId, uint32_t frame);
+    // Stores a full frame buffer as the given frame (0 = append after the
+    // last). Returns false when the image or frame number is invalid.
+    bool StoreFrame(uint32_t imageId, uint32_t frame, std::vector<RGBQUAD>&& pixels, int32_t gap);
+    // Copies the given frame into the image's displayed pixels. Returns
+    // false when the image or frame number is invalid.
+    bool SelectFrame(uint32_t imageId, uint32_t frame);
+    // Sets just a frame's gap. Returns false on an invalid image or frame.
+    bool SetFrameGap(uint32_t imageId, uint32_t frame, int32_t gap);
+    // Copies a rectangle of one frame over another, alpha blended or
+    // replaced depending on `replace`. Returns false when the image, frame
+    // numbers or rectangle are invalid.
+    bool ComposeFrames(uint32_t imageId, uint32_t source, uint32_t destination, const til::rect& sourceRect, const til::point& destinationOffset, bool replace);
+    // Records the last animation-control state keys. Returns false on an
+    // unknown image.
+    bool SetAnimationState(uint32_t imageId, uint32_t state, uint32_t loops);
     // Deletes placements matching the predicate. Returns how many.
     template<typename F>
     size_t DeletePlacements(F&& filter)

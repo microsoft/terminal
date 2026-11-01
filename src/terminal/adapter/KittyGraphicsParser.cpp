@@ -200,6 +200,7 @@ bool KittyGraphicsParser::_handleChar(const wchar_t ch)
         case L'z':
         case L'H':
         case L'V':
+        case L'b':
             _currentKey = ch;
             _state = ParseState::Equal;
             return true;
@@ -342,6 +343,7 @@ bool KittyGraphicsParser::_foldKeyValue()
     case L'X': _cmd.cellXOffset = u32; break;
     case L'Y': _cmd.cellYOffset = u32; break;
     case L'z': _cmd.zIndex = i32; break;
+    case L'b': _cmd.frameNumber = u32; break;
     case L'C': _cmd.cursorMovement = u32; break;
     case L'U': _cmd.unicodePlacement = u32; break;
     case L'N': _cmd.usageHints = u32; break;
@@ -360,10 +362,14 @@ void KittyGraphicsParser::_applyCommand()
 {
     // Any other command while a chunked transmission is in flight abandons
     // it; the client violated the chunking contract. Continuation chunks
-    // (no action key) are of course exempt.
-    if (_pendingValid && _cmd.action != 0 && _cmd.action != L't' && _cmd.action != L'T')
+    // (no action key) and frame-data chunks are of course exempt.
+    if (_pendingValid && _cmd.action != 0 && _cmd.action != L't' && _cmd.action != L'T' && _cmd.action != L'f')
     {
         _pendingValid = false;
+    }
+    if (_framePendingValid && _cmd.action != 0 && _cmd.action != L'f')
+    {
+        _framePendingValid = false;
     }
 
     switch (_cmd.action)
@@ -399,10 +405,13 @@ void KittyGraphicsParser::_applyCommand()
         _delete();
         break;
     case L'f':
+        _frame();
+        break;
     case L'a':
+        _animate();
+        break;
     case L'c':
-        // Animation actions.
-        _respond(false, L"ENOSYS:animations are not supported");
+        _compose();
         break;
     default:
         break;
@@ -618,7 +627,7 @@ void KittyGraphicsParser::_finishTransmission()
         id = _assignImageId();
         _assignedId = id;
     }
-    _images().StoreImage(id, cmd.imageNumber.value_or(0), size, std::move(pixels));
+    _images().StoreImage(id, cmd.imageNumber.value_or(0), size, std::move(pixels), format, static_cast<char>(cmd.compressed));
 
     if (cmd.unicodePlacement.value_or(0))
     {
@@ -1032,4 +1041,252 @@ void KittyGraphicsParser::_delete()
     }
 
     _respond(true);
+}
+
+namespace
+{
+    // Locates the image a command addresses through i= or I=.
+    const KittyImages::Image* FindTargetImage(const KittyImages& images, const std::optional<uint32_t>& id, const std::optional<uint32_t>& imageNumber)
+    {
+        if (id)
+        {
+            return images.FindImage(*id);
+        }
+        if (imageNumber)
+        {
+            return images.FindNewestImageByNumber(*imageNumber);
+        }
+        return nullptr;
+    }
+}
+
+void KittyGraphicsParser::_frame()
+{
+    // A frame-data chunk carrying the full parameter set starts a new
+    // frame; a chunk with only m= and payload continues the current one.
+    const auto isContinuation = _framePendingValid && _framePending.more.value_or(0) &&
+                                !_cmd.id && !_cmd.imageNumber && !_cmd.frameNumber &&
+                                !_cmd.xOffset && !_cmd.yOffset && !_cmd.width && !_cmd.height && !_cmd.numLines && !_cmd.zIndex;
+    if (!isContinuation)
+    {
+        _framePending = _cmd;
+        _framePending.payloadBase64.clear();
+        _frameBase64Bytes = 0;
+        _framePendingValid = true;
+    }
+
+    if (_frameBase64Bytes + _cmd.payloadBase64.size() > MaxBase64Length)
+    {
+        _framePendingValid = false;
+        _respond(false, L"EINVAL:payload too large");
+        return;
+    }
+    _frameBase64Bytes += _cmd.payloadBase64.size();
+    _framePending.payloadBase64 += _cmd.payloadBase64;
+    _framePending.more = _cmd.more;
+    _framePending.quiet = _cmd.quiet;
+
+    if (_framePending.more.value_or(0))
+    {
+        return;
+    }
+    _framePendingValid = false;
+
+    const auto cmd = std::move(_framePending);
+    _cmd.id = cmd.id;
+    _cmd.imageNumber = cmd.imageNumber;
+    _cmd.quiet = cmd.quiet;
+
+    const auto image = FindTargetImage(_images(), cmd.id, cmd.imageNumber);
+    if (!image)
+    {
+        _respond(false, L"ENOENT:no image with the specified id");
+        return;
+    }
+    if (image->format == 100)
+    {
+        // PNG images have no raw frame data; animation frames arrive as
+        // raw pixels over f=24/f=32 transmissions.
+        _respond(false, L"EINVAL:frames require a raw pixel format");
+        return;
+    }
+
+    const auto width = static_cast<til::CoordType>(cmd.width.value_or(0));
+    const auto height = static_cast<til::CoordType>(cmd.height.value_or(0));
+    const auto x = static_cast<til::CoordType>(cmd.xOffset.value_or(0));
+    const auto y = static_cast<til::CoordType>(cmd.yOffset.value_or(0));
+    const auto full = width == 0 && height == 0;
+    const auto rectWidth = full ? image->size.width : width;
+    const auto rectHeight = full ? image->size.height : height;
+    if (rectWidth <= 0 || rectHeight <= 0 || rectWidth > image->size.width || rectHeight > image->size.height ||
+        x < 0 || y < 0 || x + rectWidth > image->size.width || y + rectHeight > image->size.height)
+    {
+        _respond(false, L"EINVAL:invalid frame rectangle");
+        return;
+    }
+
+    const auto decoded = Base64Decode(cmd.payloadBase64);
+    if (!decoded)
+    {
+        _respond(false, L"EINVAL:corrupt base64 payload");
+        return;
+    }
+    const uint8_t* bytes = decoded->data();
+    size_t byteCount = decoded->size();
+    std::vector<uint8_t> inflated;
+    if (image->compressed == L'z')
+    {
+        inflated = Zlib::Inflate(std::span{ bytes, byteCount }, KittyImages::MaxTotalImageBytes).value_or(std::vector<uint8_t>{});
+        if (inflated.empty())
+        {
+            _respond(false, L"EINVAL:failed to decompress payload");
+            return;
+        }
+        bytes = inflated.data();
+        byteCount = inflated.size();
+    }
+
+    const auto bytesPerPixel = image->format == 24 ? 3 : 4;
+    if (byteCount != static_cast<size_t>(rectWidth) * rectHeight * bytesPerPixel)
+    {
+        _respond(false, L"EINVAL:payload size does not match the rectangle");
+        return;
+    }
+
+    // The frame starts transparent, or as a copy of the frame the r key
+    // names when the client edits an existing one.
+    std::vector<RGBQUAD> frame;
+    {
+        const auto editBase = cmd.numLines.value_or(0);
+        if (editBase)
+        {
+            _images().EnsureFrames(image->id, editBase);
+            const auto* stored = _images().FindImage(image->id);
+            if (stored->frames.size() >= editBase)
+            {
+                frame = stored->frames[editBase - 1].pixels;
+            }
+        }
+        if (frame.empty())
+        {
+            frame.resize(image->pixels.size());
+        }
+    }
+    for (til::CoordType row = 0; row < rectHeight; ++row)
+    {
+        const auto* src = bytes + static_cast<size_t>(row) * rectWidth * bytesPerPixel;
+        auto* dst = frame.data() + static_cast<size_t>(y + row) * image->size.width + x;
+        for (til::CoordType col = 0; col < rectWidth; ++col)
+        {
+            const auto r = src[col * bytesPerPixel + 0];
+            const auto g = src[col * bytesPerPixel + 1];
+            const auto b = src[col * bytesPerPixel + 2];
+            const auto a = bytesPerPixel == 4 ? src[col * bytesPerPixel + 3] : uint8_t{ 255 };
+            dst[col] = RGBQUAD{ b, g, r, a };
+        }
+    }
+
+    // A b= frame number stores the frame under that number (b=0 means
+    // unspecified, which appends); an r= edit without b= replaces r.
+    auto target = cmd.frameNumber.value_or(0);
+    if (target == 0 && cmd.numLines)
+    {
+        target = *cmd.numLines;
+    }
+    if (!_images().StoreFrame(image->id, target, std::move(frame), cmd.zIndex.value_or(0)))
+    {
+        _respond(false, L"EINVAL:invalid frame number");
+        return;
+    }
+    _respond(true);
+}
+
+void KittyGraphicsParser::_compose()
+{
+    const auto image = FindTargetImage(_images(), _cmd.id, _cmd.imageNumber);
+    if (!image)
+    {
+        _respond(false, L"ENOENT:no image with the specified id");
+        return;
+    }
+    const auto source = _cmd.numLines.value_or(1);
+    const auto destination = _cmd.numCells.value_or(1);
+    if (source == 0 || destination == 0 || source > KittyImages::MaxFrames || destination > KittyImages::MaxFrames)
+    {
+        _respond(false, L"EINVAL:invalid frame number");
+        return;
+    }
+
+    const auto sx = static_cast<til::CoordType>(_cmd.cellXOffset.value_or(0));
+    const auto sy = static_cast<til::CoordType>(_cmd.cellYOffset.value_or(0));
+    const auto w = static_cast<til::CoordType>(_cmd.width.value_or(0));
+    const auto h = static_cast<til::CoordType>(_cmd.height.value_or(0));
+    const auto rectWidth = w ? w : image->size.width;
+    const auto rectHeight = h ? h : image->size.height;
+    const auto srcRect = til::rect{ sx, sy, sx + rectWidth, sy + rectHeight };
+    const auto destinationOffset = til::point{ static_cast<til::CoordType>(_cmd.xOffset.value_or(0)), static_cast<til::CoordType>(_cmd.yOffset.value_or(0)) };
+    const auto replace = _cmd.cursorMovement.value_or(0) == 1;
+
+    if (!_images().ComposeFrames(image->id, source, destination, srcRect, destinationOffset, replace))
+    {
+        _respond(false, L"EINVAL:invalid composition rectangle");
+        return;
+    }
+    _redrawImagePlacements(image->id);
+    _respond(true);
+}
+
+void KittyGraphicsParser::_animate()
+{
+    const auto image = FindTargetImage(_images(), _cmd.id, _cmd.imageNumber);
+    if (!image)
+    {
+        _respond(false, L"ENOENT:no image with the specified id");
+        return;
+    }
+    const auto imageId = image->id;
+    auto ok = true;
+    auto visible = false;
+    // c= makes a frame the displayed one.
+    if (_cmd.numCells)
+    {
+        ok = _images().SelectFrame(imageId, *_cmd.numCells);
+        visible = ok;
+    }
+    // r= with z= sets the gap of that frame.
+    if (_cmd.numLines && _cmd.zIndex)
+    {
+        ok = _images().SetFrameGap(imageId, *_cmd.numLines, *_cmd.zIndex) && ok;
+    }
+    // s= and v= record the requested animation state. Terminal-driven
+    // playback is not implemented; the keys are kept for the client.
+    if (_cmd.dataWidth || _cmd.dataHeight)
+    {
+        ok = _images().SetAnimationState(imageId, _cmd.dataWidth.value_or(0), _cmd.dataHeight.value_or(0)) && ok;
+    }
+    if (!ok)
+    {
+        _respond(false, L"EINVAL:invalid animation command");
+        return;
+    }
+    if (visible)
+    {
+        _redrawImagePlacements(imageId);
+    }
+    _respond(true);
+}
+
+void KittyGraphicsParser::_redrawImagePlacements(const uint32_t imageId)
+{
+    auto page = _dispatcher._pages.ActivePage();
+    for (const auto& placement : _images().Placements())
+    {
+        if (placement.imageId != imageId)
+        {
+            continue;
+        }
+        const auto rect = til::inclusive_rect{ placement.x, placement.y, placement.x + placement.cols - 1, placement.y + placement.rows - 1 };
+        page.Buffer().TriggerRedraw(Viewport::FromInclusive(rect));
+    }
+    page.Buffer().NotifyPaintFrame();
 }

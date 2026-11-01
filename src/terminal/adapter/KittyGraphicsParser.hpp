@@ -16,11 +16,15 @@ Abstract:
   assigned image ids (i=/I=), direct placements with source-rectangle
   cropping and cell-rectangle scaling (x,y,w,h,c,r,X,Y,z), cursor movement
   policies (C=), Unicode placeholder virtual placements (U=1), deletion
-  (d=), quiet responses (q=), and query actions (a=q) including feature
-  queries (e=).
+  (d=), quiet responses (q=), query actions (a=q) including feature
+  queries (e=), zlib compression (o=z), animation frames (a=f with b= and
+  z=), frame composition (a=c) and client-driven animation control (a=a
+  with c=, r=, z=, s= and v=).
 - Not supported, answered with ENOSYS when asked: file and shared memory
-  transmission (t=f/t/s), compression (o=z), indexed color formats (f=8,
-  f=16), animation (a=f/a/c), and relative placements (P=/Q=/H=/V=).
+  transmission (t=f/t/s), indexed color formats (f=8, f=16), and relative
+  placements (P=/Q=/H=/V=). Terminal-driven animation playback (the
+  timing of s=2/s=3) is not implemented; frames are stored and can be
+  selected by the client.
 --*/
 
 #pragma once
@@ -74,10 +78,11 @@ namespace Microsoft::Console::VirtualTerminal
             std::optional<uint32_t> numLines; // r=
             std::optional<uint32_t> cellXOffset; // X=
             std::optional<uint32_t> cellYOffset; // Y=
-            std::optional<int32_t> zIndex; // z=
-            std::optional<uint32_t> cursorMovement; // C=
+            std::optional<int32_t> zIndex; // z= (z-index; a frame gap on frame and animation commands)
+            std::optional<uint32_t> cursorMovement; // C= (also the compose mode of a=c)
             std::optional<uint32_t> unicodePlacement; // U=
             std::optional<uint32_t> usageHints; // N=
+            std::optional<uint32_t> frameNumber; // b=, the frame number of a=f data
             std::string payloadBase64;
         };
 
@@ -96,6 +101,11 @@ namespace Microsoft::Console::VirtualTerminal
         void _query();
         void _queryFeatures();
         void _delete();
+        void _frame();
+        void _finishFrame();
+        void _compose();
+        void _animate();
+        void _redrawImagePlacements(uint32_t imageId);
 
         void _respond(bool ok, const wchar_t* message = L"OK") const;
         std::wstring _responsePrefix() const;
@@ -129,6 +139,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool _pendingValid = false;
         Command _pending;
         size_t _pendingBase64Bytes = 0;
+
+        // A multi-chunk animation frame (a=f) accumulates the same way.
+        bool _framePendingValid = false;
+        Command _framePending;
+        size_t _frameBase64Bytes = 0;
 
         // The id the terminal assigned for this command, when the client
         // did not supply one. Echoed in responses.

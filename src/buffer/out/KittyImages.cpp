@@ -63,7 +63,7 @@ const KittyImages::Image* KittyImages::FindNewestImageByNumber(const uint32_t nu
     return nullptr;
 }
 
-const KittyImages::Image* KittyImages::StoreImage(const uint32_t id, const uint32_t number, const til::size size, std::vector<RGBQUAD>&& pixels)
+const KittyImages::Image* KittyImages::StoreImage(const uint32_t id, const uint32_t number, const til::size size, std::vector<RGBQUAD>&& pixels, const uint32_t format, const char compressed)
 {
     // Re-transmitting an id replaces the image and deletes its placements.
     const auto existing = std::find_if(_images.begin(), _images.end(), [&](const Image& image) {
@@ -82,6 +82,8 @@ const KittyImages::Image* KittyImages::StoreImage(const uint32_t id, const uint3
     image.number = number;
     image.size = size;
     image.pixels = std::move(pixels);
+    image.format = format;
+    image.compressed = compressed;
     image.gen = _nextImageGen++;
     _images.push_back(std::move(image));
 
@@ -148,8 +150,185 @@ bool KittyImages::DeleteImage(const uint32_t id)
     return true;
 }
 
-KittyImages::Placement* KittyImages::FindPlacement(const uint32_t imageId, const uint32_t placementId) noexcept
+KittyImages::Image* KittyImages::EnsureFrames(const uint32_t imageId, const uint32_t frame)
 {
+    if (frame == 0 || frame > MaxFrames)
+    {
+        return nullptr;
+    }
+    const auto image = std::find_if(_images.begin(), _images.end(), [&](const Image& entry) {
+        return entry.id == imageId;
+    });
+    if (image == _images.end())
+    {
+        return nullptr;
+    }
+    if (image->frames.empty())
+    {
+        // The root frame is the image data as transmitted.
+        image->frames.push_back(Frame{ image->pixels, 0 });
+    }
+    while (image->frames.size() < frame)
+    {
+        image->frames.push_back(Frame{ std::vector<RGBQUAD>(image->pixels.size()), 0 });
+    }
+    return &*image;
+}
+
+bool KittyImages::StoreFrame(const uint32_t imageId, const uint32_t frame, std::vector<RGBQUAD>&& pixels, const int32_t gap)
+{
+    auto target = frame;
+    if (target == 0)
+    {
+        // Append after the last frame.
+        const auto* existing = EnsureFrames(imageId, 1);
+        if (!existing)
+        {
+            return false;
+        }
+        target = static_cast<uint32_t>(existing->frames.size()) + 1;
+    }
+    const auto image = EnsureFrames(imageId, target);
+    if (!image || pixels.size() != image->pixels.size())
+    {
+        return false;
+    }
+    auto& slot = image->frames[target - 1];
+    slot.pixels = std::move(pixels);
+    slot.gap = gap;
+    if (target == 1)
+    {
+        // A root-frame edit changes what is displayed whenever the root is
+        // the current frame.
+        image->pixels = image->frames[0].pixels;
+        image->currentFrame = 1;
+        image->gen = _nextImageGen++;
+        _Bump();
+    }
+    return true;
+}
+
+bool KittyImages::SelectFrame(const uint32_t imageId, const uint32_t frame)
+{
+    const auto image = EnsureFrames(imageId, frame);
+    if (!image)
+    {
+        return false;
+    }
+    if (image->currentFrame == frame)
+    {
+        return true;
+    }
+    image->pixels = image->frames[frame - 1].pixels;
+    image->currentFrame = frame;
+    image->gen = _nextImageGen++;
+    _Bump();
+    return true;
+}
+
+bool KittyImages::SetFrameGap(const uint32_t imageId, const uint32_t frame, const int32_t gap)
+{
+    const auto image = EnsureFrames(imageId, frame);
+    if (!image)
+    {
+        return false;
+    }
+    image->frames[frame - 1].gap = gap;
+    return true;
+}
+
+bool KittyImages::ComposeFrames(const uint32_t imageId, const uint32_t source, const uint32_t destination, const til::rect& sourceRect, const til::point& destinationOffset, const bool replace)
+{
+    const auto image = EnsureFrames(imageId, std::max(source, destination));
+    if (!image)
+    {
+        return false;
+    }
+    const auto width = image->size.width;
+    const auto height = image->size.height;
+    if (sourceRect.left < 0 || sourceRect.top < 0 || sourceRect.right > width || sourceRect.bottom > height ||
+        sourceRect.right <= sourceRect.left || sourceRect.bottom <= sourceRect.top)
+    {
+        return false;
+    }
+    // Clip the destination rectangle to the image; the matching source
+    // region shrinks with it.
+    auto copy = sourceRect;
+    auto offsetX = destinationOffset.x;
+    auto offsetY = destinationOffset.y;
+    if (offsetX < 0)
+    {
+        copy.left -= offsetX;
+        offsetX = 0;
+    }
+    if (offsetY < 0)
+    {
+        copy.top -= offsetY;
+        offsetY = 0;
+    }
+    copy.right = std::min<til::CoordType>(copy.right, copy.left + (width - offsetX));
+    copy.bottom = std::min<til::CoordType>(copy.bottom, copy.top + (height - offsetY));
+    if (copy.right <= copy.left || copy.bottom <= copy.top)
+    {
+        return false;
+    }
+
+    auto& srcFrame = image->frames[source - 1];
+    auto& dstFrame = image->frames[destination - 1];
+    for (auto y = copy.top; y < copy.bottom; ++y)
+    {
+        for (auto x = copy.left; x < copy.right; ++x)
+        {
+            const auto src = srcFrame.pixels[static_cast<size_t>(y) * width + x];
+            auto& dst = dstFrame.pixels[static_cast<size_t>(y + offsetY - sourceRect.top) * width + (x + offsetX - sourceRect.left)];
+            if (replace || src.rgbReserved == 255)
+            {
+                dst = src;
+                continue;
+            }
+            if (src.rgbReserved == 0)
+            {
+                continue;
+            }
+            // Straight-alpha "over".
+            const auto srcA = src.rgbReserved / 255.0f;
+            const auto dstA = dst.rgbReserved / 255.0f;
+            const auto outA = srcA + dstA * (1.0f - srcA);
+            const auto blend = [srcA, dstA, outA](const float s, const float d) {
+                return static_cast<BYTE>((s * srcA + d * dstA * (1.0f - srcA)) / (outA > 0.0f ? outA : 1.0f) + 0.5f);
+            };
+            dst = RGBQUAD{
+                blend(src.rgbBlue, dst.rgbBlue),
+                blend(src.rgbGreen, dst.rgbGreen),
+                blend(src.rgbRed, dst.rgbRed),
+                static_cast<BYTE>(outA * 255.0f + 0.5f),
+            };
+        }
+    }
+    if (image->currentFrame == destination)
+    {
+        image->pixels = dstFrame.pixels;
+        image->gen = _nextImageGen++;
+        _Bump();
+    }
+    return true;
+}
+
+bool KittyImages::SetAnimationState(const uint32_t imageId, const uint32_t state, const uint32_t loops)
+{
+    const auto image = std::find_if(_images.begin(), _images.end(), [&](const Image& entry) {
+        return entry.id == imageId;
+    });
+    if (image == _images.end())
+    {
+        return false;
+    }
+    image->animState = state;
+    image->loops = loops;
+    return true;
+}
+
+KittyImages::Placement* KittyImages::FindPlacement(const uint32_t imageId, const uint32_t placementId) noexcept{
     for (auto& placement : _placements)
     {
         if (placement.imageId == imageId && placement.placementId == placementId)

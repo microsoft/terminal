@@ -61,13 +61,27 @@ Supported:
   freeing for the capital variants.
 - Query actions (`a=q`) including feature queries (`e=`), which is how
   well-behaved clients detect support, and quiet levels (`q=1/2`).
+- Animation frames (`a=f`): raw frame data for an existing image, chunked
+  like transmissions, placed as full frames or rectangles (`x,y,w,h`),
+  editing an existing frame via `r=`, stored under an explicit frame
+  number (`b=`) or appended, with frame gaps (`z=`).
+- Frame composition (`a=c`): copying a rectangle from one frame onto
+  another (`r=` source, `c=` destination, `X,Y,x,y,w,h` rectangle),
+  alpha-blended by default or replacing with `C=1`.
+- Animation control (`a=a`): selecting the displayed frame (`c=`),
+  setting a frame's gap (`r=` with `z=`) and recording the requested
+  state (`s=`, `v=`). Client-driven animation works end to end; the
+  terminal does not advance frames on its own.
 
 Not supported, answered with `ENOSYS` errors: file and shared-memory
-transmission (`t=f/t/s/t=t`), compression (`o=z`), indexed color formats
-(`f=8/f=16`), animation (`a=f/a=c` and `d=f`), and relative placements
+transmission (`t=f/t/s/t=t`), indexed color formats
+(`f=8/f=16`), and relative placements
 (`P/Q/H/V`). The file-path media are refused deliberately: honoring an
 arbitrary client-supplied path is an arbitrary-file-read primitive for
 any program that can write to the terminal, including remote ones.
+Terminal-driven playback (timing the frame gaps of `a=a` `s=2`/`s=3`)
+is not implemented; the frames and gaps are stored and clients can step
+them with `a=a` `c=`.
 
 ### Storage and composition
 
