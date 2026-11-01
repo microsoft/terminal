@@ -438,13 +438,12 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - The Kitty Graphics Protocol is handled locally in every mode: direct
-//   sessions render it through the console surface, ConPTY sessions
-//   re-emit the composed pixels through the terminal stream, the same way
-//   Sixel content reaches the hosting terminal.
+// - Direct classic console sessions parse and render the Kitty Graphics
+//   Protocol locally. Over ConPTY the sequences pass through to the
+//   hosting terminal, which renders them itself.
 bool ConhostInternalGetSet::IsKittyGraphicsProtocolEnabled() const noexcept
 {
-    return true;
+    return !IsConPTY();
 }
 
 // Routine Description:

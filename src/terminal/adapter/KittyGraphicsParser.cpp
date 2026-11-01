@@ -10,6 +10,9 @@
 #include "../parser/stateMachine.hpp"
 #include "../parser/ascii.hpp"
 #include "../../buffer/out/ImageSlice.hpp"
+#include "../../types/inc/Viewport.hpp"
+
+using Microsoft::Console::Types::Viewport;
 #include "../../buffer/out/KittyImages.hpp"
 #include "../../buffer/out/KittyPlaceholder.hpp"
 
@@ -784,6 +787,15 @@ bool KittyGraphicsParser::_placeDirect(const Command& cmd, const uint32_t imageI
     placement.z = cmd.zIndex.value_or(0);
     _images().AddPlacement(std::move(placement));
 
+    // The covered rows are often blank text; without this they stay clean
+    // in the renderer's damage tracking and never repaint, so the composed
+    // pixels would not reach the screen.
+    {
+        const auto page2 = _dispatcher._pages.ActivePage();
+        const auto rect = til::inclusive_rect{ origin.x, origin.y, origin.x + cols - 1, origin.y + rows - 1 };
+        page2.Buffer().TriggerRedraw(Viewport::FromInclusive(rect));
+    }
+
     // Cursor movement policy. The default moves the cursor right and down
     // by the placement size, C=1 leaves it alone, C=2 puts it at the start
     // of the line below the image.
@@ -1008,6 +1020,9 @@ void KittyGraphicsParser::_delete()
         _respond(false, L"EINVAL:unknown delete action");
         return;
     }
+
+    // Redraw everything: deletions can affect rows anywhere on screen.
+    _dispatcher._pages.VisiblePage().Buffer().TriggerRedrawAll();
 
     // The capital variants also free the data of images that lost their
     // last placement.
