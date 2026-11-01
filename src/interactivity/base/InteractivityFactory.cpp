@@ -418,6 +418,16 @@ void InteractivityFactory::SetVisibility(const bool isVisible) noexcept
 {
     switch (Message)
     {
+    case WM_ENABLE:
+    {
+#ifdef _DEBUG
+        // GH#20873: Determine whether the owned pseudo-console HWND participates in
+        // an unexpected modal disable/enable transition.
+        OutputDebugStringW(wParam ? L"Windows Terminal: PseudoConsoleWindow enabled (WM_ENABLE)\n" :
+                                    L"Windows Terminal: PseudoConsoleWindow disabled (WM_ENABLE)\n");
+#endif
+        break;
+    }
     // NOTE: To the future reader, all window messages that are talked about but unused were tested
     //       during prototyping and didn't give quite the results needed to determine show/hide window
     //       state. The notes are left here for future expeditions into message queues.
