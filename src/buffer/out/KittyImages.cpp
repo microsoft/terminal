@@ -508,6 +508,67 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
             memcpy(dst, src, static_cast<size_t>(dstW) * sizeof(RGBQUAD));
         }
     }
+    else if (scale > 1.0)
+    {
+        // Upscales bilinearly: nearest-neighbor makes fine dithers and
+        // soft gradients look blocky at the terminal's DPI.
+        struct Sample
+        {
+            til::CoordType index;
+            til::CoordType next;
+            int weight; // weight of `next`, 0..256
+        };
+        const auto makeSample = [&](const til::CoordType dst, const til::CoordType off, const til::CoordType srcOrigin, const til::CoordType srcSize) {
+            const auto source = srcOrigin + (dst - off + 0.5) * invScale - 0.5;
+            auto index = static_cast<til::CoordType>(std::floor(source));
+            auto weight = static_cast<int>((source - index) * 256.0 + 0.5);
+            weight = std::clamp(weight, 0, 256);
+            index = std::clamp(index, srcOrigin, srcOrigin + srcSize - 1);
+            return Sample{ index, std::min(index + 1, srcOrigin + srcSize - 1), weight };
+        };
+
+        std::vector<Sample> columnSamples(static_cast<size_t>(dstW));
+        for (til::CoordType x = 0; x < dstW; ++x)
+        {
+            columnSamples[x] = (x < offX || x >= offX + visibleW)
+                ? Sample{ 0, 0, 0 }
+                : makeSample(x, offX, srcX, srcW);
+        }
+
+        for (til::CoordType y = 0; y < cellSize.height; ++y)
+        {
+            const auto dstY = row * cellSize.height + y;
+            if (dstY < offY || dstY >= offY + visibleH)
+            {
+                continue;
+            }
+            const auto rowSample = makeSample(dstY, offY, srcY, srcH);
+            const auto* row0 = image.pixels.data() + static_cast<size_t>(rowSample.index) * image.size.width;
+            const auto* row1 = image.pixels.data() + static_cast<size_t>(rowSample.next) * image.size.width;
+            auto out = strip.data() + static_cast<size_t>(y) * dstW;
+            for (til::CoordType x = offX; x < offX + visibleW; ++x)
+            {
+                const auto& sample = columnSamples[x];
+                const auto w00 = (256 - sample.weight) * (256 - rowSample.weight);
+                const auto wX0 = sample.weight * (256 - rowSample.weight);
+                const auto w0Y = (256 - sample.weight) * rowSample.weight;
+                const auto wXY = sample.weight * rowSample.weight;
+                const auto blend = [w00, wX0, w0Y, wXY](const BYTE c00, const BYTE cX0, const BYTE c0Y, const BYTE cXY) {
+                    return static_cast<BYTE>((c00 * w00 + cX0 * wX0 + c0Y * w0Y + cXY * wXY) >> 16);
+                };
+                const auto& p00 = row0[sample.index];
+                const auto& p01 = row0[sample.next];
+                const auto& p10 = row1[sample.index];
+                const auto& p11 = row1[sample.next];
+                out[x] = RGBQUAD{
+                    blend(p00.rgbBlue, p01.rgbBlue, p10.rgbBlue, p11.rgbBlue),
+                    blend(p00.rgbGreen, p01.rgbGreen, p10.rgbGreen, p11.rgbGreen),
+                    blend(p00.rgbRed, p01.rgbRed, p10.rgbRed, p11.rgbRed),
+                    blend(p00.rgbReserved, p01.rgbReserved, p10.rgbReserved, p11.rgbReserved),
+                };
+            }
+        }
+    }
     else
     {
         for (til::CoordType y = 0; y < cellSize.height; ++y)
