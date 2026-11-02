@@ -5189,7 +5189,10 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // Match TermControl's policy: HostBackdrop can fall back to solid when inactive.
+            acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
+                                              Media::AcrylicBackgroundSource::Backdrop :
+                                              Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
