@@ -233,7 +233,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         if (row->bitmapBelow.revision != 0)
         {
-            _drawBitmap(p, row, y, row->bitmapBelow);
+            _drawBitmap(p, row, y, row->bitmapBelow, true);
         }
 
         for (const auto& m : row->mappings)
@@ -330,7 +330,7 @@ void BackendD2D::_drawText(RenderingPayload& p)
 
         if (row->bitmap.revision != 0)
         {
-            _drawBitmap(p, row, y, row->bitmap);
+            _drawBitmap(p, row, y, row->bitmap, false);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -815,7 +815,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     }
 }
 
-void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/, u16 y, const Bitmap& b)
+void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/, u16 y, const Bitmap& b, const bool belowTextLayer)
 {
     const D2D1_SIZE_U size{
         gsl::narrow_cast<UINT32>(b.sourceSize.x),
@@ -827,11 +827,14 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/
         .dpiY = static_cast<f32>(p.s->font->dpi),
     };
 
-    if (_rowBitmaps.size() <= y)
+    // One cache slot per row per layer: a row can carry image content
+    // under and over its text simultaneously.
+    const auto slot = static_cast<size_t>(y) * 2 + (belowTextLayer ? 0 : 1);
+    if (_rowBitmaps.size() <= slot)
     {
-        _rowBitmaps.resize(y + 1);
+        _rowBitmaps.resize(slot + 1);
     }
-    auto& entry = _rowBitmaps[y];
+    auto& entry = _rowBitmaps[slot];
 
     wil::com_ptr<ID2D1Bitmap> bitmap;
     if (entry.revision == b.revision && entry.bitmap)

@@ -1141,7 +1141,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
         if (row->bitmapBelow.revision != 0)
         {
-            _drawBitmap(p, row, y, row->bitmapBelow);
+            _drawBitmap(p, row, y, row->bitmapBelow, true);
         }
 
         for (const auto& m : row->mappings)
@@ -1217,7 +1217,7 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
         if (row->bitmap.revision != 0)
         {
-            _drawBitmap(p, row, y, row->bitmap);
+            _drawBitmap(p, row, y, row->bitmap, false);
         }
 
         if (p.invalidatedRows.contains(y))
@@ -1897,13 +1897,15 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     }
 }
 
-void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b)
+void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b, const bool belowTextLayer)
 {
-    // The atlas holds one slot per row and its content is re-rendered in
-    // place when the revision changes. Keying by revision instead would
-    // insert an entry per frame under kitty animations, filling the atlas
-    // until a full reset runs every other frame.
-    auto ab = _glyphAtlasBitmaps.lookup(static_cast<u64>(y) + 1);
+    // The atlas holds one slot per row per layer (a row can carry image
+    // content under and over its text at the same time) and its content is
+    // re-rendered in place when the revision changes. Keying by revision
+    // instead would insert an entry per frame under kitty animations,
+    // filling the atlas until a full reset runs every other frame.
+    const auto key = (static_cast<u64>(y) << 1) | (belowTextLayer ? 0 : 1);
+    auto ab = _glyphAtlasBitmaps.lookup(key);
     const auto rectWidth = p.s->font->cellSize.x * b.targetWidth;
     const auto rectHeight = p.s->font->cellSize.y;
 
@@ -1938,7 +1940,7 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
         _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
         _d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
-        ab = _glyphAtlasBitmaps.insert(static_cast<u64>(y) + 1).first;
+        ab = _glyphAtlasBitmaps.insert(key).first;
         ab->size.x = static_cast<u16>(rect.w);
         ab->size.y = static_cast<u16>(rect.h);
         ab->texcoord.x = static_cast<u16>(rect.x);
