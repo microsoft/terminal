@@ -2258,6 +2258,10 @@
     <value>Si cette option est activée, le terminal est masqué dès que vous passez à une autre fenêtre.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Afficher la taille du terminal lors de son redimensionnement</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
+  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>par défaut</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>

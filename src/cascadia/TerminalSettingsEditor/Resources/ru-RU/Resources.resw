@@ -2258,6 +2258,10 @@
     <value>Если этот параметр включен, терминал будет скрыт при переключении на другое окно.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Показывать размер терминала при изменении размера</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
+  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>по умолчанию</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
