@@ -1899,12 +1899,19 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
 
 void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b)
 {
-    auto ab = _glyphAtlasBitmaps.lookup(b.revision);
-    if (!ab)
+    // The atlas holds one slot per row and its content is re-rendered in
+    // place when the revision changes. Keying by revision instead would
+    // insert an entry per frame under kitty animations, filling the atlas
+    // until a full reset runs every other frame.
+    auto ab = _glyphAtlasBitmaps.lookup(static_cast<u64>(y) + 1);
+    const auto rectWidth = p.s->font->cellSize.x * b.targetWidth;
+    const auto rectHeight = p.s->font->cellSize.y;
+
+    if (!ab || ab->size.x != rectWidth || ab->size.y != rectHeight)
     {
         stbrp_rect rect{
-            .w = p.s->font->cellSize.x * b.targetWidth,
-            .h = p.s->font->cellSize.y,
+            .w = rectWidth,
+            .h = rectHeight,
         };
         _drawGlyphAtlasAllocate(p, rect);
         _d2dBeginDrawing();
@@ -1927,13 +1934,42 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
             static_cast<f32>(rect.x + rect.w),
             static_cast<f32>(rect.y + rect.h),
         };
+        _d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
         _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        _d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
 
-        ab = _glyphAtlasBitmaps.insert(b.revision).first;
+        ab = _glyphAtlasBitmaps.insert(static_cast<u64>(y) + 1).first;
         ab->size.x = static_cast<u16>(rect.w);
         ab->size.y = static_cast<u16>(rect.h);
         ab->texcoord.x = static_cast<u16>(rect.x);
         ab->texcoord.y = static_cast<u16>(rect.y);
+        ab->revision = b.revision;
+    }
+    else if (ab->revision != b.revision)
+    {
+        const D2D1_SIZE_U size{
+            static_cast<UINT32>(b.sourceSize.x),
+            static_cast<UINT32>(b.sourceSize.y),
+        };
+        const D2D1_BITMAP_PROPERTIES bitmapProperties{
+            .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+            .dpiX = static_cast<f32>(p.s->font->dpi),
+            .dpiY = static_cast<f32>(p.s->font->dpi),
+        };
+        wil::com_ptr<ID2D1Bitmap> bitmap;
+        THROW_IF_FAILED(_d2dRenderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+
+        const D2D1_RECT_F rectF{
+            static_cast<f32>(ab->texcoord.x),
+            static_cast<f32>(ab->texcoord.y),
+            static_cast<f32>(ab->texcoord.x + ab->size.x),
+            static_cast<f32>(ab->texcoord.y + ab->size.y),
+        };
+        _d2dBeginDrawing();
+        _d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_COPY);
+        _d2dRenderTarget->DrawBitmap(bitmap.get(), &rectF, 1, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+        _d2dRenderTarget->SetPrimitiveBlend(D2D1_PRIMITIVE_BLEND_SOURCE_OVER);
+        ab->revision = b.revision;
     }
 
     const auto left = p.s->font->cellSize.x * (b.targetOffset - p.scrollOffsetX);

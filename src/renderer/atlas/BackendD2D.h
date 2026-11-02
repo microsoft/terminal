@@ -28,7 +28,7 @@ namespace Microsoft::Console::Render::Atlas
         ATLAS_ATTR_COLD void _drawTextResetLineRendition(const ShapedRow* row) const noexcept;
         ATLAS_ATTR_COLD f32r _getGlyphRunDesignBounds(const DWRITE_GLYPH_RUN& glyphRun, f32 baselineX, f32 baselineY);
         ATLAS_ATTR_COLD void _drawGridlineRow(const RenderingPayload& p, const ShapedRow* row, u16 y);
-        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b) const;
+        ATLAS_ATTR_COLD void _drawBitmap(const RenderingPayload& p, const ShapedRow* row, u16 y, const Bitmap& b);
         void _drawCursorPart1(const RenderingPayload& p);
         void _drawCursorPart2(const RenderingPayload& p);
         static void _drawCursor(const RenderingPayload& p, ID2D1RenderTarget* renderTarget, D2D1_RECT_F rect, ID2D1Brush* brush) noexcept;
@@ -57,6 +57,16 @@ namespace Microsoft::Console::Render::Atlas
 
         wil::com_ptr<ID2D1Bitmap> _cursorBitmap;
         til::size _cursorBitmapSize; // in columns/rows
+
+        // Per-row image slice bitmaps, re-uploaded in place when their
+        // revision changes; creating a fresh ID2D1Bitmap per frame under
+        // kitty animations is far too slow.
+        struct RowBitmap
+        {
+            u64 revision = 0;
+            wil::com_ptr<ID2D1Bitmap> bitmap;
+        };
+        std::vector<RowBitmap> _rowBitmaps;
 
         wil::com_ptr<ID2D1SolidColorBrush> _emojiBrush;
         wil::com_ptr<ID2D1SolidColorBrush> _brush;

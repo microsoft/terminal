@@ -30,6 +30,7 @@ void BackendD2D::ReleaseResources() noexcept
 {
     _renderTarget.reset();
     _renderTarget4.reset();
+    _rowBitmaps.clear();
     // Ensure _handleSettingsUpdate() is called so that _renderTarget gets recreated.
     _generation = {};
 }
@@ -814,9 +815,8 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     }
 }
 
-void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/, u16 y, const Bitmap& b) const
+void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/, u16 y, const Bitmap& b)
 {
-    // TODO: This could use some caching logic like BackendD3D.
     const D2D1_SIZE_U size{
         gsl::narrow_cast<UINT32>(b.sourceSize.x),
         gsl::narrow_cast<UINT32>(b.sourceSize.y),
@@ -826,8 +826,39 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/
         .dpiX = static_cast<f32>(p.s->font->dpi),
         .dpiY = static_cast<f32>(p.s->font->dpi),
     };
+
+    if (_rowBitmaps.size() <= y)
+    {
+        _rowBitmaps.resize(y + 1);
+    }
+    auto& entry = _rowBitmaps[y];
+
     wil::com_ptr<ID2D1Bitmap> bitmap;
-    THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+    if (entry.revision == b.revision && entry.bitmap)
+    {
+        bitmap = entry.bitmap;
+    }
+    else if (entry.bitmap)
+    {
+        const auto existing = entry.bitmap->GetPixelSize();
+        bitmap = entry.bitmap;
+        if (existing.width != size.width || existing.height != size.height)
+        {
+            THROW_IF_FAILED(_renderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, bitmap.addressof()));
+        }
+        else
+        {
+            const auto rect = D2D1_RECT_U{ 0, 0, size.width, size.height };
+            THROW_IF_FAILED(bitmap->CopyFromMemory(&rect, b.source.data(), gsl::narrow_cast<UINT32>(b.sourceSize.x) * 4));
+        }
+        entry.revision = b.revision;
+    }
+    else
+    {
+        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+        entry.bitmap = bitmap;
+        entry.revision = b.revision;
+    }
 
     const i32 cellWidth = p.s->font->cellSize.x;
     const i32 cellHeight = p.s->font->cellSize.y;

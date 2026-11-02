@@ -328,7 +328,8 @@ bool KittyImages::SetAnimationState(const uint32_t imageId, const uint32_t state
     return true;
 }
 
-KittyImages::Placement* KittyImages::FindPlacement(const uint32_t imageId, const uint32_t placementId) noexcept{
+KittyImages::Placement* KittyImages::FindPlacement(const uint32_t imageId, const uint32_t placementId) noexcept
+{
     for (auto& placement : _placements)
     {
         if (placement.imageId == imageId && placement.placementId == placementId)
@@ -469,46 +470,84 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
     auto strip = std::vector<RGBQUAD>(static_cast<size_t>(dstW) * cellSize.height);
 
     // This strip covers destination pixel rows [row*cellH, row*cellH+cellH).
-    for (til::CoordType y = 0; y < cellSize.height; ++y)
+    // The source columns each destination column samples are precomputed
+    // once for the whole strip; rustel-style clients replace full-screen
+    // images every frame, so the per-pixel cost here is hot.
+    const auto invScale = 1.0 / scale;
+    struct Span
     {
-        const auto dstY = row * cellSize.height + y;
-        const auto inVisibleY = dstY >= offY && dstY < offY + visibleH;
-        for (til::CoordType x = 0; x < dstW; ++x)
+        til::CoordType begin;
+        til::CoordType end;
+    };
+    std::vector<Span> columnSpans(static_cast<size_t>(dstW));
+    for (til::CoordType x = 0; x < dstW; ++x)
+    {
+        if (x < offX || x >= offX + visibleW)
         {
-            auto& out = strip[static_cast<size_t>(y) * dstW + x];
-            out = RGBQUAD{ 0, 0, 0, 0 };
-            if (!inVisibleY || x < offX || x >= offX + visibleW)
+            columnSpans[x] = Span{ 0, 0 };
+            continue;
+        }
+        const auto sx0 = static_cast<til::CoordType>(std::floor(srcX + (x - offX) * invScale));
+        const auto sx1 = std::max(sx0 + 1, static_cast<til::CoordType>(std::ceil(srcX + (x - offX + 1) * invScale)));
+        columnSpans[x] = Span{ std::max(sx0, srcX), std::min(sx1, srcX + srcW) };
+    }
+
+    // A 1:1 strip is a set of row copies.
+    if (offX == 0 && offY == 0 && visibleW == dstW && visibleH == dstH && srcW == dstW && srcH == dstH)
+    {
+        const auto srcRowStride = image.size.width;
+        for (til::CoordType y = 0; y < cellSize.height; ++y)
+        {
+            const auto srcYRow = srcY + row * cellSize.height + y;
+            if (srcYRow < 0 || srcYRow >= srcY + srcH)
             {
                 continue;
             }
-            // Box filter: a destination pixel averages the source pixels
-            // that map to it, so downscales stay smooth. Upscales fall
-            // back to the nearest source pixel.
-            const auto sx0 = static_cast<til::CoordType>(std::floor(srcX + (x - offX) / scale));
-            const auto sx1 = std::max(sx0 + 1, static_cast<til::CoordType>(std::ceil(srcX + (x - offX + 1) / scale)));
-            const auto sy0 = static_cast<til::CoordType>(std::floor(srcY + (dstY - offY) / scale));
-            const auto sy1 = std::max(sy0 + 1, static_cast<til::CoordType>(std::ceil(srcY + (dstY - offY + 1) / scale)));
-            uint32_t r = 0, g = 0, b = 0, a = 0, count = 0;
-            for (auto sy = std::max(sy0, srcY); sy < std::min(sy1, srcY + srcH); ++sy)
+            const auto* src = image.pixels.data() + static_cast<size_t>(srcYRow) * srcRowStride + srcX;
+            auto* dst = strip.data() + static_cast<size_t>(y) * dstW;
+            memcpy(dst, src, static_cast<size_t>(dstW) * sizeof(RGBQUAD));
+        }
+    }
+    else
+    {
+        for (til::CoordType y = 0; y < cellSize.height; ++y)
+        {
+            const auto dstY = row * cellSize.height + y;
+            if (dstY < offY || dstY >= offY + visibleH)
             {
-                for (auto sx = std::max(sx0, srcX); sx < std::min(sx1, srcX + srcW); ++sx)
-                {
-                    const auto& pixel = image.pixels[static_cast<size_t>(sy) * image.size.width + sx];
-                    r += pixel.rgbRed;
-                    g += pixel.rgbGreen;
-                    b += pixel.rgbBlue;
-                    a += pixel.rgbReserved;
-                    ++count;
-                }
+                continue;
             }
-            if (count)
+            const auto sy0 = static_cast<til::CoordType>(std::floor(srcY + (dstY - offY) * invScale));
+            const auto sy1 = std::max(sy0 + 1, static_cast<til::CoordType>(std::ceil(srcY + (dstY - offY + 1) * invScale)));
+            const auto rowBegin = std::max(sy0, srcY);
+            const auto rowEnd = std::min(sy1, srcY + srcH);
+            auto out = strip.data() + static_cast<size_t>(y) * dstW;
+            for (til::CoordType x = offX; x < offX + visibleW; ++x)
             {
-                out = RGBQUAD{
-                    static_cast<BYTE>(b / count),
-                    static_cast<BYTE>(g / count),
-                    static_cast<BYTE>(r / count),
-                    static_cast<BYTE>(a / count),
-                };
+                const auto& span = columnSpans[x];
+                uint32_t r = 0, g = 0, b = 0, a = 0, count = 0;
+                for (auto sy = rowBegin; sy < rowEnd; ++sy)
+                {
+                    const auto* pixelRow = image.pixels.data() + static_cast<size_t>(sy) * image.size.width;
+                    for (auto sx = span.begin; sx < span.end; ++sx)
+                    {
+                        const auto& pixel = pixelRow[sx];
+                        r += pixel.rgbRed;
+                        g += pixel.rgbGreen;
+                        b += pixel.rgbBlue;
+                        a += pixel.rgbReserved;
+                        ++count;
+                    }
+                }
+                if (count)
+                {
+                    out[x] = RGBQUAD{
+                        static_cast<BYTE>(b / count),
+                        static_cast<BYTE>(g / count),
+                        static_cast<BYTE>(r / count),
+                        static_cast<BYTE>(a / count),
+                    };
+                }
             }
         }
     }
@@ -748,10 +787,33 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
             // cell they encode.
             const auto sampleBegin = op.gridRow < 0 ? 0 : op.stripOffsetX;
             const auto sampleCount = op.gridRow < 0 ? stripWidth : cellSize.width;
+            const auto sliceXBase = op.pixelOffsetX + (columnBegin - op.columnBegin) * cellSize.width;
+            const auto sliceWidth = (columnEnd - columnBegin) * cellSize.width;
+
+            // A fully opaque, unclipped row is a straight copy; scanning
+            // the alpha first is far cheaper than the guarded per-pixel
+            // store, and full-screen per-frame images are exactly this.
+            if (sliceXBase >= 0 && sliceXBase + sampleCount <= sliceWidth && sampleBegin == 0)
+            {
+                auto allOpaque = true;
+                for (til::CoordType x = 0; x < sampleCount; ++x)
+                {
+                    if (stripLine[x].rgbReserved != 255)
+                    {
+                        allOpaque = false;
+                        break;
+                    }
+                }
+                if (allOpaque)
+                {
+                    memcpy(sliceLine + sliceXBase, stripLine, static_cast<size_t>(sampleCount) * sizeof(RGBQUAD));
+                    continue;
+                }
+            }
             for (til::CoordType x = 0; x < sampleCount; ++x)
             {
-                const auto sliceX = op.pixelOffsetX + (columnBegin - op.columnBegin) * cellSize.width + x;
-                if (sliceX < 0 || sliceX >= (columnEnd - columnBegin) * cellSize.width)
+                const auto sliceX = sliceXBase + x;
+                if (sliceX < 0 || sliceX >= sliceWidth)
                 {
                     continue;
                 }

@@ -185,6 +185,8 @@ namespace Microsoft::Console::Render::Atlas
             u64 key;
             u16x2 size;
             u16x2 texcoord;
+            // The ImageSlice::Revision() this entry holds, 0 when unset.
+            u64 revision = 0;
         };
 
         struct AtlasBitmapHashTrait
