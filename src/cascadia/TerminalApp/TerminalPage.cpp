@@ -4935,7 +4935,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // Make sure that we use the same backdrop source as TermControl.
+            // If we don't, it'll cause the same flickering as in GH #14384
+            acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
+                                              Media::AcrylicBackgroundSource::Backdrop :
+                                              Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
