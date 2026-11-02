@@ -457,15 +457,19 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
     const auto dstW = placement.cols * cellSize.width;
     const auto dstH = placement.rows * cellSize.height;
 
-    // The source rectangle is scaled to fit the destination rectangle with
-    // the aspect ratio preserved, letterboxed inside it.
-    const auto scaleX = static_cast<double>(dstW) / srcW;
-    const auto scaleY = static_cast<double>(dstH) / srcH;
-    const auto scale = std::min(scaleX, scaleY);
-    const auto visibleW = std::min(dstW, static_cast<til::CoordType>(std::lround(srcW * scale)));
-    const auto visibleH = std::min(dstH, static_cast<til::CoordType>(std::lround(srcH * scale)));
-    const auto offX = (dstW - visibleW) / 2;
-    const auto offY = (dstH - visibleH) / 2;
+    // The source rectangle is stretched to fill the destination rectangle
+    // exactly, per axis. Kitty (and WezTerm) stretch when both c and r are
+    // given; aspect ratio only comes into play when one of them is missing,
+    // which _placeDirect has already folded into cols/rows by the time a
+    // strip is built. Letterboxing here would pad every widget whose pixel
+    // aspect differs from the cell grid's, shifting them inside the text
+    // row - rustel's tab highlights and meters all lost their alignment.
+    const auto invScaleX = static_cast<double>(srcW) / dstW;
+    const auto invScaleY = static_cast<double>(srcH) / dstH;
+    const auto offX = 0;
+    const auto offY = 0;
+    const auto visibleW = dstW;
+    const auto visibleH = dstH;
 
     auto strip = std::vector<RGBQUAD>(static_cast<size_t>(dstW) * cellSize.height);
 
@@ -473,7 +477,6 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
     // The source columns each destination column samples are precomputed
     // once for the whole strip; rustel-style clients replace full-screen
     // images every frame, so the per-pixel cost here is hot.
-    const auto invScale = 1.0 / scale;
     struct Span
     {
         til::CoordType begin;
@@ -482,18 +485,13 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
     std::vector<Span> columnSpans(static_cast<size_t>(dstW));
     for (til::CoordType x = 0; x < dstW; ++x)
     {
-        if (x < offX || x >= offX + visibleW)
-        {
-            columnSpans[x] = Span{ 0, 0 };
-            continue;
-        }
-        const auto sx0 = static_cast<til::CoordType>(std::floor(srcX + (x - offX) * invScale));
-        const auto sx1 = std::max(sx0 + 1, static_cast<til::CoordType>(std::ceil(srcX + (x - offX + 1) * invScale)));
+        const auto sx0 = static_cast<til::CoordType>(std::floor(srcX + x * invScaleX));
+        const auto sx1 = std::max(sx0 + 1, static_cast<til::CoordType>(std::ceil(srcX + (x + 1) * invScaleX)));
         columnSpans[x] = Span{ std::max(sx0, srcX), std::min(sx1, srcX + srcW) };
     }
 
     // A 1:1 strip is a set of row copies.
-    if (offX == 0 && offY == 0 && visibleW == dstW && visibleH == dstH && srcW == dstW && srcH == dstH)
+    if (srcW == dstW && srcH == dstH)
     {
         const auto srcRowStride = image.size.width;
         for (til::CoordType y = 0; y < cellSize.height; ++y)
@@ -508,7 +506,7 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
             memcpy(dst, src, static_cast<size_t>(dstW) * sizeof(RGBQUAD));
         }
     }
-    else if (scale > 1.0)
+    else if (invScaleX < 1.0 || invScaleY < 1.0)
     {
         // Upscales bilinearly: nearest-neighbor makes fine dithers and
         // soft gradients look blocky at the terminal's DPI.
@@ -518,8 +516,8 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
             til::CoordType next;
             int weight; // weight of `next`, 0..256
         };
-        const auto makeSample = [&](const til::CoordType dst, const til::CoordType off, const til::CoordType srcOrigin, const til::CoordType srcSize) {
-            const auto source = srcOrigin + (dst - off + 0.5) * invScale - 0.5;
+        const auto makeSample = [&](const til::CoordType dst, const double invScale, const til::CoordType srcOrigin, const til::CoordType srcSize) {
+            const auto source = srcOrigin + (dst + 0.5) * invScale - 0.5;
             auto index = static_cast<til::CoordType>(std::floor(source));
             auto weight = static_cast<int>((source - index) * 256.0 + 0.5);
             weight = std::clamp(weight, 0, 256);
@@ -530,9 +528,7 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
         std::vector<Sample> columnSamples(static_cast<size_t>(dstW));
         for (til::CoordType x = 0; x < dstW; ++x)
         {
-            columnSamples[x] = (x < offX || x >= offX + visibleW)
-                ? Sample{ 0, 0, 0 }
-                : makeSample(x, offX, srcX, srcW);
+            columnSamples[x] = makeSample(x, invScaleX, srcX, srcW);
         }
 
         for (til::CoordType y = 0; y < cellSize.height; ++y)
@@ -542,7 +538,7 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
             {
                 continue;
             }
-            const auto rowSample = makeSample(dstY, offY, srcY, srcH);
+            const auto rowSample = makeSample(dstY, invScaleY, srcY, srcH);
             const auto* row0 = image.pixels.data() + static_cast<size_t>(rowSample.index) * image.size.width;
             const auto* row1 = image.pixels.data() + static_cast<size_t>(rowSample.next) * image.size.width;
             auto out = strip.data() + static_cast<size_t>(y) * dstW;
@@ -578,8 +574,8 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
             {
                 continue;
             }
-            const auto sy0 = static_cast<til::CoordType>(std::floor(srcY + (dstY - offY) * invScale));
-            const auto sy1 = std::max(sy0 + 1, static_cast<til::CoordType>(std::ceil(srcY + (dstY - offY + 1) * invScale)));
+            const auto sy0 = static_cast<til::CoordType>(std::floor(srcY + (dstY - offY) * invScaleY));
+            const auto sy1 = std::max(sy0 + 1, static_cast<til::CoordType>(std::ceil(srcY + (dstY - offY + 1) * invScaleY)));
             const auto rowBegin = std::max(sy0, srcY);
             const auto rowEnd = std::min(sy1, srcY + srcH);
             auto out = strip.data() + static_cast<size_t>(y) * dstW;

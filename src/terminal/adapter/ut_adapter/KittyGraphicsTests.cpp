@@ -398,8 +398,8 @@ namespace Microsoft::Console::VirtualTerminal
                     ++checked;
                 }
             }
-            // The letterboxed 40x20-cell area is 360x180 px of image.
-            VERIFY_ARE_EQUAL(360 * 180, checked);
+            // The stretched 40x20-cell area is 360x420 px of image.
+            VERIFY_ARE_EQUAL(360 * 420, checked);
             VERIFY_IS_TRUE(reds.size() > 40);
         }
 
@@ -564,9 +564,7 @@ namespace Microsoft::Console::VirtualTerminal
             // Both rows must compose an image slice for the placement, and
             // the misaligned rows must carry pixels too: a placeholder draws
             // into the very row that holds its text, sampling the strip of
-            // the grid row it encodes. The 10x10 source letterboxed into the
-            // 2x2 cells of 10x20 px leaves the top half of each strip
-            // transparent, so sample below the middle.
+            // the grid row it encodes.
             for (auto rowY : { 0, 1, 3 })
             {
                 auto& row = _buffer->GetMutableRowByOffset(rowY);
@@ -576,13 +574,11 @@ namespace Microsoft::Console::VirtualTerminal
                 const auto width = slice->PixelWidth();
                 VERIFY_ARE_EQUAL(20, width);
                 const auto& pixels = slice->Pixels();
-                // The letterboxed image covers the vertical middle of the
-                // 2-row grid, so the lower half of grid row 0 and the upper
-                // half of grid row 1 are opaque. Every composed row must
+                // The image is stretched to fill its grid exactly, so every
+                // strip is opaque top to bottom. Every composed row must
                 // carry the pixels of the grid row its placeholders encode.
-                const auto expectOpaqueAtTop = rowY == 1;
-                VERIFY_ARE_EQUAL(expectOpaqueAtTop ? 255 : 0, static_cast<int>(pixels[5 * width + 5].rgbReserved));
-                VERIFY_ARE_EQUAL(expectOpaqueAtTop ? 0 : 255, static_cast<int>(pixels[15 * width + 5].rgbReserved));
+                VERIFY_ARE_EQUAL(255, static_cast<int>(pixels[5 * width + 5].rgbReserved));
+                VERIFY_ARE_EQUAL(255, static_cast<int>(pixels[15 * width + 5].rgbReserved));
             }
         }
 
@@ -676,6 +672,60 @@ namespace Microsoft::Console::VirtualTerminal
             const auto position = _buffer->GetCursor().GetPosition();
             VERIFY_ARE_EQUAL(2, position.x);
             VERIFY_ARE_EQUAL(3, position.y);
+        }
+
+        TEST_METHOD(BothCellCountsStretchWithoutLetterbox)
+        {
+            // A rustel-style widget: an 88x12 pill scaled into 11x1 cells of
+            // 10x20 px. When both c and r are given the source is stretched
+            // to fill the cells exactly (kitty and WezTerm behavior); aspect
+            // ratio only applies when one of them is missing. A letterboxed
+            // fit leaves transparent bands around every such widget, which
+            // shifts them within the text row.
+            const auto payload = std::wstring(4224, L'A'); // 88*12*3 bytes RGB
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=88,v=12,i=5,q=2,C=1,z=-1,c=11,r=1,m=0;{}"), payload));
+
+            auto& row = _buffer->GetMutableRowByOffset(0);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, row, 0, { 10, 20 });
+            const auto slice = row.GetImageSlice(ImageSliceLayer::BelowText);
+            VERIFY_IS_NOT_NULL(slice);
+            VERIFY_ARE_EQUAL(110, slice->PixelWidth());
+            // Every pixel row of the cell must be covered, top to bottom.
+            const auto& pixels = slice->Pixels();
+            for (til::CoordType y = 0; y < 20; ++y)
+            {
+                const auto& pixel = pixels[static_cast<size_t>(y) * 110 + 55];
+                VERIFY_ARE_EQUAL(255, static_cast<int>(pixel.rgbReserved));
+                VERIFY_ARE_EQUAL(0, static_cast<int>(pixel.rgbRed));
+                VERIFY_ARE_EQUAL(0, static_cast<int>(pixel.rgbGreen));
+                VERIFY_ARE_EQUAL(0, static_cast<int>(pixel.rgbBlue));
+            }
+        }
+
+        TEST_METHOD(ReplacedFrameLeavesNoStalePlacement)
+        {
+            // rustel drops every placement and re-places each image every
+            // frame; unchanged pixels are re-placed with a=p. The placement
+            // count must stay at one.
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=10,v=20,i=6,q=2,C=1,z=-1,c=1,r=1,m=0;{}"), payload));
+            VERIFY_ARE_EQUAL(1u, _buffer->GetKittyImages().Placements().size());
+
+            SendApc(L"a=d,d=a,q=2");
+            SendApc(L"a=p,i=6,q=2,C=1,z=-1,c=1,r=1");
+            VERIFY_ARE_EQUAL(1u, _buffer->GetKittyImages().Placements().size());
+            VERIFY_ARE_EQUAL(0, _buffer->GetKittyImages().Placements()[0].y);
+        }
+
+        TEST_METHOD(DeleteAllDropsEveryPlacement)
+        {
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=10,v=20,i=7,q=2,C=1,z=-1,c=2,r=1,m=0;{}"), payload));
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=10,v=20,i=8,q=2,C=1,z=-1,c=2,r=1,m=0;{}"), payload));
+            VERIFY_ARE_EQUAL(2u, _buffer->GetKittyImages().Placements().size());
+
+            SendApc(L"a=d,d=a,q=2");
+            VERIFY_ARE_EQUAL(0u, _buffer->GetKittyImages().Placements().size());
         }
     };
 }
