@@ -1903,8 +1903,9 @@ void BackendD3D::_drawBitmap(const RenderingPayload& p, const ShapedRow* row, u1
     // content under and over its text at the same time) and its content is
     // re-rendered in place when the revision changes. Keying by revision
     // instead would insert an entry per frame under kitty animations,
-    // filling the atlas until a full reset runs every other frame.
-    const auto key = (static_cast<u64>(y) << 1) | (belowTextLayer ? 0 : 1);
+    // filling the atlas until a full reset runs every other frame. The +1
+    // keeps the key nonzero: zero marks a vacant slot.
+    const auto key = ((static_cast<u64>(y) + 1) << 1) | (belowTextLayer ? 0 : 1);
     auto ab = _glyphAtlasBitmaps.lookup(key);
     const auto rectWidth = p.s->font->cellSize.x * b.targetWidth;
     const auto rectHeight = p.s->font->cellSize.y;
