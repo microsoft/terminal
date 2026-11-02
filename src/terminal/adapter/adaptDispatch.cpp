@@ -1853,18 +1853,26 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         break;
     case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enable);
+        // A mouse-capturing client under ConPTY needs the hosting terminal
+        // to track the pointer too, or the modes it requested never reach
+        // the terminal and clicks never arrive.
+        _api.GetStateMachine().InjectSequence(enable ? InjectionType::DECSET_MOUSE_DEFAULT : InjectionType::DECRST_MOUSE_DEFAULT);
         break;
     case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enable);
+        _api.GetStateMachine().InjectSequence(enable ? InjectionType::DECSET_MOUSE_BUTTON : InjectionType::DECRST_MOUSE_BUTTON);
         break;
     case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enable);
+        _api.GetStateMachine().InjectSequence(enable ? InjectionType::DECSET_MOUSE_ANY : InjectionType::DECRST_MOUSE_ANY);
         break;
     case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enable);
+        _api.GetStateMachine().InjectSequence(enable ? InjectionType::DECSET_MOUSE_UTF8 : InjectionType::DECRST_MOUSE_UTF8);
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
+        _api.GetStateMachine().InjectSequence(enable ? InjectionType::DECSET_MOUSE_SGR : InjectionType::DECRST_MOUSE_SGR);
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);

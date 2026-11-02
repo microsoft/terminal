@@ -450,6 +450,36 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
                 //       SetConsoleMode is called and it may be worth caching this information.
                 disableNewlineTranslation = true;
                 continue;
+            case InjectionType::DECSET_MOUSE_DEFAULT:
+                sequence = "\x1b[?1000h";
+                break;
+            case InjectionType::DECSET_MOUSE_BUTTON:
+                sequence = "\x1b[?1002h";
+                break;
+            case InjectionType::DECSET_MOUSE_ANY:
+                sequence = "\x1b[?1003h";
+                break;
+            case InjectionType::DECSET_MOUSE_UTF8:
+                sequence = "\x1b[?1005h";
+                break;
+            case InjectionType::DECSET_MOUSE_SGR:
+                sequence = "\x1b[?1006h";
+                break;
+            case InjectionType::DECRST_MOUSE_DEFAULT:
+                sequence = "\x1b[?1000l";
+                break;
+            case InjectionType::DECRST_MOUSE_BUTTON:
+                sequence = "\x1b[?1002l";
+                break;
+            case InjectionType::DECRST_MOUSE_ANY:
+                sequence = "\x1b[?1003l";
+                break;
+            case InjectionType::DECRST_MOUSE_UTF8:
+                sequence = "\x1b[?1005l";
+                break;
+            case InjectionType::DECRST_MOUSE_SGR:
+                sequence = "\x1b[?1006l";
+                break;
             default:
                 assert(false);
                 break;

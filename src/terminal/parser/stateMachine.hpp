@@ -46,6 +46,16 @@ namespace Microsoft::Console::VirtualTerminal
         DECSET_FOCUS, // CSI ? 1004 h
         W32IM, // CSI ? 9001 h
         LNM, // Let the terminal handle newline translation
+        DECSET_MOUSE_DEFAULT, // CSI ? 1000 h
+        DECSET_MOUSE_BUTTON, // CSI ? 1002 h
+        DECSET_MOUSE_ANY, // CSI ? 1003 h
+        DECSET_MOUSE_UTF8, // CSI ? 1005 h
+        DECSET_MOUSE_SGR, // CSI ? 1006 h
+        DECRST_MOUSE_DEFAULT, // CSI ? 1000 l
+        DECRST_MOUSE_BUTTON, // CSI ? 1002 l
+        DECRST_MOUSE_ANY, // CSI ? 1003 l
+        DECRST_MOUSE_UTF8, // CSI ? 1005 l
+        DECRST_MOUSE_SGR, // CSI ? 1006 l
 
         Count,
     };
