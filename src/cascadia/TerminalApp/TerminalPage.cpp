@@ -5189,7 +5189,8 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto acrylicBrush = Media::AcrylicBrush();
-            // Match TermControl's policy: HostBackdrop can fall back to solid when inactive.
+            // Make sure that we use the same backdrop source as TermControl.
+            // If we don't, it'll cause the same flickering as in GH #14384
             acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
                                               Media::AcrylicBackgroundSource::Backdrop :
                                               Media::AcrylicBackgroundSource::HostBackdrop);
