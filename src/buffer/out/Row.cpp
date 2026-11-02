@@ -1254,6 +1254,12 @@ void ROW::SetScrollbarData(std::optional<ScrollbarData> data) noexcept
     _promptData = data;
 }
 
+void ROW::SetScrollbarData(std::nullopt_t) noexcept
+{
+    // Avoid copying the unused payload of an empty optional.
+    _promptData.reset();
+}
+
 void ROW::StartPrompt() noexcept
 {
     if (!_promptData.has_value())
