@@ -438,12 +438,14 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - Direct classic console sessions parse and render the Kitty Graphics
-//   Protocol locally. Over ConPTY the sequences pass through to the
-//   hosting terminal, which renders them itself.
+// - The classic console host does not render the Kitty Graphics Protocol:
+//   its GDI renderer cannot present full-window per-frame images cleanly.
+//   Direct classic sessions therefore ignore the sequences, and clients
+//   fall back to their cell-based rendering. Over ConPTY the sequences are
+//   likewise left to the hosting terminal.
 bool ConhostInternalGetSet::IsKittyGraphicsProtocolEnabled() const noexcept
 {
-    return !IsConPTY();
+    return false;
 }
 
 // Routine Description:
