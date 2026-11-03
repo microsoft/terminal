@@ -1,6 +1,6 @@
 // Diacritics used to encode row/column numbers for Unicode terminal image
 // placeholders. The values are the code points in the order given by the
-// published rowcolumn-diacritics.txt table, so the array index is the value
+// published row-column diacritics table, so the array index is the value
 // a diacritic encodes (0-296).
 // https://sw.kovidgoyal.net/kitty/graphics-protocol/#unicode-placeholders
 static constexpr std::array<char32_t, 297> Diacritics{{

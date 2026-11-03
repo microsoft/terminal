@@ -184,6 +184,7 @@ clsids
 cmatrix
 cmder
 CMDEXT
+cmf
 cmh
 CMOUSEBUTTONS
 Cmts
@@ -572,6 +573,7 @@ FINDREGEX
 FINDSTRINGEXACT
 FITZPATRICK
 FIXEDFILEINFO
+flg
 flyouts
 fmodern
 fmtarg

@@ -552,12 +552,12 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
         const auto srcRowStride = image.size.width;
         for (til::CoordType y = 0; y < cellSize.height; ++y)
         {
-            const auto srcYRow = srcY + row * cellSize.height + y;
-            if (srcYRow < 0 || srcYRow >= srcY + srcH)
+            const auto sourcePixelRow = srcY + row * cellSize.height + y;
+            if (sourcePixelRow < 0 || sourcePixelRow >= srcY + srcH)
             {
                 continue;
             }
-            const auto* src = image.pixels.data() + static_cast<size_t>(srcYRow) * srcRowStride + srcX;
+            const auto* src = image.pixels.data() + static_cast<size_t>(sourcePixelRow) * srcRowStride + srcX;
             auto* dst = strip.data() + static_cast<size_t>(y) * dstW;
             memcpy(dst, src, static_cast<size_t>(dstW) * sizeof(RGBQUAD));
         }
