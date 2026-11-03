@@ -187,8 +187,8 @@ namespace KittyPlaceholder
             }
             else if (underline.IsRgb())
             {
-                const auto urgb = underline.GetRGB();
-                cell.placementId = static_cast<int>(((urgb & 0xFF) << 16) | (urgb & 0xFF00) | ((urgb >> 16) & 0xFF));
+                const auto underlineRgb = underline.GetRGB();
+                cell.placementId = static_cast<int>(((underlineRgb & 0xFF) << 16) | (underlineRgb & 0xFF00) | ((underlineRgb >> 16) & 0xFF));
             }
             cells.push_back(cell);
             previous = &cells.back();
