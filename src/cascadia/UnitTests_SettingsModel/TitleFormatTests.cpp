@@ -179,7 +179,9 @@ namespace SettingsModelUnitTests
                 for (const auto warning : settings->Warnings())
                 {
                     if (warning == SettingsLoadWarnings::InvalidTitleFormat)
+                    {
                         ++titleWarnings;
+                    }
                 }
                 VERIFY_ARE_EQUAL(size_t{ 1 }, titleWarnings);
             }
@@ -202,7 +204,9 @@ namespace SettingsModelUnitTests
             for (const auto warning : settings->Warnings())
             {
                 if (warning == SettingsLoadWarnings::InvalidTitleFormat)
+                {
                     ++titleWarnings;
+                }
             }
             VERIFY_ARE_EQUAL(size_t{ 1 }, titleWarnings);
             VERIFY_ARE_EQUAL(winrt::hstring{ L" - " }, settings->GlobalSettings().WindowTitleSeparator());

@@ -806,7 +806,9 @@ namespace TerminalAppLocalTests
             revoker = page.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
                                                                                [weakPage = page->get_weak(), titles](auto&&, auto&&) {
                                                                                    if (const auto sender = weakPage.get())
+                                                                                   {
                                                                                        titles->push_back(sender->Title());
+                                                                                   }
                                                                                });
             _windowProperties->WindowName(L"intermediate");
             _windowProperties->WindowName(L"final");
@@ -854,7 +856,9 @@ namespace TerminalAppLocalTests
             revoker = page.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
                                                                                [weakPage = page->get_weak(), titles](auto&&, auto&&) {
                                                                                    if (const auto sender = weakPage.get())
+                                                                                   {
                                                                                        titles->push_back(sender->Title());
+                                                                                   }
                                                                                });
             EmitTitleOutput(active, L"\x1b]2;intermediate\x7\x1b]9;9;C:\\intermediate\x7");
             EmitTitleOutput(active, L"\x1b]2;final\x7\x1b]9;9;C:\\final\x7");
@@ -952,7 +956,9 @@ namespace TerminalAppLocalTests
             sourceRevoker = source.as<winrt::TerminalApp::TerminalPage>().TitleChanged(winrt::auto_revoke,
                                                                                        [weakPage = source->get_weak(), sourceTitles](auto&&, auto&&) {
                                                                                            if (const auto sender = weakPage.get())
+                                                                                           {
                                                                                                sourceTitles->push_back(sender->Title());
+                                                                                           }
                                                                                        });
             EmitTitleOutput(moving, L"\x1b]2;attached\x7");
         });
@@ -979,6 +985,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(winrt::hstring{ L"destination:resident" }, destination->Title());
             VERIFY_IS_TRUE(sourceTitles->empty());
             sourceRevoker.revoke();
+            source = nullptr;
+            destination = nullptr;
         });
     }
 
@@ -1007,8 +1015,7 @@ namespace TerminalAppLocalTests
 
             const auto globals = page->_settings.GlobalSettings();
             globals.WindowTitleFormat(winrt::box_value(winrt::hstring{ L"${paneTitle}${separator}${numPanes}" }).as<winrt::Windows::Foundation::IPropertyValue>());
-            MovePaneArgs move;
-            move.TabIndex(page->_tabs.Size());
+            MovePaneArgs move{ page->_tabs.Size(), L"" };
             VERIFY_IS_TRUE(page->_MovePane(move));
             const auto moved = page->_GetFocusedTabImpl();
             VERIFY_ARE_EQUAL(winrt::hstring{ L"second:2" }, moved->Title());

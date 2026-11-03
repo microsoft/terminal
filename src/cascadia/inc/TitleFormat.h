@@ -23,6 +23,7 @@ namespace Microsoft::Terminal
 
         TitleFormat(const std::wstring_view text, const Surface surface)
         {
+            // Collect adjacent literal characters in one token.
             std::wstring literal;
             const auto flush = [&] {
                 if (!literal.empty())
@@ -33,6 +34,7 @@ namespace Microsoft::Terminal
             };
             for (size_t offset = 0; offset < text.size();)
             {
+                // Read the escape before a variable. Do not expand escaped text.
                 if (text.substr(offset, 3) == L"$${")
                 {
                     literal += L"${";
@@ -40,14 +42,18 @@ namespace Microsoft::Terminal
                 }
                 else if (text.substr(offset, 2) == L"${")
                 {
+                    // Store the preceding literal. Then find the end of the variable.
                     flush();
                     const auto end = text.find(L'}', offset + 2);
                     if (end == std::wstring_view::npos)
                     {
+                        // Reject the complete format if a variable has no closing brace.
                         _valid = false;
                         return;
                     }
                     const auto name = text.substr(offset + 2, end - offset - 2);
+                    // Standard names contain ASCII letters and digits.
+                    // Environment names can also contain spaces and punctuation, but not braces.
                     const auto letter = [](const wchar_t value) {
                         return (value >= L'a' && value <= L'z') || (value >= L'A' && value <= L'Z');
                     };
@@ -59,15 +65,18 @@ namespace Microsoft::Terminal
                                                          });
                     if (!validName || (surface == Surface::Tab && name == TitleVariables::TabTitle))
                     {
+                        // Reject invalid names and a tab format that refers to its own title.
                         _valid = false;
                         return;
                     }
                     if (name == TitleVariables::Separator)
                     {
+                        // Keep a boundary, not text. Evaluation removes empty segments.
                         _tokens.push_back({ Kind::Separator, {} });
                     }
                     else
                     {
+                        // Store supported names for later lookup of their current values.
                         static constexpr std::wstring_view names[]{
                             TitleVariables::PaneTitle, TitleVariables::TabTitle, TitleVariables::ProfileName, TitleVariables::WorkspaceName, TitleVariables::WindowName, TitleVariables::AppName, TitleVariables::TabIndex, TitleVariables::NumPanes, TitleVariables::NumOtherPanes, TitleVariables::OtherPanes, TitleVariables::Elevated, TitleVariables::ElevatedShield, TitleVariables::ShellName, TitleVariables::ShellPid, TitleVariables::Cwd, TitleVariables::CwdFolder
                         };
@@ -77,6 +86,7 @@ namespace Microsoft::Terminal
                         }
                         else
                         {
+                            // Unknown names produce a warning and no output text.
                             _unknown = true;
                         }
                     }
@@ -84,9 +94,11 @@ namespace Microsoft::Terminal
                 }
                 else
                 {
+                    // Copy all other characters without interpretation.
                     literal += text[offset++];
                 }
             }
+            // Store the last literal, including a format with no variables.
             flush();
         }
 
@@ -94,10 +106,16 @@ namespace Microsoft::Terminal
         static std::wstring DirectoryName(std::wstring_view path)
         {
             if (path.empty())
+            {
                 return {};
+            }
+            // Use Windows separators only for a drive prefix or a leading backslash.
+            // A backslash in a POSIX filename is part of the name.
             const auto windows = (path.size() >= 2 && path[1] == L':') || path.front() == L'\\';
             const auto separators = windows ? L"/\\" : L"/";
             size_t rootLength = path.front() == L'/' || path.front() == L'\\' ? 1 : 0;
+            // Find the root boundary before removing trailing separators.
+            // An extended Windows path starts with \\?\.
             const auto extended = path.starts_with(L"\\\\?\\");
             const auto extendedUnc = extended && path.size() >= 8 &&
                                      (path[4] == L'U' || path[4] == L'u') &&
@@ -106,30 +124,38 @@ namespace Microsoft::Terminal
             const size_t driveOffset = extended ? 4 : 0;
             if (path.size() >= driveOffset + 2 && path[driveOffset + 1] == L':')
             {
+                // Keep the drive prefix. Include its separator for an absolute path.
                 rootLength = driveOffset + 2;
                 if (path.find_first_of(separators, rootLength) == rootLength)
+                {
                     ++rootLength;
+                }
             }
             else if (path.starts_with(L"\\\\"))
             {
+                // Keep the server and share as the UNC root.
+                // Skip the additional prefix for an extended UNC path.
                 const auto serverEnd = path.find_first_of(separators, extendedUnc ? 8 : 2);
                 const auto shareEnd = serverEnd == std::wstring_view::npos ? serverEnd : path.find_first_of(separators, serverEnd + 1);
                 rootLength = shareEnd == std::wstring_view::npos ? path.size() : shareEnd + 1;
             }
+            // Remove trailing separators from a directory, but keep the root intact.
             while (path.size() > rootLength && path.find_last_of(separators) == path.size() - 1)
             {
                 path.remove_suffix(1);
             }
             if (path.size() <= rootLength)
+            {
                 return std::wstring{ path };
+            }
+            // Return the last component. For C:relative, exclude the drive prefix.
             const auto last = path.find_last_of(separators);
             return std::wstring{ path.substr(last == std::wstring_view::npos ? rootLength : last + 1) };
         }
 
         bool HasWarning() const noexcept { return !_valid || _unknown; }
 
-        template<typename Resolver>
-        std::wstring Evaluate(const Resolver& resolve, const std::wstring_view separator) const
+        std::wstring Evaluate(const std::function<std::wstring(std::wstring_view)>& resolve, const std::wstring_view separator) const
         {
             if (!_valid)
             {
@@ -137,6 +163,7 @@ namespace Microsoft::Terminal
             }
             std::wstring result;
             std::wstring segment;
+            // Insert a separator only between segments that contain text.
             const auto flush = [&] {
                 if (!segment.empty())
                 {
@@ -156,6 +183,7 @@ namespace Microsoft::Terminal
                     segment += token.text;
                     break;
                 case Kind::Variable:
+                    // Append the value as text. Do not parse variables in that value.
                     segment += resolve(std::wstring_view{ token.text });
                     break;
                 case Kind::Separator:
@@ -164,6 +192,7 @@ namespace Microsoft::Terminal
                 }
             }
             flush();
+            // Replace control characters and line separators to keep the title on one line.
             for (auto& character : result)
             {
                 if (character < L' ' || (character >= L'\x7f' && character <= L'\x9f') || character == L'\u2028' || character == L'\u2029')
@@ -171,6 +200,7 @@ namespace Microsoft::Terminal
                     character = L' ';
                 }
             }
+            // Remove leading and trailing spaces. An empty result lets the caller use its fallback.
             const auto first = result.find_first_not_of(L" \t\r\n\v\f");
             if (first == std::wstring::npos)
             {

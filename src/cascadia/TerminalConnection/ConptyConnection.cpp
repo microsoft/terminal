@@ -672,6 +672,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return reinterpret_cast<uint64_t>(_piClient.hProcess);
     }
 
+    // Method Description:
+    // - Store the launch client's process ID and executable name for title variables.
+    // - Call after a local launch or an inbound handoff sets the client handle and name.
+    // - Query the process ID before taking the lock. Hold the lock while storing both values.
+    // - These values describe the launch client, not its foreground child processes.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void ConptyConnection::_CaptureMetadata()
     {
         const auto shellPid = GetProcessId(_piClient.hProcess);
@@ -685,9 +694,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
         const std::scoped_lock lock{ _metadataLock };
         if (name == TitleVariables::ShellName)
+        {
             return _shellName;
+        }
         if (name == TitleVariables::ShellPid)
+        {
             return _shellPid ? winrt::to_hstring(_shellPid) : winrt::hstring{};
+        }
         const std::wstring_view key{ name };
         constexpr std::wstring_view environmentPrefix{ TitleVariables::EnvironmentPrefix };
         if (key.starts_with(environmentPrefix))
@@ -695,7 +708,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto& environment = _launchEnvironment.as_map();
             const auto found = environment.find(std::wstring{ key.substr(environmentPrefix.size()) });
             if (found != environment.end())
+            {
                 return winrt::hstring{ found->second };
+            }
         }
         return {};
     }

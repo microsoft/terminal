@@ -396,11 +396,11 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _titleFormats.clear();
-        _rootPane->WalkTree([&](const auto& pane) {
+        _rootPane->WalkTree([&](const std::shared_ptr<Pane>& pane) {
             pane->UpdateSettings(settings, windowSettings);
             if (const auto content = pane->GetContent())
             {
-                if (const auto terminal = content.template try_as<TerminalApp::TerminalPaneContent>())
+                if (const auto terminal = content.try_as<TerminalApp::TerminalPaneContent>())
                 {
                     if (const auto format = terminal.GetProfile().TabTitleFormat())
                     {
@@ -551,9 +551,13 @@ namespace winrt::TerminalApp::implementation
     Profile Tab::_GetTitleProfile() const
     {
         if (!_activePane || !_rootPane)
+        {
             return nullptr;
+        }
         if (_activePane->_IsLeaf())
+        {
             return GetFocusedProfile();
+        }
         for (const auto paneId : _mruPanes)
         {
             if (const auto pane = _rootPane->FindPane(paneId))
@@ -590,48 +594,74 @@ namespace winrt::TerminalApp::implementation
     {
         namespace TitleVariables = ::Microsoft::Terminal::TitleVariables;
         if (name == TitleVariables::TabTitle)
+        {
             return std::wstring{ Title() };
+        }
         if (name == TitleVariables::TabIndex)
+        {
             return std::to_wstring(TabViewIndex() + 1);
+        }
         if (name == TitleVariables::WorkspaceName || name == TitleVariables::WindowName)
+        {
             return std::wstring{ _titleWorkspaceName };
+        }
         if (name == TitleVariables::AppName)
+        {
             return std::wstring{ CascadiaSettings::ApplicationDisplayName() };
+        }
         if (name == TitleVariables::Elevated || name == TitleVariables::ElevatedShield)
         {
             if (!::Microsoft::Console::Utils::IsRunningElevated())
+            {
                 return {};
+            }
             return name == TitleVariables::Elevated ? std::wstring{ RS_(L"TitleFormatAdministrator") } : L"\U0001F6E1";
         }
 
         if (name == TitleVariables::PaneTitle)
+        {
             return std::wstring{ _GetPaneTitle() };
+        }
         if (!_rootPane || !_activePane)
+        {
             return {};
+        }
         if (name == TitleVariables::NumPanes || name == TitleVariables::NumOtherPanes || name == TitleVariables::OtherPanes)
         {
             size_t count = 0;
-            _rootPane->WalkTree([&](const auto& pane) {
+            _rootPane->WalkTree([&](const std::shared_ptr<Pane>& pane) {
                 if (const auto content = pane->GetContent())
                 {
-                    if (content.template try_as<TerminalApp::TerminalPaneContent>())
+                    if (content.try_as<TerminalApp::TerminalPaneContent>())
+                    {
                         ++count;
+                    }
                 }
             });
             if (name == TitleVariables::NumPanes)
+            {
                 return std::to_wstring(count);
+            }
             if (count <= 1)
+            {
                 return {};
+            }
             const auto others = std::to_wstring(count - 1);
             return name == TitleVariables::OtherPanes ? L"[+" + others + L"]" : others;
         }
         if (!_activePane->_IsLeaf())
+        {
             return {};
+        }
         const auto profile = GetFocusedProfile();
         if (!profile)
+        {
             return {};
+        }
         if (name == TitleVariables::ProfileName)
+        {
             return std::wstring{ profile.Name() };
+        }
         if (const auto control = GetActiveTerminalControl())
         {
             if (name == TitleVariables::Cwd || name == TitleVariables::CwdFolder)

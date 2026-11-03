@@ -118,6 +118,11 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\host\exe\Host.EXE.vcxproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <PropertyGroup>
@@ -180,5 +185,18 @@
           UseHardLinksIfPossible="true"
           SkipUnchangedFiles="true" />
 
+  </Target>
+
+  <Target Name="DeployDesktopTestDependencies" AfterTargets="Build">
+    <ItemGroup>
+      <DesktopTestDependency Include="$(TargetDir)resources.pri" />
+      <DesktopTestDependency Include="$(OpenConsoleCommonOutDir)\OpenConsole.exe" />
+    </ItemGroup>
+    <Copy SourceFiles="$(OpenConsoleCommonOutDir)\OpenConsole.exe"
+          DestinationFolder="$(TargetDir)"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(DesktopTestDependency)"
+          DestinationFolder="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp"
+          SkipUnchangedFiles="true" />
   </Target>
 </Project>
