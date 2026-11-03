@@ -12,7 +12,6 @@ acp
 actctx
 ACTCTXW
 ADDALIAS
-ADDREF
 ADDSTRING
 ADDTOOL
 adml
@@ -99,6 +98,7 @@ Bgk
 bgra
 BHID
 bigobj
+bilinearly
 binlog
 binplace
 binplaced
@@ -112,6 +112,7 @@ BITOPERATION
 BKCOLOR
 BKGND
 Bksp
+Blits
 Blt
 blu
 BLUESCROLL
@@ -167,16 +168,14 @@ changelist
 CHARSETINFO
 chshdng
 CHT
+CINFO
 CInput
 CLASSSTRING
-CLAUDE
 cleartype
 CLICKACTIVE
 clickdown
 CLIENTID
 clipbrd
-CLIPCHILDREN
-CLIPSIBLINGS
 closetest
 cloudconsole
 cloudvault
@@ -338,7 +337,6 @@ dblclk
 Dcd
 DCOMMON
 DComposition
-DDESHARE
 DDevice
 DEADCHAR
 debugtype
@@ -574,7 +572,6 @@ FINDREGEX
 FINDSTRINGEXACT
 FITZPATRICK
 FIXEDFILEINFO
-Flg
 flyouts
 fmodern
 fmtarg
@@ -669,6 +666,7 @@ GGI
 GHgh
 GHIJK
 GHIJKL
+Ghostty
 gitcheckin
 gitfilters
 gksks
@@ -763,6 +761,7 @@ HVP
 hwheel
 hwnd
 HWNDPARENT
+icat
 iccex
 ICONERROR
 ICONINFORMATION
@@ -855,6 +854,7 @@ klid
 KLLF
 KLMNO
 KOK
+Konsole
 KPRIORITY
 kyouhaishaheiku
 langid
@@ -874,6 +874,8 @@ LCONTROL
 LCTRL
 lcx
 LEFTALIGN
+letterbox
+Letterboxing
 libsancov
 libtickit
 LIMITTEXT
@@ -1183,7 +1185,6 @@ osc
 OSDEPENDSROOT
 OSG
 OSGENG
-otm
 OUTOFCONTEXT
 Outptr
 outstr
@@ -1228,7 +1229,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCWCH
 PCWCHAR
 PCWSTR
 pdbs
@@ -1346,7 +1346,6 @@ PSobject
 psp
 PSPCB
 psr
-PSTR
 psz
 ptch
 ptsz
@@ -1390,6 +1389,7 @@ READCONSOLE
 READCONSOLEOUTPUT
 READCONSOLEOUTPUTSTRING
 READMODE
+recompositions
 redef
 redefinable
 redist
@@ -1460,6 +1460,7 @@ runtimeclass
 runuia
 runut
 runxamlformat
+rustel
 RVERTICAL
 rvpa
 RWIN
@@ -1690,6 +1691,7 @@ threadpool
 THUMBPOSITION
 THUMBTRACK
 tilunittests
+timg
 TIPCAP
 titlebars
 TITLEISLINKNAME
@@ -1769,6 +1771,7 @@ untextured
 UPDATEDISPLAY
 UPDOWN
 UPKEY
+Upscales
 upss
 uregex
 URegular
@@ -1866,6 +1869,7 @@ wdm
 wekyb
 wex
 wextest
+Wez
 wfopen
 wic
 WIDTHSCROLL
@@ -1992,7 +1996,6 @@ yact
 YCast
 YCENTER
 YCount
-yizz
 YLimit
 YPan
 YSubstantial

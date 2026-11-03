@@ -894,9 +894,7 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
             // which can be shifted into neighboring rows by pixel offsets.
             // Placeholder cells draw into the very row that holds their
             // text, sampling the strip of the grid row they encode.
-            const auto localY = op.gridRow < 0
-                ? (op.placement->y + op.stripRow) * cellSize.height + op.pixelOffsetY + y - rowY * cellSize.height
-                : y;
+            const auto localY = op.gridRow < 0 ? (op.placement->y + op.stripRow) * cellSize.height + op.pixelOffsetY + y - rowY * cellSize.height : y;
             if (localY < 0 || localY >= cellSize.height)
             {
                 continue;

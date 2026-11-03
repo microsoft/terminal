@@ -686,7 +686,8 @@ namespace Microsoft::Console::VirtualTerminal
             VERIFY_ARE_EQUAL(255, static_cast<int>(slice->Pixels()[10].rgbReserved));
         }
 
-        TEST_METHOD(PlaceholdersStrippedFromPlainText)        {
+        TEST_METHOD(PlaceholdersStrippedFromPlainText)
+        {
             const auto text = std::wstring(L"before \xDB3B\xDEEE\x0305\x030D after");
             const auto stripped = KittyPlaceholder::StripPlaceholders(text);
             VERIFY_ARE_EQUAL(std::wstring(L"before  after"), stripped);

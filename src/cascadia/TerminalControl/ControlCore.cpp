@@ -2370,7 +2370,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)    {
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
+    {
         try
         {
             {

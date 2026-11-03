@@ -361,28 +361,71 @@ bool KittyGraphicsParser::_foldKeyValue()
     const auto i32 = static_cast<int32_t>(std::clamp<int64_t>(i64, INT32_MIN, INT32_MAX));
     switch (_currentKey)
     {
-    case L'f': _cmd.format = u32; break;
-    case L'm': _cmd.more = u32; break;
-    case L'i': _cmd.id = u32; break;
-    case L'I': _cmd.imageNumber = u32; break;
-    case L'p': _cmd.placementId = u32; break;
-    case L'q': _cmd.quiet = u32; break;
-    case L'w': _cmd.width = u32; break;
-    case L'h': _cmd.height = u32; break;
-    case L'x': _cmd.xOffset = u32; break;
-    case L'y': _cmd.yOffset = u32; break;
-    case L'v': _cmd.dataHeight = u32; break;
-    case L's': _cmd.dataWidth = u32; break;
-    case L'c': _cmd.numCells = u32; break;
-    case L'r': _cmd.numLines = u32; break;
-    case L'X': _cmd.cellXOffset = u32; break;
-    case L'Y': _cmd.cellYOffset = u32; break;
-    case L'z': _cmd.zIndex = i32; break;
-    case L'b': _cmd.frameNumber = u32; break;
-    case L'C': _cmd.cursorMovement = u32; break;
-    case L'U': _cmd.unicodePlacement = u32; break;
-    case L'N': _cmd.usageHints = u32; break;
-    default: break; // S, O, H, V belong to unsupported features
+    case L'f':
+        _cmd.format = u32;
+        break;
+    case L'm':
+        _cmd.more = u32;
+        break;
+    case L'i':
+        _cmd.id = u32;
+        break;
+    case L'I':
+        _cmd.imageNumber = u32;
+        break;
+    case L'p':
+        _cmd.placementId = u32;
+        break;
+    case L'q':
+        _cmd.quiet = u32;
+        break;
+    case L'w':
+        _cmd.width = u32;
+        break;
+    case L'h':
+        _cmd.height = u32;
+        break;
+    case L'x':
+        _cmd.xOffset = u32;
+        break;
+    case L'y':
+        _cmd.yOffset = u32;
+        break;
+    case L'v':
+        _cmd.dataHeight = u32;
+        break;
+    case L's':
+        _cmd.dataWidth = u32;
+        break;
+    case L'c':
+        _cmd.numCells = u32;
+        break;
+    case L'r':
+        _cmd.numLines = u32;
+        break;
+    case L'X':
+        _cmd.cellXOffset = u32;
+        break;
+    case L'Y':
+        _cmd.cellYOffset = u32;
+        break;
+    case L'z':
+        _cmd.zIndex = i32;
+        break;
+    case L'b':
+        _cmd.frameNumber = u32;
+        break;
+    case L'C':
+        _cmd.cursorMovement = u32;
+        break;
+    case L'U':
+        _cmd.unicodePlacement = u32;
+        break;
+    case L'N':
+        _cmd.usageHints = u32;
+        break;
+    default:
+        break; // S, O, H, V belong to unsupported features
     }
     return true;
 }
