@@ -178,6 +178,18 @@ namespace KittyPlaceholder
                 cell.imageIdLow = static_cast<int>(((rgb & 0xFF) << 16) | (rgb & 0xFF00) | ((rgb >> 16) & 0xFF));
             }
 
+            // The underline color can encode a placement id the same way
+            // the foreground encodes the image id; it selects among an
+            // image named virtual placements.
+            if (underline.IsIndex16() || underline.IsIndex256())
+            {
+                cell.placementId = static_cast<int>(underline.GetIndex());
+            }
+            else if (underline.IsRgb())
+            {
+                const auto urgb = underline.GetRGB();
+                cell.placementId = static_cast<int>(((urgb & 0xFF) << 16) | (urgb & 0xFF00) | ((urgb >> 16) & 0xFF));
+            }
             cells.push_back(cell);
             previous = &cells.back();
             previousForeground = foreground;

@@ -669,6 +669,33 @@ namespace Microsoft::Console::VirtualTerminal
             }
         }
 
+        TEST_METHOD(NamedVirtualPlacementsSelectByUnderlineId)
+        {
+            // Two named virtual placements of one image: a 4x4 grid and a
+            // 2x2 grid. The placeholder's underline color carries the
+            // placement id and picks which grid its pixels come from.
+            const auto payload = std::wstring(400, L'A'); // 10x10 RGB
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=10,v=10,i=42,q=2;{}"), payload));
+            SendApc(L"a=p,U=1,i=42,c=4,r=4,p=7,q=2");
+            SendApc(L"a=p,U=1,i=42,c=2,r=2,p=8,q=2");
+
+            // (0,0) grid cell of each placement, distinguished by underline
+            // color 58;5;7 vs 58;5;8.
+            Send(L"\x1b[38;5;42;58;5;7m\xDB3B\xDEEE\x0305\x0305\xDB3B\xDEEE\x0305\x030D\xDB3B\xDEEE\x030D\x0305\xDB3B\xDEEE\x030D\x030D\x1b[39;59m");
+            Send(L"\r\n\x1b[38;5;42;58;5;8m\xDB3B\xDEEE\x0305\x0305\xDB3B\xDEEE\x0305\x030D\x1b[39;59m");
+            auto& rowA = _buffer->GetMutableRowByOffset(0);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, rowA, 0, { 10, 20 });
+            const auto sliceA = rowA.GetImageSlice();
+            VERIFY_IS_NOT_NULL(sliceA);
+            VERIFY_ARE_EQUAL(40, sliceA->PixelWidth());
+
+            auto& rowB = _buffer->GetMutableRowByOffset(1);
+            _buffer->GetKittyImages().ComposeRow(*_buffer, rowB, 1, { 10, 20 });
+            const auto sliceB = rowB.GetImageSlice();
+            VERIFY_IS_NOT_NULL(sliceB);
+            VERIFY_ARE_EQUAL(20, sliceB->PixelWidth());
+        }
+
         TEST_METHOD(PlaceholderDiacriticsBeyondSeven)
         {
             // A 10x180 px image in a 1x9 cell grid fills all nine strip

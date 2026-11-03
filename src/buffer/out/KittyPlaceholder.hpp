@@ -48,6 +48,9 @@ namespace KittyPlaceholder
         int imageIdLow = -1;
         // Whether the low bits came from an index color rather than RGB.
         bool indexedColor = false;
+        // Placement id from the cell underline color, when it encodes one;
+        // -1 otherwise. Selects among an image named virtual placements.
+        int placementId = -1;
     };
 
     // Decodes the placeholder cells of a row into `cells`. Returns true if

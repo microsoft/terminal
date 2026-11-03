@@ -770,16 +770,23 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
                 {
                     continue;
                 }
-                // The underline color carries the placement id, if any. With
-                // none given, the first virtual placement of the image is
-                // used.
+                // The underline color carries the placement id, if any: a
+                // placeholder selects its image's named virtual placement
+                // with a matching id, and falls back to the first one.
                 const KittyImages::Placement* virtualPlacement = nullptr;
                 for (const auto& placement : _placements)
                 {
                     if (placement.virtual_ && placement.imageId == imageId)
                     {
-                        virtualPlacement = &placement;
-                        break;
+                        if (cell.placementId > 0 && placement.placementId == static_cast<uint32_t>(cell.placementId))
+                        {
+                            virtualPlacement = &placement;
+                            break;
+                        }
+                        if (!virtualPlacement)
+                        {
+                            virtualPlacement = &placement;
+                        }
                     }
                 }
                 if (!virtualPlacement)
