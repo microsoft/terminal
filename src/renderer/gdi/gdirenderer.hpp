@@ -17,8 +17,6 @@ Author(s):
 #include "../inc/RenderEngineBase.hpp"
 #include "../inc/FontResource.hpp"
 
-#include <unordered_set>
-
 namespace Microsoft::Console::Render
 {
     class GdiEngine final : public RenderEngineBase
@@ -181,35 +179,6 @@ namespace Microsoft::Console::Render
 
         std::vector<DWORD> _imageMask;
 
-        // Rows carrying a below-text image slice this frame. Their text runs
-        // must draw with a transparent background, because the slice is
-        // blitted before the text and ETO_OPAQUE would erase it.
-        std::unordered_set<til::CoordType> _belowImageRows;
-
-        // A text run deferred because its row carries a below-text image:
-        // the image is blitted onto the window DC in EndPaint (going through
-        // the memory surface loses it), and the run is drawn on top of it
-        // there as well.
-        struct DeferredRun
-        {
-            std::wstring text;
-            std::pmr::vector<int> widths;
-            int x = 0;
-            int y = 0;
-            int leftInset = 0;
-            COLORREF fg = 0;
-        };
-        std::vector<DeferredRun> _deferredRuns;
-        // Below-text slices for this frame, blitted in EndPaint.
-        struct DeferredSlice
-        {
-            til::CoordType row = 0;
-            const ImageSlice* slice = nullptr;
-            int x = 0;
-            int y = 0;
-        };
-        std::vector<DeferredSlice> _belowImageSlices;
-
         [[nodiscard]] HRESULT _InvalidCombine(const til::rect* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const til::point* const ppt) noexcept;
         [[nodiscard]] HRESULT _InvalidRestrict() noexcept;
@@ -217,7 +186,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _InvalidateRect(const til::rect* const prc) noexcept;
 
         [[nodiscard]] HRESULT _PaintBackgroundColor(const RECT* const prc) noexcept;
-        void _BlitImageSliceToDC(_In_ HDC hdc, const ImageSlice& imageSlice, int x, int y);
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;

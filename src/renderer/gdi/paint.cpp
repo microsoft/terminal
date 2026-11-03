@@ -228,36 +228,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     const auto sz = _GetInvalidRectSize();
 
     LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.width, sz.height, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
-
-    // Below-text images and their rows' text runs go straight onto the
-    // window DC, on top of the freshly presented frame: the image first,
-    // then the deferred transparent-background runs above it. They cannot
-    // go through the memory surface, which loses them (see
-    // _belowImageSlices).
-    for (const auto& deferred : _belowImageSlices)
-    {
-        _BlitImageSliceToDC(_psInvalidData.hdc, *deferred.slice, deferred.x, deferred.y);
-    }
-    _belowImageSlices.clear();
-
-    if (!_deferredRuns.empty())
-    {
-        SetBkMode(_psInvalidData.hdc, TRANSPARENT);
-        const auto cellHeight = _GetFontSize().height;
-        for (const auto& run : _deferredRuns)
-        {
-            auto total = 0;
-            for (const auto w : run.widths)
-            {
-                total += w;
-            }
-            RECT clip{ run.x + run.leftInset, run.y, run.x + run.leftInset + total, run.y + cellHeight };
-            SetTextColor(_psInvalidData.hdc, run.fg);
-            ExtTextOutW(_psInvalidData.hdc, run.x + run.leftInset, run.y, ETO_CLIPPED, &clip, run.text.data(), static_cast<UINT>(run.text.size()), run.widths.data());
-        }
-        SetBkMode(_psInvalidData.hdc, OPAQUE);
-        _deferredRuns.clear();
-    }
+    WHEN_DBG(_DebugBltAll());
 
     _rcInvalid = {};
     _fInvalidRectUsed = false;
@@ -323,12 +294,6 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
     // clean up a cursor that is no longer there, and instead leave a bunch of
     // "ghost" cursor instances on the screen.
     cursorInvertRects.clear();
-
-    // The below-text row set is per frame for the same reason: a row that
-    // carried an image last frame may not carry one this frame.
-    _belowImageRows.clear();
-    _belowImageSlices.clear();
-    _deferredRuns.clear();
 
     if (_psInvalidData.fErase)
     {
@@ -448,10 +413,6 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
-        // A row with a below-text image has its text drawn in EndPaint, on
-        // top of the image that was blitted to the window DC there (see
-        // _deferredRuns); it never joins the PolyText queue at all.
-        const auto deferredRun = _belowImageRows.contains(coord.y) != 0;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
         pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
@@ -462,21 +423,6 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         if (trimLeft)
         {
             pPolyTextLine->rcl.left += coordFontSize.width;
-        }
-
-        if (deferredRun)
-        {
-            auto& run = _deferredRuns.emplace_back();
-            run.text = std::move(polyString);
-            run.widths = std::move(polyWidth);
-            run.x = ptDraw.x;
-            run.y = ptDraw.y;
-            run.leftInset = trimLeft ? coordFontSize.width : 0;
-            run.fg = GetTextColor(_hdcMemoryContext);
-            // Drop the queued PolyText slot this run would have occupied.
-            _polyStrings.pop_back();
-            _polyWidths.pop_back();
-            return S_OK;
         }
 
         _cPolyText++;
@@ -720,10 +666,15 @@ try
 }
 CATCH_RETURN();
 
-// Blits an image slice's pixels to the given DC at the given pixel target.
-// Shared by the immediate above-text path and the EndPaint below-text path.
-void GdiEngine::_BlitImageSliceToDC(_In_ HDC hdc, const ImageSlice& imageSlice, const int x, const int y)
+[[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
+                                                 const til::CoordType targetRow,
+                                                 const til::CoordType viewportLeft,
+                                                 const ImageSliceLayer /*layer*/) noexcept
+try
 {
+    LOG_IF_FAILED(_FlushBufferLines());
+    LOG_IF_FAILED(ResetLineTransform());
+
     const auto& imagePixels = imageSlice.Pixels();
     if (_imageMask.size() < imagePixels.size())
     {
@@ -736,6 +687,8 @@ void GdiEngine::_BlitImageSliceToDC(_In_ HDC hdc, const ImageSlice& imageSlice, 
     const auto srcHeight = srcCellSize.height;
     const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
     const auto dstHeight = dstCellSize.height;
+    const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
+    const auto y = targetRow * dstCellSize.height;
 
     auto bitmapInfo = BITMAPINFO{
         .bmiHeader = {
@@ -748,56 +701,25 @@ void GdiEngine::_BlitImageSliceToDC(_In_ HDC hdc, const ImageSlice& imageSlice, 
         }
     };
 
-    auto allTransparent = true;
     auto allOpaque = true;
+    auto allTransparent = true;
     for (size_t i = 0; i < imagePixels.size(); i++)
     {
         const auto opaque = til::at(imagePixels, i).rgbReserved != 0;
-        allTransparent &= !opaque;
         allOpaque &= opaque;
+        allTransparent &= !opaque;
         til::at(_imageMask, i) = (opaque ? 0 : 0xFFFFFF);
     }
 
-    if (allTransparent)
-    {
-        return;
-    }
     if (allOpaque)
     {
-        StretchDIBits(hdc, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
     }
-    else
+    else if (!allTransparent)
     {
-        // Mask off the transparent pixels, then paint the image over what
-        // is already there, so partial alpha keeps the backdrop.
-        StretchDIBits(hdc, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, _imageMask.data(), &bitmapInfo, DIB_RGB_COLORS, SRCAND);
-        StretchDIBits(hdc, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, _imageMask.data(), &bitmapInfo, DIB_RGB_COLORS, SRCAND);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
     }
-}
-
-[[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
-                                                 const til::CoordType targetRow,
-                                                 const til::CoordType viewportLeft,
-                                                 const ImageSliceLayer layer) noexcept
-try
-{
-    LOG_IF_FAILED(_FlushBufferLines());
-    LOG_IF_FAILED(ResetLineTransform());
-
-    // Below-text slices ride to EndPaint and go straight onto the window
-    // DC after the frame present; see _belowImageSlices.
-    if (layer == ImageSliceLayer::BelowText)
-    {
-        const auto dstCellSize = _GetFontSize();
-        _belowImageRows.insert(targetRow);
-        _belowImageSlices.emplace_back(targetRow, &imageSlice, (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width, targetRow * dstCellSize.height);
-        return S_OK;
-    }
-
-    const auto dstCellSize = _GetFontSize();
-    const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
-    const auto y = targetRow * dstCellSize.height;
-    _BlitImageSliceToDC(_hdcMemoryContext, imageSlice, x, y);
 
     return S_OK;
 }
