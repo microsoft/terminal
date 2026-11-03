@@ -580,6 +580,9 @@ bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParam
 // - the handler that forwards the raw sequence
 IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch()
 {
+    // The forwarded sequence is attacker-sized input; a cap keeps a hostile
+    // one from growing without bound. Past the cap the sequence is dropped.
+    constexpr size_t maxApcLength = 4ull * 1024 * 1024;
     return [this, content = std::wstring{ L"\x1b_" }](const wchar_t wch) mutable {
         if (wch == AsciiChars::ESC)
         {
@@ -587,7 +590,10 @@ IStateMachineEngine::StringHandler InputStateMachineEngine::ActionApcDispatch()
             _pDispatch->WriteStringRaw(content);
             return true;
         }
-        content += wch;
+        if (content.size() < maxApcLength)
+        {
+            content += wch;
+        }
         return true;
     };
 }

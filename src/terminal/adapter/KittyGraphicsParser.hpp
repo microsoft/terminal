@@ -96,7 +96,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _transmit();
         void _finishTransmission();
         void _place();
-        void _placeVirtual(const Command& cmd);
+        bool _placeVirtual(const Command& cmd);
         bool _placeDirect(const Command& cmd, uint32_t imageId);
         void _query();
         void _queryFeatures();

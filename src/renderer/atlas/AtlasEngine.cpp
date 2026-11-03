@@ -588,7 +588,41 @@ try
             b.source = Buffer<u32, 32>{ pixels.size() };
         }
 
-        memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        // The backends draw these pixels as premultiplied alpha; the slices
+        // store them straight. Fully opaque rows - the common case - are a
+        // plain copy, anything else is premultiplied on the way in.
+        const auto source = reinterpret_cast<const RGBQUAD*>(pixels.data());
+        const auto target = reinterpret_cast<RGBQUAD*>(b.source.data());
+        auto opaque = true;
+        for (size_t i = 0; i < pixels.size(); ++i)
+        {
+            if (til::at(source, i).rgbReserved != 255)
+            {
+                opaque = false;
+                break;
+            }
+        }
+        if (opaque)
+        {
+            memcpy(b.source.data(), pixels.data(), pixels.size_bytes());
+        }
+        else
+        {
+            for (size_t i = 0; i < pixels.size(); ++i)
+            {
+                const auto& src = til::at(source, i);
+                const auto alpha = src.rgbReserved;
+                if (alpha == 0)
+                {
+                    til::at(target, i) = RGBQUAD{ 0, 0, 0, 0 };
+                    continue;
+                }
+                const auto scale = [&](const BYTE channel) {
+                    return static_cast<BYTE>(channel * alpha / 255);
+                };
+                til::at(target, i) = RGBQUAD{ scale(src.rgbBlue), scale(src.rgbGreen), scale(src.rgbRed), alpha };
+            }
+        }
         b.revision = revision;
         b.sourceSize.x = srcWidth;
         b.sourceSize.y = srcHeight;

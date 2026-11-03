@@ -125,6 +125,10 @@ public:
     // Records the last animation-control state keys. Returns false on an
     // unknown image.
     bool SetAnimationState(uint32_t imageId, uint32_t state, uint32_t loops);
+    // Drops an image's animation frames; the root image data remains.
+    bool DeleteFrames(uint32_t imageId);
+    // All stored images, in arrival order.
+    const std::vector<Image>& Images() const noexcept;
     // Deletes placements matching the predicate. Returns how many.
     template<typename F>
     size_t DeletePlacements(F&& filter)
@@ -154,6 +158,10 @@ public:
     // cellSize the current font's cell size in pixels.
     void ComposeRow(const TextBuffer& buffer, ROW& row, til::CoordType rowY, til::size cellSize);
 
+    // Drops a row's cached composition so the next paint recomposes it.
+    // Called when text is written over a row that carries image pixels.
+    void InvalidateRow(til::CoordType rowY) noexcept;
+
     void Clear() noexcept;
 
 private:
@@ -165,6 +173,14 @@ private:
         til::CoordType row;
         til::CoordType cellW;
         til::CoordType cellH;
+        // Two placements of one image can share every field above — two
+        // crops sent without a p= both carry placement id 0 — so the
+        // geometry a strip is built from is part of its identity.
+        til::rect srcRect;
+        til::CoordType cols;
+        til::CoordType rows;
+        til::CoordType offsetX;
+        til::CoordType offsetY;
     };
 
     friend bool operator==(const StripKey& a, const StripKey& b) noexcept;

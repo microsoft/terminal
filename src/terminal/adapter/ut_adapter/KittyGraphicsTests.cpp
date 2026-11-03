@@ -240,13 +240,32 @@ namespace Microsoft::Console::VirtualTerminal
         TEST_METHOD(FrameChunkRectangleBlits)
         {
             // Root: 2x1 opaque red. A frame carrying a 1x1 rect of blue at
-            // x=1 edits the root frame in place via r=1.
+            // x=1 edits the root frame in place via r=. The rectangle is
+            // x, y, s, v per the spec.
             SendApc(L"a=t,f=24,s=2,v=1,i=11;/wAAAP8A");
-            SendApc(L"a=f,i=11,x=1,w=1,h=1,r=1;AAD/");
+            SendApc(L"a=f,i=11,x=1,s=1,v=1,r=1;AAD/");
             const auto image = _buffer->GetKittyImages().FindImage(11);
             VERIFY_IS_NOT_NULL(image);
             VerifyPixel(RGBQUAD{ 0, 0, 255, 255 }, image->pixels[0]);
             VerifyPixel(RGBQUAD{ 255, 0, 0, 255 }, image->pixels[1]);
+        }
+
+        TEST_METHOD(FrameBlendsByDefaultAndReplacesWithX)
+        {
+            // Root: 1x1 opaque red. A frame of half-opacity blue blends by
+            // default; with X=1 it replaces.
+            SendApc(L"a=t,f=32,s=1,v=1,i=14;/wAA/w==");
+            SendApc(L"a=f,i=14,r=1;AAD/gA==");
+            const auto blended = _buffer->GetKittyImages().FindImage(14);
+            VERIFY_IS_NOT_NULL(blended);
+            VERIFY_ARE_EQUAL(127, static_cast<int>(blended->pixels[0].rgbRed));
+            VERIFY_ARE_EQUAL(0, static_cast<int>(blended->pixels[0].rgbGreen));
+            VERIFY_ARE_EQUAL(128, static_cast<int>(blended->pixels[0].rgbBlue));
+            VERIFY_ARE_EQUAL(255, static_cast<int>(blended->pixels[0].rgbReserved));
+
+            SendApc(L"a=f,i=14,r=1,X=1;AAD/gA==");
+            const auto replaced = _buffer->GetKittyImages().FindImage(14);
+            VerifyPixel(RGBQUAD{ 255, 0, 0, 128 }, replaced->pixels[0]);
         }
 
         TEST_METHOD(FrameComposeBlendsAndReplaces)
@@ -286,6 +305,74 @@ namespace Microsoft::Console::VirtualTerminal
         {
             SendApc(L"a=f,i=99;AAAA");
             VERIFY_IS_TRUE(_api->response.find(L"ENOENT") != std::wstring::npos);
+        }
+
+        TEST_METHOD(OversizedKeysRejectedNotWrapped)
+        {
+            // Values above INT32_MAX narrow to negative coordinates unless
+            // they are range-checked before the cast; each of these used to
+            // slip past the "> limit" checks.
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=10,v=20,i=20,q=2;{}"), payload));
+            SendApc(L"a=p,i=20,c=4294967295,r=1");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+            VERIFY_ARE_EQUAL(0u, _buffer->GetKittyImages().Placements().size());
+
+            SendApc(L"a=p,i=20,c=2147483648,r=1");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=2147483648,v=1,i=21;{}"), payload));
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+
+            SendApc(fmt::format(FMT_COMPILE(L"a=T,f=24,s=10,v=20,i=22,x=4294967295;{}"), payload));
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+            // The image was stored; only its placement was refused.
+            VERIFY_IS_NOT_NULL(_buffer->GetKittyImages().FindImage(22));
+            VERIFY_ARE_EQUAL(0u, _buffer->GetKittyImages().Placements().size());
+        }
+
+        TEST_METHOD(FrameRectOverflowRejected)
+        {
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=10,v=20,i=23,q=2;{}"), payload));
+            // x near INT32_MAX with a 1x1 rectangle must not wrap.
+            SendApc(L"a=f,i=23,x=2147483647,s=1,v=1,r=1;AAD/");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+        }
+
+        TEST_METHOD(ComposeSameFrameOverlapRejected)
+        {
+            SendApc(L"a=t,f=24,s=1,v=1,i=24,q=2;/wAA");
+            SendApc(L"a=f,i=24,r=1;AAD/");
+            SendApc(L"a=c,i=24,r=1,c=1,x=0,y=0,X=0,Y=0,w=1,h=1");
+            VERIFY_IS_TRUE(_api->response.find(L"EINVAL") != std::wstring::npos);
+        }
+
+        TEST_METHOD(DeleteFramesAndCellWithZ)
+        {
+            SendApc(L"a=t,f=24,s=1,v=1,i=25,q=2;/wAA");
+            SendApc(L"a=f,i=25,r=2;AAD/");
+            VERIFY_ARE_EQUAL(2u, _buffer->GetKittyImages().FindImage(25)->frames.size());
+
+            // d=f drops the frames, root pixels remain.
+            SendApc(L"a=d,d=f,i=25");
+            VERIFY_ARE_EQUAL(0u, _buffer->GetKittyImages().FindImage(25)->frames.size());
+            VERIFY_ARE_EQUAL(1u, _buffer->GetKittyImages().FindImage(25)->pixels.size());
+
+            // d=q removes a placement at a cell with a z-index.
+            SendApc(L"a=p,i=25,c=2,r=1,z=5,q=2");
+            VERIFY_ARE_EQUAL(1u, _buffer->GetKittyImages().Placements().size());
+            SendApc(L"a=d,d=q,x=1,y=1,z=5");
+            VERIFY_ARE_EQUAL(0u, _buffer->GetKittyImages().Placements().size());
+        }
+
+        TEST_METHOD(UnknownKeysAreIgnored)
+        {
+            // A future key must not take the whole command down with it.
+            const auto payload = std::wstring(800, L'A');
+            SendApc(fmt::format(FMT_COMPILE(L"a=t,f=24,s=10,v=20,i=26,q=2,K=999;{}"), payload));
+            VERIFY_IS_TRUE(_api->response.empty() || _api->response.find(L"OK") != std::wstring::npos);
+            VERIFY_IS_NOT_NULL(_buffer->GetKittyImages().FindImage(26));
         }
 
         TEST_METHOD(ChunkedTransmission)

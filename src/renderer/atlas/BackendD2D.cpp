@@ -843,22 +843,28 @@ void BackendD2D::_drawBitmap(const RenderingPayload& p, const ShapedRow* /*row*/
     }
     else if (entry.bitmap)
     {
+        const auto stride = gsl::narrow_cast<UINT32>(b.sourceSize.x) * 4;
         const auto existing = entry.bitmap->GetPixelSize();
-        bitmap = entry.bitmap;
         if (existing.width != size.width || existing.height != size.height)
         {
-            THROW_IF_FAILED(_renderTarget->CreateBitmap(size, nullptr, 0, &bitmapProperties, bitmap.addressof()));
+            // A size change replaces the bitmap outright; create it filled
+            // with the new pixels so nothing uninitialized is ever drawn.
+            wil::com_ptr<ID2D1Bitmap> fresh;
+            THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), stride, &bitmapProperties, fresh.addressof()));
+            entry.bitmap = std::move(fresh);
         }
         else
         {
             const auto rect = D2D1_RECT_U{ 0, 0, size.width, size.height };
-            THROW_IF_FAILED(bitmap->CopyFromMemory(&rect, b.source.data(), gsl::narrow_cast<UINT32>(b.sourceSize.x) * 4));
+            THROW_IF_FAILED(entry.bitmap->CopyFromMemory(&rect, b.source.data(), stride));
         }
         entry.revision = b.revision;
+        bitmap = entry.bitmap;
     }
     else
     {
-        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), static_cast<UINT32>(b.sourceSize.x) * 4, &bitmapProperties, bitmap.addressof()));
+        const auto stride = gsl::narrow_cast<UINT32>(b.sourceSize.x) * 4;
+        THROW_IF_FAILED(_renderTarget->CreateBitmap(size, b.source.data(), stride, &bitmapProperties, bitmap.addressof()));
         entry.bitmap = bitmap;
         entry.revision = b.revision;
     }

@@ -172,8 +172,10 @@ namespace KittyPlaceholder
             }
             else if (foreground.IsRgb())
             {
+                // GetRGB returns a COLORREF (0x00BBGGRR); the client packs
+                // the id as RRGGBB, so swap the byte order.
                 const auto rgb = foreground.GetRGB();
-                cell.imageIdLow = static_cast<int>(rgb & 0xFFFFFF);
+                cell.imageIdLow = static_cast<int>(((rgb & 0xFF) << 16) | (rgb & 0xFF00) | ((rgb >> 16) & 0xFF));
             }
 
             cells.push_back(cell);
@@ -201,8 +203,14 @@ namespace KittyPlaceholder
 
         while (position != std::wstring_view::npos)
         {
-            // Skip the surrogate pair and any trailing diacritics.
+            // Skip the surrogate pair and any trailing diacritics. A lone
+            // trailing high surrogate leaves position past the end; clamp
+            // it or the find below throws.
             position += 2;
+            if (position > text.size())
+            {
+                position = text.size();
+            }
             while (position < text.size())
             {
                 const auto head = CodepointAt(text.substr(position));

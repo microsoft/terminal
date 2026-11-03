@@ -26,6 +26,25 @@ namespace
     // accumulated across all of its chunks.
     constexpr size_t MaxBase64Length = 64ull * 1024 * 1024;
 
+    // Client-supplied numbers are uint32 keys; every one that narrows to a
+    // signed coordinate must pass this first, or a value above INT32_MAX
+    // wraps negative and slips past the "> limit" checks that follow. A
+    // zero passes: the callers decide whether zero is meaningful.
+    bool CheckedCoord(const std::optional<uint32_t>& value, const uint32_t limit, til::CoordType& out)
+    {
+        out = 0;
+        if (!value)
+        {
+            return true;
+        }
+        if (*value > limit)
+        {
+            return false;
+        }
+        out = static_cast<til::CoordType>(*value);
+        return true;
+    }
+
     std::optional<std::vector<uint8_t>> Base64Decode(const std::string_view text)
     {
         static constexpr auto invalid = static_cast<uint8_t>(0xFF);
@@ -110,6 +129,12 @@ namespace
             UINT width = 0, height = 0;
             THROW_IF_FAILED(frame->GetSize(&width, &height));
             if (width == 0 || height == 0 || width > static_cast<UINT>(KittyImages::MaxDimension) || height > static_cast<UINT>(KittyImages::MaxDimension))
+            {
+                return false;
+            }
+            // The decoded pixel allocation itself must fit the image memory
+            // budget before it is made.
+            if (static_cast<uint64_t>(width) * height * sizeof(RGBQUAD) > KittyImages::MaxTotalImageBytes)
             {
                 return false;
             }
@@ -205,8 +230,12 @@ bool KittyGraphicsParser::_handleChar(const wchar_t ch)
             _state = ParseState::Equal;
             return true;
         default:
-            _state = ParseState::Rejected;
-            return false;
+            // Unknown keys are ignored, value and all: the protocol is
+            // forward-compatible, and rejecting the whole command would
+            // hang a client waiting for its reply.
+            _currentKey = 0;
+            _state = ParseState::Equal;
+            return true;
         }
 
     case ParseState::Equal:
@@ -307,6 +336,10 @@ void KittyGraphicsParser::_finalizeCommand()
     {
         _applyCommand();
     }
+    // A large payload would otherwise stay alive until the next command
+    // replaces the command struct.
+    _cmd.payloadBase64.clear();
+    _cmd.payloadBase64.shrink_to_fit();
 }
 
 bool KittyGraphicsParser::_foldKeyValue()
@@ -323,7 +356,9 @@ bool KittyGraphicsParser::_foldKeyValue()
         return false;
     }
     const auto u32 = static_cast<uint32_t>(value);
-    const auto i32 = _currentKeyIsNegative ? -static_cast<int32_t>(u32) : static_cast<int32_t>(u32);
+    // Negate and clamp in 64 bits: -INT32_MIN from a u32 is signed overflow.
+    const auto i64 = _currentKeyIsNegative ? -static_cast<int64_t>(u32) : static_cast<int64_t>(u32);
+    const auto i32 = static_cast<int32_t>(std::clamp<int64_t>(i64, INT32_MIN, INT32_MAX));
     switch (_currentKey)
     {
     case L'f': _cmd.format = u32; break;
@@ -531,6 +566,12 @@ void KittyGraphicsParser::_transmit()
     _pendingBase64Bytes += _cmd.payloadBase64.size();
     _pending.payloadBase64 += _cmd.payloadBase64;
     _pending.more = _cmd.more;
+    // A quiet level travels with the chunk that carries it; a continuation
+    // without q= leaves the previous one in place.
+    if (_cmd.quiet)
+    {
+        _pending.quiet = _cmd.quiet;
+    }
 
     if (_pending.more.value_or(0))
     {
@@ -561,13 +602,13 @@ void KittyGraphicsParser::_finishTransmission()
         _respond(false, L"EINVAL:corrupt base64 payload");
         return;
     }
-    // The payload is decompressed before any format interpretation; a
-    // decompressed payload may not exceed the image memory budget.
     const uint8_t* bytes = decoded->data();
     size_t byteCount = decoded->size();
     std::vector<uint8_t> inflated;
-    if (cmd.compressed == L'z')
+    if (format == 100 && cmd.compressed == L'z')
     {
+        // A PNG payload has no declared size; a decompressed one may not
+        // exceed the image memory budget.
         inflated = Zlib::Inflate(std::span{ bytes, byteCount }, KittyImages::MaxTotalImageBytes).value_or(std::vector<uint8_t>{});
         if (inflated.empty())
         {
@@ -580,9 +621,15 @@ void KittyGraphicsParser::_finishTransmission()
 
     if (format == 24 || format == 32)
     {
-        const auto width = static_cast<til::CoordType>(cmd.dataWidth.value_or(0));
-        const auto height = static_cast<til::CoordType>(cmd.dataHeight.value_or(0));
-        if (width == 0 || height == 0 || width > KittyImages::MaxDimension || height > KittyImages::MaxDimension)
+        til::CoordType width = 0;
+        til::CoordType height = 0;
+        if (!CheckedCoord(cmd.dataWidth, KittyImages::MaxDimension, width) ||
+            !CheckedCoord(cmd.dataHeight, KittyImages::MaxDimension, height))
+        {
+            _respond(false, L"EINVAL:invalid dimensions");
+            return;
+        }
+        if (width == 0 || height == 0)
         {
             _respond(false, L"EINVAL:invalid dimensions");
             return;
@@ -595,6 +642,20 @@ void KittyGraphicsParser::_finishTransmission()
         }
         const auto bytesPerPixel = format == 32 ? 4 : 3;
         const auto expected = static_cast<size_t>(width) * height * bytesPerPixel;
+        if (cmd.compressed == L'z')
+        {
+            // A raw payload can only ever inflate to its declared size;
+            // capping the decompression there stops zlib bombs short of
+            // the budget.
+            inflated = Zlib::Inflate(std::span{ bytes, byteCount }, expected).value_or(std::vector<uint8_t>{});
+            if (inflated.empty())
+            {
+                _respond(false, L"EINVAL:failed to decompress payload");
+                return;
+            }
+            bytes = inflated.data();
+            byteCount = inflated.size();
+        }
         if (byteCount != expected)
         {
             _respond(false, L"EINVAL:payload size does not match dimensions");
@@ -631,11 +692,19 @@ void KittyGraphicsParser::_finishTransmission()
 
     if (cmd.unicodePlacement.value_or(0))
     {
-        _placeVirtual(cmd);
+        // _placeVirtual has already answered the client, error included.
+        if (!_placeVirtual(cmd))
+        {
+            return;
+        }
     }
     else if (cmd.action == L'T')
     {
-        _placeDirect(cmd, id);
+        // Same for _placeDirect.
+        if (!_placeDirect(cmd, id))
+        {
+            return;
+        }
     }
 
     _respond(true);
@@ -672,8 +741,8 @@ void KittyGraphicsParser::_place()
 
     if (_cmd.unicodePlacement.value_or(0))
     {
+        // _placeVirtual answers the client itself, error included.
         _placeVirtual(_cmd);
-        _respond(true);
         return;
     }
 
@@ -683,14 +752,20 @@ void KittyGraphicsParser::_place()
     }
 }
 
-void KittyGraphicsParser::_placeVirtual(const Command& cmd)
+bool KittyGraphicsParser::_placeVirtual(const Command& cmd)
 {
-    const auto cols = static_cast<til::CoordType>(cmd.numCells.value_or(0));
-    const auto rows = static_cast<til::CoordType>(cmd.numLines.value_or(0));
-    if (cols == 0 || rows == 0 || cols > KittyImages::MaxDimension || rows > KittyImages::MaxDimension)
+    til::CoordType cols = 0;
+    til::CoordType rows = 0;
+    if (!CheckedCoord(cmd.numCells, KittyImages::MaxDimension, cols) ||
+        !CheckedCoord(cmd.numLines, KittyImages::MaxDimension, rows))
     {
         _respond(false, L"EINVAL:invalid virtual placement dimensions");
-        return;
+        return false;
+    }
+    if (cols == 0 || rows == 0)
+    {
+        _respond(false, L"EINVAL:invalid virtual placement dimensions");
+        return false;
     }
 
     const auto imageId = cmd.id.value_or(_assignedId.value_or(0));
@@ -698,7 +773,7 @@ void KittyGraphicsParser::_placeVirtual(const Command& cmd)
     if (!image)
     {
         _respond(false, L"ENOENT:no image with the specified id");
-        return;
+        return false;
     }
 
     auto placement = KittyImages::Placement{};
@@ -709,6 +784,7 @@ void KittyGraphicsParser::_placeVirtual(const Command& cmd)
     placement.rows = rows;
     placement.virtual_ = true;
     _images().AddPlacement(std::move(placement));
+    return true;
 }
 
 bool KittyGraphicsParser::_placeDirect(const Command& cmd, const uint32_t imageId)
@@ -723,24 +799,29 @@ bool KittyGraphicsParser::_placeDirect(const Command& cmd, const uint32_t imageI
     const auto cellSize = _dispatcher._api.GetFontCellSize();
     if (cellSize.width <= 0 || cellSize.height <= 0)
     {
+        _respond(false, L"EINVAL:no font metrics available yet");
         return false;
     }
 
-    // Source rectangle, clamped into the image.
-    auto srcRect = til::rect{
-        std::min<til::CoordType>(cmd.xOffset.value_or(0), image->size.width),
-        std::min<til::CoordType>(cmd.yOffset.value_or(0), image->size.height),
-        image->size.width,
-        image->size.height,
-    };
-    if (cmd.width)
+    // Source rectangle, clamped into the image. The offsets and sizes all
+    // narrow from client u32 keys, so they are range-checked first: a
+    // value above INT32_MAX would wrap negative and read outside the image.
+    til::CoordType srcX = 0;
+    til::CoordType srcY = 0;
+    til::CoordType srcW = 0;
+    til::CoordType srcH = 0;
+    const auto maxDim = static_cast<uint32_t>(std::max<til::CoordType>(image->size.width, image->size.height));
+    if (!CheckedCoord(cmd.xOffset, maxDim, srcX) || !CheckedCoord(cmd.yOffset, maxDim, srcY) ||
+        !CheckedCoord(cmd.width, maxDim, srcW) || !CheckedCoord(cmd.height, maxDim, srcH))
     {
-        srcRect.right = std::min<til::CoordType>(srcRect.left + *cmd.width, image->size.width);
+        _respond(false, L"EINVAL:invalid source rectangle");
+        return false;
     }
-    if (cmd.height)
-    {
-        srcRect.bottom = std::min<til::CoordType>(srcRect.top + *cmd.height, image->size.height);
-    }
+    const auto left = std::min<til::CoordType>(srcX, image->size.width);
+    const auto top = std::min<til::CoordType>(srcY, image->size.height);
+    const auto right = cmd.width ? std::min<til::CoordType>(static_cast<int64_t>(left) + srcW, image->size.width) : image->size.width;
+    const auto bottom = cmd.height ? std::min<til::CoordType>(static_cast<int64_t>(top) + srcH, image->size.height) : image->size.height;
+    auto srcRect = til::rect{ left, top, right, bottom };
     if (srcRect.left >= srcRect.right || srcRect.top >= srcRect.bottom)
     {
         _respond(false, L"EINVAL:empty source rectangle");
@@ -749,22 +830,30 @@ bool KittyGraphicsParser::_placeDirect(const Command& cmd, const uint32_t imageI
 
     // Destination rectangle, in cells. With only one of c/r given, the
     // other follows the source aspect ratio.
-    const auto srcW = static_cast<double>(srcRect.right - srcRect.left);
-    const auto srcH = static_cast<double>(srcRect.bottom - srcRect.top);
-    auto cols = static_cast<til::CoordType>(cmd.numCells.value_or(0));
-    auto rows = static_cast<til::CoordType>(cmd.numLines.value_or(0));
+    const auto sourceW = static_cast<double>(srcRect.right - srcRect.left);
+    const auto sourceH = static_cast<double>(srcRect.bottom - srcRect.top);
+    til::CoordType cols = 0;
+    til::CoordType rows = 0;
+    // Both counts narrow from client u32 keys; validate before any use so
+    // a value above INT32_MAX cannot wrap negative past the later checks.
+    if (!CheckedCoord(cmd.numCells, KittyImages::MaxDimension, cols) ||
+        !CheckedCoord(cmd.numLines, KittyImages::MaxDimension, rows))
+    {
+        _respond(false, L"EINVAL:invalid placement dimensions");
+        return false;
+    }
     if (cols == 0 && rows == 0)
     {
-        cols = static_cast<til::CoordType>((srcW + cellSize.width - 1) / cellSize.width);
-        rows = static_cast<til::CoordType>((srcH + cellSize.height - 1) / cellSize.height);
+        cols = static_cast<til::CoordType>((sourceW + cellSize.width - 1) / cellSize.width);
+        rows = static_cast<til::CoordType>((sourceH + cellSize.height - 1) / cellSize.height);
     }
     else if (rows == 0)
     {
-        rows = std::max<til::CoordType>(1, lround(cols * srcH / srcW));
+        rows = std::max<til::CoordType>(1, lround(cols * sourceH / sourceW));
     }
     else if (cols == 0)
     {
-        cols = std::max<til::CoordType>(1, lround(rows * srcW / srcH));
+        cols = std::max<til::CoordType>(1, lround(rows * sourceW / sourceH));
     }
     if (cols == 0 || rows == 0 || cols > KittyImages::MaxDimension || rows > KittyImages::MaxDimension)
     {
@@ -772,8 +861,14 @@ bool KittyGraphicsParser::_placeDirect(const Command& cmd, const uint32_t imageI
         return false;
     }
 
-    const auto cellX = static_cast<til::CoordType>(cmd.cellXOffset.value_or(0));
-    const auto cellY = static_cast<til::CoordType>(cmd.cellYOffset.value_or(0));
+    til::CoordType cellX = 0;
+    til::CoordType cellY = 0;
+    if (!CheckedCoord(cmd.cellXOffset, cellSize.width ? cellSize.width - 1 : 0, cellX) ||
+        !CheckedCoord(cmd.cellYOffset, cellSize.height ? cellSize.height - 1 : 0, cellY))
+    {
+        _respond(false, L"EINVAL:cell offsets must be smaller than the cell size");
+        return false;
+    }
     if (cellX >= cellSize.width || cellY >= cellSize.height)
     {
         _respond(false, L"EINVAL:cell offsets must be smaller than the cell size");
@@ -1023,8 +1118,44 @@ void KittyGraphicsParser::_delete()
         break;
     case L'f':
     case L'F':
-        _respond(false, L"ENOSYS:animations are not supported");
-        return;
+        // Delete the animation frames; the root image data remains.
+        if (target)
+        {
+            images.DeleteFrames(target->id);
+        }
+        else
+        {
+            for (const auto& entry : images.Images())
+            {
+                images.DeleteFrames(entry.id);
+            }
+        }
+        break;
+    case L'q':
+    case L'Q':
+    {
+        // The intersection of the p and z selectors, both 1-based and
+        // viewport-relative like d=p.
+        til::CoordType bx = 0;
+        til::CoordType by = 0;
+        if (!CheckedCoord(_cmd.xOffset, KittyImages::MaxDimension, bx) || !CheckedCoord(_cmd.yOffset, KittyImages::MaxDimension, by))
+        {
+            _respond(false, L"EINVAL:invalid delete position");
+            return;
+        }
+        if (!_cmd.xOffset || !_cmd.yOffset)
+        {
+            _respond(false, L"EINVAL:the x and y keys are required");
+            return;
+        }
+        const auto cellX = viewport.left + bx - 1;
+        const auto cellY = viewport.top + by - 1;
+        const auto z = _cmd.zIndex.value_or(0);
+        images.DeletePlacements([&](const KittyImages::Placement& p) {
+            return !p.virtual_ && cellX >= p.x && cellX < p.x + p.cols && cellY >= p.y && cellY < p.y + p.rows && p.z == z;
+        });
+        break;
+    }
     default:
         _respond(false, L"EINVAL:unknown delete action");
         return;
@@ -1066,7 +1197,7 @@ void KittyGraphicsParser::_frame()
     // frame; a chunk with only m= and payload continues the current one.
     const auto isContinuation = _framePendingValid && _framePending.more.value_or(0) &&
                                 !_cmd.id && !_cmd.imageNumber && !_cmd.frameNumber &&
-                                !_cmd.xOffset && !_cmd.yOffset && !_cmd.width && !_cmd.height && !_cmd.numLines && !_cmd.zIndex;
+                                !_cmd.xOffset && !_cmd.yOffset && !_cmd.dataWidth && !_cmd.dataHeight && !_cmd.numCells && !_cmd.numLines && !_cmd.zIndex;
     if (!isContinuation)
     {
         _framePending = _cmd;
@@ -1084,7 +1215,11 @@ void KittyGraphicsParser::_frame()
     _frameBase64Bytes += _cmd.payloadBase64.size();
     _framePending.payloadBase64 += _cmd.payloadBase64;
     _framePending.more = _cmd.more;
-    _framePending.quiet = _cmd.quiet;
+    // A quiet level travels with the chunk that carries it.
+    if (_cmd.quiet)
+    {
+        _framePending.quiet = _cmd.quiet;
+    }
 
     if (_framePending.more.value_or(0))
     {
@@ -1103,7 +1238,8 @@ void KittyGraphicsParser::_frame()
         _respond(false, L"ENOENT:no image with the specified id");
         return;
     }
-    if (image->format == 100)
+    const auto format = cmd.format ? *cmd.format : image->format;
+    if (format == 100)
     {
         // PNG images have no raw frame data; animation frames arrive as
         // raw pixels over f=24/f=32 transmissions.
@@ -1111,15 +1247,25 @@ void KittyGraphicsParser::_frame()
         return;
     }
 
-    const auto width = static_cast<til::CoordType>(cmd.width.value_or(0));
-    const auto height = static_cast<til::CoordType>(cmd.height.value_or(0));
-    const auto x = static_cast<til::CoordType>(cmd.xOffset.value_or(0));
-    const auto y = static_cast<til::CoordType>(cmd.yOffset.value_or(0));
+    // Per the spec the updated rectangle is x, y, s, v; everything narrows
+    // from client u32 keys, so validate in 64 bits before touching pixels.
+    const auto maxDim = static_cast<uint32_t>(std::max<til::CoordType>(image->size.width, image->size.height));
+    til::CoordType x = 0;
+    til::CoordType y = 0;
+    til::CoordType width = 0;
+    til::CoordType height = 0;
+    if (!CheckedCoord(cmd.xOffset, maxDim, x) || !CheckedCoord(cmd.yOffset, maxDim, y) ||
+        !CheckedCoord(cmd.dataWidth, maxDim, width) || !CheckedCoord(cmd.dataHeight, maxDim, height))
+    {
+        _respond(false, L"EINVAL:invalid frame rectangle");
+        return;
+    }
     const auto full = width == 0 && height == 0;
     const auto rectWidth = full ? image->size.width : width;
     const auto rectHeight = full ? image->size.height : height;
-    if (rectWidth <= 0 || rectHeight <= 0 || rectWidth > image->size.width || rectHeight > image->size.height ||
-        x < 0 || y < 0 || x + rectWidth > image->size.width || y + rectHeight > image->size.height)
+    if (rectWidth <= 0 || rectHeight <= 0 ||
+        static_cast<uint64_t>(x) + static_cast<uint64_t>(rectWidth) > static_cast<uint64_t>(image->size.width) ||
+        static_cast<uint64_t>(y) + static_cast<uint64_t>(rectHeight) > static_cast<uint64_t>(image->size.height))
     {
         _respond(false, L"EINVAL:invalid frame rectangle");
         return;
@@ -1134,9 +1280,11 @@ void KittyGraphicsParser::_frame()
     const uint8_t* bytes = decoded->data();
     size_t byteCount = decoded->size();
     std::vector<uint8_t> inflated;
-    if (image->compressed == L'z')
+    if (cmd.compressed == L'z')
     {
-        inflated = Zlib::Inflate(std::span{ bytes, byteCount }, KittyImages::MaxTotalImageBytes).value_or(std::vector<uint8_t>{});
+        // A frame payload can only ever inflate to its declared size.
+        const auto expected = static_cast<size_t>(rectWidth) * rectHeight * (format == 24 ? 3 : 4);
+        inflated = Zlib::Inflate(std::span{ bytes, byteCount }, expected).value_or(std::vector<uint8_t>{});
         if (inflated.empty())
         {
             _respond(false, L"EINVAL:failed to decompress payload");
@@ -1146,32 +1294,67 @@ void KittyGraphicsParser::_frame()
         byteCount = inflated.size();
     }
 
-    const auto bytesPerPixel = image->format == 24 ? 3 : 4;
+    const auto bytesPerPixel = format == 24 ? 3 : 4;
     if (byteCount != static_cast<size_t>(rectWidth) * rectHeight * bytesPerPixel)
     {
         _respond(false, L"EINVAL:payload size does not match the rectangle");
         return;
     }
 
-    // The frame starts transparent, or as a copy of the frame the r key
-    // names when the client edits an existing one.
+    // The new frame starts as the frame the c key copies, or transparent
+    // (or the Y background color) when it names none. An r key edits the
+    // frame it names instead of appending a new one.
     std::vector<RGBQUAD> frame;
+    uint32_t target = 0;
+    if (cmd.numLines)
     {
-        const auto editBase = cmd.numLines.value_or(0);
-        if (editBase)
+        target = *cmd.numLines;
+        if (target > KittyImages::MaxFrames || !_images().EnsureFrames(image->id, target))
         {
-            _images().EnsureFrames(image->id, editBase);
-            const auto* stored = _images().FindImage(image->id);
-            if (stored->frames.size() >= editBase)
-            {
-                frame = stored->frames[editBase - 1].pixels;
-            }
+            _respond(false, L"EINVAL:invalid frame number");
+            return;
         }
-        if (frame.empty())
+        const auto* stored = _images().FindImage(image->id);
+        if (stored->frames.size() >= target)
         {
-            frame.resize(image->pixels.size());
+            frame = stored->frames[target - 1].pixels;
         }
     }
+    if (frame.empty())
+    {
+        frame.resize(image->pixels.size());
+        if (cmd.cellYOffset)
+        {
+            // Y is a 32-bit RGBA color for the pixels the frame does not
+            // carry; the default is transparent black.
+            const auto rgba = *cmd.cellYOffset;
+            const auto background = RGBQUAD{
+                static_cast<BYTE>((rgba >> 8) & 0xFF),
+                static_cast<BYTE>((rgba >> 16) & 0xFF),
+                static_cast<BYTE>((rgba >> 24) & 0xFF),
+                static_cast<BYTE>(rgba & 0xFF),
+            };
+            std::fill(frame.begin(), frame.end(), background);
+        }
+        if (cmd.numCells)
+        {
+            // c names the frame whose pixels serve as the base canvas.
+            const auto base = *cmd.numCells;
+            if (base > KittyImages::MaxFrames || !_images().EnsureFrames(image->id, base))
+            {
+                _respond(false, L"EINVAL:invalid frame number");
+                return;
+            }
+            const auto* stored = _images().FindImage(image->id);
+            if (stored->frames.size() >= base)
+            {
+                frame = stored->frames[base - 1].pixels;
+            }
+        }
+    }
+
+    // The composition mode defaults to full alpha blending; X=1 replaces.
+    const auto replace = cmd.cellXOffset.value_or(0) == 1;
     for (til::CoordType row = 0; row < rectHeight; ++row)
     {
         const auto* src = bytes + static_cast<size_t>(row) * rectWidth * bytesPerPixel;
@@ -1182,18 +1365,45 @@ void KittyGraphicsParser::_frame()
             const auto g = src[col * bytesPerPixel + 1];
             const auto b = src[col * bytesPerPixel + 2];
             const auto a = bytesPerPixel == 4 ? src[col * bytesPerPixel + 3] : uint8_t{ 255 };
-            dst[col] = RGBQUAD{ b, g, r, a };
+            const auto srcPixel = RGBQUAD{ b, g, r, a };
+            if (replace || a == 255)
+            {
+                dst[col] = srcPixel;
+            }
+            else if (a != 0)
+            {
+                // Straight-alpha "over": source atop destination.
+                const auto& dstPixel = dst[col];
+                const uint32_t sa = a;
+                const uint32_t da = dstPixel.rgbReserved;
+                const uint32_t inv = 255 - sa;
+                const uint32_t outA = sa + da * inv / 255;
+                if (outA == 0)
+                {
+                    dst[col] = srcPixel;
+                    continue;
+                }
+                const auto mix = [&](const BYTE sc, const BYTE dc) {
+                    return static_cast<BYTE>((static_cast<uint32_t>(sc) * sa + static_cast<uint32_t>(dc) * (da * inv / 255)) / outA);
+                };
+                dst[col] = RGBQUAD{
+                    mix(srcPixel.rgbBlue, dstPixel.rgbBlue),
+                    mix(srcPixel.rgbGreen, dstPixel.rgbGreen),
+                    mix(srcPixel.rgbRed, dstPixel.rgbRed),
+                    static_cast<BYTE>(outA),
+                };
+            }
         }
     }
 
-    // A b= frame number stores the frame under that number (b=0 means
-    // unspecified, which appends); an r= edit without b= replaces r.
-    auto target = cmd.frameNumber.value_or(0);
-    if (target == 0 && cmd.numLines)
+    // b= stores the frame under an explicit number (0 appends after the
+    // last); an r= edit without b= replaces r.
+    auto explicitTarget = cmd.frameNumber.value_or(0);
+    if (explicitTarget == 0)
     {
-        target = *cmd.numLines;
+        explicitTarget = target;
     }
-    if (!_images().StoreFrame(image->id, target, std::move(frame), cmd.zIndex.value_or(0)))
+    if (!_images().StoreFrame(image->id, explicitTarget, std::move(frame), cmd.zIndex.value_or(0)))
     {
         _respond(false, L"EINVAL:invalid frame number");
         return;
@@ -1217,15 +1427,45 @@ void KittyGraphicsParser::_compose()
         return;
     }
 
-    const auto sx = static_cast<til::CoordType>(_cmd.cellXOffset.value_or(0));
-    const auto sy = static_cast<til::CoordType>(_cmd.cellYOffset.value_or(0));
-    const auto w = static_cast<til::CoordType>(_cmd.width.value_or(0));
-    const auto h = static_cast<til::CoordType>(_cmd.height.value_or(0));
+    // The rectangle, source offset (X, Y) and destination offset (x, y) all
+    // narrow from client u32 keys; validate in 64 bits or a value above
+    // INT32_MAX wraps negative into the composition loops.
+    const auto maxDim = static_cast<uint32_t>(std::max<til::CoordType>(image->size.width, image->size.height));
+    til::CoordType sx = 0;
+    til::CoordType sy = 0;
+    til::CoordType w = 0;
+    til::CoordType h = 0;
+    til::CoordType dx = 0;
+    til::CoordType dy = 0;
+    if (!CheckedCoord(_cmd.cellXOffset, maxDim, sx) || !CheckedCoord(_cmd.cellYOffset, maxDim, sy) ||
+        !CheckedCoord(_cmd.width, maxDim, w) || !CheckedCoord(_cmd.height, maxDim, h) ||
+        !CheckedCoord(_cmd.xOffset, maxDim, dx) || !CheckedCoord(_cmd.yOffset, maxDim, dy))
+    {
+        _respond(false, L"EINVAL:invalid composition rectangle");
+        return;
+    }
     const auto rectWidth = w ? w : image->size.width;
     const auto rectHeight = h ? h : image->size.height;
+    if (static_cast<uint64_t>(sx) + static_cast<uint64_t>(rectWidth) > static_cast<uint64_t>(image->size.width) ||
+        static_cast<uint64_t>(sy) + static_cast<uint64_t>(rectHeight) > static_cast<uint64_t>(image->size.height) ||
+        static_cast<uint64_t>(dx) + static_cast<uint64_t>(rectWidth) > static_cast<uint64_t>(image->size.width) ||
+        static_cast<uint64_t>(dy) + static_cast<uint64_t>(rectHeight) > static_cast<uint64_t>(image->size.height))
+    {
+        _respond(false, L"EINVAL:invalid composition rectangle");
+        return;
+    }
     const auto srcRect = til::rect{ sx, sy, sx + rectWidth, sy + rectHeight };
-    const auto destinationOffset = til::point{ static_cast<til::CoordType>(_cmd.xOffset.value_or(0)), static_cast<til::CoordType>(_cmd.yOffset.value_or(0)) };
+    const auto destinationOffset = til::point{ dx, dy };
     const auto replace = _cmd.cursorMovement.value_or(0) == 1;
+
+    if (source == destination &&
+        srcRect.left < destinationOffset.x + rectWidth && destinationOffset.x < srcRect.right &&
+        srcRect.top < destinationOffset.y + rectHeight && destinationOffset.y < srcRect.bottom)
+    {
+        // Composing a frame onto itself needs disjoint rectangles.
+        _respond(false, L"EINVAL:overlapping source and destination");
+        return;
+    }
 
     if (!_images().ComposeFrames(image->id, source, destination, srcRect, destinationOffset, replace))
     {

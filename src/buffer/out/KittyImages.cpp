@@ -26,7 +26,7 @@ namespace
 
 bool operator==(const KittyImages::StripKey& a, const KittyImages::StripKey& b) noexcept
 {
-    return a.imageGen == b.imageGen && a.imageId == b.imageId && a.placementId == b.placementId && a.row == b.row && a.cellW == b.cellW && a.cellH == b.cellH;
+    return a.imageGen == b.imageGen && a.imageId == b.imageId && a.placementId == b.placementId && a.row == b.row && a.cellW == b.cellW && a.cellH == b.cellH && a.srcRect == b.srcRect && a.cols == b.cols && a.rows == b.rows && a.offsetX == b.offsetX && a.offsetY == b.offsetY;
 }
 
 bool KittyImages::HasContent() const noexcept
@@ -88,14 +88,22 @@ const KittyImages::Image* KittyImages::StoreImage(const uint32_t id, const uint3
     _images.push_back(std::move(image));
 
     // Bound total image memory by evicting the oldest images, placements
-    // and all.
-    auto total = std::accumulate(_images.begin(), _images.end(), size_t{}, [](size_t sum, const Image& entry) {
-        return sum + entry.pixels.size() * sizeof(RGBQUAD);
+    // and all. Animation frames count the same as their pixels.
+    const auto imageBytes = [](const Image& entry) {
+        size_t bytes = entry.pixels.size() * sizeof(RGBQUAD);
+        for (const auto& frame : entry.frames)
+        {
+            bytes += frame.pixels.size() * sizeof(RGBQUAD);
+        }
+        return bytes;
+    };
+    auto total = std::accumulate(_images.begin(), _images.end(), size_t{}, [&](size_t sum, const Image& entry) {
+        return sum + imageBytes(entry);
     });
     while (total > MaxTotalImageBytes && _images.size() > 1)
     {
         const auto& oldest = _images.front();
-        total -= oldest.pixels.size() * sizeof(RGBQUAD);
+        total -= imageBytes(oldest);
         std::erase_if(_placements, [&](const Placement& placement) {
             return placement.imageId == oldest.id;
         });
@@ -116,6 +124,29 @@ bool KittyImages::HasPlacements(const uint32_t imageId) const noexcept
         }
     }
     return false;
+}
+
+const std::vector<KittyImages::Image>& KittyImages::Images() const noexcept
+{
+    return _images;
+}
+
+bool KittyImages::DeleteFrames(const uint32_t imageId)
+{
+    const auto image = std::find_if(_images.begin(), _images.end(), [&](const Image& entry) {
+        return entry.id == imageId;
+    });
+    if (image == _images.end())
+    {
+        return false;
+    }
+    if (!image->frames.empty())
+    {
+        image->frames.clear();
+        image->frames.shrink_to_fit();
+        _Bump();
+    }
+    return true;
 }
 
 size_t KittyImages::DeleteUnreferencedImages()
@@ -168,8 +199,24 @@ KittyImages::Image* KittyImages::EnsureFrames(const uint32_t imageId, const uint
         // The root frame is the image data as transmitted.
         image->frames.push_back(Frame{ image->pixels, 0 });
     }
+    // Animation frames are full-size pixel buffers; they count against the
+    // image memory budget like any other pixels. Padding past the budget
+    // rolls back and reports no space (ENOSPC) rather than committing it.
+    const auto sizeBefore = image->frames.size();
+    const auto frameBytes = image->pixels.size() * sizeof(RGBQUAD);
+    auto committed = image->pixels.size() * sizeof(RGBQUAD);
+    for (const auto& existing : image->frames)
+    {
+        committed += existing.pixels.size() * sizeof(RGBQUAD);
+    }
     while (image->frames.size() < frame)
     {
+        if (committed + frameBytes > MaxTotalImageBytes)
+        {
+            image->frames.resize(sizeBefore);
+            return nullptr;
+        }
+        committed += frameBytes;
         image->frames.push_back(Frame{ std::vector<RGBQUAD>(image->pixels.size()), 0 });
     }
     return &*image;
@@ -373,8 +420,10 @@ void KittyImages::OnCircularIncrement() noexcept
             placement.y -= 1;
         }
     }
+    // A placement stays while any of its rows are still in the buffer; a
+    // negative origin is fine, ComposeRow clips to the visible rows.
     std::erase_if(_placements, [](const Placement& placement) {
-        return !placement.virtual_ && placement.y < 0;
+        return !placement.virtual_ && placement.y + placement.rows <= 0;
     });
     _composedRows.clear();
     _Bump();
@@ -389,13 +438,15 @@ void KittyImages::OnScrollRows(const til::CoordType firstRow, const til::CoordTy
     const auto lastRow = firstRow + size;
     for (auto& placement : _placements)
     {
-        if (!placement.virtual_ && placement.y >= firstRow && placement.y < lastRow)
+        // Every placement the scrolled band intersects moves with it,
+        // including ones that straddle its edge.
+        if (!placement.virtual_ && placement.y < lastRow && placement.y + placement.rows > firstRow)
         {
             placement.y += delta;
         }
     }
     std::erase_if(_placements, [](const Placement& placement) {
-        return !placement.virtual_ && placement.y < 0;
+        return !placement.virtual_ && placement.y + placement.rows <= 0;
     });
     _composedRows.clear();
     _Bump();
@@ -441,6 +492,11 @@ const std::vector<RGBQUAD>& KittyImages::_Strip(const Placement& placement, cons
         .row = row,
         .cellW = cellSize.width,
         .cellH = cellSize.height,
+        .srcRect = placement.srcRect,
+        .cols = placement.cols,
+        .rows = placement.rows,
+        .offsetX = placement.offsetX,
+        .offsetY = placement.offsetY,
     };
     for (const auto& entry : _strips)
     {
@@ -642,6 +698,14 @@ namespace
     };
 }
 
+void KittyImages::InvalidateRow(const til::CoordType rowY) noexcept
+{
+    if (_composedRows.erase(rowY))
+    {
+        _Bump();
+    }
+}
+
 void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::CoordType rowY, const til::size cellSize)
 {
     if (!HasContent() && _composedRows.empty())
@@ -700,7 +764,7 @@ void KittyImages::ComposeRow(const TextBuffer& buffer, ROW& row, const til::Coor
                 {
                     continue;
                 }
-                const auto imageId = static_cast<uint32_t>(cell.imageIdLow) | (cell.imageIdHigh < 0 ? 0u : static_cast<uint32_t>(cell.imageIdHigh) << 24);
+                const auto imageId = static_cast<uint32_t>(cell.imageIdLow) | (cell.imageIdHigh < 0 ? 0u : static_cast<uint32_t>(cell.imageIdHigh & 0xFF) << 24);
                 const auto image = FindImage(imageId);
                 if (!image)
                 {

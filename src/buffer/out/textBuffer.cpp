@@ -542,7 +542,15 @@ void TextBuffer::Replace(til::CoordType row, const TextAttribute& attributes, Ro
     auto& r = GetMutableRowByOffset(row);
     r.ReplaceText(state);
     r.ReplaceAttributes(state.columnBegin, state.columnEnd, attributes);
+    // Kitty placements re-compose over whatever text lands on their rows;
+    // a row that still carries one must not keep its cached composition
+    // after the erase below or the pixels never come back.
+    const auto hasKitty = GetKittyImages().HasContent() && (r.GetImageSlice() || r.GetImageSlice(ImageSliceLayer::BelowText));
     ImageSlice::EraseCells(r, state.columnBegin, state.columnEnd);
+    if (hasKitty)
+    {
+        GetKittyImages().InvalidateRow(row);
+    }
     TriggerRedraw(Viewport::FromExclusive({ state.columnBeginDirty, row, state.columnEndDirty, row + 1 }));
 }
 
