@@ -73,7 +73,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
         std::unordered_map<winrt::hstring, winrt::com_ptr<implementation::ColorScheme>> colorSchemes;
-        std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
         bool fixupsAppliedDuringLoad{ false };
         std::set<std::string> themesChangeLog;
 
@@ -101,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;
         std::unordered_map<hstring, winrt::com_ptr<implementation::ExtensionPackage>> extensionPackageMap;
+        std::unordered_map<winrt::hstring, winrt::hstring> colorSchemeRemappings;
         bool duplicateProfile = false;
         bool sshProfilesGenerated = false;
 
