@@ -378,6 +378,54 @@ class RunLengthEncodingTests
         }
     }
 
+    TEST_METHOD(ReplaceMatchesReferenceModel)
+    {
+        // Differential check of replace() against a decode/modify/encode reference, weighted toward ranges
+        // that start inside the last run (the fast path in _scan).
+        uint32_t state = 0x2545F491;
+        const auto next = [&](uint32_t bound) {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return bound ? state % bound : 0;
+        };
+
+        for (auto idx = 0; idx < 20000; ++idx)
+        {
+            basic_container source;
+            for (auto runs = next(7); runs; --runs)
+            {
+                source.append(next(4) + 1, static_cast<value_type>(next(4)));
+            }
+            basic_container change;
+            for (auto runs = next(4); runs; --runs)
+            {
+                change.append(next(3) + 1, static_cast<value_type>(next(4)));
+            }
+
+            const auto size = static_cast<size_type>(source.size());
+            auto start = static_cast<size_type>(next(size + 1));
+            if (size && next(2))
+            {
+                const auto trailing = rle_encode(source).back().length;
+                start = static_cast<size_type>(size - trailing + next(trailing));
+            }
+            const auto end = static_cast<size_type>(start + next(size - start + 1));
+
+            auto expected = source;
+            expected.replace(start, end - start, change);
+
+            rle_vector rle{ rle_encode(source) };
+            const auto replacement = rle_encode(change);
+            rle.replace(start, end, replacement);
+
+            const auto message = NoThrowString().Format(L"case %d: start %u end %u actual %s", idx, start, end, rle.to_string().c_str());
+            VERIFY_ARE_EQUAL(expected.size(), static_cast<size_t>(rle.size()), message);
+            VERIFY_IS_TRUE(rle_decode(rle.runs()) == expected, message);
+            VERIFY_IS_TRUE(rle.runs() == rle_encode(expected), message);
+        }
+    }
+
     TEST_METHOD(ReplaceValues)
     {
         struct TestCase
