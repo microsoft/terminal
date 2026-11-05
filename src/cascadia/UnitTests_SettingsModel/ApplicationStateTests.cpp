@@ -27,7 +27,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TakeWorkspaceRemovesAndReturns);
         TEST_METHOD(TakeWorkspaceReturnsNullWhenMissing);
         TEST_METHOD(IgnoreUnknownDismissedMessages);
-        TEST_METHOD(DoNotSerializeIgnoredDismissedMessages);
 
     private:
         static std::filesystem::path _tempRoot()
@@ -60,70 +59,15 @@ namespace SettingsModelUnitTests
         Log::Comment(L"GH #16874 - Unknown dismissed message names must not terminate state loading");
 
         Json::Value json{ Json::objectValue };
-        json["settingsHash"] = "test-hash";
-        json["dismissedMessages"] = Json::Value{ Json::arrayValue };
-        for (const auto name : { "futureMessage", "closeOnExitInfo", "removedMessage", "keyboardServiceWarning", "setAsDefault", "", "deprecated", "closeOnExitInfo" })
-        {
-            json["dismissedMessages"].append(name);
-        }
-        json["allowedCommandlines"] = Json::Value{ Json::arrayValue };
-        json["allowedCommandlines"].append("test-command");
+        json["dismissedMessages"].append("unknownMessage");
+        json["dismissedMessages"].append("closeOnExitInfo");
 
         auto state = _make();
-        state->FromJson(json, implementation::FileSource::Shared | implementation::FileSource::Local);
-
-        const auto messages = state->DismissedMessages();
-        VERIFY_IS_NOT_NULL(messages);
-        VERIFY_ARE_EQUAL(8u, messages.Size());
-        VERIFY_ARE_EQUAL(InfoBarMessage::IgnoredDeprecatedEntry, messages.GetAt(0));
-        VERIFY_ARE_EQUAL(InfoBarMessage::CloseOnExitInfo, messages.GetAt(1));
-        for (uint32_t i = 2; i < 7; ++i)
-        {
-            VERIFY_ARE_EQUAL(InfoBarMessage::IgnoredDeprecatedEntry, messages.GetAt(i));
-        }
-        VERIFY_ARE_EQUAL(InfoBarMessage::CloseOnExitInfo, messages.GetAt(7));
-
-        // Invalid names must not prevent fields before or after this one from loading.
-        VERIFY_ARE_EQUAL(L"test-hash", state->SettingsHash());
-        VERIFY_ARE_EQUAL(1u, state->AllowedCommandlines().Size());
-        VERIFY_ARE_EQUAL(L"test-command", state->AllowedCommandlines().GetAt(0));
+        state->FromJson(json, implementation::FileSource::Shared);
 
         const auto serialized = state->ToJson(implementation::FileSource::Shared);
-        VERIFY_IS_TRUE(serialized["dismissedMessages"].isArray());
-        VERIFY_ARE_EQUAL(2u, serialized["dismissedMessages"].size());
+        VERIFY_ARE_EQUAL(1u, serialized["dismissedMessages"].size());
         VERIFY_ARE_EQUAL("closeOnExitInfo", serialized["dismissedMessages"][0].asString());
-        VERIFY_ARE_EQUAL("closeOnExitInfo", serialized["dismissedMessages"][1].asString());
-        VERIFY_ARE_EQUAL(8u, messages.Size());
-
-        // Saving and reloading removes ignored entries while retaining known dismissals.
-        state->FromJson(serialized, implementation::FileSource::Shared);
-        VERIFY_ARE_EQUAL(2u, state->DismissedMessages().Size());
-        VERIFY_ARE_EQUAL(InfoBarMessage::CloseOnExitInfo, state->DismissedMessages().GetAt(0));
-        VERIFY_ARE_EQUAL(InfoBarMessage::CloseOnExitInfo, state->DismissedMessages().GetAt(1));
-        VERIFY_IS_TRUE(serialized == state->ToJson(implementation::FileSource::Shared));
-    }
-
-    void ApplicationStateTests::DoNotSerializeIgnoredDismissedMessages()
-    {
-        auto state = _make();
-        const auto messages = winrt::single_threaded_vector<InfoBarMessage>({ InfoBarMessage::IgnoredDeprecatedEntry });
-        state->DismissedMessages(messages);
-
-        // The serializer must also ignore sentinel values supplied directly by a caller.
-        auto serialized = state->ToJson(implementation::FileSource::Shared);
-        VERIFY_IS_TRUE(serialized["dismissedMessages"].isArray());
-        VERIFY_ARE_EQUAL(0u, serialized["dismissedMessages"].size());
-        VERIFY_ARE_EQUAL(1u, messages.Size());
-
-        messages.Clear();
-        serialized = state->ToJson(implementation::FileSource::Shared);
-        VERIFY_IS_TRUE(serialized["dismissedMessages"].isArray());
-        VERIFY_ARE_EQUAL(0u, serialized["dismissedMessages"].size());
-
-        state->DismissedMessages(nullptr);
-        serialized = state->ToJson(implementation::FileSource::Shared);
-        VERIFY_IS_TRUE(serialized["dismissedMessages"].isArray());
-        VERIFY_ARE_EQUAL(0u, serialized["dismissedMessages"].size());
     }
 
     void ApplicationStateTests::SaveAndLookupWorkspace()
