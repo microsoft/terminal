@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -503,11 +503,11 @@
     <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
-    <value>Када је искључено, картице још увек могу да се померају „премести картицу” акцијама.</value>
+    <value>Када је искључено, картице и даље могу да се померају акцијама „премести картицу”.</value>
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
-    <value>Превлачење картица није могуће јер се Терминал извршава као администратор. Уместо тога, употребите „премести картицу” акције.</value>
+    <value>Превлачење картица није доступно јер се Терминал извршава као администратор. Уместо тога, употребите акције „премести картицу”.</value>
     <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -1375,7 +1375,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>Мењај позицију курсора кликовима мишем</value>
+    <value>Промени позицију курсора кликовима мишем</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -2258,6 +2258,10 @@
     <value>Ако је укључено, терминал ће се сакрити чим се пребаците на други прозор.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Прикажи величину терминала при промени величине</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
+  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>подразумевана</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -2728,11 +2732,11 @@
     <value>Означава софтвер који је оригинално креирао овај профил.</value>
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
-    <value>У Startup Apps одељку Windows подешавања је искључено покретање.</value>
+    <value>Аутоматско покретање је искључено у одељку Startup Apps у подешавањима система Windows.</value>
     <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
-    <value>Овом опцијом управља корпоративна полиса и овде не може да се промени.</value>
+    <value>Овом опцијом управља корпоративни пропис и овде не може да се промени.</value>
     <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">

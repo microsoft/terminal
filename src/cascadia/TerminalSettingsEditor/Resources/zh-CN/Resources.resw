@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -503,7 +503,7 @@
     <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
-    <value>禁用后，仍可使用“移动选项卡”操作移动选项卡。</value>
+    <value>禁用后，仍可使用“移动标签页”操作移动标签页。</value>
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
@@ -2319,6 +2319,10 @@
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 终端正在便携模式下运行。</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
+  </data>
+  <data name="Settings_PortableModeInfoLink.NavigateUri" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2229086</value>
+    <comment>{Locked}</comment>
   </data>
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>了解详细信息。</value>

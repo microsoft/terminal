@@ -121,6 +121,10 @@
     <value>เทอร์มินัล</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppNameCan" xml:space="preserve">
     <value>เทอร์มินัล Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
@@ -132,6 +136,10 @@
   <data name="AppStoreName" xml:space="preserve">
     <value>เทอร์มินัล Windows</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
+  </data>
+  <data name="AppStoreNameDev" xml:space="preserve">
+    <value>Windows Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="AppStoreNameCan" xml:space="preserve">
     <value>เทอร์มินัล Windows Canary</value>
@@ -145,6 +153,10 @@
     <value>เทอร์มินัล</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppShortNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppShortNameCan" xml:space="preserve">
     <value>เทอร์มินัล Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
@@ -156,8 +168,20 @@
   <data name="AppDescription" xml:space="preserve">
     <value>เทอร์มินัล Windows ใหม่</value>
   </data>
+  <data name="AppDescriptionDev" xml:space="preserve">
+    <value>The Windows Terminal, but Unofficial</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
+  <data name="AppDescriptionCan" xml:space="preserve">
+    <value>The Windows Terminal (Canary build)</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppDescriptionPre" xml:space="preserve">
     <value>เทอร์มินัล Windows ที่มีพรีวิวฟีเจอร์ที่กําลังจะมาถึง</value>
+  </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
+    <value>Open in Terminal (&amp;Dev)</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Canary" xml:space="preserve">
     <value>เปิดใน เทอร์มินัล (&amp;Canary)</value>

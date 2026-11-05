@@ -213,7 +213,7 @@
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[помилка {0} під час запуску '{1}']</value>
-    <comment>The first argument {0} is the error code. The second argument {1} is the user-specified path to a program.&#xD;
+    <comment>The first argument {0} is the error code. The second argument {1} is the user-specified path to a program.
       If this string is broken to multiple lines, it will not be displayed properly.</comment>
   </data>
   <data name="BadPathText" xml:space="preserve">

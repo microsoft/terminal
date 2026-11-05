@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -499,7 +499,7 @@
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
-    <value>탭을 끌어 순서를 변경하거나 새 창으로 분리</value>
+    <value>끌어서 탭 순서 변경 및 분리</value>
     <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
@@ -507,7 +507,7 @@
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
-    <value>터미널이 관리자 권한으로 실행 중이므로 탭을 끌어 이동할 수 없습니다. 대신 "탭 이동" 작업을 사용하세요.</value>
+    <value>터미널이 관리자 권한으로 실행 중이므로 탭을 끌 수 없습니다. 대신 "탭 이동" 작업을 사용하세요.</value>
     <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -2320,6 +2320,10 @@
     <value>Windows 터미널이 이식 가능 모드에서 실행되고 있습니다.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
   </data>
+  <data name="Settings_PortableModeInfoLink.NavigateUri" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2229086</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>자세히 알아보세요.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
@@ -2664,7 +2668,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>키 바인딩을 사용하여 선택한 텍스트 또는 일치하는 텍스트를 사용자 지정 색으로 강조 표시</value>
+    <value>키 바인딩을 사용하여 선택한 텍스트 또는 일치하는 텍스트를 사용자 지정 색으로 강조 표시합니다</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2728,7 +2732,7 @@
     <value>이 프로필을 원래 만든 소프트웨어를 나타냅니다.</value>
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
-    <value>Windows 설정의 Startup Apps 섹션에서 자동 시작을 사용하지 않도록 설정했습니다.</value>
+    <value>Windows 설정의 시작 앱 섹션에서 자동 시작을 사용하지 않도록 설정했습니다.</value>
     <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">

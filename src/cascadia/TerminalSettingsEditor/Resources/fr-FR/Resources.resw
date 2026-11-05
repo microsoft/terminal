@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -503,11 +503,11 @@
     <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
-    <value>Lorsqu’il est désactivé, les onglets peuvent toujours être déplacés avec les actions « déplacer l’onglet ».</value>
+    <value>Lorsqu’elle est désactivée, les onglets peuvent toujours être déplacés avec les actions « déplacer l’onglet ».</value>
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
-    <value>Le déplacement des onglets par glisser-déposer n’est pas disponible, car le Terminal s’exécute en tant qu’administrateu(trice)r. Utilisez plutôt les actions « Déplacer l’onglet ».</value>
+    <value>Le déplacement des onglets par glisser-déposer n’est pas disponible, car le Terminal s’exécute en tant qu’administrateur. Utilisez plutôt les actions « déplacer l’onglet ».</value>
     <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -2320,6 +2320,10 @@
     <value>Terminal Windows s’exécute en mode portable.</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
   </data>
+  <data name="Settings_PortableModeInfoLink.NavigateUri" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2229086</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>En savoir plus.</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
@@ -2728,7 +2732,7 @@
     <value>Indique le logiciel qui a créé ce profil à l’origine.</value>
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
-    <value>Le démarrage automatique a été désactivé dans la section Applications de démarrage de Windows paramètres.</value>
+    <value>Le démarrage automatique a été désactivé dans la section Applications de démarrage des paramètres Windows.</value>
     <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
@@ -2779,7 +2783,7 @@
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
   </data>
   <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
-    <value>EXPERIMENTAL</value>
+    <value>EXPÉRIMENTAL</value>
     <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
   </data>
   <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">

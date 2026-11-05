@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -499,7 +499,7 @@
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
-    <value>ドラッグしてタブを並べ替えたり、新しいウィンドウに切り離したりする</value>
+    <value>ドラッグしてタブを並べ替えたり切り離したりする</value>
     <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
@@ -507,7 +507,7 @@
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
-    <value>ターミナルは管理者として実行されているため、タブをドラッグできません。代わりに、[タブの移動] アクションを使用してください。</value>
+    <value>ターミナルは管理者として実行されているため、タブをドラッグできません。代わりに、"タブの移動" アクションを使用してください。</value>
     <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -2320,6 +2320,10 @@
     <value>Windows ターミナルはポータブル モードで実行されています。</value>
     <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
   </data>
+  <data name="Settings_PortableModeInfoLink.NavigateUri" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2229086</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
     <value>詳細をご覧ください。</value>
     <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
@@ -2664,7 +2668,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>キー バインドを使用して選択したテキストまたは一致するテキストをカスタム カラーで強調表示する</value>
+    <value>キー バインドを使用して、選択したテキストまたは一致するテキストをカスタム カラーで強調表示します</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
