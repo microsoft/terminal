@@ -1497,6 +1497,13 @@ til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstri
 
 void TextBuffer::_PruneHyperlinks()
 {
+    // Pruning can only ever erase map entries, so with empty maps there's nothing to do.
+    // This runs on every buffer rotation, so skip scanning the row's attributes.
+    if (_hyperlinkMap.empty() && _hyperlinkCustomIdMap.empty())
+    {
+        return;
+    }
+
     // Check the old first row for hyperlink references
     // If there are any, search the entire buffer for the same reference
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
