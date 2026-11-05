@@ -127,8 +127,15 @@ void Renderer::TriggerTeardown() noexcept
 
 void Renderer::NotifyPaintFrame() noexcept
 {
-    _redraw.store(true, std::memory_order_relaxed);
-    til::atomic_notify_one(_redraw);
+    // Output calls this for nearly every line/cursor move, but the render thread consumes
+    // _redraw at most once per frame. Only the false -> true transition has to wake it:
+    // if _redraw is already set, the thread that set it notified, and the render thread
+    // re-checks _redraw before every wait. Skipping the redundant WakeByAddressSingle
+    // (and the cache-line write when the flag is already set) keeps it off the output path.
+    if (!_redraw.load(std::memory_order_relaxed) && !_redraw.exchange(true, std::memory_order_relaxed))
+    {
+        til::atomic_notify_one(_redraw);
+    }
 }
 
 DWORD WINAPI Renderer::s_renderThread(void* param) noexcept
