@@ -1,0 +1,80 @@
+name: LLM localization test
+
+on:
+  push:
+    branches:
+      - dev/lhecker/llm-localization
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: llm-localization-test
+  cancel-in-progress: false
+
+jobs:
+  localize:
+    name: Translate and push test branch
+    if: github.ref == 'refs/heads/dev/lhecker/llm-localization'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: write
+      copilot-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          version: '0.12.18'
+          python-version: '3.13'
+      - name: Translate and publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          source_commit=$(git rev-parse HEAD)
+          branch=dev/lhecker/llm-localization-test
+          remote_target=$(git ls-remote --heads origin "refs/heads/$branch")
+          expected_target=${remote_target%%$'\t'*}
+          source_date=$(git show -s --format=%ct "$source_commit")
+          cutoff=$((source_date - 6 * 7 * 24 * 60 * 60))
+          baseline=$(git rev-list -1 --before="@$cutoff" "$source_commit")
+          test -n "$baseline"
+          tag="localization-test-baseline-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          git tag "$tag" "$baseline"
+
+          scratch=$(mktemp -d)
+          trap 'rm -rf -- "$scratch"' EXIT
+          if ! uv run --locked --project tools/localization python tools/localization/localize.py \
+              --baseline "$tag" > "$scratch/commit-message.txt"; then
+            cat "$scratch/commit-message.txt" >&2
+            exit 1
+          fi
+          cat "$scratch/commit-message.txt"
+
+          # Do not publish a run superseded by a newer source push.
+          remote_source=$(git ls-remote --heads origin refs/heads/dev/lhecker/llm-localization)
+          test "${remote_source%%$'\t'*}" = "$source_commit"
+          test "$(git rev-parse HEAD)" = "$source_commit"
+          git diff --name-only -z > "$scratch/changed"
+          git ls-files --others --exclude-standard -z >> "$scratch/changed"
+          while IFS= read -r -d '' path; do
+            if [[ ! "$path" =~ ^src/.+/Resources/[^/]+/[^/]+\.resw$ ||
+                  "$path" == */en-US/* || "$path" == */qps-*/* ]]; then
+              printf 'Unexpected localization change: %s\n' "$path" >&2
+              exit 1
+            fi
+          done < "$scratch/changed"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -F "$scratch/commit-message.txt"
+          fi
+          git push --force-with-lease="refs/heads/$branch:$expected_target" \
+            origin "HEAD:refs/heads/$branch"

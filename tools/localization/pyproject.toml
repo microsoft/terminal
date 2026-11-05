@@ -1,0 +1,13 @@
+[project]
+name = "localize"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "filelock==4.2.7",
+    "github-copilot-sdk==1.0.28",
+    "pyahocorasick==2.3.1",
+    "tiktoken==0.12.0",
+]
+
+[tool.uv]
+package = false
