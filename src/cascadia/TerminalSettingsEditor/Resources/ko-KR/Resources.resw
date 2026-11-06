@@ -2806,7 +2806,7 @@
     <value>다시 설정</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>취소</value>
+    <value>지우기</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>모든 페이지의 모든 설정이 기본값으로 다시 설정됩니다.

@@ -2806,7 +2806,7 @@
     <value>重設</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>晴朗</value>
+    <value>清除</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>所有頁面的所有設定都會重設為預設值。

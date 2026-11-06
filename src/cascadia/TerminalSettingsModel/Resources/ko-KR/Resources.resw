@@ -936,7 +936,7 @@
     <value>경로</value>
   </data>
   <data name="ClearActionArgumentLocalized" xml:space="preserve">
-    <value>취소</value>
+    <value>지우기</value>
   </data>
   <data name="OpacityActionArgumentLocalized" xml:space="preserve">
     <value>불투명도</value>

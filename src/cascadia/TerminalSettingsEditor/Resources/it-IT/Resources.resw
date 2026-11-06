@@ -2806,7 +2806,7 @@
     <value>Reimposta</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>Sereno</value>
+    <value>Cancella</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>Tutte le impostazioni in tutte le pagine verranno ripristinate ai valori predefiniti.

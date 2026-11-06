@@ -2806,7 +2806,7 @@
     <value>リセット</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>キャンセル</value>
+    <value>クリア</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>すべてのページのすべての設定が既定値にリセットされます。

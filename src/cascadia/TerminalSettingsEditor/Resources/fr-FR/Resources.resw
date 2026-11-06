@@ -2806,7 +2806,7 @@
     <value>Réinitialiser</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>Dégagé</value>
+    <value>Effacer</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>Tous les paramètres de toutes les pages seront réinitialisés à leurs valeurs par défaut.

@@ -2806,7 +2806,7 @@
     <value>Сбросить</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>Ясно</value>
+    <value>Очистить</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>Все параметры на всех страницах будут сброшены до значений по умолчанию.

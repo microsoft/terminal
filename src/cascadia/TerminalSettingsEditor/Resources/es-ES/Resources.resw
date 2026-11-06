@@ -2806,7 +2806,7 @@
     <value>Restablecer</value>
   </data>
   <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
-    <value>Despejado</value>
+    <value>Borrar</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
     <value>Toda la configuración de todas las páginas se restablecerá a sus valores predeterminados.

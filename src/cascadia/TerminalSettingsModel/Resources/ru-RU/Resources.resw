@@ -936,7 +936,7 @@
     <value>Путь</value>
   </data>
   <data name="ClearActionArgumentLocalized" xml:space="preserve">
-    <value>Ясно</value>
+    <value>Очистить</value>
   </data>
   <data name="OpacityActionArgumentLocalized" xml:space="preserve">
     <value>Прозрачность</value>

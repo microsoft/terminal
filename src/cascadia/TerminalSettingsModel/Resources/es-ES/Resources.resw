@@ -936,7 +936,7 @@
     <value>Ruta de acceso</value>
   </data>
   <data name="ClearActionArgumentLocalized" xml:space="preserve">
-    <value>Despejado</value>
+    <value>Borrar</value>
   </data>
   <data name="OpacityActionArgumentLocalized" xml:space="preserve">
     <value>Opacidad</value>
