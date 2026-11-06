@@ -395,14 +395,25 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // This method gives access to the raw run length encoded array
         // and allows users of this class to iterate over those.
-        const container& runs() const noexcept
+        const container& runs() const& noexcept
         {
             return _runs;
         }
 
-        container& runs() noexcept
+        container& runs() & noexcept
         {
             return _runs;
+        }
+
+        container runs() && noexcept
+        {
+            auto runs = std::move(_runs);
+            // See basic_rle(basic_rle&&) for why this is necessary.
+            if (_runs.empty())
+            {
+                _total_length = 0;
+            }
+            return runs;
         }
 
         // Get the value at the position
