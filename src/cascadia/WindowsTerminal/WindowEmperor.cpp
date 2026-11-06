@@ -893,11 +893,30 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
 
     if (winrt::guid currentDesktop; VirtualDesktopUtils::GetCurrentVirtualDesktopId(reinterpret_cast<GUID*>(&currentDesktop)))
     {
+        // GH#20849: co_await below returns to the UI thread, which may close a
+        // window (erase + Close) or emplace a new one. Iterating _windows
+        // directly would dangle. Snapshot strong refs so each host stays alive
+        // for the query, then ignore any that have since closed.
+        const auto windows = _windows;
+        const auto isOpen = [this](const std::shared_ptr<AppHost>& host) {
+            return host && host->Logic() && std::find(_windows.begin(), _windows.end(), host) != _windows.end();
+        };
+
         int64_t max = INT64_MIN;
-        for (const auto& w : _windows)
+        for (const auto& w : windows)
         {
+            if (!isOpen(w))
+            {
+                continue;
+            }
+
             const auto lastActivatedTime = w->GetLastActivatedTime();
             const auto desktopId = co_await w->GetVirtualDesktopId();
+            if (!isOpen(w))
+            {
+                continue;
+            }
+
             if (desktopId == currentDesktop && lastActivatedTime > max)
             {
                 max = lastActivatedTime;
@@ -907,7 +926,10 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
 
         // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
         _assertIsMainThread();
-        window = mostRecent.get();
+        if (isOpen(mostRecent))
+        {
+            window = mostRecent.get();
+        }
     }
     else
     {

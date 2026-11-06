@@ -358,8 +358,21 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::guid> AppHost::GetVirtualDesk
         co_return _virtualDesktopId;
     }
 
-    const auto dispatcher = _windowLogic.GetRoot().Dispatcher();
-    const auto hwnd = _window->GetHandle();
+    // GH#20849: Close() nulls _windowLogic while a commandline dispatch may
+    // still be querying this host. GetRoot() on a null window crashes.
+    if (!_windowLogic)
+    {
+        co_return null_guid;
+    }
+
+    const auto root = _windowLogic.GetRoot();
+    if (!root)
+    {
+        co_return null_guid;
+    }
+
+    const auto dispatcher = root.Dispatcher();
+    const auto hwnd = _window ? _window->GetHandle() : nullptr;
     const auto weakThis = weak_from_this();
     const auto desktopManager = getDesktopManager();
 
@@ -382,7 +395,8 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::guid> AppHost::GetVirtualDesk
     co_await wil::resume_foreground(dispatcher);
 
     const auto strongThis = weakThis.lock();
-    if (!strongThis)
+    // The host may have been closed while GetWindowDesktopId ran off-thread.
+    if (!strongThis || !strongThis->_windowLogic)
     {
         co_return null_guid;
     }
