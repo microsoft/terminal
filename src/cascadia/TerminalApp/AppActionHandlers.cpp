@@ -846,7 +846,8 @@ namespace winrt::TerminalApp::implementation
     {
         const auto p = LoadCommandPalette();
         p.SetTabs(_tabs, _mruTabs);
-        p.EnableTabSearchMode();
+        // GH#20892: pass the focused tab so opening search does not preview tab 0.
+        p.EnableTabSearchMode(_GetFocusedTabIndex().value_or(0));
         p.Visibility(Visibility::Visible);
 
         args.Handled(true);

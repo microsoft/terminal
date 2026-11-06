@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
 
         void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
         void EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode);
-        void EnableTabSearchMode();
+        void EnableTabSearchMode(const uint32_t startIdx);
 
         til::property_changed_event PropertyChanged;
         til::typed_event<winrt::TerminalApp::CommandPalette, winrt::TerminalApp::Tab> SwitchToTabRequested;
@@ -134,6 +134,11 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _mruTabActions{ nullptr };
         Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitcherMode;
         uint32_t _switcherStartIdx;
+        // Tab focused when tab search opened. Dismiss switches back to it (GH#20892).
+        winrt::TerminalApp::Tab _tabSearchOrigin{ nullptr };
+        // Set before a committed tab-search selection closes the palette, so the
+        // visibility callback's re-entrant dismiss does not undo that selection.
+        bool _tabSearchCommitted{ false };
 
         void _bindTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& source, const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target);
         void _anchorKeyUpHandler();
@@ -143,6 +148,7 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommand(const winrt::TerminalApp::FilteredCommand& command);
         void _dispatchCommandline(const winrt::TerminalApp::FilteredCommand& command);
         void _switchToTab(const winrt::TerminalApp::FilteredCommand& command);
+        void _restoreTabSearchOrigin();
         static std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine);
 
         void _dismissPalette();

@@ -57,7 +57,17 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    _filteredActionsView().SelectedIndex(0);
+                    // GH#20892: tab search previews by switching tabs, so selecting
+                    // index 0 would jump to the first tab. Select the tab that was
+                    // focused when the palette opened. Focus stays in the search box.
+                    if (_currentMode == CommandPaletteMode::TabSearchMode)
+                    {
+                        _scrollToIndex(_switcherStartIdx);
+                    }
+                    else
+                    {
+                        _filteredActionsView().SelectedIndex(0);
+                    }
                     _searchBox().Focus(FocusState::Programmatic);
                 }
 
@@ -757,6 +767,14 @@ namespace winrt::TerminalApp::implementation
         }
         else if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
         {
+            // GH#20892: _close() re-enters _dismissPalette via the visibility
+            // callback. Mark a real selection committed first so that path does
+            // not snap back to the tab that was focused when search opened.
+            // Enter with nothing selected still dismisses and restores.
+            if (_currentMode == CommandPaletteMode::TabSearchMode && filteredCommand)
+            {
+                _tabSearchCommitted = true;
+            }
             _switchToTab(filteredCommand);
             _close();
         }
@@ -908,6 +926,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dismissPalette()
     {
+        // GH#20892: tab search previews by actually switching tabs. Cancel
+        // (Escape, click outside, lost focus) must return to the tab that was
+        // focused when the palette opened. A commit sets _tabSearchCommitted
+        // before _close(), and _close() re-enters here, so that flag is what
+        // keeps a confirmed selection.
+        if (_currentMode == CommandPaletteMode::TabSearchMode && !_tabSearchCommitted)
+        {
+            _restoreTabSearchOrigin();
+        }
+
         _close();
 
         TraceLoggingWrite(
@@ -962,8 +990,17 @@ namespace winrt::TerminalApp::implementation
 
         _updateFilteredActions();
 
-        // In the command line mode we want the user to explicitly select the command
-        _filteredActionsView().SelectedIndex(_currentMode == CommandPaletteMode::CommandlineMode ? -1 : 0);
+        // In the command line mode we want the user to explicitly select the command.
+        // GH#20892: an empty tab-search query highlights the tab that was focused
+        // on open, not the first one. A non-empty query still previews the first match.
+        if (_currentMode == CommandPaletteMode::TabSearchMode && _searchBox().Text().empty())
+        {
+            _scrollToIndex(_switcherStartIdx);
+        }
+        else
+        {
+            _filteredActionsView().SelectedIndex(_currentMode == CommandPaletteMode::CommandlineMode ? -1 : 0);
+        }
 
         if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode)
         {
@@ -1314,9 +1351,14 @@ namespace winrt::TerminalApp::implementation
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
 
-        // revert any preview
+        // Revert any action preview. Tab-search previews are real tab switches;
+        // those are restored in _dismissPalette, not here, because _close also
+        // runs after a committed selection (GH#20892).
         _filteredActionsView().SelectedIndex(-1);
         PreviewAction.raise(*this, nullptr);
+
+        _tabSearchOrigin = nullptr;
+        _tabSearchCommitted = false;
     }
 
     void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)
@@ -1329,9 +1371,47 @@ namespace winrt::TerminalApp::implementation
         _switchToMode(CommandPaletteMode::TabSwitchMode);
     }
 
-    void CommandPalette::EnableTabSearchMode()
+    // Method Description:
+    // - Opens the palette in tab search. `startIdx` is the focused tab in
+    //   in-order tab list, so the list highlights that tab instead of tab 0.
+    //   The tab itself is remembered so a cancel can switch back to it.
+    // Arguments:
+    // - startIdx: index of the currently focused tab in `_tabs` / `_tabActions`.
+    // Return Value:
+    // - <none>
+    void CommandPalette::EnableTabSearchMode(const uint32_t startIdx)
     {
+        _tabSearchCommitted = false;
+        _tabSearchOrigin = nullptr;
+        _switcherStartIdx = startIdx;
+
+        if (startIdx < _tabActions.Size())
+        {
+            const auto item{ _tabActions.GetAt(startIdx).Item() };
+            if (item && item.Type() == PaletteItemType::Tab)
+            {
+                const auto tabPaletteItem{ winrt::get_self<TabPaletteItem>(item) };
+                _tabSearchOrigin = tabPaletteItem->Tab();
+            }
+        }
+
         _switchToMode(CommandPaletteMode::TabSearchMode);
+    }
+
+    // Method Description:
+    // - Switch back to the tab that was focused when tab search opened.
+    //   Clears the remembered tab so a re-entrant dismiss does not switch twice.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_restoreTabSearchOrigin()
+    {
+        if (const auto origin{ _tabSearchOrigin })
+        {
+            _tabSearchOrigin = nullptr;
+            SwitchToTabRequested.raise(*this, origin);
+        }
     }
 
     // Method Description:
