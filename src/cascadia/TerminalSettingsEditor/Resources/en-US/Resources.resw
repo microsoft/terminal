@@ -824,8 +824,9 @@
   <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Add new font feature</value>
   </data>
-  <data name="Profile_DeleteFontKeyValuePairButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Delete</value>
+  <data name="Profile_DeleteFontKeyValuePairButtonNameFormat" xml:space="preserve">
+    <value>Delete {}</value>
+    <comment>{Locked="{}"} Narrator name for the button that removes a font axis or font feature entry. {} is replaced with the entry's name (e.g. "Delete Weight (wght)").</comment>
   </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Add new</value>

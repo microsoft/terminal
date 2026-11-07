@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         float Value() const noexcept;
         void Value(float v);
         winrt::hstring AutomationName();
+        winrt::hstring DeleteButtonName();
 
         void SetValueDirect(float v);
         bool IsFontFeature() const noexcept;
