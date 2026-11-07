@@ -7,7 +7,6 @@
 #include "TitleChangedEventArgs.g.h"
 #include "ContextMenuRequestedEventArgs.g.h"
 #include "WriteToClipboardEventArgs.g.h"
-#include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
 #include "NoticeEventArgs.g.h"
 #include "ScrollPositionChangedArgs.g.h"
@@ -82,24 +81,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::hstring _plain;
         std::string _html;
         std::string _rtf;
-    };
-
-    struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
-    {
-    public:
-        PasteFromClipboardEventArgs(std::function<void(const hstring&)> clipboardDataHandler, bool bracketedPasteEnabled) :
-            m_clipboardDataHandler(clipboardDataHandler),
-            _BracketedPasteEnabled{ bracketedPasteEnabled } {}
-
-        void HandleClipboardData(hstring value)
-        {
-            m_clipboardDataHandler(value);
-        };
-
-        WINRT_PROPERTY(bool, BracketedPasteEnabled, false);
-
-    private:
-        std::function<void(const hstring&)> m_clipboardDataHandler;
     };
 
     struct OpenHyperlinkEventArgs : public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
@@ -236,10 +217,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct StringSentEventArgs : public StringSentEventArgsT<StringSentEventArgs>
     {
     public:
-        StringSentEventArgs(const winrt::hstring& text) :
-            _Text(text) {}
+        StringSentEventArgs(const winrt::hstring& text, uint32_t type) :
+            _Text(text), _Type(type) {}
 
         WINRT_PROPERTY(winrt::hstring, Text);
+        WINRT_PROPERTY(uint32_t, Type);
     };
 
     struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>
