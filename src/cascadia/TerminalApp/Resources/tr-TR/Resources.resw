@@ -1,0 +1,951 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:schema id="root">
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xs:element name="root" ns1:IsDataSet="true">
+      <xs:complexType>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="metadata">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" />
+              </xs:sequence>
+              <xs:attribute name="name" use="required" type="xsd:string" />
+              <xs:attribute name="type" type="xsd:string" />
+              <xs:attribute name="mimetype" type="xsd:string" />
+              <xs:attribute ref="xml:space" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="assembly">
+            <xs:complexType>
+              <xs:attribute name="alias" type="xsd:string" />
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+                <xs:element name="comment" type="xsd:string" minOccurs="0" ns1:Ordinal="2" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" use="required" ns1:Ordinal="1" />
+              <xs:attribute name="type" type="xsd:string" ns1:Ordinal="3" />
+              <xs:attribute name="mimetype" type="xsd:string" ns1:Ordinal="4" />
+              <xs:attribute ref="xml:space" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="resheader">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" use="required" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>Ayarlar dosyadan yüklenemedi. Sondaki virgüller de dahil olmak üzere sözdizimi hatalarını denetleyin.</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>Profil listenizde varsayılan profiliniz bulunamadı; ilk profil kullanılıyor. "defaultProfile" değerinin profillerinizden birinin GUID'si ile eşleştiğinden emin olun.</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>Ayar dosyanızda aynı GUID'ye sahip birden çok profil bulundu; kopyalar yoksayılıyor. Her profilin GUID'sinin benzersiz olduğundan emin olun.</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>Geçersiz "colorScheme" içeren bir profil bulundu. Bu profil için varsayılan renkler uygulanıyor. "colorScheme" ayarlanırken değerin "schemes" listesindeki bir renk şemasının "name" değeriyle eşleştiğinden emin olun.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>Ayarlarınızda hiçbir profil bulunamadı.</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>Ayarlarınızdaki tüm profiller gizlendi. Gizlenmemiş en az bir profiliniz olmalıdır.</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Ayarlar dosyadan yeniden yüklenemedi. Sondaki virgüller de dahil olmak üzere sözdizimi hatalarını denetleyin.</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Geçici olarak Windows Terminal varsayılan ayarları kullanılıyor.</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>Ayarlar yüklenemedi</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>Kullanıcı ayarları yüklenirken hatalarla karşılaşıldı</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>Ayarlar yeniden yüklenemedi</value>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Birden çok bölme</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Sekmeyi taşı</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Sağdaki sekmeleri kapat</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Diğer sekmeleri kapat</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Sekmeyi kapat</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Bölmeyi kapat</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Sekmeyi böl</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Bölmeyi böl</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Bölme yönleri için sağ tıklayın: sağ/aşağı/yukarı/sol</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Bölmeyi aşağıya böl</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Bölmeyi sağa böl</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Bölmeyi yukarıya böl</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Bölmeyi sola böl</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Çoğalt</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Bölmeyi değiştir</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Bölmeyi aşağıyla değiştir</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Bölmeyi sağla değiştir</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Bölmeyi yukarıyla değiştir</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Bölmeyi solla değiştir</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Bölme yakınlaştırmasını aç/kapat</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Diğer bölmeleri kapat</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Web'de ara</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Sekme rengini değiştir</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Sıfırla</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>Sekmeyi yeniden adlandır</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Sekmeyi çoğalt</value>
+  </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Ayarlarınızda belirtilen bir veya daha fazla kaynak (simge veya backgroundImage gibi) bulunamadı.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>Tuş atamalarınız ayrıştırılırken uyarılar bulundu:</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• "keys" dizisinde çok fazla dize içeren bir tuş ataması bulundu. "keys" dizisinde yalnızca bir dize değeri olmalıdır.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• İç içe komutun tüm alt komutları ayrıştırılamadı.</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• Gerekli parametre değeri eksik olan bir tuş ataması bulundu. Bu tuş ataması yoksayılacak.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• Belirtilen "theme" tema listesinde bulunamadı. Geçici olarak varsayılan değere dönülüyor.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>"iterateOn" ayarlanmış bir komut genişletilemedi. Bu komut yoksayılacak.</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Geçersiz "colorScheme" içeren bir komut bulundu. Bu komut yoksayılacak. "colorScheme" ayarlanırken değerin "schemes" listesindeki bir renk şemasının "name" değeriyle eşleştiğinden emin olun.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>Geçersiz "size" içeren bir "splitPane" komutu bulundu. Bu komut yoksayılacak. Boyutun hariç olmak üzere 0 ile 1 arasında olduğundan emin olun.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>"startupActions" ayrıştırılamadı.</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>Farklı büyük/küçük harf durumlarında aynı ada sahip birden çok ortam değişkeni bulundu; yalnızca bir değer kullanılacak.</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>Yeni sekmede veya bölmede başlatılacak bağımsız değişkenlere sahip isteğe bağlı bir komut</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Komut satırını giriş eylemi olarak kaydet</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>İsteğe bağlı bir bağımsız değişken</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>İsteğe bağlı bir bağımsız değişken</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>Odağı başka bir sekmeye taşı</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>Odağı sonraki sekmeye taşı</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>"focus-tab" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>Odağı önceki sekmeye taşı</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>Odağı belirtilen dizindeki sekmeye taşı</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Odaklanan bölmeyi belirtilen dizindeki sekmeye taşı</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Odaklanan bölmeyi başka bir sekmeye taşı</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>"move-pane" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Boyutu üst bölmenin yüzdesi olarak belirtin. Geçerli değerler hariç olmak üzere (0,1) arasındadır.</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>Yeni sekme oluştur</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>"new-tab" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Odağı başka bir bölmeye taşı</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>"focus-pane" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Belirtilen dizindeki bölmeye odaklan</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>Belirtilen profille aç. Bir profilin adını veya GUID'sini kabul eder</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>WT_SESSION değişkenini ayarlar; bir GUID olmalıdır</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>Yeni bir bölünmüş bölme oluştur</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>"split-pane" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>Yeni bölmeyi yatay bölme olarak oluştur ([-] gibi düşünün)</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>Yeni bölmeyi dikey bölme olarak oluştur ([|] gibi düşünün)</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Yeni bölmeyi odaklanan bölmenin profilini çoğaltarak oluştur</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>Profilin ayarlanmış "startingDirectory" değeri yerine belirtilen dizinde aç</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>Terminali profilin ayarlanmış "title" değeri yerine sağlanan başlıkla aç</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Sekmeyi #rrggbb biçiminde belirtilen renkle aç</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Sekmeyi tabTitle varsayılan başlığı geçersiz kılacak ve uygulamadan gelen başlık değiştirme mesajlarını gizleyecek şekilde aç</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>Yeni sekme veya bölme oluştururken yeni bir ortam bloğu oluşturmak yerine terminalin kendi ortam değişkenlerini devral. Bir "command" geçirildiğinde bu varsayılan olarak etkindir.</value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Sekmeyi profilin ayarlanmış "colorScheme" değeri yerine belirtilen renk şemasıyla aç</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>Uygulama sürümünü görüntüle</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Pencereyi ekranı kaplamış olarak başlat</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>Pencereyi tam ekran modunda başlat</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Odağı belirtilen yöndeki bitişik bölmeye taşı</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>"move-focus" alt komutu için bir diğer ad.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>Odağın taşınacağı yön</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>Odaklanan bölmeyi belirtilen yöndeki bitişik bölmeyle değiştir</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>Odaklanan bölmenin taşınacağı yön</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>Pencereyi odak modunda başlat</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>Bu parametre dahili bir uygulama ayrıntısıdır ve kullanılmamalıdır.</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Verilen komut satırının çalıştırılacağı bir terminal penceresi belirtin. "0" her zaman geçerli pencereyi ifade eder.</value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Terminalin konumunu "x,y" biçiminde belirtin.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Terminal için sütun ve satır sayısını "c,r" biçiminde belirtin.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Varsayılan profilinizle yeni bir terminal sekmesi açmak için düğmeye basın. Hangi profili açmak istediğinizi seçmek için açılır menüyü açın.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Yeni Sekme</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>Yeni sekme aç</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>Geçerli pencereyi bölmek için Alt+Tıklayın</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Yeni pencere açmak için Shift+Tıklayın</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Yönetici olarak açmak için Ctrl+Tıklayın</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Simge Durumuna Küçült</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>Simge Durumuna Küçült</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Geri bildirim gönder</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>Sürüm:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Kaynak kod</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>Belgeler</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>Sürüm notları</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>Gizlilik ilkesi</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>Üçüncü taraf bildirimleri</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
+    <value>Tüm pencereleri kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
+    <value>Tümünü kapat</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
+    <value>Tüm sekmeleri kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>Tümünü kapat</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>Bu sekmeyi kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>Sekmeyi kapat</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>Bu bölmeyi kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>Bölmeyi kapat</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>Bu sekmeleri kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>Sekmeleri kapat</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>Bu bölmeleri kapatmak istiyor musunuz?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>Bölmeleri kapat</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>Bunu bana bir daha sorma</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Yine de kapat</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>Salt okunur bir terminali kapatmak üzeresiniz. Devam etmek istiyor musunuz?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>5 KiB'den daha uzun bir metni yapıştırmak üzeresiniz. Devam etmek istiyor musunuz?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Yine de yapıştır</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>Birden çok satır içeren metni yapıştırmak üzeresiniz. Bu metni kabuğunuza yapıştırırsanız komutların beklenmedik şekilde yürütülmesine neden olabilir. Devam etmek istiyor musunuz?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Yine de yapıştır</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Bir komut adı yazın...</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>Eşleşen komut yok</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>Eylem arama modu</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Sekme başlığı modu</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Komut satırı modu</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}" için daha fazla seçenek</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>Komut satırının yürütülmesi şu komutları çağıracaktır:</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>Komut satırı ayrıştırılamadı:</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Komut paleti</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Sekme değiştirici</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Bir sekme adı yazın...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>Eşleşen sekme adı yok</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>Çalıştırmak için bir wt komut satırı girin</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>"{}" için daha fazla seçenek</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Bir komut adı yazın...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>Eşleşen komut yok</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>Öneriler menüsü</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Daha fazla seçenek</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>Bulunan öneriler: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Kızıl</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Çelik Mavisi</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Orta Deniz Yeşili</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Koyu Turuncu</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Orta Menekşe Kırmızısı</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Dodger Mavisi</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Çim Yeşili</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Sarı</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Mavi Menekşe</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Arduvaz Mavisi</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Parlak Yeşil</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Taba</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Macenta</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Camgöbeği</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Gök Mavisi</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Koyu Gri</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>Bu bağlantı geçersiz:</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>Bu bağlantı türü şu anda desteklenmiyor:</value>
+  </data>
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Bu bağlantı güvenli olmayan bir konuma yönlendirebilir. Köprüler bilgisayarınıza ve verilerinize zarar verebilir. Bilgisayarınızı korumak için yalnızca güvenilir kaynaklardan gelen bağlantılara tıklayın.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Yine de aç</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>Ayar dosyanıza yazılamadı. Salt okunur bayrağının ayarlanmadığından ve yazma erişimi verildiğinden emin olmak için bu dosyadaki izinleri denetleyin.</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Hata Ayıklama</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Pano içeriği (önizleme):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Daha fazla seçenek</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Pencere</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>adsız pencere</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Yeni pencere</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>Bu pencereyi adlandır...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>Bu pencereyi yeniden adlandır...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0} (adsız)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>Çalışma alanı silinsin mi?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>Çalışma alanını aç</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>"{0}" silinsin mi?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>"{0}" çalışma alanını silmek istediğinizden emin misiniz? Bu çalışma alanıyla ilişkili oturumlar da silinecektir.</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>Sil</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>İptal</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>Yeni bir ad girin:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Ekranı Kapla</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Aşağı Geri Yükle</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Komut paleti</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>Terminal'e Odaklan</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Pencereler</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>"{0}" sekmesinde etkinlik</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>"{0}" sekmesinde etkinlik (pencere: "{1}")</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Belirtilen başlangıç dizininde yeni bir sekme aç</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Belirtilen başlangıç diziniyle yeni bir pencere aç</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Pencereyi böl ve belirtilen dizinde başlat</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Metni dışarı aktar</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Bul</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Sonlandırma davranışı gelişmiş profil ayarlarından yapılandırılabilir.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Bir daha gösterme</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Bu Terminal penceresi yönetici olarak çalışıyor</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Çalışma Alanları</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Bulunan öneriler: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>Güncelleştirmeler denetleniyor...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>Bir güncelleştirme mevcut.</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>Şimdi yükle</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>"newTabMenu" alanı "remainingProfiles" türünde birden fazla girdi içeriyor. Yalnızca ilki dikkate alınacaktır.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>"__content" özelliği dahili kullanım için ayrılmıştır</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Ürün bilgilerini içeren bir iletişim kutusu aç</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Bu sekmenin rengini seçmek için renk seçiciyi aç</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Komut paletini aç</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Geçerli dizindeki etkin profili kullanarak yeni bir sekme aç</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Metin arabelleğinin içeriğini bir metin dosyasına aktar</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Arama iletişim kutusunu aç</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Bu sekmeyi yeniden adlandır</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Ayarlar sayfasını aç</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Geçerli dizindeki etkin profili kullanarak yeni bir bölme aç</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Bu sekmenin sağındaki tüm sekmeleri kapat</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Bu sekme dışındaki tüm sekmeleri kapat</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Bu sekmeyi kapat</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Boş</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Bölmeyi kapat</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Birden çok bölme varsa etkin bölmeyi kapat</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Sekme rengini sıfırla</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>Sekmeyi yeni pencereye taşı</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>Sekmeyi yeni bir pencereye taşır</value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>Yönetici olarak çalıştır</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>Etkin bölme "{0}" sekmesine taşındı</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>"{0}" sekmesi "{1}" penceresine taşındı</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>"{0}" sekmesi yeni pencereye taşındı</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>"{0}" sekmesi "{1}" konumuna taşındı</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>Etkin bölme "{0}" penceresine taşındı</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window to which the pane was moved.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Etkin bölme yeni pencereye taşındı</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>Etkin bölme yeni sekmeye taşındı</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>Ayarlandıysa komut, profilin varsayılan komutunun yerini almak yerine sonuna eklenecektir.</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>Oturumu yeniden başlat</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Etkin bölmedeki oturumu yeniden başlat</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Kod Parçacıkları</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Kod parçacıklarını filtrele...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Bu komutu girin</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bu komutu girin</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>Ayarlarınızda kod parçacığı bulunamadı.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Burada görünmelerini sağlamak için ayarlarınıza bazı "Giriş gönder" eylemleri ekleyin.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Eylem kaydedildi</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Eylem kaydedilemedi</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Bölmeyi kapat</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Bölmeyi kapat</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Sola taşı</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Sağa taşı</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Geçersiz bir normal ifade bulundu.</value>
+  </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>Not: Tanınmayan bağımsız değişkenler otomatik olarak 'new-tab' alt komutuna geçirilir.
+Örneğin, 'wt -p "Ubuntu" -d C:\', 'wt new-tab -p "Ubuntu" -d C:\' komutuna eşdeğerdir.
+Kullanılabilir tüm seçenekler için 'wt new-tab --help' komutunu çalıştırın.</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
+  </data>
+</root>
