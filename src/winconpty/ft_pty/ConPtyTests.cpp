@@ -102,6 +102,7 @@ class ConPtyTests
     TEST_METHOD(CreateConPtyBadSize);
     TEST_METHOD(GoodCreate);
     TEST_METHOD(GoodCreateMultiple);
+    TEST_METHOD(CodePageTests);
     TEST_METHOD(SurvivesOnBreakOutput);
     TEST_METHOD(DiesOnClose);
     TEST_METHOD(ReleasePseudoConsole);
@@ -233,6 +234,73 @@ void ConPtyTests::GoodCreateMultiple()
     auto closePty2 = wil::scope_exit([&] {
         _ClosePseudoConsoleMembers(&pcon2);
     });
+}
+
+void ConPtyTests::CodePageTests()
+{
+    auto pipes = createPipes();
+
+    wchar_t codePageArgument[32]{};
+    BOOL useCodePageArgument = TRUE;
+    VERIFY_SUCCEEDED(_GenerateCodePageArgument(false,
+                                               CP_UTF8,
+                                               codePageArgument,
+                                               ARRAYSIZE(codePageArgument),
+                                               &useCodePageArgument));
+    VERIFY_IS_FALSE(useCodePageArgument);
+    VERIFY_IS_TRUE(std::wstring_view{ codePageArgument }.empty());
+
+    useCodePageArgument = TRUE;
+    VERIFY_SUCCEEDED(_GenerateCodePageArgument(true,
+                                               0,
+                                               codePageArgument,
+                                               ARRAYSIZE(codePageArgument),
+                                               &useCodePageArgument));
+    VERIFY_IS_FALSE(useCodePageArgument);
+    VERIFY_IS_TRUE(std::wstring_view{ codePageArgument }.empty());
+
+    VERIFY_SUCCEEDED(_GenerateCodePageArgument(true,
+                                               CP_UTF8,
+                                               codePageArgument,
+                                               ARRAYSIZE(codePageArgument),
+                                               &useCodePageArgument));
+    VERIFY_IS_TRUE(useCodePageArgument);
+    VERIFY_IS_TRUE(std::wstring_view{ codePageArgument } == L"--codepage 65001 ");
+
+    unique_hpcon invalidHpcon;
+    BOOL invalidCodePageApplied = TRUE;
+    VERIFY_ARE_EQUAL(E_INVALIDARG,
+                     ConptyCreatePseudoConsoleWithCodePage(defaultSize,
+                                                           pipes.conpty.in.get(),
+                                                           pipes.conpty.out.get(),
+                                                           0,
+                                                           65535,
+                                                           &invalidCodePageApplied,
+                                                           invalidHpcon.addressof()));
+    VERIFY_IS_FALSE(invalidCodePageApplied);
+    VERIFY_IS_TRUE(invalidHpcon.get() == nullptr);
+
+    unique_hpcon hpcon;
+    BOOL codePageApplied = FALSE;
+    VERIFY_SUCCEEDED(ConptyCreatePseudoConsoleWithCodePage(defaultSize,
+                                                           pipes.conpty.in.get(),
+                                                           pipes.conpty.out.get(),
+                                                           0,
+                                                           CP_UTF8,
+                                                           &codePageApplied,
+                                                           hpcon.addressof()));
+    VERIFY_IS_TRUE(codePageApplied);
+    pipes.conpty.in.reset();
+    pipes.conpty.out.reset();
+
+    wil::unique_process_information piClient;
+    std::wstring command{ L"cmd.exe /d /c chcp" };
+    VERIFY_SUCCEEDED(AttachPseudoConsole(hpcon.get(), command, piClient.addressof()));
+    VERIFY_ARE_EQUAL(static_cast<DWORD>(WAIT_OBJECT_0), WaitForSingleObject(piClient.hProcess, 5000));
+
+    hpcon.reset();
+    const auto output = readOutputToEOF(pipes.our);
+    VERIFY_ARE_NOT_EQUAL(std::string::npos, output.find("65001"));
 }
 
 void ConPtyTests::SurvivesOnBreakOutput()

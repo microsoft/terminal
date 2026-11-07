@@ -5,6 +5,7 @@
 #include "Profiles_Advanced.h"
 #include "Profiles_Advanced.g.cpp"
 #include "ProfileViewModel.h"
+#include "CodePageUtils.h"
 
 #include "EnumEntry.h"
 #include "..\WinRTUtils\inc\Utils.h"
@@ -45,6 +46,78 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Advanced::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
+    }
+
+    void Profiles_Advanced::CodePageBox_GotFocus(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        _Profile.UpdateCodePageFilter({});
+        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+    }
+
+    void Profiles_Advanced::CodePageBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& e)
+    {
+        const auto isUserInput = e.Reason() == AutoSuggestionBoxTextChangeReason::UserInput;
+        if (!isUserInput)
+        {
+            return;
+        }
+
+        if (CodePageUtils::ShouldClearFromTextChange(isUserInput, sender.Text().empty()))
+        {
+            _Profile.ClearSetting(L"CodePage");
+            _Profile.UpdateCodePageFilter({});
+            sender.Text(_Profile.CodePageDisplayText());
+        }
+        else
+        {
+            _Profile.UpdateCodePageFilter(sender.Text());
+        }
+    }
+
+    void Profiles_Advanced::CodePageBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& e)
+    {
+        auto entry = winrt::unbox_value_or<Editor::EnumEntry>(e.ChosenSuggestion(), nullptr);
+        if (!entry)
+        {
+            const auto filtered = _Profile.FilteredCodePageList();
+            if (CodePageUtils::ShouldCommitSingleResult(false, filtered.Size()))
+            {
+                entry = filtered.GetAt(0);
+            }
+        }
+        if (!entry)
+        {
+            return;
+        }
+
+        const auto weakThis = get_weak();
+        const auto weakSender = winrt::make_weak(sender);
+        Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis, weakSender, entry]() {
+            if (const auto self = weakThis.get())
+            {
+                self->_Profile.SelectCodePage(entry);
+                self->_Profile.UpdateCodePageFilter({});
+                if (const auto box = weakSender.get())
+                {
+                    box.Text(self->_Profile.CodePageDisplayText());
+                }
+            }
+        });
+    }
+
+    void Profiles_Advanced::CodePageBox_LostFocus(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        const auto weakThis = get_weak();
+        const auto weakSender = winrt::make_weak(sender.as<AutoSuggestBox>());
+        Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis, weakSender]() {
+            if (const auto self = weakThis.get())
+            {
+                if (const auto box = weakSender.get())
+                {
+                    box.Text(self->_Profile.CodePageDisplayText());
+                }
+            }
+        });
     }
 
     safe_void_coroutine Profiles_Advanced::BellSoundAudioPreview_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)

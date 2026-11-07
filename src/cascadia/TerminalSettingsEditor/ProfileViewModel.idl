@@ -59,6 +59,12 @@ namespace Microsoft.Terminal.Settings.Editor
         void RequestAddBellSound(String path);
         void RequestDeleteBellSound(BellSoundViewModel vm);
 
+        String CodePageUnsetText { get; };
+        String CodePageDisplayText { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FilteredCodePageList { get; };
+        void UpdateCodePageFilter(String filter);
+        void SelectCodePage(Microsoft.Terminal.Settings.Editor.EnumEntry entry);
+
         IInspectable CurrentAntiAliasingMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
 

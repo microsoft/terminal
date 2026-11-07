@@ -5,8 +5,9 @@
 
 #include "winconpty.h"
 
-#ifdef __INSIDE_WINDOWS
 #include <strsafe.h>
+
+#ifdef __INSIDE_WINDOWS
 #include <consoleinternal.h>
 // You need kernelbasestaging.h to be able to use wil in libraries consumed by kernelbase.dll
 #include <kernelbasestaging.h>
@@ -41,17 +42,22 @@ static wil::unique_process_heap_string _InboxConsoleHostPath()
     return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
 }
 
-// Function Description:
-// - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
-//   module is building with Windows and OpenConsole could be found.
-// Return Value:
-// - A pointer to permanent storage containing the path to the console host.
-static wchar_t* _ConsoleHostPath()
+struct ConsoleHostInfo
 {
-    // Use the magic of magic statics to only calculate this once.
-    static auto consoleHostPath = []() {
+    wil::unique_process_heap_string path;
+    bool supportsCodePageArgument;
+};
+
+// Function Description:
+// - Returns the side-by-side OpenConsole path when available, or the inbox conhost path otherwise.
+// Return Value:
+// - The selected host path and whether it supports the custom --codepage argument.
+static const ConsoleHostInfo& _ConsoleHost()
+{
+    // Use a magic static to calculate the host selection only once.
+    static const auto consoleHost = []() -> ConsoleHostInfo {
 #if defined(__INSIDE_WINDOWS)
-        return _InboxConsoleHostPath();
+        return { _InboxConsoleHostPath(), false };
 #else
         // Use the STL only if we're not building in Windows.
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
@@ -62,7 +68,7 @@ static wchar_t* _ConsoleHostPath()
             USHORT unusedImageFileMachine{}, nativeMachine{};
             if (IsWow64Process2(GetCurrentProcess(), &unusedImageFileMachine, &nativeMachine))
             {
-                // Despite being a machine type, the values IsWow64Process2 returns are *image* types
+                // Despite being a machine type, the values IsWow64Process2 returns are image types.
                 switch (nativeMachine)
                 {
                 case IMAGE_FILE_MACHINE_AMD64:
@@ -80,22 +86,20 @@ static wchar_t* _ConsoleHostPath()
             }
             if (architectureInfix.empty())
             {
-                // WHAT?
-                return _InboxConsoleHostPath();
+                return { _InboxConsoleHostPath(), false };
             }
             modulePath.replace_filename(architectureInfix);
             modulePath.append(L"OpenConsole.exe");
         }
         if (!std::filesystem::exists(modulePath))
         {
-            // We tried the architecture infix version and failed, fall back to conhost.
-            return _InboxConsoleHostPath();
+            return { _InboxConsoleHostPath(), false };
         }
         const auto& modulePathAsString = modulePath.native();
-        return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
+        return { wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size()), true };
 #endif // __INSIDE_WINDOWS
     }();
-    return consoleHostPath.get();
+    return consoleHost;
 }
 
 static void _EnsureDriverIsLoaded() noexcept
@@ -116,13 +120,38 @@ static bool _HandleIsValid(HANDLE h) noexcept
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
 
+HRESULT _GenerateCodePageArgument(const bool supportsCodePageArgument,
+                                  const UINT codePage,
+                                  _Out_writes_(codePageArgumentLength) wchar_t* const codePageArgument,
+                                  const size_t codePageArgumentLength,
+                                  _Out_ BOOL* const useCodePageArgument)
+{
+    RETURN_HR_IF(E_INVALIDARG, !codePageArgument || codePageArgumentLength == 0 || !useCodePageArgument);
+    codePageArgument[0] = L'\0';
+    *useCodePageArgument = FALSE;
+
+    if (codePage != 0 && supportsCodePageArgument)
+    {
+        RETURN_IF_FAILED(StringCchPrintfW(codePageArgument, codePageArgumentLength, L"--codepage %u ", codePage));
+        *useCodePageArgument = TRUE;
+    }
+
+    return S_OK;
+}
+
 HRESULT _CreatePseudoConsole(HANDLE hToken,
                              const COORD size,
                              const HANDLE hInput,
                              const HANDLE hOutput,
                              const DWORD dwFlags,
-                             _Inout_ PseudoConsole* pPty)
+                             _Inout_ PseudoConsole* pPty,
+                             const UINT codePage,
+                             _Out_opt_ BOOL* const codePageApplied)
 {
+    if (codePageApplied)
+    {
+        *codePageApplied = FALSE;
+    }
     if (pPty == nullptr)
     {
         return E_INVALIDARG;
@@ -186,18 +215,28 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
         break;
     }
 
-    const auto conhostPath = _ConsoleHostPath();
+    const auto& consoleHost = _ConsoleHost();
+    const auto conhostPath = consoleHost.path.get();
+
+    wchar_t codePageArgument[32]{};
+    BOOL useCodePageArgument = FALSE;
+    RETURN_IF_FAILED(_GenerateCodePageArgument(consoleHost.supportsCodePageArgument,
+                                               codePage,
+                                               codePageArgument,
+                                               ARRAYSIZE(codePageArgument),
+                                               &useCodePageArgument));
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
     // This is plenty of space to hold the formatted string
     wil::unique_process_heap_string cmd;
     RETURN_IF_FAILED(wil::str_printf_nothrow(
         cmd,
-        L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        L"\"%s\" --headless %s%s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
         conhostPath,
         inheritCursor,
         ambiguousIsWide,
         textMeasurement,
+        codePageArgument,
         size.X,
         size.Y,
         std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),
@@ -273,6 +312,11 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     pPty->hSignal = signalPipeOurSide.release();
     pPty->hPtyReference = referenceHandle.release();
     pPty->hConPtyProcess = std::exchange(pi.hProcess, nullptr);
+
+    if (codePageApplied && useCodePageArgument)
+    {
+        *codePageApplied = TRUE;
+    }
 
     return S_OK;
 }
@@ -468,18 +512,28 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsole(_In_ COORD size,
     return ConptyCreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
 }
 
-extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
-                                                          _In_ COORD size,
-                                                          _In_ HANDLE hInput,
-                                                          _In_ HANDLE hOutput,
-                                                          _In_ DWORD dwFlags,
-                                                          _Out_ HPCON* phPC)
+static HRESULT _ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                                _In_ COORD size,
+                                                _In_ HANDLE hInput,
+                                                _In_ HANDLE hOutput,
+                                                _In_ DWORD dwFlags,
+                                                _In_ UINT codePage,
+                                                _Out_opt_ BOOL* codePageApplied,
+                                                _Out_ HPCON* phPC)
 {
+    if (codePageApplied)
+    {
+        *codePageApplied = FALSE;
+    }
     if (phPC == nullptr)
     {
         return E_INVALIDARG;
     }
     *phPC = nullptr;
+    if (codePage != 0 && !IsValidCodePage(codePage))
+    {
+        return E_INVALIDARG;
+    }
     if ((!_HandleIsValid(hInput)) && (!_HandleIsValid(hOutput)))
     {
         return E_INVALIDARG;
@@ -496,12 +550,33 @@ extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hInput, GetCurrentProcess(), duplicatedInput.addressof(), 0, TRUE, DUPLICATE_SAME_ACCESS));
     RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), hOutput, GetCurrentProcess(), duplicatedOutput.addressof(), 0, TRUE, DUPLICATE_SAME_ACCESS));
 
-    RETURN_IF_FAILED(_CreatePseudoConsole(hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty));
+    RETURN_IF_FAILED(_CreatePseudoConsole(hToken, size, duplicatedInput.get(), duplicatedOutput.get(), dwFlags, pPty, codePage, codePageApplied));
 
     *phPC = (HPCON)pPty;
     cleanupPty.release();
 
     return S_OK;
+}
+
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleWithCodePage(_In_ COORD size,
+                                                                _In_ HANDLE hInput,
+                                                                _In_ HANDLE hOutput,
+                                                                _In_ DWORD dwFlags,
+                                                                _In_ UINT codePage,
+                                                                _Out_opt_ BOOL* codePageApplied,
+                                                                _Out_ HPCON* phPC)
+{
+    return _ConptyCreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, codePage, codePageApplied, phPC);
+}
+
+extern "C" HRESULT WINAPI ConptyCreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                                          _In_ COORD size,
+                                                          _In_ HANDLE hInput,
+                                                          _In_ HANDLE hOutput,
+                                                          _In_ DWORD dwFlags,
+                                                          _Out_ HPCON* phPC)
+{
+    return _ConptyCreatePseudoConsoleAsUser(hToken, size, hInput, hOutput, dwFlags, 0, nullptr, phPC);
 }
 
 // Function Description:

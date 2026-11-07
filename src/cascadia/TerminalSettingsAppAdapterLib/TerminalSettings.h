@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         // Settings which do not pertain to the control (why are they here?)
         SIMPLE_OVERRIDABLE_SETTING(bool, Elevate, false);
+        SIMPLE_OVERRIDABLE_SETTING(uint32_t, CodePage, 0);
         SIMPLE_OVERRIDABLE_SETTING(IEnvironmentVariableMapView, EnvironmentVariables, nullptr);
         SIMPLE_OVERRIDABLE_SETTING(bool, ReloadEnvironmentVariables, true);
 

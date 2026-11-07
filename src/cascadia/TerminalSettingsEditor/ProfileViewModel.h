@@ -41,6 +41,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
 
+        hstring CodePageUnsetText() const;
+        hstring CodePageDisplayText() const;
+        Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> FilteredCodePageList();
+        void UpdateCodePageFilter(const hstring& filter);
+        void SelectCodePage(const Editor::EnumEntry& entry);
+
         // bell style bits
         hstring BellStylePreview() const;
         hstring BellStyleAccessibleName() const;
@@ -130,6 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 // Settings that expose a reset button.
 // Wired into both the property accessors and the reset dispatch automatically.
+// CodePage uses a searchable effective-value adapter and is dispatched separately.
 #define PROFILE_INHERITABLE_SETTINGS(X)         \
     X(_profile, Name)                           \
     X(_profile, Hidden)                         \
@@ -191,8 +198,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
+        static void _InitializeCodePageList();
+        void _UpdateFilteredCodePageList();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
+        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _CodePageList;
+        Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _filteredCodePageList{ nullptr };
+        hstring _codePageFilter;
 
         Model::CascadiaSettings _appSettings;
         Model::WindowSettings _windowSettings{ nullptr };

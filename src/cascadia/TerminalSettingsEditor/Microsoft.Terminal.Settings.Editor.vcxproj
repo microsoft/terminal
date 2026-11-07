@@ -184,6 +184,7 @@
       <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="CodePageUtils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
     <ClInclude Include="../fzf/fzf.h" />

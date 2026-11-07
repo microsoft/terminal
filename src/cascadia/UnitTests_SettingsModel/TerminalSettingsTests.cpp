@@ -50,6 +50,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(NormalizeCommandLine);
         TEST_METHOD(GetProfileForArgsWithCommandline);
         TEST_METHOD(MakeSettingsForProfile);
+        TEST_METHOD(CodePagePrecedence);
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
@@ -667,6 +668,80 @@ namespace SettingsModelUnitTests
         {
             VERIFY_IS_TRUE(false, L"This call to CreateWithNewTerminalArgs should succeed");
         }
+    }
+
+    void TerminalSettingsTests::CodePagePrecedence()
+    {
+        static constexpr std::string_view settingsString{ R"(
+        {
+            "profiles": {
+                "defaults": {
+                    "codePage": 65001
+                },
+                "list": [
+                    {
+                        "name": "uses profile defaults",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                    },
+                    {
+                        "name": "profile override",
+                        "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                        "codePage": 950
+                    }
+                ]
+            }
+        })" };
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsString);
+        const auto inheritedProfile = settings->FindProfile(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}"));
+        const auto overrideProfile = settings->FindProfile(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}"));
+
+        VERIFY_IS_TRUE(settings->ProfileDefaults().HasCodePage());
+        VERIFY_ARE_EQUAL(65001u, settings->ProfileDefaults().CodePage());
+        VERIFY_IS_FALSE(inheritedProfile.HasCodePage());
+        VERIFY_ARE_EQUAL(65001u, inheritedProfile.CodePage());
+        VERIFY_IS_TRUE(overrideProfile.HasCodePage());
+        VERIFY_ARE_EQUAL(950u, overrideProfile.CodePage());
+
+        const auto inheritedResult = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), inheritedProfile);
+        VERIFY_ARE_EQUAL(65001u, inheritedResult.DefaultSettings()->CodePage());
+
+        const auto overrideResult = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), overrideProfile);
+        VERIFY_ARE_EQUAL(950u, overrideResult.DefaultSettings()->CodePage());
+
+        overrideProfile.ClearCodePage();
+        VERIFY_IS_FALSE(overrideProfile.HasCodePage());
+        VERIFY_ARE_EQUAL(65001u, overrideProfile.CodePage());
+        const auto resetResult = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), overrideProfile);
+        VERIFY_ARE_EQUAL(65001u, resetResult.DefaultSettings()->CodePage());
+
+        static constexpr std::string_view defaultSettingsString{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "uses operating system default",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name": "profile only",
+                    "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}",
+                    "codePage": 437
+                }
+            ]
+        })" };
+        const auto defaultSettings = winrt::make_self<implementation::CascadiaSettings>(defaultSettingsString);
+        const auto defaultProfile = defaultSettings->FindProfile(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}"));
+        VERIFY_IS_FALSE(defaultSettings->ProfileDefaults().HasCodePage());
+        VERIFY_ARE_EQUAL(0u, defaultSettings->ProfileDefaults().CodePage());
+        VERIFY_IS_FALSE(defaultProfile.HasCodePage());
+        VERIFY_ARE_EQUAL(0u, defaultProfile.CodePage());
+        const auto defaultResult = TerminalSettings::CreateWithProfile(*defaultSettings, defaultSettings->WindowSettingsDefaults(), defaultProfile);
+        VERIFY_ARE_EQUAL(0u, defaultResult.DefaultSettings()->CodePage());
+
+        const auto profileOnly = defaultSettings->FindProfile(::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}"));
+        VERIFY_IS_TRUE(profileOnly.HasCodePage());
+        VERIFY_ARE_EQUAL(437u, profileOnly.CodePage());
+        const auto profileOnlyResult = TerminalSettings::CreateWithProfile(*defaultSettings, defaultSettings->WindowSettingsDefaults(), profileOnly);
+        VERIFY_ARE_EQUAL(437u, profileOnlyResult.DefaultSettings()->CodePage());
     }
 
     void TerminalSettingsTests::MakeSettingsForDefaultProfileThatDoesntExist()
