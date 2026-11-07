@@ -104,8 +104,9 @@ HRESULT TextAnalysisSource::GetNumberSubstitution(UINT32 textPosition, UINT32* t
     return E_NOTIMPL;
 }
 
-TextAnalysisSink::TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results) noexcept :
-    _results{ results }
+TextAnalysisSink::TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results, std::vector<BidiRun>& bidiResults) noexcept :
+    _results{ results },
+    _bidiResults{ bidiResults }
 {
 }
 
@@ -167,9 +168,12 @@ HRESULT TextAnalysisSink::SetLineBreakpoints(UINT32 textPosition, UINT32 textLen
 }
 
 HRESULT TextAnalysisSink::SetBidiLevel(UINT32 textPosition, UINT32 textLength, UINT8 explicitLevel, UINT8 resolvedLevel) noexcept
+try
 {
-    return E_NOTIMPL;
+    _bidiResults.emplace_back(textPosition, textLength, resolvedLevel);
+    return S_OK;
 }
+CATCH_RETURN()
 
 HRESULT TextAnalysisSink::SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept
 {
