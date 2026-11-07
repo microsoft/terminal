@@ -93,7 +93,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
-        til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
         til::typed_event<IInspectable, IInspectable> Closed;
