@@ -30,6 +30,8 @@ class AdapterTest;
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    class KittyGraphics;
+
     class AdaptDispatch : public ITermDispatch
     {
         using Renderer = Microsoft::Console::Render::Renderer;
@@ -196,6 +198,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
 
+        StringHandler KittyGraphicsCommand() override; // APC G
+
         void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
     private:
@@ -317,6 +321,8 @@ namespace Microsoft::Console::VirtualTerminal
         PageManager _pages;
         friend class SixelParser;
         std::shared_ptr<SixelParser> _sixelParser;
+        friend class KittyGraphics;
+        std::shared_ptr<KittyGraphics> _kittyGraphics;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;

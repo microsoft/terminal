@@ -57,6 +57,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
                                               const til::CoordType targetRow,
                                               const til::CoordType viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintGraphics(const GraphicsPaintInfo& info) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
@@ -177,6 +178,24 @@ namespace Microsoft::Console::Render
         std::pmr::vector<std::pmr::vector<int>> _polyWidths;
 
         std::vector<DWORD> _imageMask;
+
+        // Graphics below the text of the row that's being painted.
+        std::vector<GraphicsPaintInfo> _underlays;
+        til::CoordType _underlayRow = -1;
+        COLORREF _defaultBackground = CLR_INVALID;
+        // The most recently drawn images, least recently used first.
+        struct GraphicsBitmap
+        {
+            uint64_t revision = 0;
+            size_t byteSize = 0;
+            wil::unique_hbitmap bitmap;
+            wil::unique_hdc dc;
+        };
+        static constexpr size_t s_graphicsBitmapCacheBytes = 128 * 1024 * 1024;
+        std::vector<GraphicsBitmap> _graphicsBitmaps;
+        size_t _graphicsBitmapBytes = 0;
+
+        [[nodiscard]] HRESULT _PaintGraphicsStrip(const GraphicsPaintInfo& info, const RECT* clip) noexcept;
 
         [[nodiscard]] HRESULT _InvalidCombine(const til::rect* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const til::point* const ppt) noexcept;

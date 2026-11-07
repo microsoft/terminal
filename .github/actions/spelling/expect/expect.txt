@@ -111,6 +111,7 @@ BITOPERATION
 BKCOLOR
 BKGND
 Bksp
+BLENDFUNCTION
 Blt
 blu
 BLUESCROLL
@@ -133,6 +134,7 @@ buflen
 buildsystems
 buildtransitive
 BValue
+Bytef
 Cacafire
 CALLCONV
 CANDRABINDU
@@ -500,6 +502,7 @@ dxsm
 dxttbmp
 Dyreen
 EASTEUROPE
+EBADPNG
 ECH
 echokey
 ecount
@@ -928,6 +931,7 @@ LPPSHNOTIFY
 lprc
 lpstr
 lpsz
+LPto
 LPTSTR
 LPTTFONTLIST
 lpv
@@ -962,6 +966,7 @@ MAKELONG
 MAKELPARAM
 MAKELRESULT
 MAPBITMAP
+mapview
 MAPVIRTUALKEY
 MAPVK
 matrix'd
@@ -1204,6 +1209,7 @@ pankaj
 parentable
 PATCOPY
 PATTERNID
+PBGRA
 pbstr
 pcb
 pcch

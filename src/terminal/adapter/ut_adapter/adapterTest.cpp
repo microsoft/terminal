@@ -1801,6 +1801,165 @@ public:
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
     }
 
+    TEST_METHOD(KittyGraphicsTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& buffer = *_testGetSet->_textBuffer;
+        auto& cursor = buffer.GetCursor();
+        const auto graphicsAt = [&](const til::CoordType y) {
+            return buffer.GetRowByOffset(y).GetGraphics().size();
+        };
+
+        Log::Comment(L"A query with an id is answered.");
+        _stateMachine->ProcessString(L"\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=31;OK\x1b\\");
+
+        Log::Comment(L"Insufficient image data is reported as an error.");
+        _stateMachine->ProcessString(L"\x1b_Gi=32,s=2,v=2,a=q,f=24;AAAA\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=32;ENODATA:Insufficient image data\x1b\\");
+
+        Log::Comment(L"Specifying both an image id and number is an error.");
+        _stateMachine->ProcessString(L"\x1b_Gi=33,I=1,s=1,v=1,f=24;AAAA\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=33,I=1;EINVAL:Must not specify both image id and image number\x1b\\");
+
+        Log::Comment(L"A feature query reports the supported keys.");
+        _stateMachine->ProcessString(L"\x1b_Ga=q,i=34,e=T,U=1,C=1,P=5\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=34,e=T,C=1,U=1;OK\x1b\\");
+
+        Log::Comment(L"An image is displayed over 3x2 cells, and the cursor moves after it.");
+        cursor.SetPosition({ 5, 25 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,i=7,p=3,f=24,s=1,v=1,c=3,r=2;AAAA\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=7,p=3;OK\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(26));
+        VERIFY_ARE_EQUAL(0u, graphicsAt(27));
+        VERIFY_ARE_EQUAL(1, buffer.GetRowByOffset(26).GetGraphics()[0].row);
+        VERIFY_ARE_EQUAL(5, buffer.GetRowByOffset(26).GetGraphics()[0].placement->column);
+        VERIFY_ARE_EQUAL(til::point(8, 26), cursor.GetPosition());
+
+        Log::Comment(L"Text written over the image doesn't erase it.");
+        cursor.SetPosition({ 5, 25 });
+        _stateMachine->ProcessString(L"abc");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+
+        Log::Comment(L"A placement with the same id replaces the old one, and C=1 keeps the cursor.");
+        cursor.SetPosition({ 0, 30 });
+        _stateMachine->ProcessString(L"\x1b_Ga=p,i=7,p=3,C=1,q=1\x1b\\");
+        VERIFY_ARE_EQUAL(til::point(0, 30), cursor.GetPosition());
+        VERIFY_ARE_EQUAL(0u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(30));
+
+        Log::Comment(L"Clearing the screen removes the placements.");
+        _stateMachine->ProcessString(L"\x1b[2J");
+        VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
+
+        Log::Comment(L"Deleting by id with d=I frees the image data.");
+        cursor.SetPosition({ 0, 30 });
+        _stateMachine->ProcessString(L"\x1b_Ga=p,i=7,C=1,q=1\x1b\\");
+        VERIFY_IS_TRUE(buffer.AnyGraphics([](auto&) { return true; }));
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=7\x1b\\");
+        VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
+        _stateMachine->ProcessString(L"\x1b_Ga=p,i=7\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=7;ENOENT:Put command refers to a nonexistent image\x1b\\");
+
+        Log::Comment(L"Chunked transmissions are assembled before the image is loaded.");
+        _stateMachine->ProcessString(L"\x1b_Ga=t,i=8,f=24,s=2,v=1,m=1;AAAA\x1b\\");
+        _stateMachine->ProcessString(L"\x1b_Gm=0;AAAA\x1b\\");
+        _testGetSet->ValidateInputEvent(L"\x1b_Gi=8;OK\x1b\\");
+
+        Log::Comment(L"A virtual placement is stored for unicode placeholders.");
+        _stateMachine->ProcessString(L"\x1b_Ga=p,U=1,i=8,c=4,r=2,q=2\x1b\\");
+        const auto virtualPlacement = buffer.GetGraphicsStore().FindVirtualPlacement(8, 0);
+        VERIFY_IS_NOT_NULL(virtualPlacement);
+        VERIFY_ARE_EQUAL(4, virtualPlacement->columns);
+        VERIFY_ARE_EQUAL(2, virtualPlacement->rows);
+    }
+
+    TEST_METHOD(KittyGraphicsScrollingTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& buffer = *_testGetSet->_textBuffer;
+        auto& cursor = buffer.GetCursor();
+        const auto graphicsAt = [&](const til::CoordType y) {
+            return buffer.GetRowByOffset(y).GetGraphics().size();
+        };
+
+        // The page starts at row 20, so these margins cover rows 24 to 33.
+        _stateMachine->ProcessString(L"\x1b[5;14r");
+
+        Log::Comment(L"One image inside the margins, and one extending below them.");
+        cursor.SetPosition({ 0, 25 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=2,r=2,C=1,q=2;AAAA\x1b\\");
+        cursor.SetPosition({ 5, 33 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=2,r=3,C=1,q=2;AAAA\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(26));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(35));
+
+        Log::Comment(L"Scrolling the margins only moves the image entirely within them.");
+        _stateMachine->ProcessString(L"\x1b[S");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(24));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(0u, graphicsAt(26));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+        VERIFY_ARE_EQUAL(0, buffer.GetRowByOffset(33).GetGraphics()[0].row);
+        VERIFY_ARE_EQUAL(1u, graphicsAt(35));
+
+        Log::Comment(L"Deleting by id without an id does nothing.");
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=i\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(24));
+
+        Log::Comment(L"Scrolling the whole region removes the images within it.");
+        _stateMachine->ProcessString(L"\x1b[100S");
+        VERIFY_ARE_EQUAL(0u, graphicsAt(24));
+        VERIFY_ARE_EQUAL(0u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(33));
+
+        Log::Comment(L"A hard reset removes all images.");
+        _stateMachine->ProcessString(L"\x1b[r\033c");
+        VERIFY_IS_FALSE(buffer.AnyGraphics([](auto&) { return true; }));
+    }
+
+    TEST_METHOD(KittyGraphicsLifetimeTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData();
+        auto& buffer = *_testGetSet->_textBuffer;
+        auto& cursor = buffer.GetCursor();
+        const auto graphicsAt = [&](const til::CoordType y) {
+            return buffer.GetRowByOffset(y).GetGraphics().size();
+        };
+
+        Log::Comment(L"An image offset into its first cell covers every row it's drawn on.");
+        cursor.SetPosition({ 0, 25 });
+        _stateMachine->ProcessString(L"\x1b_Ga=T,f=24,s=1,v=1,c=1,Y=19,C=1,q=2;AAAA\x1b\\");
+        VERIFY_ARE_EQUAL(1u, graphicsAt(25));
+        VERIFY_ARE_EQUAL(1u, graphicsAt(26));
+
+        Log::Comment(L"Resizing the buffer doesn't leak the placements of the old rows.");
+        const auto placement = buffer.GetRowByOffset(25).GetGraphics()[0].placement;
+        VERIFY_ARE_EQUAL(3, placement.use_count());
+        buffer.ResizeTraditional({ 100, 600 });
+        VERIFY_ARE_EQUAL(3, placement.use_count());
+
+        Log::Comment(L"Freeing an image keeps it while another virtual placement uses it.");
+        _stateMachine->ProcessString(L"\x1b_Ga=t,i=9,f=24,s=1,v=1,q=2;AAAA\x1b\\");
+        _stateMachine->ProcessString(L"\x1b_Ga=p,U=1,i=9,p=2,c=2,r=1,q=2\x1b\\");
+        cursor.SetPosition({ 0, 30 });
+        _stateMachine->ProcessString(L"\x1b_Ga=p,i=9,p=1,C=1,q=2\x1b\\");
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=9,p=1,q=2\x1b\\");
+        VERIFY_ARE_EQUAL(0u, graphicsAt(30));
+        VERIFY_IS_NOT_NULL(buffer.GetGraphicsStore().Find(9));
+        _stateMachine->ProcessString(L"\x1b_Ga=d,d=I,i=9,q=2\x1b\\");
+        VERIFY_IS_NULL(buffer.GetGraphicsStore().Find(9));
+    }
+
     TEST_METHOD(RequestDisplayedExtentTests)
     {
         Log::Comment(L"Starting test...");
