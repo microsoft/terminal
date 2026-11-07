@@ -155,8 +155,26 @@ jobs:
         Verbosity: 'Verbose'
 
   - pwsh: |-
-      tar -c -v --format=zip -f "$(JobOutputDirectory)/GroupPolicyTemplates_$(XES_APPXMANIFESTVERSION).zip" -C "$(Build.SourcesDirectory)/policies" *
-    displayName: Package GPO Templates
+      # Uniform naming: omit the version from the zip name so the filename is
+      # stable across releases.  The version is recorded in version.txt instead.
+      tar -c -v --format=zip -f "$(JobOutputDirectory)/GroupPolicyTemplates.zip" -C "$(Build.SourcesDirectory)/policies" *
+    displayName: Package GPO Templates (uniform name)
+
+  - pwsh: |-
+      # Write a version sidecar for the bundle so callers can discover the
+      # version without parsing the .msixbundle filename.
+      $content = @"
+# Windows Terminal release version metadata
+# Generated: $(Get-Date -Format 'o')
+PackageName=$(BundleStemName)
+Version=$(XES_APPXMANIFESTVERSION)
+"@
+      [System.IO.File]::WriteAllText(
+          "$(JobOutputDirectory)/version.txt",
+          $content,
+          [System.Text.UTF8Encoding]::new($false))
+      Write-Host "version.txt written."
+    displayName: Write version.txt metadata sidecar
 
   - ${{ parameters.afterBuildSteps }}
 

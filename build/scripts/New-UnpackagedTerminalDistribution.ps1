@@ -30,7 +30,11 @@ Param(
     [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='AppX')]
     [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='Layout')]
     [switch]
-    $PortableMode = $PSCmdlet.ParameterSetName -eq 'Layout'
+    $PortableMode = $PSCmdlet.ParameterSetName -eq 'Layout',
+
+    [Parameter(HelpMessage="Use a uniform (version-free) filename for the output ZIP, e.g. PackageName_x64.zip instead of PackageName_1.2.3.0_x64.zip. A version.txt file is always written alongside the ZIP regardless of this switch.", ParameterSetName='AppX')]
+    [switch]
+    $UniformNaming
 )
 
 $filesToRemove = @("*.xml", "*.winmd", "Appx*", "Images/*Tile*", "Images/*Logo*") # Remove from Terminal
@@ -146,8 +150,29 @@ If ($PortableMode) {
 If ($PSCmdlet.ParameterSetName -Eq "AppX") {
 	# We only produce a ZIP when we're combining two AppX directories.
 	New-Item -ItemType Directory -Path $Destination -ErrorAction:SilentlyContinue | Out-Null
-	$outputZip = (Join-Path $Destination ("{0}.zip" -f ($distributionName)))
+
+	# When -UniformNaming is requested, omit the version segment from the ZIP filename so the
+	# name stays stable across releases (e.g. Microsoft.WindowsTerminalCanary_x64.zip).
+	# The exact version is always written to a companion version.txt so callers can still
+	# discover it via HEAD + redirect or by reading that sidecar file.
+	If ($UniformNaming) {
+		$uniformName = "{0}_{1}" -f ($pfn, $architecture)
+		$outputZip = (Join-Path $Destination ("{0}.zip" -f ($uniformName)))
+	} Else {
+		$outputZip = (Join-Path $Destination ("{0}.zip" -f ($distributionName)))
+	}
+
 	& tar -c --format=zip -f $outputZip -C $tempDir $terminalDir
+
+	# Always write a version sidecar so update-checkers can retrieve the
+	# version without parsing the ZIP filename or the manifest inside.
+	$versionTxtPath = (Join-Path $Destination "version.txt")
+	& "$PSScriptRoot\New-VersionMetadataFile.ps1" `
+		-PackageName $pfn `
+		-Version $version `
+		-Architecture $architecture `
+		-OutputPath $versionTxtPath
+
 	Remove-Item -Recurse -Force $tempDir -EA:SilentlyContinue
 	Get-Item $outputZip
 } ElseIf ($PSCmdlet.ParameterSetName -Eq "Layout") {

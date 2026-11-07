@@ -57,7 +57,10 @@ jobs:
       inputs:
         artifactName: build-${{ platform }}-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
         downloadPath: '$(Build.SourcesDirectory)/_unpackaged'
-        itemPattern: '**/_unpackaged/*.zip'
+        # Download both the ZIP and the version.txt sidecar produced by New-UnpackagedTerminalDistribution.ps1
+        itemPattern: |
+          **/_unpackaged/*.zip
+          **/_unpackaged/version.txt
 
   - pwsh: |-
       $b = Get-Item _out/*.msixbundle
@@ -65,15 +68,23 @@ jobs:
     displayName: "Produce AppInstaller for MSIX bundle"
 
   - pwsh: |-
+      # The unpackaged ZIPs are now built with -UniformNaming, so their names are
+      # already stable (e.g. Microsoft.WindowsTerminalCanary_x64.zip).  Move them
+      # into _out alongside version.txt and the .msixbundle for a single upload.
       $zips = Get-ChildItem -Recurse -Filter *.zip _unpackaged
       $zips | ForEach-Object {
-        $name = $_.Name
-        $parts = $name.Split('_')
-        $parts[1] = "latest"
-        $name = [String]::Join('_', $parts)
-        $_ | Move-Item -Destination (Join-Path "_out" $name)
+        $_ | Move-Item -Destination (Join-Path "_out" $_.Name)
       }
-    displayName: "Wrangle Unpackaged builds into place, rename"
+      # Also surface any version.txt sidecar files produced by the build.
+      $versionFiles = Get-ChildItem -Recurse -Filter version.txt _unpackaged
+      $versionFiles | ForEach-Object {
+        # Rename to include the architecture so each platform's file is distinct.
+        $parts = $_.Directory.Name.Split('_')   # e.g. "Microsoft.WindowsTerminalCanary_x64"
+        $arch  = $parts[-1]
+        $dest  = Join-Path "_out" "version_${arch}.txt"
+        $_ | Move-Item -Destination $dest
+      }
+    displayName: "Wrangle Unpackaged builds into place"
 
   - task: PowerShell@2
     displayName: Install Azure Modules from custom PowerShell Gallery Repo
