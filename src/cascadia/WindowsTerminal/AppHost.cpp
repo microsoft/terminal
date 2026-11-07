@@ -861,14 +861,19 @@ void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord,
 // - <none>
 void AppHost::DispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
-    winrt::TerminalApp::SummonWindowBehavior summonArgs{};
-    summonArgs.MoveToCurrentDesktop(false);
-    summonArgs.DropdownDuration(0);
-    summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
-    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
-    // Summon the window whenever we dispatch a commandline to it. This will
-    // make it obvious when a new tab/pane is created in a window.
-    HandleSummon(std::move(summonArgs));
+    // Summon the window whenever we dispatch a commandline to it, unless the command
+    // was launched with a minimize or hidden command (e.g. `start /min wt ...`).
+    // This will make it obvious when a new tab/pane is created in a window, while
+    // respecting the caller's request to remain minimized (GH#18076).
+    if (ShouldShowWindow(args.ShowWindowCommand()))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summonArgs{};
+        summonArgs.MoveToCurrentDesktop(false);
+        summonArgs.DropdownDuration(0);
+        summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+        HandleSummon(std::move(summonArgs));
+    }
     _windowLogic.ExecuteCommandline(std::move(args));
 }
 
@@ -1285,12 +1290,7 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
     // pull ourselves to the foreground. Don't necessarily do a whole "summon",
     // we don't really want to STEAL foreground if someone rightfully took it
 
-    const bool noForeground = nCmdShow == SW_SHOWMINIMIZED ||
-                              nCmdShow == SW_SHOWNOACTIVATE ||
-                              nCmdShow == SW_SHOWMINNOACTIVE ||
-                              nCmdShow == SW_SHOWNA ||
-                              nCmdShow == SW_FORCEMINIMIZE;
-    if (!noForeground)
+    if (ShouldShowWindow(nCmdShow))
     {
         SetForegroundWindow(_window->GetHandle());
     }

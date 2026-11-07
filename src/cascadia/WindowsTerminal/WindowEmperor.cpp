@@ -629,13 +629,17 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     {
         TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
+            const auto showWindow = conn.ShowWindow();
             TerminalApp::CommandlineArgs args;
-            args.ShowWindowCommand(conn.ShowWindow());
+            args.ShowWindowCommand(showWindow);
             args.Connection(std::move(conn));
             _dispatchCommandline(std::move(args));
-            _summonWindow(SummonWindowSelectionArgs{
-                .SummonBehavior = nullptr,
-            });
+            if (AppHost::ShouldShowWindow(showWindow))
+            {
+                _summonWindow(SummonWindowSelectionArgs{
+                    .SummonBehavior = nullptr,
+                });
+            }
         });
         TerminalConnection::ConptyConnection::StartInboundListener();
     }
