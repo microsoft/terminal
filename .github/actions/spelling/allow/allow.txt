@@ -21,6 +21,7 @@ downsides
 Emacspeak
 Fitt
 flac
+focusp
 FTCS
 gantt
 gfm
@@ -32,6 +33,7 @@ https
 hyperlinking
 hyperlinks
 Kbds
+killp
 libfuzzer
 liga
 Llast
@@ -39,6 +41,8 @@ LLMs
 Lmid
 locl
 lol
+lsp
+lsw
 Lorigin
 maxed
 megathread
@@ -46,6 +50,7 @@ minimalistic
 mkmk
 mnt
 mru
+newt
 notwrapped
 NPCs
 NTMTo
@@ -72,8 +77,10 @@ rubyw
 runtimes
 servicebus
 slnt
+splitp
 ssh
 stakeholders
+submittable
 subpage
 subpages
 sustainability
