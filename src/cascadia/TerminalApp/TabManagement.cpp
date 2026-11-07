@@ -1324,6 +1324,30 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Checks whether one of this window's panes hosts the given terminal session.
+    // Arguments:
+    // - sessionId: The session's ID, the value of its WT_SESSION environment variable.
+    // Return Value:
+    // - true if a pane in this window is connected to that session, false otherwise.
+    bool TerminalPage::HostsSession(const winrt::guid& sessionId) const
+    {
+        for (const auto& tab : _tabs)
+        {
+            const auto tabImpl{ _GetTabImpl(tab) };
+            const auto rootPane{ tabImpl ? tabImpl->GetRootPane() : nullptr };
+            if (rootPane && rootPane->WalkTree([&](const auto& pane) {
+                    const auto control{ pane->GetTerminalControl() };
+                    const auto connection{ control ? control.Connection() : nullptr };
+                    return connection && connection.SessionId() == sessionId;
+                }))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Method Description:
     // - Sends a desktop toast notification with the given title and body.
     //   When the toast is activated (clicked), the window is summoned and
     //   the originating tab is focused.
