@@ -27,6 +27,23 @@ public:
     safe_void_coroutine HandleSummon(winrt::TerminalApp::SummonWindowBehavior args) const;
     void DispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
 
+    static constexpr bool ShouldShowWindow(uint32_t showWindowCommand) noexcept
+    {
+        switch (showWindowCommand)
+        {
+        case SW_HIDE:
+        case SW_SHOWMINIMIZED:
+        case SW_SHOWNOACTIVATE:
+        case SW_MINIMIZE:
+        case SW_SHOWMINNOACTIVE:
+        case SW_SHOWNA:
+        case SW_FORCEMINIMIZE:
+            return false;
+        default:
+            return true;
+        }
+    }
+
 private:
     enum class WindowInitializedState : uint32_t
     {
