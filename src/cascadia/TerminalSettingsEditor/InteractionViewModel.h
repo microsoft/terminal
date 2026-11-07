@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(ConfirmOnClose, Model::ConfirmOnClose, _GlobalSettings.ConfirmOnClose);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, CopyOnSelect);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, CloseOnMiddleClick);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, SnapToGridOnResize);
