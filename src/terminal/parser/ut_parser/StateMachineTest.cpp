@@ -46,7 +46,7 @@ public:
 
     bool EncounteredWin32InputModeSequence() const noexcept override
     {
-        return false;
+        return encounteredWin32InputModeSequence;
     }
 
     bool ActionExecute(const wchar_t wch) override
@@ -122,6 +122,7 @@ public:
 
     // Flush function for pass-through test.
     std::function<bool()> pfnFlushToTerminal;
+    bool encounteredWin32InputModeSequence = false;
 
     // Passed through string.
     std::wstring passedThrough;
@@ -191,7 +192,7 @@ void StateMachineTest::PassThroughUnhandled()
     auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.
     auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr) };
+    StateMachine machine{ std::move(enginePtr), true };
 
     // Hook up the passthrough function.
     engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);
@@ -207,7 +208,7 @@ void StateMachineTest::RunStorageBeforeEscape()
     auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.
     auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr) };
+    StateMachine machine{ std::move(enginePtr), true };
 
     // Hook up the passthrough function.
     engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);
@@ -236,10 +237,16 @@ void StateMachineTest::BulkTextPrint()
 
 void StateMachineTest::PassThroughUnhandledSplitAcrossWrites()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:win32InputMode", L"{ false, true }")
+    END_TEST_METHOD_PROPERTIES()
+
     auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
     // this dance is required because StateMachine presumes to take ownership of its engine.
     auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr) };
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"win32InputMode", engine.encounteredWin32InputModeSequence));
+    // Only the input engine forwards cached sequences across writes.
+    StateMachine machine{ std::move(enginePtr), true };
 
     // Hook up the passthrough function.
     engine.pfnFlushToTerminal = std::bind(&StateMachine::FlushToTerminal, &machine);

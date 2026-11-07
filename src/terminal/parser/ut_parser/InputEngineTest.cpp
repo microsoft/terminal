@@ -1345,17 +1345,18 @@ void InputEngineTest::CtrlAltZCtrlAltXTest()
 
 void InputEngineTest::TestSs3Entry()
 {
+    // Step through parser states without applying ProcessString's end-of-input heuristics.
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     StateMachine mach(std::move(engine));
 
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L'm');
+    mach._ProcessCharacter(L'm');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 }
 
@@ -1368,32 +1369,32 @@ void InputEngineTest::TestSs3Immediate()
     StateMachine mach(std::move(engine));
 
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L'$');
+    mach._ProcessCharacter(L'$');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L'#');
+    mach._ProcessCharacter(L'#');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L'%');
+    mach._ProcessCharacter(L'%');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L'?');
+    mach._ProcessCharacter(L'?');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 }
 
@@ -1405,25 +1406,25 @@ void InputEngineTest::TestSs3Param()
     StateMachine mach(std::move(engine));
 
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
-    mach.ProcessCharacter(AsciiChars::ESC);
+    mach._ProcessCharacter(AsciiChars::ESC);
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
-    mach.ProcessCharacter(L'O');
+    mach._ProcessCharacter(L'O');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Entry);
-    mach.ProcessCharacter(L';');
+    mach._ProcessCharacter(L';');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L'3');
+    mach._ProcessCharacter(L'3');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L'2');
+    mach._ProcessCharacter(L'2');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L'4');
+    mach._ProcessCharacter(L'4');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L';');
+    mach._ProcessCharacter(L';');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L';');
+    mach._ProcessCharacter(L';');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L'8');
+    mach._ProcessCharacter(L'8');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ss3Param);
-    mach.ProcessCharacter(L'J');
+    mach._ProcessCharacter(L'J');
     VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 }
 

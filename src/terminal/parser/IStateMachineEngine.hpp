@@ -20,7 +20,7 @@ namespace Microsoft::Console::VirtualTerminal
     class IStateMachineEngine
     {
     public:
-        using StringHandler = std::function<bool(const wchar_t)>;
+        using StringHandler = std::function<bool(std::wstring_view)>;
 
         virtual ~IStateMachineEngine() = 0;
         IStateMachineEngine(const IStateMachineEngine&) = default;
