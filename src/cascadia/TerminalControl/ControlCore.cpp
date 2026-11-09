@@ -429,7 +429,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
             _terminal->Create(viewportSize, _settings.HistorySize(), *_renderer);
             _terminal->UpdateSettings(_settings);
 
