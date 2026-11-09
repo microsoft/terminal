@@ -2509,7 +2509,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        if (!_core->Settings().ShowResizeOverlay())
+        if (!_core.Settings().ShowResizeOverlay())
         {
             return;
         }
