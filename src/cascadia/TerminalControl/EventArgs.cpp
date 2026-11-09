@@ -7,7 +7,6 @@
 #include "TitleChangedEventArgs.g.cpp"
 #include "ContextMenuRequestedEventArgs.g.cpp"
 #include "WriteToClipboardEventArgs.g.cpp"
-#include "PasteFromClipboardEventArgs.g.cpp"
 #include "OpenHyperlinkEventArgs.g.cpp"
 #include "NoticeEventArgs.g.cpp"
 #include "ScrollPositionChangedArgs.g.cpp"

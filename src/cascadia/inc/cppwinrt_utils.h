@@ -153,9 +153,9 @@ public:                                                                         
 //    _core.TitleChanged({ get_weak(), &TermControl::_bubbleTitleChanged });
 #define BUBBLED_FORWARDED_TYPED_EVENT(name, sender, args) \
     TYPED_EVENT(name, sender, args)                       \
-    void _bubble##name(const sender& s, const args& a)    \
+    void _bubble##name(const sender&, const args& a)      \
     {                                                     \
-        _##name##Handlers(s, a);                          \
+        _##name##Handlers(*this, a);                      \
     }
 
 // Use this macro to quick implement both the getter and setter for a property.
