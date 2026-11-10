@@ -2009,6 +2009,25 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 _runOffset = i;
                 _runSize = 0;
             }
+
+            if (_state == VTStates::Ground &&
+                string.size() - i >= 2 &&
+                til::at(string, i) == AsciiChars::ESC &&
+                til::at(string, i + 1) == L'[' &&
+                !_isEngineForInput &&
+                _parserMode.test(Mode::Ansi) &&
+                !_trace.IsEnabled())
+            {
+                // Only Ground reaches this scan. Interrupt is a no-op here;
+                // retain both entry actions and the raw prefix for passthrough.
+                _runSize = 1;
+                _processingLastCharacter = false;
+                _EnterEscape();
+                _runSize = 2;
+                _processingLastCharacter = i + 2 == string.size();
+                _EnterCsiEntry();
+                i += 2;
+            }
         }
 
     processStringLoopVtStart:
