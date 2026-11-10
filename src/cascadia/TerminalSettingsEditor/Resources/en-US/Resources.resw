@@ -1002,6 +1002,12 @@
     <value>Size of the font in points.</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
+  <data name="Profile_FontSizeInPixelsDescription" xml:space="preserve">
+    <value>Line height in pixels; corresponds to the behavior of font size in the Windows console. For the best experience, set "Font face" to "Consolas" and "Text antialiasing" to "ClearType".</value>
+  </data>
+  <data name="Profile_ConhostFontSize.Content" xml:space="preserve">
+    <value>Vintage-style</value>
+  </data>
   <data name="Profile_LineHeight.Header" xml:space="preserve">
     <value>Line height</value>
     <comment>Header for a control that sets the text line height.</comment>

@@ -974,7 +974,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Manually turn off acrylic if they turn off transparency.
             _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
 
-            const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
+            const auto sizeChanged = _setFontSizeUnderLock();
 
             // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
@@ -1185,17 +1185,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Set the font size of the terminal control.
-    // Arguments:
-    // - fontSize: The size of the font.
     // Return Value:
     // - Returns true if you need to call _refreshSizeUnderLock().
-    bool ControlCore::_setFontSizeUnderLock(float fontSize)
+    bool ControlCore::_setFontSizeUnderLock()
     {
         const auto before = _actualFont.GetCellSizeInPhysicalPx();
+        auto fontSize = _settings.FontSize();
+        auto cellHeight = _cellHeight;
 
-        const auto newSize = std::max(fontSize, 1.0f);
+        if (_accumulatedFontSizeDelta != 0)
+        {
+            if (fontSize <= 0 && cellHeight.Reference() != CSSLengthPercentage::ReferenceFrame::None)
+            {
+                // No font-size & some cell-height = we can scale the cell height.
+                const auto height = cellHeight.Resolve(0, 72.0f, 16.0f, 8.0f) * (96.0f / 72.0f);
+                cellHeight = CSSLengthPercentage::FromPixel(std::max(height + _accumulatedFontSizeDelta, 1.0f));
+            }
+            else
+            {
+                // Otherwise, we can only scale by font-size (which may also be undefined).
+                if (fontSize <= 0)
+                {
+                    fontSize = DEFAULT_FONT_SIZE;
+                }
+                fontSize = std::max(fontSize + _accumulatedFontSizeDelta, 1.0f);
+            }
+        }
 
-        _desiredFont.SetFontSizeInPt(newSize);
+        _desiredFont.SetFontSizeInPt(fontSize);
+        _desiredFont.SetCellHeight(cellHeight);
 
         _updateFont();
         const auto after = _actualFont.GetCellSizeInPhysicalPx();
@@ -1226,7 +1244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto lock = _terminal->LockForWriting();
 
-            if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
+            if (_setFontSizeUnderLock())
             {
                 _refreshSizeUnderLock();
             }

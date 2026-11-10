@@ -8,8 +8,10 @@
 
 #include "EnumEntry.h"
 #include "ProfileViewModel.h"
+#include "../../renderer/inc/CSSLengthPercentage.h"
 
 #include "Appearances.g.cpp"
+#include <DefaultSettings.h>
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
@@ -606,6 +608,128 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    float AppearanceViewModel::FontSize() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        const auto size = fontInfo.FontSize();
+
+        if (size > 0)
+        {
+            return size;
+        }
+        else
+        {
+            const auto height = CSSLengthPercentage::FromString(fontInfo.CellHeight().c_str());
+            return height.Resolve(DEFAULT_FONT_SIZE, 96.0f, 16.0f, 8.0f);
+        }
+    }
+
+    void AppearanceViewModel::FontSize(float value)
+    {
+        if (std::isnan(value))
+        {
+            ClearFontSize();
+        }
+        else if (FontSize() != value)
+        {
+            const auto fontInfo = _appearance.SourceProfile().FontInfo();
+
+            if (ConhostFontSize())
+            {
+                fontInfo.CellHeight(til::hstring_format(FMT_COMPILE(L"{:.6g}px"), value));
+            }
+            else
+            {
+                fontInfo.FontSize(value);
+            }
+
+            _notifyFontSizeChanges();
+        }
+    }
+
+    bool AppearanceViewModel::HasFontSize() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasFontSize() || (ConhostFontSize() && fontInfo.HasCellHeight());
+    }
+
+    void AppearanceViewModel::ClearFontSize()
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        const auto usedCellHeight = ConhostFontSize();
+
+        fontInfo.ClearFontSize();
+
+        // ClearFontSize() may now reveal an inherited value,
+        // so ConhostFontSize() needs to be checked again.
+        if (usedCellHeight || ConhostFontSize())
+        {
+            fontInfo.ClearCellHeight();
+        }
+
+        _notifyFontSizeChanges();
+    }
+
+    Model::FontConfig AppearanceViewModel::FontSizeOverrideSource() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+
+        if (ConhostFontSize())
+        {
+            if (const auto source = fontInfo.CellHeightOverrideSource())
+            {
+                return source;
+            }
+        }
+
+        return fontInfo.FontSizeOverrideSource();
+    }
+
+    bool AppearanceViewModel::ConhostFontSize() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        const auto height = CSSLengthPercentage::FromString(fontInfo.CellHeight().c_str());
+        return fontInfo.FontSize() <= 0 && height.Reference() != CSSLengthPercentage::ReferenceFrame::None;
+    }
+
+    void AppearanceViewModel::ConhostFontSize(bool value)
+    {
+        if (ConhostFontSize() == value)
+        {
+            return;
+        }
+
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+
+        if (value)
+        {
+            auto size = FontSize();
+            if (size == DEFAULT_FONT_SIZE)
+            {
+                size = 16.0f;
+            }
+            fontInfo.FontSize(0);
+            fontInfo.CellHeight(til::hstring_format(FMT_COMPILE(L"{:.6g}px"), size));
+        }
+        else
+        {
+            fontInfo.ClearFontSize();
+            fontInfo.ClearCellHeight();
+        }
+
+        _notifyFontSizeChanges();
+    }
+
+    winrt::hstring AppearanceViewModel::FontSizeDescription() const
+    {
+        return ConhostFontSize() ? RS_(L"Profile_FontSizeInPixelsDescription") : RS_(L"Profile_FontSize/Description");
+    }
+
+    void AppearanceViewModel::_notifyFontSizeChanges()
+    {
+        _NotifyChanges(L"FontSize", L"HasFontSize", L"ConhostFontSize", L"FontSizeDescription", L"LineHeight", L"HasLineHeight");
+    }
+
     double AppearanceViewModel::_parseCellSizeValue(const hstring& val) const
     {
         const auto str = val.c_str();
@@ -656,7 +780,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::LineHeight(const double value)
     {
-        CELL_SIZE_SETTER(CellHeight, LineHeight);
+        if (!ConhostFontSize())
+        {
+            CELL_SIZE_SETTER(CellHeight, LineHeight);
+            if (ConhostFontSize())
+            {
+                _notifyFontSizeChanges();
+            }
+        }
     }
 
     void AppearanceViewModel::CellWidth(const double value)
