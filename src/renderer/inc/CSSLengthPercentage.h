@@ -34,13 +34,6 @@ struct CSSLengthPercentage
     };
 
     static CSSLengthPercentage FromString(const wchar_t* str) noexcept;
-    static constexpr CSSLengthPercentage None() noexcept
-    {
-        CSSLengthPercentage obj;
-        obj._value = 0;
-        obj._referenceFrame = ReferenceFrame::Absolute;
-        return obj;
-    }
     static constexpr CSSLengthPercentage FromPixel(float px) noexcept
     {
         CSSLengthPercentage obj;
