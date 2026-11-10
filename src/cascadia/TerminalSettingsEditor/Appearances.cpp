@@ -4,14 +4,13 @@
 #include "pch.h"
 #include "Appearances.h"
 
+#include "../../renderer/inc/CSSLengthPercentage.h"
 #include "../WinRTUtils/inc/Utils.h"
 
 #include "EnumEntry.h"
 #include "ProfileViewModel.h"
-#include "../../renderer/inc/CSSLengthPercentage.h"
 
 #include "Appearances.g.cpp"
-#include <DefaultSettings.h>
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
@@ -620,7 +619,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else
         {
             const auto height = CSSLengthPercentage::FromString(fontInfo.CellHeight().c_str());
-            return height.Resolve(DEFAULT_FONT_SIZE, 96.0f, 16.0f, 8.0f);
+            return height.Resolve(12.0f, 96.0f, 16.0f, 8.0f);
         }
     }
 
@@ -703,13 +702,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (value)
         {
-            auto size = FontSize();
-            if (size == DEFAULT_FONT_SIZE)
-            {
-                size = 16.0f;
-            }
             fontInfo.FontSize(0);
-            fontInfo.CellHeight(til::hstring_format(FMT_COMPILE(L"{:.6g}px"), size));
+            fontInfo.CellHeight(L"16px");
         }
         else
         {
