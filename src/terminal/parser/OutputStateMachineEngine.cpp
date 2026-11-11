@@ -753,6 +753,32 @@ IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(c
 }
 
 // Routine Description:
+// - Triggers the ApcDispatch action to indicate that the listener should handle
+//      an APC string. Returns the handler function that is to be used to
+//      process the remaining characters of the string.
+// Arguments:
+// - wch - The first character of the string, identifying the command.
+// Return Value:
+// - the data string handler function or nullptr if the command is not supported
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionApcDispatch(const wchar_t wch)
+{
+    StringHandler handler = nullptr;
+
+    switch (wch)
+    {
+    case L'G':
+        handler = _dispatch->KittyGraphicsCommand();
+        break;
+    default:
+        break;
+    }
+
+    _ClearLastChar();
+
+    return handler;
+}
+
+// Routine Description:
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:

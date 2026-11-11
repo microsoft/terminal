@@ -47,6 +47,8 @@ namespace Microsoft::Console::Render
                                               const til::CoordType targetRow,
                                               const til::CoordType viewportLeft) noexcept override;
 
+        [[nodiscard]] HRESULT PaintGraphics(const GraphicsPaintInfo& info) noexcept override;
+
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         [[nodiscard]] bool WaitUntilCanRender(HANDLE shutdownEvent) noexcept override;

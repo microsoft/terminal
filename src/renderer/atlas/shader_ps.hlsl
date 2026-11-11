@@ -42,6 +42,19 @@ Output main(PSData data) : SV_Target
         weights = float4(1, 1, 1, 1);
         break;
     }
+    case SHADING_TYPE_BACKGROUND_NON_DEFAULT:
+    {
+        // Redraws the cells whose background differs from the default one.
+        // This is used to draw images below the non-default cell backgrounds.
+        float2 cell = data.position.xy / backgroundCellSize;
+        color = all(cell < backgroundCellCount) ? background[cell] : backgroundColor;
+        if (all(abs(color - backgroundColor) < 0.5f / 255.0f))
+        {
+            discard;
+        }
+        weights = float4(1, 1, 1, 1);
+        break;
+    }
     case SHADING_TYPE_TEXT_GRAYSCALE:
     {
         // These are independent of the glyph texture and could be moved to the vertex shader or CPU side of things.

@@ -231,6 +231,7 @@ void ROW::Reset(const TextAttribute& attr) noexcept
     // Modifying the existing object is _much_ faster.
     *_attr.runs().unsafe_shrink_to_size(1) = til::rle_pair{ attr, _columnCount };
     _imageSlice = nullptr;
+    _graphics.clear();
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
@@ -979,6 +980,16 @@ ImageSlice* ROW::SetImageSlice(ImageSlice::Pointer imageSlice) noexcept
 const ImageSlice* ROW::GetImageSlice() const noexcept
 {
     return _imageSlice.get();
+}
+
+const std::vector<GraphicsRowRef>& ROW::GetGraphics() const noexcept
+{
+    return _graphics;
+}
+
+std::vector<GraphicsRowRef>& ROW::GetMutableGraphics() noexcept
+{
+    return _graphics;
 }
 
 ImageSlice* ROW::GetMutableImageSlice() noexcept

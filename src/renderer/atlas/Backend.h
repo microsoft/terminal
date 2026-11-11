@@ -96,6 +96,7 @@ namespace Microsoft::Console::Render::Atlas
 
     inline constexpr D2D1_RECT_F GlyphRunEmptyBounds{ 1e38f, 1e38f, -1e38f, -1e38f };
     void GlyphRunAccumulateBounds(const ID2D1DeviceContext* d2dRenderTarget, D2D1_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun, D2D1_RECT_F& bounds);
+    bool CreateGraphicsBitmap(ID2D1DeviceContext* renderTarget, const GraphicsImage& image, ID2D1Bitmap** bitmap, f32x2& scale) noexcept;
 
     wil::com_ptr<IDWriteColorGlyphRunEnumerator1> TranslateColorGlyphRun(IDWriteFactory4* dwriteFactory4, D2D_POINT_2F baselineOrigin, const DWRITE_GLYPH_RUN* glyphRun) noexcept;
     bool ColorGlyphRunMoveNext(IDWriteColorGlyphRunEnumerator1* enumerator);
