@@ -82,7 +82,9 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
-              demands: ImageOverride -equals SHINE-VS18-Latest
+              demands:
+                - WorkFolder -equals G:\_work
+                - ImageOverride -equals SHINE-VS18-Preview
             buildPlatforms:
               - ${{ platform }}
             buildConfigurations: [Release]
