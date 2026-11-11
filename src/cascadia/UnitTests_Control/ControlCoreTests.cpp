@@ -48,6 +48,9 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestSimpleClickSelection);
 
+        TEST_METHOD(TestScrollPositionChangedIsThrottled);
+        TEST_METHOD(TestScrollToMarkRaisesVisibleViewport);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -809,5 +812,118 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedEnd, end);
         }
         VERIFY_IS_TRUE(gotSelectionUpdate);
+    }
+
+    void ControlCoreTests::TestScrollPositionChangedIsThrottled()
+    {
+        // Declared before the core, so that they outlive it.
+        std::atomic<int> callbacks{ 0 };
+        std::atomic<bool> raisedOffDispatcher{ false };
+        std::atomic<int> lastViewTop{ -1 };
+        std::atomic<int> lastBufferSize{ -1 };
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        core->ScrollPositionChanged([&, dispatcher = core->_dispatcher](auto&&, const Control::ScrollPositionChangedArgs& args) {
+            ++callbacks;
+            if (!dispatcher.HasThreadAccess())
+            {
+                raisedOffDispatcher = true;
+            }
+            lastViewTop = args.ViewTop();
+            // Stored last: once the test thread sees it, it sees the values above too.
+            lastBufferSize = args.BufferSize();
+        });
+
+        // _inUnitTests bypasses the throttle. Turn it off to test the real one.
+        core->_inUnitTests = false;
+
+        Log::Comment(L"Print 100 lines in a single write. The last 81 line feeds scroll the viewport.");
+        std::wstring output;
+        for (auto i = 0; i < 100; ++i)
+        {
+            output.append(L"Foo\r\n");
+        }
+        conn->WriteInput(winrt_wstring_to_array_view(output));
+
+        const auto expectedViewTop = core->ScrollOffset();
+        const auto expectedBufferSize = core->BufferHeight();
+        VERIFY_ARE_EQUAL(81, expectedViewTop);
+        VERIFY_ARE_EQUAL(101, expectedBufferSize);
+
+        Log::Comment(L"Wait for the throttled update with the final position");
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{ 5 };
+        while (lastBufferSize.load() != expectedBufferSize && std::chrono::steady_clock::now() < deadline)
+        {
+            Sleep(1);
+        }
+
+        // That was the last update, so no callback is pending anymore.
+        // Restore the flag; ~ControlCore relies on it.
+        core->_inUnitTests = true;
+
+        VERIFY_ARE_EQUAL(expectedBufferSize, lastBufferSize.load());
+        VERIFY_ARE_EQUAL(expectedViewTop, lastViewTop.load());
+        VERIFY_IS_FALSE(raisedOffDispatcher.load(), L"ScrollPositionChanged must be raised on the core's dispatcher");
+
+        Log::Comment(NoThrowString().Format(L"81 scroll notifications resulted in %d ScrollPositionChanged events", callbacks.load()));
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(callbacks.load(), 1);
+        VERIFY_IS_LESS_THAN(callbacks.load(), 81);
+    }
+
+    void ControlCoreTests::TestScrollToMarkRaisesVisibleViewport()
+    {
+        // Declared before the core, so that they outlive it.
+        auto events = 0;
+        auto lastViewTop = -1;
+        auto lastViewHeight = -1;
+        auto lastBufferSize = -1;
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print 100 lines, with prompt marks on rows 10 and 95");
+        for (auto i = 0; i < 100; ++i)
+        {
+            if (i == 10 || i == 95)
+            {
+                conn->WriteInput(winrt_wstring_to_array_view(L"\x1b]133;A\x7"));
+            }
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
+        }
+        VERIFY_ARE_EQUAL(81, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(101, core->BufferHeight());
+
+        core->ScrollPositionChanged([&](auto&&, const Control::ScrollPositionChangedArgs& args) {
+            ++events;
+            lastViewTop = args.ViewTop();
+            lastViewHeight = args.ViewHeight();
+            lastBufferSize = args.BufferSize();
+        });
+
+        // Expect one ScrollPositionChanged per call, for the (possibly clamped) viewport it scrolled to.
+        const auto scrollToMark = [&](const Control::ScrollToMarkDirection direction, const int expectedTop) {
+            events = 0;
+            core->ScrollToMark(direction);
+            VERIFY_ARE_EQUAL(expectedTop, core->ScrollOffset());
+            VERIFY_ARE_EQUAL(1, events);
+            VERIFY_ARE_EQUAL(expectedTop, lastViewTop);
+            VERIFY_ARE_EQUAL(20, lastViewHeight);
+            VERIFY_ARE_EQUAL(101, lastBufferSize);
+        };
+
+        Log::Comment(L"Previous: from the bottom (row 81) to the mark on row 10");
+        scrollToMark(Control::ScrollToMarkDirection::Previous, 10);
+        Log::Comment(L"Previous: there's no mark above row 10, so scroll to the top");
+        scrollToMark(Control::ScrollToMarkDirection::Previous, 0);
+        Log::Comment(L"Next: back to the mark on row 10");
+        scrollToMark(Control::ScrollToMarkDirection::Next, 10);
+        Log::Comment(L"Next: the mark on row 95 is on the last page, so the viewport stops at row 81");
+        scrollToMark(Control::ScrollToMarkDirection::Next, 81);
     }
 }
