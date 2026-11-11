@@ -17,6 +17,7 @@
 #include <shlobj.h>
 
 static constexpr std::wstring_view POWERSHELL_PFN{ L"Microsoft.PowerShell_8wekyb3d8bbwe" };
+static constexpr std::wstring_view POWERSHELL_LTS_PFN{ L"Microsoft.PowerShell-LTS_8wekyb3d8bbwe" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShellPreview_8wekyb3d8bbwe" };
 static constexpr std::wstring_view PWSH_EXE{ L"pwsh.exe" };
 static constexpr std::wstring_view POWERSHELL_ICON{ L"ms-appx:///ProfileIcons/pwsh.png" };
@@ -60,7 +61,8 @@ namespace
         WOWx86 = 1 << 5, // non-native (Windows-on-Windows, x86 variety)
 
         // build type (choose one)
-        Preview = 1 << 6, // preview version
+        LTS = 1 << 6, // LTS version
+        Preview = 1 << 7, // preview version
     };
     DEFINE_ENUM_FLAG_OPERATORS(PowerShellFlags);
 
@@ -98,6 +100,10 @@ namespace
                 {
                     namestream << L" Preview";
                 }
+                else if (WI_IsFlagSet(flags, PowerShellFlags::LTS))
+                {
+                    namestream << L" LTS";
+                }
                 namestream << L" (msix)";
             }
             else if (WI_IsFlagSet(flags, PowerShellFlags::Dotnet))
@@ -121,6 +127,10 @@ namespace
                 if (WI_IsFlagSet(flags, PowerShellFlags::Preview))
                 {
                     namestream << L" Preview";
+                }
+                else if (WI_IsFlagSet(flags, PowerShellFlags::LTS))
+                {
+                    namestream << L" LTS";
                 }
                 if (WI_IsFlagSet(flags, PowerShellFlags::WOWx86))
                 {
@@ -158,10 +168,12 @@ static void _accumulateTraditionalLayoutPowerShellInstancesInDirectory(std::wstr
             const auto executable = versionedPath / PWSH_EXE;
             if (std::filesystem::exists(executable))
             {
-                const auto preview = versionedPath.filename().native().find(L"-preview") != std::wstring::npos;
-                const auto previewFlag = preview ? PowerShellFlags::Preview : PowerShellFlags::None;
-                out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()),
-                                                     PowerShellFlags::Traditional | flags | previewFlag,
+                const auto filename = versionedPath.filename().native();
+                const auto preview = filename.find(L"-preview") != std::wstring::npos;
+                const auto lts = filename.find(L"-lts") != std::wstring::npos;
+                const auto buildTypeFlag = preview ? PowerShellFlags::Preview : (lts ? PowerShellFlags::LTS : PowerShellFlags::None);
+                out.emplace_back(PowerShellInstance{ std::stoi(filename),
+                                                     PowerShellFlags::Traditional | flags | buildTypeFlag,
                                                      executable });
             }
         }
@@ -221,6 +233,20 @@ static void _accumulateStorePowerShellInstances(std::vector<PowerShellInstance>&
                     gsl::narrow_cast<int>(previewPackage.Id().Version().Major),
                     PowerShellFlags::Store | PowerShellFlags::Preview,
                     previewPath / PWSH_EXE });
+            }
+        }
+
+        // App execution aliases for LTS powershell
+        const auto ltsPath = appExecAliasPath / POWERSHELL_LTS_PFN;
+        if (std::filesystem::exists(ltsPath))
+        {
+            const auto ltsPackage = _getStorePackage(POWERSHELL_LTS_PFN);
+            if (ltsPackage)
+            {
+                out.emplace_back(PowerShellInstance{
+                    gsl::narrow_cast<int>(ltsPackage.Id().Version().Major),
+                    PowerShellFlags::Store | PowerShellFlags::LTS,
+                    ltsPath / PWSH_EXE });
             }
         }
 
