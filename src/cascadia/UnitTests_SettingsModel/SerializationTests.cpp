@@ -108,6 +108,19 @@ namespace SettingsModelUnitTests
     {
         static constexpr std::string_view globalsString{ R"(
             {
+                "warning.confirmOnClose": "automatic",
+                "actions": [],
+                "keybindings": []
+            })" };
+
+        static constexpr std::string_view smallGlobalsString{ R"(
+            {
+                "actions": [],
+                "keybindings": []
+            })" };
+
+        static constexpr std::string_view windowString{ R"(
+            {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
                 "initialRows": 30,
@@ -131,23 +144,19 @@ namespace SettingsModelUnitTests
 
                 "trimPaste": true,
 
-                "warning.confirmOnClose": "automatic",
                 "warning.largePaste" : true,
-                "warning.multiLinePaste" : "automatic",
-
-                "actions": [],
-                "keybindings": []
+                "warning.multiLinePaste" : "automatic"
             })" };
 
-        static constexpr std::string_view smallGlobalsString{ R"(
+        static constexpr std::string_view smallWindowString{ R"(
             {
-                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
-                "actions": [],
-                "keybindings": []
+                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
             })" };
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
         RoundtripTest<implementation::GlobalAppSettings>(smallGlobalsString);
+        RoundtripTest<implementation::WindowSettings>(windowString);
+        RoundtripTest<implementation::WindowSettings>(smallWindowString);
     }
 
     void SerializationTests::Profile()
