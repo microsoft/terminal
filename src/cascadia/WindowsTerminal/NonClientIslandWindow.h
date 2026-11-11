@@ -54,6 +54,7 @@ private:
     std::optional<til::point> _oldIslandPos;
 
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
+    winrt::TerminalApp::WindowContextMenu _contextMenu{ nullptr };
 
     wil::unique_hbrush _backgroundBrush;
     til::color _backgroundBrushColor;
