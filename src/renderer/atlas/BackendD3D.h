@@ -248,7 +248,7 @@ namespace Microsoft::Console::Render::Atlas
         void _drawBackground(const RenderingPayload& p);
         void _uploadBackgroundBitmap(const RenderingPayload& p);
         void _drawText(RenderingPayload& p);
-        ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y);
+        ATLAS_ATTR_COLD void _drawTextOverlapSplit(const RenderingPayload& p, u16 y, til::CoordType advanceLeft, til::CoordType advanceRight);
         [[nodiscard]] ATLAS_ATTR_COLD AtlasGlyphEntry* _drawGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         AtlasGlyphEntry* _drawBuiltinGlyph(const RenderingPayload& p, const ShapedRow& row, AtlasFontFaceEntry& fontFaceEntry, u32 glyphIndex);
         ShadingType _drawSoftFontGlyph(const RenderingPayload& p, const D2D1_RECT_F& rect, u32 glyphIndex);
@@ -300,8 +300,7 @@ namespace Microsoft::Console::Render::Atlas
         AtlasFontFaceEntry _builtinGlyphs;
         Buffer<stbrp_node> _rectPackerData;
         stbrp_context _rectPacker{};
-        til::CoordType _ligatureOverhangTriggerLeft = 0;
-        til::CoordType _ligatureOverhangTriggerRight = 0;
+        bool _ligatureOverlapSplit = false;
 
         wil::com_ptr<ID2D1DeviceContext> _d2dRenderTarget;
         wil::com_ptr<ID2D1DeviceContext4> _d2dRenderTarget4; // Optional. Supported since Windows 10 14393.

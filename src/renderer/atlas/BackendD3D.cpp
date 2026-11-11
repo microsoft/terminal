@@ -320,31 +320,14 @@ void BackendD3D::_updateFontDependents(const RenderingPayload& p)
     _fontChangedResetGlyphAtlas = true;
     _textShadingType = font.antialiasingMode == AntialiasingMode::ClearType ? ShadingType::TextClearType : ShadingType::TextGrayscale;
 
-    // _ligatureOverhangTriggerLeft/Right are essentially thresholds for a glyph's width at
-    // which point we consider it wider than allowed and "this looks like a coding ligature".
-    // See _drawTextOverlapSplit for more information about what this does.
+    // No ligatures -> No need to color glyphs cell-wise. See _drawTextOverlapSplit.
+    _ligatureOverlapSplit = true;
+    for (const auto& feature : font.fontFeatures)
     {
-        // No ligatures -> No thresholds.
-        auto ligaturesDisabled = false;
-        for (const auto& feature : font.fontFeatures)
+        if (feature.nameTag == DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES)
         {
-            if (feature.nameTag == DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES)
-            {
-                ligaturesDisabled = !feature.parameter;
-                break;
-            }
-        }
-
-        if (ligaturesDisabled)
-        {
-            _ligatureOverhangTriggerLeft = til::CoordTypeMin;
-            _ligatureOverhangTriggerRight = til::CoordTypeMax;
-        }
-        else
-        {
-            const auto halfCellWidth = font.cellSize.x / 2;
-            _ligatureOverhangTriggerLeft = -halfCellWidth;
-            _ligatureOverhangTriggerRight = font.advanceWidth + halfCellWidth;
+            _ligatureOverlapSplit = feature.parameter != 0;
+            break;
         }
     }
 
@@ -1196,7 +1179,9 @@ void BackendD3D::_drawText(RenderingPayload& p)
 
                     if (glyphEntry->overlapSplit)
                     {
-                        _drawTextOverlapSplit(p, y);
+                        const auto advanceLeft = static_cast<til::CoordType>(lrintf(baselineX * scaleX));
+                        const auto advanceRight = static_cast<til::CoordType>(lrintf((baselineX + row->glyphAdvances[x]) * scaleX));
+                        _drawTextOverlapSplit(p, y, advanceLeft, advanceRight);
                     }
                 }
 
@@ -1244,7 +1229,15 @@ void BackendD3D::_drawText(RenderingPayload& p)
 //   < !--
 //   < ! --
 //   < ! - -
-void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
+//
+// Each segment takes the foreground color of the column underneath it, but only within the range of columns
+// the glyph actually covers. That range is the glyph's advance [advanceLeft, advanceRight), widened to wherever
+// its ink overhangs the advance by at least half a cell, because that's what a ligature looks like:
+// Some fonts implement "->" by drawing an arrow glyph for ">" that reaches back over the "-" column.
+// Smaller overhangs aren't ligatures, for instance the slant of an italic glyph, or a wide glyph's ink reaching
+// into its neighbor. Those keep the color of the nearest column within the range, instead of turning into the
+// color of whatever text happens to follow them. For a wide glyph, whose columns share one color, that's a no-op.
+void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y, til::CoordType advanceLeft, til::CoordType advanceRight)
 {
     auto& originalQuad = _getLastQuad();
 
@@ -1263,41 +1256,49 @@ void BackendD3D::_drawTextOverlapSplit(const RenderingPayload& p, u16 y)
         cellCount >>= 1;
     }
 
+    const auto halfCellWidth = columnAdvanceInPx / 2;
     i32 originalLeft = originalQuad.position.x;
     i32 originalRight = originalQuad.position.x + originalQuad.size.x;
+
+    // The pixel range whose color is taken from the columns underneath it, as explained above.
+    const auto colorLeft = originalLeft <= advanceLeft - halfCellWidth ? originalLeft : advanceLeft;
+    const auto colorRight = originalRight >= advanceRight + halfCellWidth ? originalRight : advanceRight;
+
     originalLeft = std::max(originalLeft, 0);
     originalRight = std::min(originalRight, cellCount * columnAdvanceInPx);
 
-    if (originalLeft >= originalRight)
+    if (originalLeft >= originalRight || colorLeft >= colorRight)
     {
         return;
     }
 
-    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+    // The columns spanned by [colorLeft, colorRight), in units of columnAdvanceInPx. Clamping them
+    // to the viewport also prevents out of bounds accesses into foregroundBitmap below, which
+    // may otherwise happen with glyphs that are severely overlapping their cells outside of it.
+    const auto minColumn = clamp(colorLeft / columnAdvanceInPx, 0, cellCount - 1);
+    const auto maxColumn = clamp((colorRight - 1) / columnAdvanceInPx, minColumn, cellCount - 1);
 
-    // As explained in the beginning, column and clipLeft should be in multiples of columnAdvance
-    // and columnAdvanceInPx respectively, because that's how line renditions work.
+    const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+    const auto colorAt = [&](i32 column) noexcept {
+        // As explained in the beginning, columns are in multiples of columnAdvance, because that's how line renditions work.
+        return colors[clamp(column, minColumn, maxColumn) * columnAdvance];
+    };
+
     auto column = originalLeft / columnAdvanceInPx;
     auto clipLeft = column * columnAdvanceInPx;
-    column *= columnAdvance;
 
     // Our loop below will split the ligature by processing it from left to right.
     // Some fonts however implement ligatures by replacing a string like "&&" with a whitespace padding glyph,
     // followed by the actual "&&" glyph which has a 1 column advance width. In that case the originalQuad
     // will have the .color of the 2nd column and not of the 1st one. We need to fix that here.
-    auto lastFg = colors[column];
+    auto lastFg = colorAt(column);
     originalQuad.color = lastFg;
-    column += columnAdvance;
+    column += 1;
     clipLeft += columnAdvanceInPx;
 
-    // We must ensure to exit the loop while `column` is less than `cellCount.x`,
-    // otherwise we cause a potential out of bounds access into foregroundBitmap.
-    // This may happen with glyphs that are severely overlapping their cells,
-    // outside of the viewport. The `clipLeft < originalRight` condition doubles
-    // as a `column < cellCount.x` condition thanks to us std::min()ing it above.
-    for (; clipLeft < originalRight; column += columnAdvance, clipLeft += columnAdvanceInPx)
+    for (; clipLeft < originalRight; column += 1, clipLeft += columnAdvanceInPx)
     {
-        const auto fg = colors[column];
+        const auto fg = colorAt(column);
 
         if (lastFg != fg)
         {
@@ -1555,11 +1556,10 @@ BackendD3D::AtlasGlyphEntry* BackendD3D::_drawGlyph(const RenderingPayload& p, c
     // Ligatures are drawn with strict cell-wise foreground color, while other text allows colors to overhang
     // their cells. This makes sure that italics and such retain their color and don't look "cut off".
     //
-    // The former condition makes sure to exclude diacritics and such from being considered a ligature,
-    // while the latter condition-pair makes sure to exclude regular BMP wide glyphs that overlap a little.
-    const auto triggerLeft = _ligatureOverhangTriggerLeft << scale;
-    const auto triggerRight = _ligatureOverhangTriggerRight << scale;
-    const auto overlapSplit = rect.w >= p.s->font->cellSize.x && (bl <= triggerLeft || br >= triggerRight);
+    // Whether a glyph acts as a ligature depends on the advance it's drawn with, which is only known
+    // once it's placed in a row (see _drawTextOverlapSplit). Here we only exclude the glyphs that can't be one:
+    // anything narrower than a cell, like diacritics, and everything if ligatures are disabled.
+    const auto overlapSplit = _ligatureOverlapSplit && rect.w >= p.s->font->cellSize.x;
 
     const auto glyphEntry = _drawGlyphAllocateEntry(row, fontFaceEntry, glyphIndex);
     glyphEntry->shadingType = isColorGlyph ? ShadingType::TextPassthrough : _textShadingType;
