@@ -41,7 +41,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ControlCore* _getCore() const noexcept;
 
         TermControl* _termControl = nullptr;
-        HWND _hwnd = nullptr;
     };
 
     struct TermControl : TermControlT<TermControl>

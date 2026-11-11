@@ -34,6 +34,7 @@
     <ClInclude Include="HwndTerminalAutomationPeer.h" />
     <ClInclude Include="ControlCore.h" />
     <ClInclude Include="ControlInteractivity.h" />
+    <ClInclude Include="InputSiteWindow.h" />
     <ClInclude Include="ScrollBarVisualStateManager.h">
       <DependentUpon>ScrollBarVisualStateManager.idl</DependentUpon>
     </ClInclude>

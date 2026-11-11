@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TermControl.h"
+#include "InputSiteWindow.h"
 
 #include <DefaultSettings.h>
 #include <inputpaneinterop.h>
@@ -178,18 +179,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     HWND TsfDataProvider::GetHwnd()
     {
-        if (!_hwnd)
-        {
-            // WinUI's WinRT based TSF runs in its own window "Windows.UI.Input.InputSite.WindowClass" (..."great")
-            // and in order for us to snatch the focus away from that one we need to find its HWND.
-            // The way we do it here is by finding the existing, active TSF context and getting the HWND from it.
-            _hwnd = GetTSFHandle().FindWindowOfActiveTSF();
-            if (!_hwnd)
-            {
-                _hwnd = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-            }
-        }
-        return _hwnd;
+        // Resolve the current owner each time, including after tab moves or
+        // InputSite recreation, rather than keeping a potentially stale HWND.
+        return FindInputSiteWindow(reinterpret_cast<HWND>(_termControl->OwningHwnd()));
     }
 
     RECT TsfDataProvider::GetViewport()
