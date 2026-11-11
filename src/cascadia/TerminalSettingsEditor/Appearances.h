@@ -90,6 +90,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ClearFontFace();
         Model::FontConfig FontFaceOverrideSource() const;
 
+        float FontSize() const;
+        void FontSize(float value);
+        bool HasFontSize() const;
+        void ClearFontSize();
+        Model::FontConfig FontSizeOverrideSource() const;
+
+        bool ConhostFontSize() const;
+        void ConhostFontSize(bool value);
+
+        winrt::hstring FontSizeDescription() const;
+
         double LineHeight() const;
         void LineHeight(const double value);
         bool HasLineHeight() const;
@@ -162,7 +173,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 // scheme names) and so is intentionally not listed here.
 #define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)                 \
     CUSTOM(FontFace)                                                       \
-    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)            \
+    CUSTOM(FontSize)                                                       \
     CUSTOM(LineHeight)                                                     \
     CUSTOM(CellWidth)                                                      \
     PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)          \
@@ -195,6 +206,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
+        void _notifyFontSizeChanges();
         void _invalidateFontFaceDependents() { _fontFaceDependents.reset(); }
         void _refreshFontFaceDependents();
         static std::pair<std::vector<Editor::FontKeyValuePair>::const_iterator, bool> _fontSettingSortedByKeyInsertPosition(const std::vector<Editor::FontKeyValuePair>& vec, uint32_t key);

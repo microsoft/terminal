@@ -330,8 +330,8 @@
         },
         "size": {
           "default": 12,
-          "description": "Size of the font in points.",
-          "minimum": 1,
+          "description": "Size of the font in points. To achieve font sizing in the style of the Windows Console set this to 0 and cellHeight to e.g. \"16px\".",
+          "minimum": 0,
           "type": "number"
         },
         "weight": {
@@ -3129,7 +3129,7 @@
           "type": "number",
           "description": "[Deprecated] Replaced with the \"size\" setting within the \"font\" object.",
           "default": 12,
-          "minimum": 1,
+          "minimum": 0,
           "deprecated": true
         },
         "fontWeight": {
