@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{CA5CAD1A-C663-4A5D-99D4-D7080F26C861}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalDscUnitTests</RootNamespace>
+    <ProjectName>UnitTests_TerminalDsc</ProjectName>
+    <TargetName>TerminalDsc.Unit.Tests</TargetName>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+    <!-- TerminalCppWinrt is not set intentionally -->
+    <TerminalMUX>true</TerminalMUX>
+  </PropertyGroup>
+
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
+  <Import Project="$(OpenConsoleDir)\src\cppwinrt.build.pre.props" />
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="SettingsResourceTests.cpp" />
+    <ClCompile Include="ResourceRegistryTests.cpp" />
+    <ClCompile Include="ManifestGeneratorTests.cpp" />
+    <!-- Compile the code under test directly into the test binary. -->
+    <ClCompile Include="../TerminalDsc/Resource/JsonUtils.cpp" />
+    <ClCompile Include="../TerminalDsc/Resource/Logger.cpp" />
+    <ClCompile Include="../TerminalDsc/Resource/ManifestGenerator.cpp" />
+    <ClCompile Include="../TerminalDsc/Resource/ResourceRegistry.cpp" />
+    <ClCompile Include="../TerminalDsc/Resources/Settings/SettingsResource.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj" />
+
+    <!-- If you don't reference these projects here, the
+    _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+      <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>onecoreuap.lib;%(AdditionalDependencies);$(IntDir)\..\Microsoft.Terminal.Settings.Model.lib\Microsoft.Terminal.Settings.Model.res</AdditionalDependencies>
+      <!--
+      SettingsModelLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">%(AdditionalOptions) /INCLUDE:_DllMain@12</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">%(AdditionalOptions) /INCLUDE:DllMain</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup>
+    <GenerateManifest>true</GenerateManifest>
+    <EmbedManifest>true</EmbedManifest>
+  </PropertyGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
+  <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+
+  <ItemGroup>
+    <ProjectPriFiles Include="$(TargetDir)\Microsoft.Terminal.Settings.Model.pri" />
+    <OutputPriFiles Include="$(TargetDir)\resources.pri" />
+  </ItemGroup>
+
+  <Target Name="AfterBuild" Inputs="@(ProjectPriFiles)" Outputs="@(OutputPriFiles)">
+    <Copy SourceFiles="@(ProjectPriFiles)"
+          DestinationFiles="@(OutputPriFiles)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

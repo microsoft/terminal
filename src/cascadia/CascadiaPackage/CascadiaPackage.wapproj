@@ -89,6 +89,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ElevateShim\elevate-shim.vcxproj" >
       <Project>{416fd703-baa7-4f6e-9361-64f550ec8fca}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalDsc\TerminalDsc.vcxproj">
+      <Project>{CA5CAD1A-1C2D-46EF-B109-22320F070B04}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
     </ProjectReference>
