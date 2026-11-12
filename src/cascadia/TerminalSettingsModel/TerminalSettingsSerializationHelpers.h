@@ -588,14 +588,55 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
 {
-    JSON_MAPPINGS(4) = {
-        pair_type{ "deprecated", ValueType::IgnoredDeprecatedEntry },
-        pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
+    ValueType FromJson(const Json::Value& json)
+    {
+        const auto name{ Detail::GetStringView(json) };
+        for (const auto& pair : mappings)
+        {
+            if (pair.first == name)
+            {
+                return pair.second;
+            }
+        }
 
-        // Keep deprecated keys last, so when they get serialized again they aren't written out
-        pair_type{ "keyboardServiceWarning", ValueType::IgnoredDeprecatedEntry },
-        pair_type{ "setAsDefault", ValueType::IgnoredDeprecatedEntry },
+        // Unknown names may come from another version of Terminal. They must not prevent startup.
+        return ValueType::IgnoredDeprecatedEntry;
+    }
+
+    JSON_MAPPINGS(1) = {
+        pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
     };
+};
+
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>> :
+    ConversionTrait<std::vector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>>
+{
+    using ValueType = winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage;
+    using Base = ConversionTrait<std::vector<ValueType>>;
+
+    winrt::Windows::Foundation::Collections::IVector<ValueType> FromJson(const Json::Value& json)
+    {
+        return winrt::single_threaded_vector<ValueType>(Base::FromJson(json));
+    }
+
+    Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<ValueType>& val)
+    {
+        Json::Value json{ Json::arrayValue };
+        if (val)
+        {
+            ConversionTrait<ValueType> trait;
+            for (const auto& message : val)
+            {
+                // Drop unknown and deprecated dismissals instead of writing the sentinel back to state.json.
+                if (message != ValueType::IgnoredDeprecatedEntry)
+                {
+                    json.append(trait.ToJson(message));
+                }
+            }
+        }
+        return json;
+    }
 };
 
 template<>
