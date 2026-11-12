@@ -84,6 +84,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
+        u32 _nextAnalysisBoundary(u32 pos) const noexcept;
         void _mapRegularText(size_t offBeg, size_t offEnd);
         void _mapBuiltinGlyphs(size_t offBeg, size_t offEnd);
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
@@ -144,6 +145,7 @@ namespace Microsoft::Console::Render::Atlas
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
+            std::vector<BidiRun> bidiResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
