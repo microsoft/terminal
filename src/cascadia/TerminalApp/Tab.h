@@ -21,7 +21,7 @@ namespace winrt::TerminalApp::implementation
         Tab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
-        void Initialize();
+        void Initialize(const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
         winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
         winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile() const noexcept;
