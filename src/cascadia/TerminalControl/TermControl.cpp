@@ -179,9 +179,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     HWND TsfDataProvider::GetHwnd()
     {
-        // Resolve the current owner each time, including after tab moves or
-        // InputSite recreation, rather than keeping a potentially stale HWND.
-        return FindInputSiteWindow(reinterpret_cast<HWND>(_termControl->OwningHwnd()));
+        if (!_hwnd)
+        {
+            // WinUI's WinRT based TSF runs in its own window "Windows.UI.Input.InputSite.WindowClass" (..."great")
+            // and in order for us to snatch the focus away from that one we need to find its HWND.
+            // All windows share the same UI thread and ITfThreadMgr, so we must look for the one underneath
+            // our own window. Asking TSF instead (e.g. via EnumDocumentMgrs) yields an arbitrary window's.
+            const auto owner = reinterpret_cast<HWND>(_termControl->OwningHwnd());
+            const auto hwnd = FindInputSiteWindow(owner);
+            // Only cache a successful lookup. A TermControl never changes windows
+            // (moving a tab creates a new one), so the result never goes stale.
+            if (hwnd != owner)
+            {
+                _hwnd = hwnd;
+            }
+            return hwnd;
+        }
+        return _hwnd;
     }
 
     RECT TsfDataProvider::GetViewport()
