@@ -194,4 +194,11 @@
         <alwaysDisabledReleaseTokens/>
     </feature>
 
+    <feature>
+        <name>Feature_WtCli</name>
+        <description>Enables the wtcli client and Terminal Protocol server.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
 </featureStaging>
