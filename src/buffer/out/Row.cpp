@@ -651,6 +651,38 @@ catch (...)
     const auto end = it + std::min<size_t>(chars.size(), colLimit - colBeg);
     size_t ch = chBeg;
 
+#if defined(TIL_SSE_INTRINSICS)
+    // Leave a block containing non-ASCII untouched for the scalar Unicode fallback.
+    const auto vecEnd = it + ((end - it) & ~ptrdiff_t{ 7 });
+
+    if (it != vecEnd)
+    {
+        const auto asciiMask = _mm_set1_epi16(-128);
+        const auto zero = _mm_setzero_si128();
+        const auto step = _mm_set1_epi16(8);
+        auto output = _mm_add_epi16(_mm_set1_epi16(gsl::narrow_cast<int16_t>(ch)), _mm_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7));
+        const auto colStart = colEnd;
+
+        do
+        {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            const auto input = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&*it));
+            if (_mm_movemask_epi8(_mm_cmpeq_epi16(_mm_and_si128(input, asciiMask), zero)) != 0xffff)
+            {
+                break;
+            }
+
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(row._charOffsets.data() + colEnd), output);
+            output = _mm_add_epi16(output, step);
+            colEnd += 8;
+            it += 8;
+        } while (it != vecEnd);
+
+        ch += colEnd - colStart;
+    }
+#endif
+
     while (it != end)
     {
         if (*it >= 0x80) [[unlikely]]

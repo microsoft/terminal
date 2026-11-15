@@ -137,6 +137,7 @@ class TextBufferTests
 
     TEST_METHOD(TestOverwriteChars);
     TEST_METHOD(TestReplace);
+    TEST_METHOD(TestReplaceAsciiBlocks);
     TEST_METHOD(TestInsert);
 
     TEST_METHOD(TestAppendRTFText);
@@ -1882,6 +1883,130 @@ void TextBufferTests::TestReplace()
     }
 
 #undef complex
+}
+
+void TextBufferTests::TestReplaceAsciiBlocks()
+{
+    const TextAttribute initial{ 0x7f };
+    TextAttribute written{ 0x4e };
+    written.SetHyperlinkId(23);
+    written.SetProtected(true);
+    written.SetMarkAttributes(MarkKind::Output);
+
+    for (const auto length : { 1, 7, 8, 9, 15, 16, 17, 31, 32, 33 })
+    {
+        TextBuffer buffer{ { 40, 1 }, initial, 12, false, &_renderer };
+        auto& row = buffer.GetMutableRowByOffset(0);
+        row.ReplaceCharacters(0, 2, L"\x4e00");
+        const std::wstring input(length, L'x');
+        RowWriteState state{ .text = input, .columnBegin = 1, .columnLimit = 40 };
+        buffer.Replace(0, written, state);
+
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(1 + length, state.columnEnd);
+        VERIFY_ARE_EQUAL(0, state.columnBeginDirty);
+        VERIFY_ARE_EQUAL(1 + length, state.columnEndDirty);
+        const auto expected = std::wstring{ L" " } + input + std::wstring(39 - length, L' ');
+        VERIFY_ARE_EQUAL(std::wstring_view{ expected }, row.GetText());
+        for (auto col = 0; col < 40; ++col)
+        {
+            VERIFY_ARE_EQUAL(static_cast<uint16_t>(col), row.GetCharOffset(col));
+            VERIFY_ARE_EQUAL(col >= 1 && col < 1 + length ? written : initial, row.GetAttrByColumn(col));
+        }
+    }
+
+    for (auto prefix = 1; prefix <= 23; ++prefix)
+    {
+        TextBuffer buffer{ { 40, 1 }, initial, 12, false, &_renderer };
+        auto& row = buffer.GetMutableRowByOffset(0);
+        const auto text = std::wstring(prefix, L'a') + L"\x0301" + L"Z";
+        RowWriteState state{ .text = text, .columnBegin = 0, .columnLimit = 40 };
+        buffer.Replace(0, written, state);
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(prefix + 1, state.columnEnd);
+        VERIFY_ARE_EQUAL(0, state.columnBeginDirty);
+        VERIFY_ARE_EQUAL(prefix + 1, state.columnEndDirty);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"a\x0301" }, row.GlyphAt(prefix - 1));
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"Z" }, row.GlyphAt(prefix));
+        const auto expected = text + std::wstring(39 - prefix, L' ');
+        VERIFY_ARE_EQUAL(std::wstring_view{ expected }, row.GetText());
+    }
+
+    for (auto prefix = 0; prefix <= 16; ++prefix)
+    {
+        TextBuffer buffer{ { 40, 1 }, initial, 12, false, &_renderer };
+        const auto text = std::wstring(prefix, L'a') + L"\U0001F41B" + L"Z";
+        RowWriteState state{ .text = text, .columnBegin = 0, .columnLimit = 40 };
+        buffer.Replace(0, written, state);
+        const auto& row = buffer.GetRowByOffset(0);
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(prefix + 3, state.columnEnd);
+        VERIFY_ARE_EQUAL(prefix + 3, state.columnEndDirty);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"\U0001F41B" }, row.GlyphAt(prefix));
+        VERIFY_ARE_EQUAL(row.DbcsAttrAt(prefix), DbcsAttribute::Leading);
+        VERIFY_ARE_EQUAL(row.DbcsAttrAt(prefix + 1), DbcsAttribute::Trailing);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"Z" }, row.GlyphAt(prefix + 2));
+    }
+
+    for (auto prefix = 0; prefix <= 16; ++prefix)
+    {
+        TextBuffer buffer{ { 40, 1 }, initial, 12, false, &_renderer };
+        const auto text = std::wstring(prefix, L'a') + L"\x00e9" + L"Z";
+        RowWriteState state{ .text = text, .columnBegin = 0, .columnLimit = 40 };
+        buffer.Replace(0, written, state);
+        const auto& row = buffer.GetRowByOffset(0);
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(prefix + 2, state.columnEnd);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"\x00e9" }, row.GlyphAt(prefix));
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"Z" }, row.GlyphAt(prefix + 1));
+    }
+
+    {
+        TextBuffer buffer{ { 128, 1 }, initial, 12, false, &_renderer };
+        std::wstring text;
+        for (auto value = 0; value < 128; ++value)
+        {
+            text.push_back(static_cast<wchar_t>(value));
+        }
+        RowWriteState state{ .text = text, .columnBegin = 0, .columnLimit = 128 };
+        buffer.Replace(0, written, state);
+        const auto& row = buffer.GetRowByOffset(0);
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(128, state.columnEnd);
+        VERIFY_ARE_EQUAL(std::wstring_view{ text }, row.GetText());
+        for (auto col = 0; col <= 128; ++col)
+        {
+            VERIFY_ARE_EQUAL(static_cast<uint16_t>(col), row.GetCharOffset(col));
+        }
+    }
+
+    {
+        TextBuffer buffer{ { 20, 1 }, initial, 12, false, &_renderer };
+        auto& row = buffer.GetMutableRowByOffset(0);
+        row.ReplaceCharacters(8, 2, L"\x4e00");
+        const std::wstring text = L"123456789abcdef";
+        RowWriteState state{ .text = text, .columnBegin = 0, .columnLimit = 9 };
+        buffer.Replace(0, written, state);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"abcdef" }, state.text);
+        VERIFY_ARE_EQUAL(9, state.columnEnd);
+        VERIFY_ARE_EQUAL(0, state.columnBeginDirty);
+        VERIFY_ARE_EQUAL(10, state.columnEndDirty);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"123456789           " }, row.GetText());
+    }
+
+    {
+        TextBuffer buffer{ { 40, 1 }, initial, 12, false, &_renderer };
+        RowWriteState seed{ .text = L"abcdefghijklmnopqrst", .columnBegin = 0, .columnLimit = 40 };
+        buffer.Replace(0, initial, seed);
+        RowWriteState state{ .text = L"12345678", .columnBegin = 0, .columnLimit = 40 };
+        buffer.Insert(0, written, state);
+        const auto& row = buffer.GetRowByOffset(0);
+        VERIFY_IS_TRUE(state.text.empty());
+        VERIFY_ARE_EQUAL(8, state.columnEnd);
+        VERIFY_ARE_EQUAL(std::wstring_view{ L"12345678abcdefghijklmnopqrst            " }, row.GetText());
+        VERIFY_ARE_EQUAL(written, row.GetAttrByColumn(0));
+        VERIFY_ARE_EQUAL(initial, row.GetAttrByColumn(8));
+    }
 }
 
 void TextBufferTests::TestInsert()
