@@ -37,7 +37,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: packages
-          key: ${{matrix.arch}}-${{hashFiles('dep/nuget/packages.json')}}
+          key: ${{matrix.arch}}-${{hashFiles('dep/nuget/packages.config')}}
 
       - run: |-
           Import-Module $env:VS_DEVSHELL
