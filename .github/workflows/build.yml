@@ -1,3 +1,4 @@
+
 name: Build Windows Terminal
 
 on:
@@ -13,6 +14,7 @@ on:
           - installer
           - msixbundle
           - both
+
       configuration:
         description: "Build configuration"
         required: true
@@ -21,6 +23,7 @@ on:
         options:
           - Debug
           - Release
+
       platform:
         description: "Target platform"
         required: true
@@ -35,6 +38,7 @@ permissions:
 
 jobs:
   build:
+    name: Build Windows Terminal (${{ inputs.platform }} / ${{ inputs.configuration }})
     runs-on: windows-latest
 
     steps:
@@ -58,31 +62,45 @@ jobs:
         with:
           vcpkgJsonGlob: 'vcpkg.json'
 
-      # 5. Configure artifact selection
-      - name: Configure artifact selection
-        id: output_mode
+      # 5. Validate build options
+      - name: Configure build options
+        id: options
         shell: pwsh
         env:
           OUTPUT_FORMAT: ${{ inputs.output_format || 'both' }}
+          CONFIGURATION: ${{ inputs.configuration || 'Release' }}
+          PLATFORM: ${{ inputs.platform || 'x64' }}
         run: |
           $ErrorActionPreference = "Stop"
 
-          $mode = $env:OUTPUT_FORMAT
-
-          if ($mode -notin @("raw", "installer", "msixbundle", "both")) {
-            throw "Invalid output format: $mode"
+          if ($env:OUTPUT_FORMAT -notin @(
+            "raw", "installer", "msixbundle", "both"
+          )) {
+            throw "Invalid output format: $env:OUTPUT_FORMAT"
           }
 
-          "mode=$mode" >> $env:GITHUB_OUTPUT
+          if ($env:CONFIGURATION -notin @("Debug", "Release")) {
+            throw "Invalid configuration: $env:CONFIGURATION"
+          }
 
-          Write-Host "Selected artifact format: $mode"
+          if ($env:PLATFORM -notin @("x64", "ARM64")) {
+            throw "Invalid platform: $env:PLATFORM"
+          }
+
+          "mode=$env:OUTPUT_FORMAT" >> $env:GITHUB_OUTPUT
+          "configuration=$env:CONFIGURATION" >> $env:GITHUB_OUTPUT
+          "platform=$env:PLATFORM" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Output: $env:OUTPUT_FORMAT"
+          Write-Host "Configuration: $env:CONFIGURATION"
+          Write-Host "Platform: $env:PLATFORM"
 
       # 6. Restore dependencies and build
       - name: Restore dependencies and build Windows Terminal
         shell: pwsh
         env:
-          CONFIGURATION: ${{ inputs.configuration || 'Release' }}
-          PLATFORM: ${{ inputs.platform || 'x64' }}
+          CONFIGURATION: ${{ steps.options.outputs.configuration }}
+          PLATFORM: ${{ steps.options.outputs.platform }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -124,14 +142,27 @@ jobs:
               throw "Native NuGet restore failed! Exit code: $LASTEXITCODE"
             }
 
-            # Verify WIL
-            $wil = ".\packages\Microsoft.Windows.ImplementationLibrary.1.0.250325.1\build\native\Microsoft.Windows.ImplementationLibrary.targets"
+            # Verify WIL package
+            Write-Host "`nVerifying WIL package..."
 
-            if (!(Test-Path $wil)) {
-              throw "WIL package is missing: $wil"
+            $wilPackages = @(
+              Get-ChildItem ".\packages" -Directory |
+                Where-Object {
+                  $_.Name -like "Microsoft.Windows.ImplementationLibrary.*" -and
+                  (Test-Path (
+                    Join-Path $_.FullName `
+                      "build\native\Microsoft.Windows.ImplementationLibrary.targets"
+                  ))
+                }
+            )
+
+            if ($wilPackages.Count -eq 0) {
+              throw "WIL package is missing or incomplete!"
             }
 
-            Write-Host "WIL package restored successfully!"
+            $wilPackages | ForEach-Object {
+              Write-Host "WIL: $($_.Name)"
+            }
 
             # Initialize official build environment
             Write-Host "`n[3/4] Initializing Windows Terminal build environment..."
@@ -179,231 +210,356 @@ jobs:
             Stop-Transcript
           }
 
-      # 7. Sign main MSIX / bundle if PFX secret is configured (skip otherwise)
-      - name: Resolve signing method
-        id: signing
+      # 7. Prepare, sign and package selected artifacts
+      - name: Prepare Windows Terminal artifacts
         shell: pwsh
         env:
-          PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
-        run: |
-          $configured = -not [string]::IsNullOrWhiteSpace($env:PFX_BASE64)
-          "configured=$($configured.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-          Write-Host "PFX signing configured: $configured"
+          OUTPUT_FORMAT: ${{ steps.options.outputs.mode }}
+          CONFIGURATION: ${{ steps.options.outputs.configuration }}
+          PLATFORM: ${{ steps.options.outputs.platform }}
 
-      - name: Sign MSIX and Bundle
-        if: ${{ steps.signing.outputs.configured == 'true' }}
-        shell: pwsh
-        env:
           PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
           PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
-          OUTPUT_FORMAT: ${{ steps.output_mode.outputs.mode }}
-        run: |
-          $ErrorActionPreference = "Stop"
 
-          $pfx = Join-Path $env:RUNNER_TEMP "SigningCert.pfx"
-          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64))
-
-          $signtool = Get-ChildItem `
-            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-          if (-not $signtool) { throw "signtool.exe not found in Windows Kits" }
-
-          $appPackages = ".\src\cascadia\CascadiaPackage\AppPackages"
-          $packageDirs = @(
-            Get-ChildItem $appPackages -Directory |
-              Where-Object {
-                Test-Path (Join-Path $_.FullName "Add-AppDevPackage.ps1")
-              }
-          )
-          if ($packageDirs.Count -eq 0) { throw "No installable package directory found!" }
-          $packageDir = $packageDirs | Select-Object -First 1
-
-          # 收集需要签名的文件（msix 和 生成的 msixbundle）
-          $filesToSign = @()
-          $msix = Get-ChildItem $packageDir.FullName -File -Filter "*.msix" | Select-Object -First 1
-          if ($msix) { $filesToSign += $msix.FullName }
-          
-          $outputRoot = ".\artifacts\output"
-          $bundleFile = Join-Path $outputRoot "WindowsTerminal-$env:PLATFORM.msixbundle"
-          if (Test-Path $bundleFile) { $filesToSign += $bundleFile }
-
-          foreach ($file in $filesToSign) {
-            Write-Host "Signing: $file"
-            $signArgs = @(
-              "sign"
-              "/fd", "SHA256"
-              "/f", $pfx
-              "/tr", "http://timestamp.digicert.com"
-              "/td", "SHA256"
-              $file
-            )
-            if (-not [string]::IsNullOrEmpty($env:PFX_PASSWORD)) {
-              $signArgs = @(
-                "sign"
-                "/fd", "SHA256"
-                "/f", $pfx
-                "/p", $env:PFX_PASSWORD
-                "/tr", "http://timestamp.digicert.com"
-                "/td", "SHA256"
-                $file
-              )
-            }
-
-            & $signtool.FullName @signArgs
-            if ($LASTEXITCODE -ne 0) {
-              throw "signtool sign failed for $file! Exit code: $LASTEXITCODE"
-            }
-          }
-          Write-Host "All packages signed successfully."
-
-      # 8. Verify and prepare selected artifacts (RAW, Installer, msixbundle)
-      - name: Prepare Artifacts
-        shell: pwsh
-        env:
-          OUTPUT_FORMAT: ${{ steps.output_mode.outputs.mode }}
-          PLATFORM: ${{ inputs.platform || 'x64' }}
         run: |
           $ErrorActionPreference = "Stop"
 
           $appPackages = ".\src\cascadia\CascadiaPackage\AppPackages"
           $outputRoot = ".\artifacts\output"
+
+          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
           if (!(Test-Path $appPackages)) {
             throw "AppPackages directory not found!"
           }
 
+          # Find the exact build configuration and architecture
+          $expectedPattern = "_$([regex]::Escape($env:PLATFORM))_$([regex]::Escape($env:CONFIGURATION))_Test$"
+
           $packageDirs = @(
             Get-ChildItem $appPackages -Directory |
               Where-Object {
-                Test-Path (Join-Path $_.FullName "Add-AppDevPackage.ps1")
-              }
+                $_.Name -match $expectedPattern -and
+                (Test-Path (Join-Path $_.FullName "Add-AppDevPackage.ps1"))
+              } |
+              Sort-Object LastWriteTime -Descending
           )
 
           if ($packageDirs.Count -eq 0) {
-            throw "No installable package directory found!"
+            throw "No matching package directory found for $env:PLATFORM / $env:CONFIGURATION!"
           }
 
-          $packageDir = $packageDirs | Select-Object -First 1
-          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+          if ($packageDirs.Count -gt 1) {
+            Write-Warning "Multiple matching package directories found. Selecting the newest."
+          }
 
+          $packageDir = $packageDirs[0]
+
+          Write-Host "Selected package directory: $($packageDir.FullName)"
+
+          # Find the correct MSIX
+          $msixFiles = @(
+            Get-ChildItem $packageDir.FullName -File -Filter "*_$($env:PLATFORM).msix"
+          )
+
+          if ($msixFiles.Count -ne 1) {
+            throw "Expected exactly one $($env:PLATFORM) MSIX, found $($msixFiles.Count)!"
+          }
+
+          $msix = $msixFiles[0]
+
+          Write-Host "Selected MSIX: $($msix.FullName)"
+
+          # Initialize Windows SDK tools
           Import-Module .\tools\OpenConsole.psm1 -Force
           Set-MsBuildDevEnvironment
+
           $makeappx = (Get-Command makeappx.exe -ErrorAction Stop).Source
 
-          # 自动寻找编译出来的 msix 文件
-          $msix = Get-ChildItem $packageDir.FullName -File -Filter "*.msix" | Select-Object -First 1
-          if (-not $msix) { throw "No MSIX package found!" }
+          # ========================================
+          # 1. Resolve signing configuration
+          # ========================================
+
+          $signingEnabled = -not [string]::IsNullOrWhiteSpace($env:PFX_BASE64)
+          $pfx = $null
+          $signtool = $null
+
+          if ($signingEnabled) {
+            Write-Host "`nSigning is enabled."
+
+            $pfx = Join-Path $env:RUNNER_TEMP "SigningCert.pfx"
+
+            [IO.File]::WriteAllBytes(
+              $pfx,
+              [Convert]::FromBase64String($env:PFX_BASE64)
+            )
+
+            $signtoolCandidates = @(
+              Get-ChildItem `
+                "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" `
+                -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending
+            )
+
+            if ($signtoolCandidates.Count -eq 0) {
+              throw "signtool.exe not found in Windows Kits!"
+            }
+
+            $signtool = $signtoolCandidates[0].FullName
+
+            Write-Host "SignTool: $signtool"
+
+            function Sign-Package {
+              param(
+                [Parameter(Mandatory = $true)]
+                [string]$File
+              )
+
+              Write-Host "`nSigning: $File"
+
+              $signArgs = @(
+                "sign"
+                "/fd", "SHA256"
+                "/f", $pfx
+                "/tr", "http://timestamp.digicert.com"
+                "/td", "SHA256"
+              )
+
+              if (-not [string]::IsNullOrEmpty($env:PFX_PASSWORD)) {
+                $signArgs += @("/p", $env:PFX_PASSWORD)
+              }
+
+              $signArgs += $File
+
+              & $signtool @signArgs
+
+              if ($LASTEXITCODE -ne 0) {
+                throw "SignTool failed for $File! Exit code: $LASTEXITCODE"
+              }
+
+              Write-Host "Successfully signed: $File"
+            }
+
+            # Sign original MSIX first
+            Sign-Package -File $msix.FullName
+          }
+          else {
+            Write-Warning "No signing certificate configured. Packages will remain unsigned."
+          }
 
           # ========================================
-          # 0. 如果选择了 msixbundle 或 both，则通过 MakeAppx 打包成 msixbundle
+          # 2. Generate MSIXBundle
           # ========================================
+
           if ($env:OUTPUT_FORMAT -in @("msixbundle", "both")) {
             Write-Host "`nPreparing MSIXBundle artifact..."
-            $bundlePath = Join-Path $outputRoot "WindowsTerminal-$env:PLATFORM.msixbundle"
-            
-            # 使用多行 Here-String 确保换行和映射文件格式正确
-            $mappingContent = @"
-[Files]
-"$($msix.FullName)" "$($msix.Name)"
-"@
+
+            $bundlePath = Join-Path $outputRoot `
+              "WindowsTerminal-$($env:PLATFORM)-$($env:CONFIGURATION).msixbundle"
+
             $mappingFile = Join-Path $env:RUNNER_TEMP "mapping.txt"
+
+            $mappingContent = @"
+          [Files]
+          "$($msix.FullName)" "$($msix.Name)"
+          "@
+
             Set-Content -Path $mappingFile -Value $mappingContent -Encoding utf8
 
-            & $makeappx bundle /f $mappingFile /p $bundlePath /o
+            & $makeappx bundle `
+              /v `
+              /f $mappingFile `
+              /p $bundlePath `
+              /o
+
             if ($LASTEXITCODE -ne 0) {
               throw "MakeAppx bundle failed! Exit code: $LASTEXITCODE"
             }
+
+            if (!(Test-Path $bundlePath)) {
+              throw "MSIXBundle was not generated!"
+            }
+
             Write-Host "MSIXBundle created: $bundlePath"
+
+            # Bundle must be signed after it is generated
+            if ($signingEnabled) {
+              Sign-Package -File $bundlePath
+            }
           }
 
           # ========================================
-          # 1. RAW: Unpacked MSIX application payload
+          # 3. Generate RAW artifact
           # ========================================
+
           if ($env:OUTPUT_FORMAT -in @("raw", "both")) {
             Write-Host "`nPreparing RAW artifact..."
 
             $rawDir = Join-Path $outputRoot "RAW"
-            $rawZip = Join-Path $outputRoot "WindowsTerminal-RAW-$env:PLATFORM.zip"
+            $rawZip = Join-Path $outputRoot `
+              "WindowsTerminal-RAW-$($env:PLATFORM)-$($env:CONFIGURATION).zip"
+
+            if (Test-Path $rawDir) {
+              Remove-Item $rawDir -Recurse -Force
+            }
 
             New-Item -ItemType Directory -Force -Path $rawDir | Out-Null
 
-            & $makeappx unpack /p $msix.FullName /d $rawDir /o
+            & $makeappx unpack `
+              /p $msix.FullName `
+              /d $rawDir `
+              /o
+
             if ($LASTEXITCODE -ne 0) {
               throw "MSIX unpack failed! Exit code: $LASTEXITCODE"
             }
 
-            Compress-Archive -Path "$rawDir\*" -DestinationPath $rawZip -CompressionLevel Optimal -Force
+            if (Test-Path $rawZip) {
+              Remove-Item $rawZip -Force
+            }
+
+            Compress-Archive `
+              -Path "$rawDir\*" `
+              -DestinationPath $rawZip `
+              -CompressionLevel Optimal `
+              -Force
+
             Write-Host "RAW artifact created: $rawZip"
           }
 
           # ========================================
-          # 2. INSTALLER: Complete installable package
+          # 4. Generate Installer artifact
           # ========================================
+
           if ($env:OUTPUT_FORMAT -in @("installer", "both")) {
             Write-Host "`nPreparing Installer artifact..."
 
             $installerDir = Join-Path $outputRoot "Installer"
-            $installerZip = Join-Path $outputRoot "WindowsTerminal-Installer-$env:PLATFORM.zip"
+
+            $installerZip = Join-Path $outputRoot `
+              "WindowsTerminal-Installer-$($env:PLATFORM)-$($env:CONFIGURATION).zip"
+
+            if (Test-Path $installerDir) {
+              Remove-Item $installerDir -Recurse -Force
+            }
 
             New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
+
             $copiedPackage = Join-Path $installerDir $packageDir.Name
+
             New-Item -ItemType Directory -Force -Path $copiedPackage | Out-Null
 
-            Get-ChildItem $packageDir.FullName -Force | Copy-Item -Destination $copiedPackage -Recurse -Force
+            Get-ChildItem $packageDir.FullName -Force |
+              Copy-Item -Destination $copiedPackage -Recurse -Force
 
-            Compress-Archive -Path "$installerDir\*" -DestinationPath $installerZip -CompressionLevel Optimal -Force
+            if (Test-Path $installerZip) {
+              Remove-Item $installerZip -Force
+            }
+
+            Compress-Archive `
+              -Path "$installerDir\*" `
+              -DestinationPath $installerZip `
+              -CompressionLevel Optimal `
+              -Force
+
             Write-Host "Installer artifact created: $installerZip"
           }
+
+          # ========================================
+          # 5. Verify generated artifacts
+          # ========================================
 
           Write-Host "`n========================================"
           Write-Host " Generated Artifacts"
           Write-Host "========================================"
 
-          Get-ChildItem $outputRoot -File -Recurse |
+          $generatedFiles = @(
+            Get-ChildItem $outputRoot -File -Recurse
+          )
+
+          if ($generatedFiles.Count -eq 0) {
+            throw "No artifacts were generated!"
+          }
+
+          $generatedFiles |
             Select-Object FullName, Length |
             Format-Table -AutoSize
 
-      # 9. Upload diagnostic logs
+          # Ensure the expected files exist
+          $expectedFiles = @()
+
+          if ($env:OUTPUT_FORMAT -in @("raw", "both")) {
+            $expectedFiles += Join-Path $outputRoot `
+              "WindowsTerminal-RAW-$($env:PLATFORM)-$($env:CONFIGURATION).zip"
+          }
+
+          if ($env:OUTPUT_FORMAT -in @("installer", "both")) {
+            $expectedFiles += Join-Path $outputRoot `
+              "WindowsTerminal-Installer-$($env:PLATFORM)-$($env:CONFIGURATION).zip"
+          }
+
+          if ($env:OUTPUT_FORMAT -in @("msixbundle", "both")) {
+            $expectedFiles += Join-Path $outputRoot `
+              "WindowsTerminal-$($env:PLATFORM)-$($env:CONFIGURATION).msixbundle"
+          }
+
+          foreach ($file in $expectedFiles) {
+            if (!(Test-Path $file)) {
+              throw "Expected artifact is missing: $file"
+            }
+
+            if ((Get-Item $file).Length -eq 0) {
+              throw "Artifact is empty: $file"
+            }
+          }
+
+          Write-Host "`nAll requested artifacts verified successfully!"
+
+          # Cleanup signing certificate
+          if ($pfx -and (Test-Path $pfx)) {
+            Remove-Item $pfx -Force
+          }
+
+      # 8. Upload diagnostic logs
       - name: Upload complete build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-Build-Logs
+          name: WindowsTerminal-Build-Logs-${{ inputs.platform || 'x64' }}-${{ inputs.configuration || 'Release' }}
           path: artifacts/logs/
           if-no-files-found: warn
           compression-level: 6
           retention-days: 30
 
-      # 10. Upload RAW
+      # 9. Upload RAW
       - name: Upload Windows Terminal RAW
-        if: success() && (steps.output_mode.outputs.mode == 'raw' || steps.output_mode.outputs.mode == 'both')
+        if: success() && (steps.options.outputs.mode == 'raw' || steps.options.outputs.mode == 'both')
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-RAW-${{ inputs.platform || 'x64' }}
-          path: artifacts/output/WindowsTerminal-RAW-${{ inputs.platform || 'x64' }}.zip
+          name: WindowsTerminal-RAW-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}
+          path: artifacts/output/WindowsTerminal-RAW-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}.zip
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
 
-      # 11. Upload Installer
+      # 10. Upload Installer
       - name: Upload Windows Terminal Installer
-        if: success() && (steps.output_mode.outputs.mode == 'installer' || steps.output_mode.outputs.mode == 'both')
+        if: success() && (steps.options.outputs.mode == 'installer' || steps.options.outputs.mode == 'both')
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-Installer-${{ inputs.platform || 'x64' }}
-          path: artifacts/output/WindowsTerminal-Installer-${{ inputs.platform || 'x64' }}.zip
+          name: WindowsTerminal-Installer-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}
+          path: artifacts/output/WindowsTerminal-Installer-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}.zip
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
 
-      # 12. Upload msixbundle
+      # 11. Upload MSIXBundle
       - name: Upload Windows Terminal MSIXBundle
-        if: success() && (steps.output_mode.outputs.mode == 'msixbundle' || steps.output_mode.outputs.mode == 'both')
+        if: success() && (steps.options.outputs.mode == 'msixbundle' || steps.options.outputs.mode == 'both')
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-Bundle-${{ inputs.platform || 'x64' }}
-          path: artifacts/output/WindowsTerminal-${{ inputs.platform || 'x64' }}.msixbundle
+          name: WindowsTerminal-MSIXBundle-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}
+          path: artifacts/output/WindowsTerminal-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}.msixbundle
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
