@@ -28,6 +28,7 @@ jobs:
           Import-Module $env:VS_DEVSHELL
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
           & msbuild OpenConsole.slnx /p:Platform=${{ matrix.arch }} /p:Configuration=Release /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /t:Restore
+          & nuget restore dep/nuget/packages.config
         name: Restore NuGet
       - run: |-
           Import-Module $env:VS_DEVSHELL
