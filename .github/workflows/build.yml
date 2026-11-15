@@ -44,5 +44,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: binlog-${{matrix.arch}}
-          path: msbuild.binlog
+          name: logs-${{matrix.arch}}
+          path: |-
+            msbuild.binlog
+            obj/${{matrix.arch}}/vcpkg/**/*.log
