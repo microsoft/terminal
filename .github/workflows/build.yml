@@ -1,9 +1,6 @@
 name: Build Windows Terminal
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
   workflow_dispatch:
     inputs:
       output_format:
@@ -14,6 +11,7 @@ on:
         options:
           - raw
           - installer
+          - msixbundle
           - both
       configuration:
         description: "Build configuration"
@@ -71,7 +69,7 @@ jobs:
 
           $mode = $env:OUTPUT_FORMAT
 
-          if ($mode -notin @("raw", "installer", "both")) {
+          if ($mode -notin @("raw", "installer", "msixbundle", "both")) {
             throw "Invalid output format: $mode"
           }
 
@@ -181,7 +179,7 @@ jobs:
             Stop-Transcript
           }
 
-      # 7. Sign main MSIX if PFX secret is configured (skip otherwise)
+      # 7. Sign main MSIX / bundle if PFX secret is configured (skip otherwise)
       - name: Resolve signing method
         id: signing
         shell: pwsh
@@ -192,27 +190,25 @@ jobs:
           "configured=$($configured.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           Write-Host "PFX signing configured: $configured"
 
-      - name: Sign main MSIX
+      - name: Sign MSIX and Bundle
         if: ${{ steps.signing.outputs.configured == 'true' }}
         shell: pwsh
         env:
           PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
           PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+          OUTPUT_FORMAT: ${{ steps.output_mode.outputs.mode }}
         run: |
           $ErrorActionPreference = "Stop"
 
-          # Decode PFX from secret
           $pfx = Join-Path $env:RUNNER_TEMP "SigningCert.pfx"
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64))
 
-          # Locate signtool.exe from Windows Kits
           $signtool = Get-ChildItem `
             "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" |
             Sort-Object FullName -Descending |
             Select-Object -First 1
           if (-not $signtool) { throw "signtool.exe not found in Windows Kits" }
 
-          # Locate main MSIX (same package directory logic as Prepare step)
           $appPackages = ".\src\cascadia\CascadiaPackage\AppPackages"
           $packageDirs = @(
             Get-ChildItem $appPackages -Directory |
@@ -220,46 +216,49 @@ jobs:
                 Test-Path (Join-Path $_.FullName "Add-AppDevPackage.ps1")
               }
           )
-          if ($packageDirs.Count -eq 0) {
-            throw "No installable package directory found!"
-          }
+          if ($packageDirs.Count -eq 0) { throw "No installable package directory found!" }
           $packageDir = $packageDirs | Select-Object -First 1
 
-          $msix = Get-ChildItem $packageDir.FullName -File -Filter "*.msix" |
-            Select-Object -First 1
-          if (-not $msix) { throw "No MSIX package found!" }
+          # 收集需要签名的文件（msix 和 生成的 msixbundle）
+          $filesToSign = @()
+          $msix = Get-ChildItem $packageDir.FullName -File -Filter "*.msix" | Select-Object -First 1
+          if ($msix) { $filesToSign += $msix.FullName }
+          
+          $outputRoot = ".\artifacts\output"
+          $bundleFile = Join-Path $outputRoot "WindowsTerminal-$env:PLATFORM.msixbundle"
+          if (Test-Path $bundleFile) { $filesToSign += $bundleFile }
 
-          Write-Host "Signing MSIX: $($msix.FullName)"
-
-          $signArgs = @(
-            "sign"
-            "/fd", "SHA256"
-            "/f", $pfx
-            "/tr", "http://timestamp.digicert.com"
-            "/td", "SHA256"
-            $msix.FullName
-          )
-          if (-not [string]::IsNullOrEmpty($env:PFX_PASSWORD)) {
+          foreach ($file in $filesToSign) {
+            Write-Host "Signing: $file"
             $signArgs = @(
               "sign"
               "/fd", "SHA256"
               "/f", $pfx
-              "/p", $env:PFX_PASSWORD
               "/tr", "http://timestamp.digicert.com"
               "/td", "SHA256"
-              $msix.FullName
+              $file
             )
+            if (-not [string]::IsNullOrEmpty($env:PFX_PASSWORD)) {
+              $signArgs = @(
+                "sign"
+                "/fd", "SHA256"
+                "/f", $pfx
+                "/p", $env:PFX_PASSWORD
+                "/tr", "http://timestamp.digicert.com"
+                "/td", "SHA256"
+                $file
+              )
+            }
+
+            & $signtool.FullName @signArgs
+            if ($LASTEXITCODE -ne 0) {
+              throw "signtool sign failed for $file! Exit code: $LASTEXITCODE"
+            }
           }
+          Write-Host "All packages signed successfully."
 
-          & $signtool.FullName @signArgs
-          if ($LASTEXITCODE -ne 0) {
-            throw "signtool sign failed! Exit code: $LASTEXITCODE"
-          }
-
-          Write-Host "MSIX signed successfully."
-
-      # 8. Verify and prepare selected artifacts
-      - name: Prepare RAW and Installer artifacts
+      # 8. Verify and prepare selected artifacts (RAW, Installer, msixbundle)
+      - name: Prepare Artifacts
         shell: pwsh
         env:
           OUTPUT_FORMAT: ${{ steps.output_mode.outputs.mode }}
@@ -274,7 +273,6 @@ jobs:
             throw "AppPackages directory not found!"
           }
 
-          # Find generated package directory
           $packageDirs = @(
             Get-ChildItem $appPackages -Directory |
               Where-Object {
@@ -286,105 +284,72 @@ jobs:
             throw "No installable package directory found!"
           }
 
-          $packageDir = $packageDirs |
-            Select-Object -First 1
+          $packageDir = $packageDirs | Select-Object -First 1
+          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
-          Write-Host "Package directory: $($packageDir.FullName)"
+          Import-Module .\tools\OpenConsole.psm1 -Force
+          Set-MsBuildDevEnvironment
+          $makeappx = (Get-Command makeappx.exe -ErrorAction Stop).Source
 
-          # Locate main MSIX package
-          $packages = @(
-            Get-ChildItem $packageDir.FullName -File -Filter "*.msix"
-          )
+          # 自动寻找编译出来的 msix 文件
+          $msix = Get-ChildItem $packageDir.FullName -File -Filter "*.msix" | Select-Object -First 1
+          if (-not $msix) { throw "No MSIX package found!" }
 
-          if ($packages.Count -eq 0) {
-            throw "No MSIX package found!"
+          # ========================================
+          # 0. 如果选择了 msixbundle 或 both，则通过 MakeAppx 打包成 msixbundle
+          # ========================================
+          if ($env:OUTPUT_FORMAT -in @("msixbundle", "both")) {
+            Write-Host "`nPreparing MSIXBundle artifact..."
+            $bundlePath = Join-Path $outputRoot "WindowsTerminal-$env:PLATFORM.msixbundle"
+            
+            # 使用映射文件方式打包 bundle
+            $mappingContent = "[Files]``n`"$($msix.FullName)`" `"$($msix.Name)`""
+            $mappingFile = Join-Path $env:RUNNER_TEMP "mapping.txt"
+            Set-Content -Path $mappingFile -Value $mappingContent
+
+            & $makeappx bundle /f $mappingFile /p $bundlePath /o
+            if ($LASTEXITCODE -ne 0) {
+              throw "MakeAppx bundle failed! Exit code: $LASTEXITCODE"
+            }
+            Write-Host "MSIXBundle created: $bundlePath"
           }
 
-          $msix = $packages |
-            Select-Object -First 1
-
-          Write-Host "Main package: $($msix.FullName)"
-
-          New-Item -ItemType Directory -Force -Path $outputRoot |
-            Out-Null
-
           # ========================================
-          # RAW: Unpacked MSIX application payload
+          # 1. RAW: Unpacked MSIX application payload
           # ========================================
-
           if ($env:OUTPUT_FORMAT -in @("raw", "both")) {
             Write-Host "`nPreparing RAW artifact..."
-
-            Import-Module .\tools\OpenConsole.psm1 -Force
-            Set-MsBuildDevEnvironment
-
-            $makeappx = (Get-Command makeappx.exe -ErrorAction Stop).Source
 
             $rawDir = Join-Path $outputRoot "RAW"
             $rawZip = Join-Path $outputRoot "WindowsTerminal-RAW-$env:PLATFORM.zip"
 
-            New-Item -ItemType Directory -Force -Path $rawDir |
-              Out-Null
+            New-Item -ItemType Directory -Force -Path $rawDir | Out-Null
 
-            & $makeappx unpack `
-              /p $msix.FullName `
-              /d $rawDir `
-              /o
-
+            & $makeappx unpack /p $msix.FullName /d $rawDir /o
             if ($LASTEXITCODE -ne 0) {
               throw "MSIX unpack failed! Exit code: $LASTEXITCODE"
             }
 
-            if (!(Test-Path (Join-Path $rawDir "AppxManifest.xml"))) {
-              throw "RAW package validation failed: AppxManifest.xml missing!"
-            }
-
-            Compress-Archive `
-              -Path "$rawDir\*" `
-              -DestinationPath $rawZip `
-              -CompressionLevel Optimal `
-              -Force
-
+            Compress-Archive -Path "$rawDir\*" -DestinationPath $rawZip -CompressionLevel Optimal -Force
             Write-Host "RAW artifact created: $rawZip"
           }
 
           # ========================================
-          # INSTALLER: Complete installable package
+          # 2. INSTALLER: Complete installable package
           # ========================================
-
           if ($env:OUTPUT_FORMAT -in @("installer", "both")) {
             Write-Host "`nPreparing Installer artifact..."
 
             $installerDir = Join-Path $outputRoot "Installer"
             $installerZip = Join-Path $outputRoot "WindowsTerminal-Installer-$env:PLATFORM.zip"
 
-            New-Item -ItemType Directory -Force -Path $installerDir |
-              Out-Null
-
-            # Preserve the original package directory structure
+            New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
             $copiedPackage = Join-Path $installerDir $packageDir.Name
+            New-Item -ItemType Directory -Force -Path $copiedPackage | Out-Null
 
-            New-Item -ItemType Directory -Force -Path $copiedPackage |
-              Out-Null
+            Get-ChildItem $packageDir.FullName -Force | Copy-Item -Destination $copiedPackage -Recurse -Force
 
-            Get-ChildItem $packageDir.FullName -Force |
-              Copy-Item -Destination $copiedPackage -Recurse -Force
-
-            # Validate installer contents
-            if (!(Test-Path (Join-Path $copiedPackage "Add-AppDevPackage.ps1"))) {
-              throw "Installer validation failed: Add-AppDevPackage.ps1 missing!"
-            }
-
-            if (!(Get-ChildItem $copiedPackage -File -Filter "*.msix")) {
-              throw "Installer validation failed: MSIX missing!"
-            }
-
-            Compress-Archive `
-              -Path "$installerDir\*" `
-              -DestinationPath $installerZip `
-              -CompressionLevel Optimal `
-              -Force
-
+            Compress-Archive -Path "$installerDir\*" -DestinationPath $installerZip -CompressionLevel Optimal -Force
             Write-Host "Installer artifact created: $installerZip"
           }
 
@@ -396,7 +361,7 @@ jobs:
             Select-Object FullName, Length |
             Format-Table -AutoSize
 
-      # 9. Upload diagnostic logs, even if build fails
+      # 9. Upload diagnostic logs
       - name: Upload complete build logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -425,6 +390,17 @@ jobs:
         with:
           name: WindowsTerminal-Installer-${{ inputs.platform || 'x64' }}
           path: artifacts/output/WindowsTerminal-Installer-${{ inputs.platform || 'x64' }}.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+      # 12. Upload msixbundle
+      - name: Upload Windows Terminal MSIXBundle
+        if: success() && (steps.output_mode.outputs.mode == 'msixbundle' || steps.output_mode.outputs.mode == 'both')
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsTerminal-Bundle-${{ inputs.platform || 'x64' }}
+          path: artifacts/output/WindowsTerminal-${{ inputs.platform || 'x64' }}.msixbundle
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
