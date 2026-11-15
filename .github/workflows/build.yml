@@ -302,10 +302,13 @@ jobs:
             Write-Host "`nPreparing MSIXBundle artifact..."
             $bundlePath = Join-Path $outputRoot "WindowsTerminal-$env:PLATFORM.msixbundle"
             
-            # 使用映射文件方式打包 bundle
-            $mappingContent = "[Files]``n`"$($msix.FullName)`" `"$($msix.Name)`""
+            # 使用多行 Here-String 确保换行和映射文件格式正确
+            $mappingContent = @"
+[Files]
+"$($msix.FullName)" "$($msix.Name)"
+"@
             $mappingFile = Join-Path $env:RUNNER_TEMP "mapping.txt"
-            Set-Content -Path $mappingFile -Value $mappingContent
+            Set-Content -Path $mappingFile -Value $mappingContent -Encoding utf8
 
             & $makeappx bundle /f $mappingFile /p $bundlePath /o
             if ($LASTEXITCODE -ne 0) {
