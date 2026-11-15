@@ -1,0 +1,33 @@
+name: Build
+on:
+  pull_request:
+    branches: [ main, dev/dhowett/github-ci ]
+  workflow_trigger:
+
+jobs:
+  build:
+    runs-on: windows-2025
+    name: Build ${{ matrix.arch }}
+    strategy:
+      matrix:
+        arch: [x64] #, arm64]
+    env:
+      WT_BRANDING: Preview
+    steps:
+      - uses: actions/checkout@v7
+      - run: |-
+          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+          $instance = & $vsWhere -path $devShell -property instanceId
+          "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
+          "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
+        name: Discover Visual Studio
+      - run: |-
+          Import-Module $env:VS_DEVSHELL
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
+          & msbuild OpenConsole.slnx /p:Platform=${{ matrix.arch }};Configuration=Release /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /bl:msbuild.binlog
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: binlog-${{matrix.arch}}
+          path: msbuild.binlog
