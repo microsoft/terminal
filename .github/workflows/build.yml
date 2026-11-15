@@ -1,8 +1,10 @@
 name: Build
 on:
+  push:
+    branches: [ main, dev/dhowett/github-ci ]
   pull_request:
     branches: [ main, dev/dhowett/github-ci ]
-  workflow_trigger:
+  workflow_dispatch:
 
 jobs:
   build:
