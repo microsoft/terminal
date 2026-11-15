@@ -233,11 +233,32 @@ jobs:
             throw "AppPackages directory not found!"
           }
 
-          # Find the exact build configuration and architecture
-          $expectedPattern = "_$([regex]::Escape($env:PLATFORM))_$([regex]::Escape($env:CONFIGURATION))_Test$"
+          # ========================================
+          # 1. Find package directory
+          # ========================================
+
+          Write-Host "`nSearching package directories..."
+          Write-Host "AppPackages: $appPackages"
+          Write-Host "Target platform: $env:PLATFORM"
+          Write-Host "Configuration: $env:CONFIGURATION"
+
+          $allPackageDirs = @(
+            Get-ChildItem $appPackages -Directory
+          )
+
+          Write-Host "`nAvailable package directories:"
+
+          $allPackageDirs | ForEach-Object {
+            Write-Host "  $($_.Name)"
+          }
+
+          # Configuration is not necessarily included in directory name.
+          # Match architecture and Test suffix only.
+
+          $expectedPattern = "_$([regex]::Escape($env:PLATFORM))_Test$"
 
           $packageDirs = @(
-            Get-ChildItem $appPackages -Directory |
+            $allPackageDirs |
               Where-Object {
                 $_.Name -match $expectedPattern -and
                 (Test-Path (Join-Path $_.FullName "Add-AppDevPackage.ps1"))
@@ -246,7 +267,16 @@ jobs:
           )
 
           if ($packageDirs.Count -eq 0) {
-            throw "No matching package directory found for $env:PLATFORM / $env:CONFIGURATION!"
+            throw @"
+          No matching package directory found!
+
+          Platform: $env:PLATFORM
+          Configuration: $env:CONFIGURATION
+          Expected suffix: _$($env:PLATFORM)_Test
+
+          Available directories:
+          $($allPackageDirs.Name -join "`n")
+          "@
           }
 
           if ($packageDirs.Count -gt 1) {
@@ -255,9 +285,13 @@ jobs:
 
           $packageDir = $packageDirs[0]
 
-          Write-Host "Selected package directory: $($packageDir.FullName)"
+          Write-Host "`nSelected package directory:"
+          Write-Host $packageDir.FullName
 
-          # Find the correct MSIX
+          # ========================================
+          # 2. Find MSIX package
+          # ========================================
+
           $msixFiles = @(
             Get-ChildItem $packageDir.FullName -File -Filter "*_$($env:PLATFORM).msix"
           )
@@ -270,17 +304,21 @@ jobs:
 
           Write-Host "Selected MSIX: $($msix.FullName)"
 
-          # Initialize Windows SDK tools
+          # ========================================
+          # 3. Initialize Windows SDK tools
+          # ========================================
+
           Import-Module .\tools\OpenConsole.psm1 -Force
           Set-MsBuildDevEnvironment
 
           $makeappx = (Get-Command makeappx.exe -ErrorAction Stop).Source
 
           # ========================================
-          # 1. Resolve signing configuration
+          # 4. Resolve signing configuration
           # ========================================
 
           $signingEnabled = -not [string]::IsNullOrWhiteSpace($env:PFX_BASE64)
+
           $pfx = $null
           $signtool = $null
 
@@ -348,7 +386,7 @@ jobs:
           }
 
           # ========================================
-          # 2. Generate MSIXBundle
+          # 5. Generate MSIXBundle
           # ========================================
 
           if ($env:OUTPUT_FORMAT -in @("msixbundle", "both")) {
@@ -382,20 +420,21 @@ jobs:
 
             Write-Host "MSIXBundle created: $bundlePath"
 
-            # Bundle must be signed after it is generated
+            # Bundle must be signed after generation
             if ($signingEnabled) {
               Sign-Package -File $bundlePath
             }
           }
 
           # ========================================
-          # 3. Generate RAW artifact
+          # 6. Generate RAW artifact
           # ========================================
 
           if ($env:OUTPUT_FORMAT -in @("raw", "both")) {
             Write-Host "`nPreparing RAW artifact..."
 
             $rawDir = Join-Path $outputRoot "RAW"
+
             $rawZip = Join-Path $outputRoot `
               "WindowsTerminal-RAW-$($env:PLATFORM)-$($env:CONFIGURATION).zip"
 
@@ -428,7 +467,7 @@ jobs:
           }
 
           # ========================================
-          # 4. Generate Installer artifact
+          # 7. Generate Installer artifact
           # ========================================
 
           if ($env:OUTPUT_FORMAT -in @("installer", "both")) {
@@ -466,7 +505,7 @@ jobs:
           }
 
           # ========================================
-          # 5. Verify generated artifacts
+          # 8. Verify generated artifacts
           # ========================================
 
           Write-Host "`n========================================"
@@ -485,7 +524,6 @@ jobs:
             Select-Object FullName, Length |
             Format-Table -AutoSize
 
-          # Ensure the expected files exist
           $expectedFiles = @()
 
           if ($env:OUTPUT_FORMAT -in @("raw", "both")) {
@@ -525,7 +563,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-Build-Logs-${{ inputs.platform || 'x64' }}-${{ inputs.configuration || 'Release' }}
+          name: WindowsTerminal-Build-Logs-${{ steps.options.outputs.platform }}-${{ steps.options.outputs.configuration }}
           path: artifacts/logs/
           if-no-files-found: warn
           compression-level: 6
