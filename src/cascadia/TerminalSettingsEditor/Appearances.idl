@@ -84,6 +84,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, LightColorSchemeName);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, CursorBlinking);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IMediaResource, BackgroundImagePath);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Single, BackgroundImageOpacity);

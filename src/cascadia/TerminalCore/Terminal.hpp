@@ -143,7 +143,7 @@ public:
     void ReturnAnswerback() override;
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
-    CursorType GetUserDefaultCursorStyle() const noexcept override;
+    std::pair<CursorType, bool> GetUserDefaultCursorStyle() const noexcept override;
     bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
     void SetCodePage(const unsigned int codepage) noexcept override;
     void ResetCodePage() noexcept override;
@@ -363,6 +363,7 @@ private:
     mutable til::generation_t _lastSelectionGeneration{};
 
     CursorType _defaultCursorShape = CursorType::Legacy;
+    bool _defaultCursorBlinking = true;
     std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };

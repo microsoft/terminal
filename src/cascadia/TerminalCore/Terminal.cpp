@@ -53,6 +53,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
+    _mainBuffer->GetCursor().SetIsBlinking(_defaultCursorBlinking);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -211,15 +212,22 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
+    const auto blinkingChanged = _defaultCursorBlinking != appearance.CursorBlinking();
+    _defaultCursorShape = cursorShape;
+    _defaultCursorBlinking = appearance.CursorBlinking();
+
     // We're checking if the main buffer exists here, but then setting the
     // appearance of the active one. If the main buffer exists, then at least
     // one buffer exists and _activeBuffer() will work
     if (_mainBuffer)
     {
         _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
+        // Preserve application-selected blinking across unchanged appearance updates.
+        if (blinkingChanged)
+        {
+            SetCursorStyle(DispatchTypes::CursorStyle::UserDefault);
+        }
     }
-
-    _defaultCursorShape = cursorShape;
 
     UpdateColorScheme(appearance);
 }

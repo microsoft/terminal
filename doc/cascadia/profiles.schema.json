@@ -197,6 +197,11 @@
           ],
           "type": "string"
         },
+        "cursorBlinking": {
+          "default": true,
+          "description": "Sets the default cursor blinking state when unfocused. Uses the Windows cursor blink rate. Applications can change this state.",
+          "type": "boolean"
+        },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor (when unfocused) starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
           "maximum": 100,
@@ -3031,6 +3036,11 @@
             }
           ],
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorBlinking": {
+          "default": true,
+          "description": "Sets the default cursor blinking state, restored by DECSCUSR 0 and RIS. Uses the Windows cursor blink rate. Applications can change this state.",
+          "type": "boolean"
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",

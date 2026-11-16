@@ -50,6 +50,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(NormalizeCommandLine);
         TEST_METHOD(GetProfileForArgsWithCommandline);
         TEST_METHOD(MakeSettingsForProfile);
+        TEST_METHOD(CursorBlinkingProfileSetting);
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
@@ -666,6 +667,61 @@ namespace SettingsModelUnitTests
         catch (...)
         {
             VERIFY_IS_TRUE(false, L"This call to CreateWithNewTerminalArgs should succeed");
+        }
+    }
+
+    void TerminalSettingsTests::CursorBlinkingProfileSetting()
+    {
+        const auto defaults = winrt::make<implementation::Profile>();
+        VERIFY_IS_TRUE(defaults.DefaultAppearance().CursorBlinking());
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "cursorBlinking": false,
+                    "unfocusedAppearance": {}
+                },
+                "list": [
+                    { "name": "inherited" },
+                    {
+                        "name": "overridden",
+                        "cursorBlinking": true,
+                        "unfocusedAppearance": { "cursorBlinking": false }
+                    }
+                ]
+            }
+        })" };
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        VERIFY_ARE_EQUAL(2u, settings->ActiveProfiles().Size());
+
+        const auto defaultsJson = winrt::get_self<implementation::Profile>(settings->ProfileDefaults())->ToJson();
+        VERIFY_IS_TRUE(defaultsJson.isMember("cursorBlinking"));
+        VERIFY_IS_FALSE(defaultsJson["cursorBlinking"].asBool());
+
+        for (auto i = 0u; i < 2u; ++i)
+        {
+            const auto profile = settings->ActiveProfiles().GetAt(i);
+            const auto expected = i == 1;
+            const auto appearance = profile.DefaultAppearance();
+            VERIFY_ARE_EQUAL(expected, appearance.CursorBlinking());
+            VERIFY_ARE_EQUAL(expected, appearance.HasCursorBlinking());
+
+            const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
+            VERIFY_ARE_EQUAL(expected, json.isMember("cursorBlinking"));
+            if (expected)
+            {
+                VERIFY_IS_TRUE(json["cursorBlinking"].asBool());
+                VERIFY_IS_FALSE(json["unfocusedAppearance"]["cursorBlinking"].asBool());
+            }
+
+            const auto result = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), profile);
+            VERIFY_ARE_EQUAL(expected, result.DefaultSettings()->CursorBlinking());
+            VERIFY_IS_NOT_NULL(result.UnfocusedSettings());
+            VERIFY_IS_FALSE(result.UnfocusedSettings()->CursorBlinking());
+
+            appearance.ClearCursorBlinking();
+            VERIFY_IS_FALSE(appearance.CursorBlinking());
+            VERIFY_IS_FALSE(appearance.HasCursorBlinking());
         }
     }
 

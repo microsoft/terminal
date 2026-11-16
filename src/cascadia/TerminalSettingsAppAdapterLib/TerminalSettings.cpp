@@ -218,6 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings
                                                     const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
     {
         _CursorShape = appearance.CursorShape();
+        _CursorBlinking = appearance.CursorBlinking();
         _CursorHeight = appearance.CursorHeight();
 
         auto requestedTheme = currentTheme.RequestedTheme();

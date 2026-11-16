@@ -1079,7 +1079,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // forces you to revisit those places before bumping it.
 #define APPEARANCE_COUNT(target, name) +1
 #define APPEARANCE_COUNT_CUSTOM(name) +1
-    static_assert(0 APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_COUNT, APPEARANCE_COUNT_CUSTOM) == 24,
+    static_assert(0 APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_COUNT, APPEARANCE_COUNT_CUSTOM) == 25,
                   "The set of inheritable appearance settings changed. Update this count, then make "
                   "sure the new/removed setting is also reflected in Appearances.idl and in the XAML "
                   "reset buttons.");
