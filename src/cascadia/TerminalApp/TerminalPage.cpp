@@ -3446,8 +3446,8 @@ namespace winrt::TerminalApp::implementation
         }
         if (schemeName == L"file")
         {
-            // ShellExecuteW ignores trailing spaces and dots in file paths.
-            const auto beg = launchTarget.find_last_not_of(L" .");
+            // ShellExecuteExW ignores trailing spaces, dots, and slashes in file paths.
+            const auto beg = launchTarget.find_last_not_of(L" .\\/");
             if (beg != std::wstring_view::npos)
             {
                 launchTarget = launchTarget.substr(0, beg + 1);
