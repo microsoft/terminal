@@ -4,6 +4,7 @@
   ],
   "ContainsFilters": [
     "/.",
+    "/AGENTS.md",
     "/.git/",
     "/obj/",
     "/bin/",
@@ -31,8 +32,8 @@
     "/src/tools/schemes-fragment/",
     "/scratch/",
     "/tools/ReleaseEngineering/",
-    "/policies/",
-    "Scratch.sln",
+    "/tools/GenerateSettingsIndex.ps1",
+    "/policies/"
   ],
   "SuffixFilters": [
     ".dbb",
@@ -54,6 +55,8 @@
     ".vcxproj.filters",
     ".Build.props",
     ".Build.targets",
-    "OpenConsole.slnx"
+    ".sln",
+    ".slnx",
+    ".slnf"
   ]
 }

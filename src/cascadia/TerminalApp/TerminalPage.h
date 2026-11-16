@@ -485,8 +485,8 @@ namespace winrt::TerminalApp::implementation
                                                        const IInspectable eventArgs);
 
         safe_void_coroutine _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
-        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
-        bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const;
+        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget);
+        bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget) const;
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(bool dismissSelection, bool singleLine, bool withControlSequences, Microsoft::Terminal::Control::CopyFormat formats);
@@ -501,6 +501,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
+        bool _tabDragDropEnabled() const;
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 

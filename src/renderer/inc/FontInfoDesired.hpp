@@ -19,38 +19,31 @@ Author(s):
 #pragma once
 
 #include "FontInfoBase.hpp"
-#include "FontInfo.hpp"
 #include "CSSLengthPercentage.h"
 
-class FontInfoDesired : public FontInfoBase
+struct FontInfoDesired : FontInfoBase
 {
-public:
-    FontInfoDesired(const std::wstring_view& faceName,
-                    const unsigned char family,
-                    const unsigned int weight,
-                    const float fontSize,
-                    const unsigned int uiCodePage) noexcept;
-    FontInfoDesired(const FontInfo& fiFont) noexcept;
+    const CSSLengthPercentage& GetCellWidth() const noexcept;
+    const CSSLengthPercentage& GetCellHeight() const noexcept;
+    float GetFontSizeInPt() const noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
+    bool GetEnableColorGlyphs() const noexcept;
 
-    bool operator==(const FontInfoDesired& other) = delete;
-
-    void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
+    void SetCellWidth(CSSLengthPercentage cellWidth) noexcept;
+    void SetCellHeight(CSSLengthPercentage cellHeight) noexcept;
+    void SetFontSizeInPt(float fontSizeInPt) noexcept;
     void SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept;
     void SetEnableColorGlyphs(bool colorGlyphs) noexcept;
 
-    const CSSLengthPercentage& GetCellWidth() const noexcept;
-    const CSSLengthPercentage& GetCellHeight() const noexcept;
-    bool GetEnableBuiltinGlyphs() const noexcept;
-    bool GetEnableColorGlyphs() const noexcept;
-    float GetFontSize() const noexcept;
-    til::size GetEngineSize() const noexcept;
+    til::size GetPixelCellSize() const noexcept;
+    void SetPixelCellSize(til::size size) noexcept;
+    bool IsTrueTypeFont() const noexcept;
     bool IsDefaultRasterFont() const noexcept;
 
 private:
-    til::size _coordSizeDesired;
-    float _fontSize;
     CSSLengthPercentage _cellWidth;
     CSSLengthPercentage _cellHeight;
+    float _fontSizeInPt = 0;
     bool _builtinGlyphs = false;
     bool _colorGlyphs = true;
 };

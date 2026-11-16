@@ -498,6 +498,18 @@
     <value>Verwendung des Titels des aktiven Terminals als Anwendungstitel</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>Registerkarten durch Ziehen neu anordnen oder in ein neues Fenster herauslösen</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
+    <value>Wenn diese Option deaktiviert ist, können Registerkarten weiterhin mit den Aktionen "Registerkarte verschieben" verschoben werden.</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>Das Ziehen von Registerkarten ist nicht verfügbar, da Terminal als Administrator ausgeführt wird. Verwenden Sie stattdessen die Aktionen „Registerkarte verschieben“.</value>
+    <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Anpassen der Fenstergröße an Zeichenraster ausrichten</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -1363,7 +1375,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>Experimentell: Positionieren des Cursors mit Mausklicks</value>
+    <value>Cursor durch Mausklicks neu positionieren</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -2246,6 +2258,10 @@
     <value>Wenn diese Option aktiviert ist, wird das Terminal ausgeblendet, sobald Sie zu einem anderen Fenster wechseln.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Terminalgröße beim Ändern der Größe anzeigen</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
+  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>Standard</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -2640,7 +2656,7 @@
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
-    <value>Experimentell: Eingabevorschläge in Regenbogenfarben anzeigen</value>
+    <value>Vorgeschlagene Eingabe in Regenbogenfarben anzeigen</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
@@ -2648,7 +2664,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>Experimentell. Ausgewählten Text oder übereinstimmenden Text mit benutzerdefinierten Farben mithilfe von Tastenkombinationen hervorheben</value>
+    <value>Ausgewählten Text oder übereinstimmenden Text mit benutzerdefinierten Farben mithilfe von Tastenkombinationen hervorheben</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2761,6 +2777,14 @@
   <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
     <value>NEU</value>
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
+    <value>EXPERIMENTELL</value>
+    <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">
+    <value>Experimentelle Einstellung</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>Weitere Informationen zu regulären Ausdrücken</value>

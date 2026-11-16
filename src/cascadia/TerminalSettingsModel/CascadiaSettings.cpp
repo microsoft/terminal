@@ -574,15 +574,7 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
             }
             else if (til::equals_insensitive_ascii(scheme, L"file"))
             {
-                const auto uriPath{ resourceUri.Path() };
-                if (uriPath.size() < 2)
-                {
-                    resource.Reject();
-                    return;
-                }
-                // Uri mangles file paths to begin with a / (ala /C:/) and escapes special characters such as Space.
-                // Try to un-mangle it.
-                resourcePath = til::safe_slice_abs(winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath), 1, SIZE_T_MAX);
+                resourcePath = Utils::FileUriToPath(resourcePath);
                 // FALL THROUGH TO TRY FILESYSTEM PATHS
             }
             else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))

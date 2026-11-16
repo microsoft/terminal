@@ -35,10 +35,26 @@ class UtilsTests
 
     TEST_METHOD(TestEvaluateStartingDirectory);
     TEST_METHOD(TestIsValidDirectory);
+    TEST_METHOD(TestFileUriToPath);
 
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
     void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
+
+void UtilsTests::TestFileUriToPath()
+{
+    VERIFY_ARE_EQUAL(L"C:\\test\\\u4e2d\u6587.txt", FileUriToPath(L"file:///C:/test/%E4%B8%AD%E6%96%87.txt"));
+    VERIFY_ARE_EQUAL(L"C:\\test\\\U0001f600.txt", FileUriToPath(L"file:///C:/test/%F0%9F%98%80.txt"));
+    VERIFY_ARE_EQUAL(L"C:\\test\\a#b%20c.txt", FileUriToPath(L"file:///C:/test/a%23b%2520c.txt?query#42"));
+    VERIFY_ARE_EQUAL(L"C:\\test\\a.exe", FileUriToPath(L"file://localhost/C:/test/a.%65xe"));
+    VERIFY_ARE_EQUAL(L"\\\\wsl.localhost\\Ubuntu\\home\\\u4e2d\u6587.txt", FileUriToPath(L"file://wsl.localhost/Ubuntu/home/%E4%B8%AD%E6%96%87.txt"));
+    VERIFY_ARE_EQUAL(L"\\\\server\\share\\a b.txt", FileUriToPath(L"file://server/share/a%20b.txt"));
+    VERIFY_ARE_EQUAL(L"C:\\test\\a/b.txt", FileUriToPath(L"file:///C:/test/a%2Fb.txt"));
+    VERIFY_THROWS(FileUriToPath(L"file:///C:/test/a%00b.txt"), wil::ResultException);
+    VERIFY_THROWS(FileUriToPath(L"https://example.com/file.txt"), wil::ResultException);
+    using namespace std::string_view_literals;
+    VERIFY_THROWS(FileUriToPath(L"file:///C:/test/a\0b.txt"sv), wil::ResultException);
+}
 
 void UtilsTests::TestClampToShortMax()
 {

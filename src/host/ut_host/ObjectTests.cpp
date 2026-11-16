@@ -58,6 +58,7 @@ class ObjectTests
         SCREEN_INFORMATION* newOutput;
 
         VERIFY_NT_SUCCESS(SCREEN_INFORMATION::CreateInstance(existingOutput.GetViewport().Dimensions(),
+                                                             existingOutput.GetDesiredFont(),
                                                              existingOutput.GetCurrentFont(),
                                                              existingOutput.GetBufferSize().Dimensions(),
                                                              existingOutput.GetAttributes(),

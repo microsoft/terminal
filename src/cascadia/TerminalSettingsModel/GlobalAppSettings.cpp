@@ -29,6 +29,7 @@ static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.for
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
+static constexpr std::string_view LegacyWarningConfirmCloseAllTabsKey{ "warning.confirmCloseAllTabs" };
 static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
 // Method Description:
@@ -169,11 +170,17 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
     // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
     // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    // Precedence: "warning.confirmOnClose" (read below) > "warning.confirmCloseAllTabs" > "confirmCloseAllTabs".
+    for (const auto key : { LegacyConfirmCloseAllTabsKey, LegacyWarningConfirmCloseAllTabsKey })
     {
         std::optional<bool> legacyConfirmClose;
-        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        if (JsonUtils::GetValueForKey(json, key, legacyConfirmClose))
         {
-            _ConfirmOnClose = legacyConfirmClose.value() ? ConfirmOnClose::Automatic : ConfirmOnClose::Never;
+            // A null value has nothing to migrate, but we still want the key removed.
+            if (legacyConfirmClose)
+            {
+                _ConfirmOnClose = *legacyConfirmClose ? ConfirmOnClose::Automatic : ConfirmOnClose::Never;
+            }
             _fixupsAppliedDuringLoad = true;
         }
     }

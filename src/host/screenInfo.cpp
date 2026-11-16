@@ -21,11 +21,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics* pMetrics,
     const TextAttribute popupAttributes,
-    const FontInfo fontInfo) :
+    FontInfoDesired fontInfoDesired,
+    FontInfo fontInfo) :
     _pConsoleWindowMetrics{ pMetrics },
     _PopupAttributes{ popupAttributes },
-    _currentFont{ fontInfo },
-    _desiredFont{ fontInfo }
+    _currentFont{ std::move(fontInfo) }
 {
     // Check if VT mode should be enabled by default. This can be true if
     // VirtualTerminalLevel is set to !=0 in the registry, or when conhost
@@ -35,7 +35,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
-    _desiredFont.SetEnableBuiltinGlyphs(gci.GetEnableBuiltinGlyphs());
+    _setDesiredFont(std::move(fontInfoDesired));
 }
 
 // Routine Description:
@@ -59,7 +59,8 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // - dwScreenBufferSize - the initial size of the screen buffer (in rows/columns).
 // Return Value:
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ til::size coordWindowSize,
-                                                          const FontInfo fontInfo,
+                                                          FontInfoDesired fontInfoDesired,
+                                                          FontInfo fontInfo,
                                                           _In_ til::size coordScreenBufferSize,
                                                           const TextAttribute defaultAttributes,
                                                           const TextAttribute popupAttributes,
@@ -76,7 +77,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         // It is possible for pNotifier to be null and that's OK.
         // For instance, the PTY doesn't need to send events. Just pass it along
         // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
-        const auto pScreen = new SCREEN_INFORMATION(pMetrics, popupAttributes, fontInfo);
+        const auto pScreen = new SCREEN_INFORMATION(pMetrics, popupAttributes, std::move(fontInfoDesired), std::move(fontInfo));
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -465,7 +466,7 @@ til::size SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 
 void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const
 {
-    const auto coordFontSize = GetCurrentFont().GetSize();
+    const auto coordFontSize = GetCurrentFont().GetCellSizeInPhysicalPx();
 
     // TODO: Assert valid size boundaries
     pRequiredSize->width = GetViewport().Width() * coordFontSize.width;
@@ -480,7 +481,7 @@ til::size SCREEN_INFORMATION::GetScreenFontSize() const
     til::size coordRet = { 1, 1 };
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        coordRet = GetCurrentFont().GetSize();
+        coordRet = GetCurrentFont().GetCellSizeInPhysicalPx();
     }
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
@@ -525,14 +526,32 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
     }
 }
 
-void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
+void SCREEN_INFORMATION::_setDesiredFont(FontInfoDesired newFont)
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& globals = ServiceLocator::LocateGlobals();
+    auto& gci = globals.getConsoleInformation();
 
-    FontInfoDesired fiDesiredFont(*pfiNewFont);
-    fiDesiredFont.SetEnableBuiltinGlyphs(gci.GetEnableBuiltinGlyphs());
+    newFont.SetEnableBuiltinGlyphs(gci.GetEnableBuiltinGlyphs());
 
-    GetDesiredFont() = fiDesiredFont;
+    if (newFont.GetFaceName() == DEFAULT_TT_FONT_FACENAME)
+    {
+        // GH#3123: Propagate font length changes up through Settings and propsheet
+        wchar_t faceName[LF_FACESIZE];
+        if (SUCCEEDED(TrueTypeFontList::s_SearchByCodePage(newFont.GetCodePage(), faceName, ARRAYSIZE(faceName))))
+        {
+            newFont.SetFaceName(faceName);
+            // If we're assigning a default true type font name, make sure the family is also set to TrueType
+            // to help GDI select the appropriate font when we actually create it.
+            newFont.SetFamily(TMPF_TRUETYPE);
+        }
+    }
+
+    _desiredFont = std::move(newFont);
+}
+
+void SCREEN_INFORMATION::UpdateFont(FontInfoDesired newFont)
+{
+    _setDesiredFont(std::move(newFont));
 
     RefreshFontWithRenderer();
 
@@ -551,7 +570,7 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->UpdateFont(pfiNewFont);
+        _psiMainBuffer->UpdateFont(_desiredFont);
     }
 }
 
@@ -584,13 +603,23 @@ SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
     // Fire off an event to let accessibility apps know the layout has changed.
     ServiceLocator::LocateGlobals().accessibilityNotifier.Layout();
 
-    const auto buffer = GetBufferSize();
+    // The scrollbar state always tracks the main buffer, even when an
+    // alt buffer is active. This ensures that switching the alt buffer
+    // on/off doesn't shift the window or its contents around.
+    //
+    // Since we don't handle the deferred main buffer resize (`_fAltWindowChanged`)
+    // this results in some odd behavior when resizing a horizontally scrolling window.
+    // This can be fixed by running the _AdjustScreenBuffer arithmetic here.
+    // However, this complicates the design for a feature that is rarely used nowadays.
+    const auto& mainBuffer = GetMainBuffer();
+    const auto buffer = mainBuffer.GetBufferSize();
     const auto isAltBuffer = _IsAltBuffer();
-    const auto maxSizeVer = gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive();
+    const auto maxSizeVer = gci.IsTerminalScrolling() ? mainBuffer._virtualBottom : buffer.BottomInclusive();
     const auto maxSizeHor = buffer.RightInclusive();
+    const auto viewport = mainBuffer._viewport.ToExclusive();
     return ScrollBarState{
         .maxSize = { maxSizeHor, maxSizeVer },
-        .viewport = _viewport.ToExclusive(),
+        .viewport = viewport,
         .isAltBuffer = isAltBuffer,
     };
 }
@@ -889,17 +918,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const til::rect* const prcClientNew
         }
     }
 
-    auto hr = S_FALSE;
-
-    // Only attempt to modify the buffer if something changed. Expensive operation.
-    if (coordBufferSizeOld != coordBufferSizeNew)
-    {
-        LOG_IF_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
-        // Return S_OK, to indicate we succeeded and actually did something.
-        hr = S_OK;
-    }
-
-    return hr;
+    RETURN_IF_NTSTATUS_FAILED(ResizeScreenBuffer(coordBufferSizeNew, FALSE));
+    return S_OK;
 }
 
 // Routine Description:
@@ -1796,10 +1816,9 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
     // Create new screen buffer.
     auto WindowSize = _viewport.Dimensions();
 
-    const auto& existingFont = GetCurrentFont();
-
     auto Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
-                                                     existingFont,
+                                                     _desiredFont,
+                                                     _currentFont,
                                                      WindowSize,
                                                      initAttributes,
                                                      GetPopupAttributes(),
@@ -2135,10 +2154,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // MSFT-33471786, GH#13193:
     // newViewport may reside anywhere outside of the valid coordScreenBufferSize.
     // For instance it might be scrolled down more than our text buffer allows to be scrolled.
-    const auto cx = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width));
-    const auto cy = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height));
-    const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
-    const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
+    const auto cx = std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width);
+    const auto cy = std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height);
+    const auto x = std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx);
+    const auto y = std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy);
 
     _CommitViewport(Viewport::FromExclusive({ x, y, x + cx, y + cy }));
 
@@ -2431,4 +2450,38 @@ FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
 const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
+}
+
+til::size SCREEN_INFORMATION::GetLegacyConhostFontCellSize() const noexcept
+{
+    // This was previously quite different (in "GdiEngine", src\renderer\gdi\state.cpp).
+    // It set this size (coordSizeUnscaled) to the requested cell size,
+    // unless it was a raster font, in which case it uses the actual cell size.
+    // It also filled back the cell width if it was missing.
+    //
+    // My assumption is that the author wanted the desired cell size to round-trip
+    // for most fonts (TrueType fonts). I do not know why they didn't just use the
+    // desired font without feedback from the renderer. No round-trip logic needed.
+    // My assumption about the logic for raster fonts is that the author wanted the cell size
+    // to round-trip between calls to SetCurrentConsoleFontEx and GetCurrentConsoleFontEx.
+    //
+    // Well, it's mostly fixed now (aside from the necessary float -> int truncation).
+    // _desiredFont is always the source of truth. No backward feedback.
+    // _currentFont is always the true resulting render size. No size hacks.
+
+    // Try to use the given (desired) cell if we have one.
+    auto size = _desiredFont.GetPixelCellSize();
+
+    if (!size) // when either dimension is zero
+    {
+        // Otherwise, fall back to the renderer size.
+        size = _currentFont.GetCellSizeInDIP().AsInteger_DoNotUse();
+    }
+
+    if (!size)
+    {
+        size = { 8, 12 };
+    }
+
+    return size;
 }
