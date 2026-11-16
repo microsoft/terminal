@@ -2898,6 +2898,11 @@
           "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
           "type": "boolean"
         },
+        "compatibility.allowCursorBlinking": {
+          "default": true,
+          "description": "Allows cursor blinking. When false, cursor blinking is forced off, including when applications request blinking with mode ?12 or DECSCUSR. Applications can still change the cursor shape or show and hide it. Changes apply immediately to running terminals.",
+          "type": "boolean"
+        },
         "compatibility.allowOSC52": {
           "default": true,
           "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",

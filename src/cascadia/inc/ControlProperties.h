@@ -57,6 +57,7 @@
     X(bool, RepositionCursorWithMouse, false)                                                                     \
     X(bool, RainbowSuggestions)                                                                                   \
     X(bool, AllowVtChecksumReport)                                                                                \
+    X(bool, AllowVtCursorBlinking, true)                                                                          \
     X(bool, AllowVtClipboardWrite, true)                                                                          \
     X(bool, AllowOscNotifications, false)
 

@@ -271,6 +271,7 @@ void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettin
     features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
     features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
     features.set(ITermDispatch::OptionalFeature::DesktopNotification, settings.AllowOscNotifications());
+    features.set(ITermDispatch::OptionalFeature::CursorBlinking, settings.AllowVtCursorBlinking());
     engine.Dispatch().SetOptionalFeatures(features);
 }
 

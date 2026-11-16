@@ -368,6 +368,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _ForceVTInput = profile.ForceVTInput();
         _AllowKittyKeyboardMode = profile.AllowKittyKeyboardMode();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
+        _AllowVtCursorBlinking = profile.AllowVtCursorBlinking();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
         _AllowOscNotifications = profile.AllowOscNotifications();
         _PathTranslationStyle = profile.PathTranslationStyle();

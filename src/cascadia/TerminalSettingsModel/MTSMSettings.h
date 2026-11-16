@@ -118,6 +118,7 @@ Author(s):
     X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
     X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
+    X(bool, AllowVtCursorBlinking, "compatibility.allowCursorBlinking", true)                                                                                  \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \

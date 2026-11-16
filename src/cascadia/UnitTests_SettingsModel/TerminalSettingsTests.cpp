@@ -54,6 +54,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
         TEST_METHOD(TestInitialPositionParsing);
+        TEST_METHOD(AllowCursorBlinkingProfileSetting);
     };
 
     // CascadiaSettings::_normalizeCommandLine abuses some aspects from CommandLineToArgvW
@@ -893,6 +894,56 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings()->StartingTitle());
         }
     }
+    void TerminalSettingsTests::AllowCursorBlinkingProfileSetting()
+    {
+        const auto defaults = winrt::make<implementation::Profile>();
+        VERIFY_IS_TRUE(defaults.AllowVtCursorBlinking());
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "compatibility.allowCursorBlinking": false,
+                    "unfocusedAppearance": {}
+                },
+                "list": [
+                    { "name": "inherited" },
+                    { "name": "overridden", "compatibility.allowCursorBlinking": true }
+                ]
+            }
+        })" };
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        VERIFY_ARE_EQUAL(2u, settings->ActiveProfiles().Size());
+
+        const auto defaultsJson = winrt::get_self<implementation::Profile>(settings->ProfileDefaults())->ToJson();
+        VERIFY_IS_TRUE(defaultsJson.isMember("compatibility.allowCursorBlinking"));
+        VERIFY_IS_FALSE(defaultsJson["compatibility.allowCursorBlinking"].asBool());
+
+        for (auto i = 0u; i < 2u; ++i)
+        {
+            const auto profile = settings->ActiveProfiles().GetAt(i);
+            const auto expected = i == 1;
+            VERIFY_ARE_EQUAL(expected, profile.AllowVtCursorBlinking());
+            VERIFY_ARE_EQUAL(expected, profile.HasAllowVtCursorBlinking());
+
+            const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
+            VERIFY_ARE_EQUAL(expected, json.isMember("compatibility.allowCursorBlinking"));
+            if (expected)
+            {
+                VERIFY_IS_TRUE(json["compatibility.allowCursorBlinking"].asBool());
+            }
+
+            const auto result = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), profile);
+            VERIFY_ARE_EQUAL(expected, result.DefaultSettings()->AllowVtCursorBlinking());
+            VERIFY_IS_NOT_NULL(result.UnfocusedSettings());
+            VERIFY_ARE_EQUAL(expected, result.UnfocusedSettings()->AllowVtCursorBlinking());
+
+            profile.ClearAllowVtCursorBlinking();
+            VERIFY_IS_FALSE(profile.AllowVtCursorBlinking());
+            VERIFY_IS_FALSE(profile.HasAllowVtCursorBlinking());
+            VERIFY_IS_FALSE(winrt::get_self<implementation::Profile>(profile)->ToJson().isMember("compatibility.allowCursorBlinking"));
+        }
+    }
+
     void TerminalSettingsTests::TestInitialPositionParsing()
     {
         {

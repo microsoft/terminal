@@ -1753,6 +1753,12 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
         _usingAltBuffer = false;
         CursorRestoreState();
     }
+
+    // Re-entering the alternate buffer can copy an older state from the main buffer.
+    if (!_optionalFeatures.test(OptionalFeature::CursorBlinking))
+    {
+        _pages.ActivePage().Cursor().SetIsBlinking(false);
+    }
 }
 
 // Routine Description:
@@ -1808,7 +1814,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        _pages.ActivePage().Cursor().SetIsBlinking(enable);
+        _pages.ActivePage().Cursor().SetIsBlinking(enable && _optionalFeatures.test(OptionalFeature::CursorBlinking));
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
@@ -1973,7 +1979,9 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = mapTemp(_pages.ActivePage().Cursor().IsBlinking());
+        state = _optionalFeatures.test(OptionalFeature::CursorBlinking) ?
+                    mapTemp(_pages.ActivePage().Cursor().IsBlinking()) :
+                    mapPerm(false);
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
@@ -3104,7 +3112,7 @@ void AdaptDispatch::HardReset(bool erase)
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
-    _pages.ActivePage().Cursor().SetIsBlinking(true);
+    _pages.ActivePage().Cursor().SetIsBlinking(_optionalFeatures.test(OptionalFeature::CursorBlinking));
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3289,7 +3297,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
-    cursor.SetIsBlinking(fEnableBlinking);
+    cursor.SetIsBlinking(fEnableBlinking && _optionalFeatures.test(OptionalFeature::CursorBlinking));
 }
 
 // Routine Description:
@@ -4897,7 +4905,12 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
     });
 }
 
-void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept
+void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features)
 {
     _optionalFeatures = features;
+    if (!_optionalFeatures.test(OptionalFeature::CursorBlinking))
+    {
+        _pages.ActivePage().Cursor().SetIsBlinking(false);
+        _pages.VisiblePage().Cursor().SetIsBlinking(false);
+    }
 }

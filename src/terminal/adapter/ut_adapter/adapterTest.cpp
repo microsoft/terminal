@@ -2210,6 +2210,7 @@ public:
 
         using namespace std::string_view_literals;
 
+        _testGetSet->PrepData();
         _pDispatch->SetOptionalFeatures(ITermDispatch::OptionalFeature::ChecksumReport);
 
         Log::Comment(L"Test 1: ASCII characters");
@@ -3913,6 +3914,35 @@ public:
         _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
         _testGetSet->_expectedReplaceLength = 20;
         _pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })");
+    }
+
+    TEST_METHOD(CursorBlinkingDisabledAcrossPages)
+    {
+        _testGetSet->PrepData();
+        auto& pages = _pDispatch->_pages;
+        _pDispatch->SetMode(DispatchTypes::ModeParams::ATT610_StartCursorBlink);
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(2, pages.ActivePage().Number());
+        VERIFY_ARE_EQUAL(1, pages.VisiblePage().Number());
+        VERIFY_IS_TRUE(pages.ActivePage().Cursor().IsBlinking());
+        VERIFY_IS_TRUE(pages.VisiblePage().Cursor().IsBlinking());
+
+        _pDispatch->SetOptionalFeatures({});
+        VERIFY_IS_FALSE(pages.ActivePage().Cursor().IsBlinking());
+        VERIFY_IS_FALSE(pages.VisiblePage().Cursor().IsBlinking());
+        _pDispatch->SetMode(DispatchTypes::ModeParams::ATT610_StartCursorBlink);
+        VERIFY_IS_FALSE(pages.ActivePage().Cursor().IsBlinking());
+
+        for (const auto page : { 3, 1, 2 })
+        {
+            _pDispatch->PagePositionAbsolute(page);
+            VERIFY_IS_FALSE(pages.ActivePage().Cursor().IsBlinking());
+            _pDispatch->SetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+            VERIFY_IS_FALSE(pages.VisiblePage().Cursor().IsBlinking());
+        }
+        _pDispatch->HardReset(false);
+        VERIFY_IS_FALSE(pages.ActivePage().Cursor().IsBlinking());
     }
 
     TEST_METHOD(PageMovementTests)
