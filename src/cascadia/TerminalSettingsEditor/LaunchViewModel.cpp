@@ -421,10 +421,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             case WAM::StartupTaskState::Enabled:
             case WAM::StartupTaskState::Disabled:
             default:
-                break; // fall through to the common case (no task, not configured, etc.)
+                break;
             }
         }
-        return RS_(L"Globals_StartOnUserLogin/Description");
+        return {};
     }
 
     bool LaunchViewModel::StartOnUserLogin()

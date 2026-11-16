@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetName(KeyBindingsContainer(), RS_(L"EditAction_KeyBindings/Text"));
         Automation::AutomationProperties::SetName(AdditionalCustomizationsContainer(), RS_(L"EditAction_AdditionalCustomizations/Text"));
         Automation::AutomationProperties::SetName(NewKeyBinding(), RS_(L"EditAction_NewKeyBinding/Header"));
+        Automation::AutomationProperties::SetName(DeleteCommand(), RS_(L"Actions_DeleteButton2/Text"));
     }
 
     // The browse buttons live inside data templates, so we can't reference them by name.

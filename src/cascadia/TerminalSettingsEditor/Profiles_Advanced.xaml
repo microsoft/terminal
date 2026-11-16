@@ -82,7 +82,8 @@
                                 x:Uid="Profile_HistorySize"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                    <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                    <muxc:NumberBox x:Name="HistorySizeBox"
+                                    x:Uid="Profile_HistorySizeBox"
                                     LargeChange="100"
                                     Minimum="0"
                                     SmallChange="10"
@@ -285,6 +286,7 @@
             <!--  RepositionCursorWithMouse  -->
             <local:SettingsCard x:Name="RepositionCursorWithMouse"
                                 x:Uid="Profile_RepositionCursorWithMouse"
+                                IsExperimental="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
                                 Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
@@ -299,6 +301,7 @@
             <!--  RainbowSuggestions  -->
             <local:SettingsCard x:Name="RainbowSuggestions"
                                 x:Uid="Profile_RainbowSuggestions"
+                                IsExperimental="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"

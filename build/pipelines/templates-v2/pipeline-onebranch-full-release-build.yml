@@ -236,6 +236,8 @@ extends:
                 generateSbom: false # Handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
                 afterBuildSteps:
                   # This directory has to exist, even if we aren't using createvpack, because the Guardian rules demand it.
                   - pwsh: |-
@@ -265,6 +267,8 @@ extends:
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
@@ -284,6 +288,8 @@ extends:
                 generateSbom: false # this is handled by onebranch
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
       - stage: Publish
         displayName: Publish

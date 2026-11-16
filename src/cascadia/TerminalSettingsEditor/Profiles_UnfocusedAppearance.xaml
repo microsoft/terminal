@@ -11,7 +11,8 @@
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -55,6 +56,7 @@
             <local:SettingsCard x:Name="DeleteUnfocusedAppearance"
                                 x:Uid="Profile_DeleteUnfocusedAppearance"
                                 Margin="0,18,0,0"
+                                search:Ignore="True"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <local:SettingsCard.HeaderIcon>
                     <FontIcon Glyph="&#xE74D;" />

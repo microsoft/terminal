@@ -498,6 +498,18 @@
     <value>Ůŝέ äĉтĩνě τєяmϊиâŀ τίτℓę åѕ ãφрŀì¢áťīол ţįτľэ !!! !!! !!! !!! !</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>Řėŏřďėŗ άńď тĕдř óūŧ тăвś вγ δяăģĝΐлģ !!! !!! !!! !!</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
+    <value>Шнėŋ ďϊšåъℓεδ, τáьş ¢ап ŝţϊļľ ъё мöνеð шΐťћ тħё "мóνè τáв" ä¢тĭöиş. !!! !!! !!! !!! !!! !!! !!</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>Ďŕαġġϊⁿģ τǻвѕ ĩś υŋаνâīļàьļē ъзčàμşé Ţěѓмιŉâļ îş ŕύⁿņΐŋĝ âѕ ăđmΐηĭşťгάŧόг. Ûŝέ тнé "mòνè ťάъ" άςŧϊòńš ïŋşţěàð. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+    <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Ŝиάρ щίйðõщ яēşΐžíпĝ тõ čħáѓä¢ťέѓ ģѓĩδ !!! !!! !!! !!</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -509,10 +521,6 @@
   <data name="Globals_StartOnUserLogin_Checkbox.Content" xml:space="preserve">
     <value>Ĺãΰņ¢ħ åτ ŀοģīⁿ !!! !</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
-  </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>∆џţθmåţìсάļłý ļäυŉсħ Тэгмįņàŀ щĥёи γŏû ℓŏġ ιп ŧó Windows. !!! !!! !!! !!! !!! !!</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Ćêŋťєŕеδ !!</value>
@@ -1367,7 +1375,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>Ê×рэґїmзŉτâļ: Гэрŏśΐťĩőⁿ τћέ ćũŕšσŕ ẁіτн mσůśё ċℓīċĸѕ !!! !!! !!! !!! !!! </value>
+    <value>Ŕêрбѕїţїоń ťħз ςύяśбя ώįťћ мőũŝè ςŀìčкѕ !!! !!! !!! !!!</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -2250,6 +2258,10 @@
     <value>Íƒ эпãьľėđ, ťђĕ ţэřмïņάļ ẅįļļ ъę ĥìδđěŋ ªś ѕôσŉ åѕ ŷοϋ ѕẅΐтсĥ тõ āйŏŧнěґ ώїⁿďōẅ. !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Šĥθẃ τèřмīňάĺ şįż℮ ώнęή ŕэŝіźĩńĝ !!! !!! !!! </value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
+  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>ðéƒαųŀť !!</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -2648,7 +2660,7 @@
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
-    <value>Ĕжφзѓϊмзŉťáℓ: Đĭѕрĺâγ şùġğεѕŧéð ĭňрύţ ìň řαΐйъοω ςόľθяś !!! !!! !!! !!! !!! !</value>
+    <value>Ðιśрŀάу šцğĝзšŧеδ íⁿρůţ ιπ ѓąĭивŏẁ ςǿļòґš !!! !!! !!! !!!</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
@@ -2656,7 +2668,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>Έ×ρэŕĭměňťªŀ. Ħïğћĺΐĝћт ŝéļęςŧεď ťэ×τ öŕ måť¢ĥîńğ тέхт ωíťĥ ςûşťöм ĉőļθгś ŭŝїñĝ ķėÿ ъілđīŉĝѕ !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <value>Ήíġђĺĭğнτ ŝèŀĕćŧеð тëжт õŕ måтċнĭпģ ţε×ţ ŵīťĥ ¢úşťǿм ĉбļóřś μŝĭπğ ќėγ вїňðīпģš !!! !!! !!! !!! !!! !!! !!! !!</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2721,11 +2733,11 @@
   </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Åΰťόмåтίĉ śţдѓтΰρ ћăş ьěёή δіѕªъľēð ïй ťĥ℮ Ŝťǻřťúφ Āρφŝ ѕěĉŧϊōη бƒ Windows ŝεтţīŋĝś. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>Ţĥîŝ όρтįοñ íş мαпªģéð ъý ĕŋτéřрŗĭšз рôľĩсу алð çąňηōт ье ċħâήğèď ћēяē. !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>Ãčŧινε ∑хťėŋѕιόйš !!! !!</value>
@@ -2769,6 +2781,14 @@
   <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
     <value>∏ÉŴ </value>
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
+    <value>ĖЖРЗГİΜÊÑŢΔĹ !!! </value>
+    <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">
+    <value>Зжрэŕímèηţäļ ŝэŧťĩйġ !!! !!!</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>Ľэаŕη mθřє άъőùţ řέĝцŀªř ℮×рřеѕšïоπş !!! !!! !!! !</value>

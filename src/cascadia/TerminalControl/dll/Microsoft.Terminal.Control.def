@@ -16,8 +16,9 @@ EXPORTS
   TerminalSendCharEvent
   TerminalSendKeyEvent
   TerminalSendOutput
-  TerminalSetFocused
   TerminalSetTheme
   TerminalTriggerResize
   TerminalTriggerResizeWithDimension
   TerminalUserScroll
+
+  InteropQueueHandlerInvoke

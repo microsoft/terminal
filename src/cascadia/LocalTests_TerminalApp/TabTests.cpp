@@ -1290,15 +1290,6 @@ namespace TerminalAppLocalTests
         });
     }
 
-    static til::color _getControlBackgroundColor(winrt::TerminalApp::implementation::ContentManager* contentManager,
-                                                 const winrt::Microsoft::Terminal::Control::TermControl& c)
-    {
-        auto interactivity{ contentManager->TryLookupCore(c.ContentId()) };
-        VERIFY_IS_NOT_NULL(interactivity);
-        const auto core{ interactivity.Core() };
-        return til::color{ core.BackgroundColor() };
-    }
-
     void TabTests::TestPreviewCommitScheme()
     {
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
@@ -1310,7 +1301,7 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
@@ -1326,7 +1317,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed to the preview");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
 
             // And we should have stored a function to revert the change.
@@ -1346,7 +1337,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
 
             // After preview there should be no more restore functions to execute.
@@ -1372,7 +1363,7 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
@@ -1388,7 +1379,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed to the preview");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
         });
 
@@ -1402,7 +1393,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be the same as it originally was");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
         Log::Comment(L"Sleep to let events propagate");
@@ -1422,7 +1413,7 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
@@ -1437,7 +1428,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed to the preview");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
         });
 
@@ -1452,7 +1443,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed to the preview");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, backgroundColor);
         });
 
@@ -1469,7 +1460,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(activeControl);
 
             Log::Comment(L"Color should be changed");
-            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, backgroundColor);
         });
         Log::Comment(L"Sleep to let events propagate");

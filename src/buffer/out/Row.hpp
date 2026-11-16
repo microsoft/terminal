@@ -180,6 +180,7 @@ public:
 
     const std::optional<ScrollbarData>& GetScrollbarData() const noexcept;
     void SetScrollbarData(std::optional<ScrollbarData> data) noexcept;
+    void SetScrollbarData(std::nullopt_t) noexcept;
     void StartPrompt() noexcept;
     void EndOutput(std::optional<unsigned int> error) noexcept;
 

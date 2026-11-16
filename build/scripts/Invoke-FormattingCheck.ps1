@@ -8,13 +8,23 @@ function Invoke-CheckBadCodeFormatting() {
     # it'll still touch all the .xaml files.
     Invoke-CodeFormat -IgnoreXaml
 
-    # returns a non-zero exit code if there are any diffs in the tracked files in the repo
-    git diff-index --quiet HEAD --
-    if ($LASTEXITCODE -eq 1) {
+    $file = $null
+    $count = 0
+    git -c core.quotePath=false diff --no-color -U0 HEAD | ForEach-Object {
+        if ($_ -cmatch '^\+\+\+ b/(.*)$')
+        {
+            $file = $Matches[1]
+            $count++
+        }
+        elseif ($null -ne $file -and $_ -cmatch '^@@ .* \+(\d+)')
+        {
+            $line = [int]$Matches[1]
+            Write-Host ("::error file={0},line={1},title=Format::{0} is improperly formatted" -f ($file, $line))
+            $file = $null
+        }
+    }
 
-        # Write the list of files that need updating to the log
-        git diff-index --name-only HEAD
-
+    if ($count -gt 0) {
         throw "code formatting bad, run Invoke-CodeFormat on branch"
     }
 
@@ -23,4 +33,5 @@ function Invoke-CheckBadCodeFormatting() {
 
 }
 
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Invoke-CheckBadCodeFormatting

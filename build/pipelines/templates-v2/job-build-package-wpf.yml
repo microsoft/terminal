@@ -27,12 +27,18 @@ parameters:
   - name: publishArtifacts
     type: boolean
     default: true
+  - name: packageSymbols
+    type: boolean
+    default: true
   - name: signingIdentity
     type: object
     default: {}
   - name: outerTemplateContext
     type: object
     default: {}
+  - name: beforeBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -64,8 +70,6 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - template: steps-setup-versioning.yml
-
   - template: steps-download-bin-dir-artifact.yml
     parameters:
       buildPlatforms:
@@ -79,6 +83,8 @@ jobs:
 
   - template: .\steps-restore-nuget.yml
 
+  - ${{ parameters.beforeBuildSteps }}
+
   - task: VSBuild@1
     displayName: Build solution OpenConsole.slnx for WPF Control (Pack)
     inputs:
@@ -86,7 +92,7 @@ jobs:
       msbuildArgs: >-
         /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
         /p:NoBuild=true
-        /p:IncludeSymbols=true
+        /p:IncludeSymbols=${{ parameters.packageSymbols }}
         /t:Terminal\wpf\WpfTerminalControl:Pack
       msbuildArchitecture: x64
       platform: Any CPU

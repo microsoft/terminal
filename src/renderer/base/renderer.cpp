@@ -27,6 +27,7 @@ Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _renderSettings(renderSettings),
     _pData(pData)
 {
+    _shutdownEvent.create(wil::EventOptions::ManualReset);
     _cursorBlinker = RegisterTimer("cursor blink", [](Renderer& renderer, TimerHandle) {
         renderer._cursorBlinkerOn = !renderer._cursorBlinkerOn;
     });
@@ -69,10 +70,16 @@ void Renderer::EnablePainting()
     // match before the next cursor move is painted.
     _forceUpdateViewport = true;
 
+    // TriggerTeardown may have cancelled a frame late in a render cycle (e.g. Present)
+    // after its invalidations were already consumed (e.g. in BeginPaint/EndPaint).
+    // This ensures that any missed invalidations are redrawn.
+    TriggerRedrawAll();
+
     _enable.SetEvent();
 
     if (const auto guard = _threadMutex.lock_exclusive(); !_thread)
     {
+        _shutdownEvent.ResetEvent();
         _threadKeepRunning.store(true, std::memory_order_relaxed);
 
         _thread.reset(CreateThread(nullptr, 0, s_renderThread, this, 0, nullptr));
@@ -107,6 +114,7 @@ void Renderer::TriggerTeardown() noexcept
         // The render thread first waits for the event and then checks _threadKeepRunning. By doing it
         // in reverse order here, we ensure that it's impossible for the render thread to miss this.
         _threadKeepRunning.store(false, std::memory_order_relaxed);
+        _shutdownEvent.SetEvent();
         NotifyPaintFrame();
         _enable.SetEvent();
 
@@ -133,7 +141,10 @@ DWORD Renderer::_renderThread() noexcept
     while (_threadKeepRunning.load(std::memory_order_relaxed))
     {
         _enable.wait();
-        _waitUntilCanRender();
+        if (!_waitUntilCanRender())
+        {
+            break;
+        }
         _waitUntilTimerOrRedraw();
 
         // We just completed what could have been a long wait;
@@ -150,12 +161,16 @@ DWORD Renderer::_renderThread() noexcept
     return S_OK;
 }
 
-void Renderer::_waitUntilCanRender() noexcept
+bool Renderer::_waitUntilCanRender() noexcept
 {
     for (const auto pEngine : _engines)
     {
-        pEngine->WaitUntilCanRender();
+        if (!pEngine->WaitUntilCanRender(_shutdownEvent.get()))
+        {
+            return false;
+        }
     }
+    return true;
 }
 
 TimerHandle Renderer::RegisterTimer(const char* description, TimerCallback routine)
@@ -349,13 +364,16 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
         {
             // Add a bit of backoff.
             // Sleep 100, 200, 400, 600, 800ms, 1600ms before failing out and disabling the renderer.
-            Sleep(renderBackoffBaseTimeMilliseconds * (1 << (attempt - 1)));
+            if (_shutdownEvent.wait(renderBackoffBaseTimeMilliseconds * (1 << (attempt - 1))))
+            {
+                return S_FALSE;
+            }
         }
 
         // BODGY: Optimally we would want to retry per engine, but that causes different
         // problems (intermittent inconsistent states between text renderer and UIA output,
         // not being able to lock the cursor location, etc.).
-        hr = _PaintFrame();
+        hr = _PaintFrame(attempt);
         if (SUCCEEDED(hr))
         {
             break;
@@ -381,8 +399,11 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
     return hr;
 }
 
-[[nodiscard]] HRESULT Renderer::_PaintFrame() noexcept
+[[nodiscard]] HRESULT Renderer::_PaintFrame(unsigned int attempt) noexcept
+try
 {
+    til::small_vector<IRenderEngine*, 2> enginesToPresent;
+
     {
         _pData->LockConsole();
         auto unlock = wil::scope_exit([&]() {
@@ -392,6 +413,14 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
         if (_isSynchronizingOutput)
         {
             _synchronizeWithOutput();
+        }
+
+        if (attempt > 0) [[unlikely]]
+        {
+            // The previous attempt may have consumed invalidations
+            // (e.g. in BeginPaint/EndPaint) before failing (e.g. in Present).
+            // This ensures we get a full screen of content no matter what.
+            TriggerRedrawAll();
         }
 
         _tickTimers();
@@ -417,19 +446,26 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
         _invalidateCurrentCursor(); // NOTE: This now refers to the updated cursor position.
         _prepareNewComposition();
 
+        enginesToPresent.reserve(_engines.size());
         for (const auto pEngine : _engines)
         {
-            RETURN_IF_FAILED(_PaintFrameForEngine(pEngine));
+            const auto hr = _PaintFrameForEngine(pEngine);
+            RETURN_IF_FAILED(hr);
+            if (hr != S_FALSE)
+            {
+                enginesToPresent.push_back(pEngine);
+            }
         }
     }
 
-    for (const auto pEngine : _engines)
+    for (const auto pEngine : enginesToPresent)
     {
-        RETURN_IF_FAILED(pEngine->Present());
+        RETURN_IF_FAILED(pEngine->Present(_shutdownEvent.get()));
     }
 
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept
 try
@@ -441,11 +477,9 @@ try
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
-    // The renderer itself tracks if there's something to do with the title, the
-    //      engine won't know that.
     if (S_FALSE == hr)
     {
-        return S_OK;
+        return S_FALSE;
     }
 
     auto endPaint = wil::scope_exit([&]() {

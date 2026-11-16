@@ -323,6 +323,11 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    bool TerminalPage::_tabDragDropEnabled() const
+    {
+        return CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -333,7 +338,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop();
+        const auto canDragDrop = _tabDragDropEnabled();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -1901,7 +1906,7 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
-    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
+    bool TerminalPage::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool /*extended*/, const bool down)
     {
         const auto modifiers = _GetPressedModifierKeys();
         if (vkey == VK_SPACE && modifiers.IsAltPressed() && down)
@@ -2825,7 +2830,7 @@ namespace winrt::TerminalApp::implementation
     //   attached to our window. content represents a blob of JSON describing
     //   some startup actions for rebuilding the specified panes. They will
     //   include `__content` properties with the GUID of the existing
-    //   ControlInteractivity's we should use, rather than starting new ones.
+    //   Content we should use, rather than starting new ones.
     // - _MakePane is already enlightened to use the ContentId property to
     //   reattach instead of create new content, so this method simply needs to
     //   parse the JSON and pump it into our action handler. Almost the same as
@@ -3149,7 +3154,7 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcher = Dispatcher();
         const auto windowSettings = _currentWindowSettings();
         const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
-        const auto sourceId = sender.try_as<ControlInteractivity>().Id();
+        const auto sourceId = sender.try_as<IContentHandle>().Id();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
@@ -3280,13 +3285,25 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
+        const auto strongThis = get_strong();
+
         try
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
-            if (_IsUriSupported(parsed))
+
+            std::wstring filePath;
+            wil::zwstring_view launchTarget{ uriString.c_str(), uriString.size() };
+
+            if (parsed.SchemeName() == L"file")
             {
-                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+                filePath = Utils::FileUriToPath(uriString);
+                launchTarget = filePath;
+            }
+
+            if (_IsUriSupported(parsed, launchTarget))
+            {
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed, launchTarget) };
 
                 if (!shouldLaunch)
                 {
@@ -3308,7 +3325,17 @@ namespace winrt::TerminalApp::implementation
 
                 if (shouldLaunch)
                 {
-                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    SHELLEXECUTEINFOW info{ sizeof(info) };
+                    info.fMask = SEE_MASK_FLAG_NO_UI;
+                    info.hwnd = _hostingHwnd.value_or(nullptr);
+                    info.lpVerb = L"open";
+                    info.lpFile = launchTarget.c_str();
+                    info.nShow = SW_SHOWNORMAL;
+                    if (!ShellExecuteExW(&info))
+                    {
+                        const auto error = HRESULT_FROM_WIN32(GetLastError());
+                        _ShowCouldNotOpenDialog(winrt::hresult_error{ error }.message(), uriString);
+                    }
                 }
             }
             else
@@ -3349,9 +3376,10 @@ namespace winrt::TerminalApp::implementation
     // - Determines if the given URI is currently supported
     // Arguments:
     // - The parsed URI
+    // - The original URI, or the decoded filesystem path for file URIs
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
@@ -3359,27 +3387,48 @@ namespace winrt::TerminalApp::implementation
         }
         if (parsedUri.SchemeName() == L"file")
         {
-            const auto host = parsedUri.Host();
-            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
-            // and we allow it
-            if (host == L"")
-            {
-                return true;
-            }
-
-            // GH#10188: WSL paths are okay. We'll let those through.
-            if (host == L"wsl$" || host == L"wsl.localhost")
-            {
-                return true;
-            }
-
             // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
             // comparing that value against what is returned by GetComputerNameExW and making sure they match.
             // However, ShellExecute does not seem to be happy with file URIs of the form
             //          file://{hostname}/path/to/file.ext
             // and so while we could do the hostname matching, we do not know how to actually open the URI
             // if its given in that form. So for now we ignore all hostnames other than localhost
-            return false;
+
+            if (til::starts_with(launchTarget, LR"(\\)"))
+            {
+                // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
+                const auto serverEnd = launchTarget.find_first_of(L"\\/", 2);
+                const auto server = til::safe_slice_abs(launchTarget, 2, serverEnd);
+                return til::equals_insensitive_ascii(server, L"wsl$") ||
+                       til::equals_insensitive_ascii(server, L"wsl.localhost");
+            }
+            else
+            {
+                // Relative file URIs would be weird, right? Reject them.
+                //
+                // NOTE: std::filesystem::path::is_absolute() would permit paths
+                // like `//foo/` as absolute, which feels overly permissive here.
+                if (launchTarget.size() < 3)
+                {
+                    return false;
+                }
+
+                // This is how STL implemented std::filesystem:_Is_drive_prefix().
+                // I thought it was such a neat trick, that I wanted to use it here.
+                // It's very ugly, but kind of beautiful. Obviously, this only works
+                // in little-endian, but who would do big-endian in this day and age.
+                uint32_t prefix;
+                memcpy(&prefix, launchTarget.data(), sizeof(prefix)); // load from possibly unaligned address
+                prefix &= 0xFFFFFFDFu; // transform lowercase drive letters into uppercase ones
+                prefix -= (static_cast<unsigned int>(L':') << (sizeof(wchar_t) * CHAR_BIT)) | L'A';
+                if (prefix >= 26)
+                {
+                    return false;
+                }
+
+                const auto slash = launchTarget[2];
+                return slash == L'\\' || slash == L'/';
+            }
         }
 
         // In this case, the app manually output a URI other than file:// or
@@ -3389,7 +3438,7 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
         // file URIs pointing to remote locations are *always* considered unsafe.
@@ -3408,11 +3457,17 @@ namespace winrt::TerminalApp::implementation
         }
         if (schemeName == L"file")
         {
+            // ShellExecuteExW ignores trailing spaces, dots, and slashes in file paths.
+            const auto beg = launchTarget.find_last_not_of(L" .\\/");
+            if (beg != std::wstring_view::npos)
+            {
+                launchTarget = launchTarget.substr(0, beg + 1);
+            }
+
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
-            const auto filename = parsedUri.Path();
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
-                if (til::ends_with_insensitive_ascii(filename, e))
+                if (!e.empty() && til::ends_with_insensitive_ascii(launchTarget, e))
                 {
                     return false;
                 }
@@ -3635,8 +3690,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    safe_void_coroutine TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
     {
+        // This is our hook into SetCopyToClipboardCallback, which gets called by the VT parser thread.
+        // When this gets called, the console lock is being held. This is not a problem per-se, but there
+        // is just a teeny tiny problem... EmptyClipboard() sends WM_DESTROYCLIPBOARD to the previous owner.
+        // *We* may be the previous owner.
+        //
+        // So now we (VT thread, holding the lock) are waiting for us (UI thread, waiting for the lock)
+        // and immediately deadlock. *Tada* 5s app freeze.
+        //
+        // Solution: Just do it on the UI thread. Just like conhost.
+        co_await wil::resume_foreground(Dispatcher());
+
         if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
         {
             const auto plain = args.Plain();
@@ -4148,6 +4214,10 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_currentWindowSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
+
+        const auto canDragDrop = _tabDragDropEnabled();
+        _tabView.CanReorderTabs(canDragDrop);
+        _tabView.CanDragTabs(canDragDrop);
 
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
@@ -5251,7 +5321,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // Make sure that we use the same backdrop source as TermControl.
+            // If we don't, it'll cause the same flickering as in GH #14384
+            acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
+                                              Media::AcrylicBackgroundSource::Backdrop :
+                                              Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
