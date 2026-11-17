@@ -549,8 +549,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isInternalScrollBarUpdate = true;
 
         auto scrollBar = ScrollBar();
-        // Don't snap a dragged thumb onto the row it's already on: its value is
-        // fractional, and the core reports the row that value rounds to.
+        // Don't update the scrollbar at all for fractional rows that round to the same value
         if (update.newValue && std::lround(scrollBar.Value()) != std::lround(*update.newValue))
         {
             scrollBar.Value(*update.newValue);
