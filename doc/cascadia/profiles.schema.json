@@ -3034,7 +3034,7 @@
         },
         "cursorBlinking": {
           "default": true,
-          "description": "Sets the profile's default cursor blinking state, restored by DECSCUSR 0 and RIS. Uses the Windows cursor blink rate. Applications can change this state. Cannot be overridden by unfocusedAppearance.",
+          "description": "Sets the default cursor blinking state, restored by DECSCUSR 0 and RIS. Applications can change this state.",
           "type": "boolean"
         },
         "cursorHeight": {
