@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _LaunchModeList.RemoveAt(6); // fullscreenFocus
         _LaunchModeList.RemoveAt(3); // maximizedFullscreen
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(StartOnLoginMode, StartOnLoginMode, StartOnLoginMode, L"Globals_StartOnLoginMode", L"Content");
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -391,7 +392,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto strongThis{ get_strong() };
         auto task{ co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName) };
         _startOnUserLoginTask = std::move(task);
-        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+        _NotifyChanges(L"StartOnUserLogin", L"StartOnUserLoginConfigurable", L"StartOnLoginModeConfigurable", L"StartOnUserLoginStatefulHelpText");
     }
 
     bool LaunchViewModel::StartOnUserLoginConfigurable()
@@ -404,6 +405,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto state{ _startOnUserLoginTask.State() };
         // Terminal cannot change the state of the login task if it is any of the "ByUser" or "ByPolicy" states.
         return state == WAM::StartupTaskState::Disabled || state == WAM::StartupTaskState::Enabled;
+    }
+
+    bool LaunchViewModel::StartOnLoginModeConfigurable()
+    {
+        return StartOnUserLogin();
     }
 
     winrt::hstring LaunchViewModel::StartOnUserLoginStatefulHelpText()
@@ -425,6 +431,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return {};
+    }
+
+    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> LaunchViewModel::StartOnLoginModeList()
+    {
+        return _StartOnLoginModeList;
+    }
+
+    winrt::Windows::Foundation::IInspectable LaunchViewModel::CurrentStartOnLoginMode()
+    {
+        const auto currentMode = _Settings.GlobalSettings().StartOnLoginMode();
+        return winrt::box_value<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(_StartOnLoginModeMap.Lookup(currentMode));
+    }
+
+    void LaunchViewModel::CurrentStartOnLoginMode(const winrt::Windows::Foundation::IInspectable& enumEntry)
+    {
+        if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
+        {
+            auto mode = winrt::unbox_value<Model::StartOnLoginMode>(ee.EnumValue());
+            _Settings.GlobalSettings().StartOnLoginMode(mode);
+        }
     }
 
     bool LaunchViewModel::StartOnUserLogin()
@@ -455,6 +481,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _startOnUserLoginTask.Disable();
         }
         // Any of these could have changed in response to an attempt to enable (e.g. it was disabled in task manager since our last check)
-        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+        _NotifyChanges(L"StartOnUserLogin", L"StartOnUserLoginConfigurable", L"StartOnLoginModeConfigurable", L"StartOnUserLoginStatefulHelpText");
     }
 }

@@ -579,18 +579,54 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
         const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
 
+        // Detect whether we were launched as a startup task (i.e. on user login).
+        // This is only available for packaged Terminal.
+        auto startOnLoginMode = Settings::Model::StartOnLoginMode::Normal;
+        if (IsPackaged())
+        {
+            try
+            {
+                const auto activatedArgs = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
+                if (activatedArgs && activatedArgs.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::StartupTask)
+                {
+                    startOnLoginMode = _app.Logic().Settings().GlobalSettings().StartOnLoginMode();
+                }
+            }
+            CATCH_LOG();
+        }
+
+        const auto isHeadlessStartup = startOnLoginMode == Settings::Model::StartOnLoginMode::Headless;
+        const auto isMinimizedStartup = startOnLoginMode == Settings::Model::StartOnLoginMode::Minimized;
+
+        if (isHeadlessStartup)
+        {
+            // In headless mode, keep the process alive in the background.
+            // The user can summon windows later via global hotkeys, quake mode,
+            // or running wt.exe from another shell.
+            _allowHeadlessOverride = true;
+        }
+
         // Restore persisted windows.
         const auto state = ApplicationState::SharedInstance();
         const auto layouts = state.PersistedWindowLayouts();
-        if (layouts && layouts.Size() > 0)
+        _needsPersistenceCleanup = layouts && layouts.Size() > 0;
+        if (_needsPersistenceCleanup && _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
         {
-            _needsPersistenceCleanup = true;
+            // I wanted minimized startup mode to restore the windows as
+            // minimized. However, this didn't seem to work. It would restore
+            // them, but leave them in a weird state where they couldn't be
+            // restored? But I could re-activated them via the tray icon? it was
+            // very weird. Leaving that as a note for now.
+            // (headless mode will just restore them normally)
+            //
+            // const auto restoreShowCmd = isMinimizedStartup ? gsl::narrow_cast<uint32_t>(SW_SHOWMINIMIZED) : showCmd;
+            const auto restoreShowCmd = showCmd;
 
             uint32_t startIdx = 0;
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+                _dispatchCommandlineCommon(args, cwd, env, restoreShowCmd);
                 startIdx += 1;
             }
         }
@@ -607,12 +643,17 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             });
             _handoffTimeoutTimer.Start();
         }
-        else
+        else if (!isHeadlessStartup)
         {
             // Create another window if needed: There aren't any yet, OR we got an explicit command line.
+            // In headless mode, we skip creating a new default window entirely.
             if (_windows.empty() || args.size() != 1)
             {
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+                // If this is a startup task activation with minimized mode, and
+                // we're creating a new default window (not restoring persisted
+                // windows), show it minimized.
+                const auto newShowCmd = isMinimizedStartup ? gsl::narrow_cast<uint32_t>(SW_SHOWMINIMIZED) : showCmd;
+                _dispatchCommandlineCommon(args, cwd, env, newShowCmd);
             }
 
             // If we created no windows, e.g. because the args are "/?" we can just exit now.
@@ -1083,6 +1124,7 @@ void WindowEmperor::_postQuitMessageIfNeeded() const
     if (
         _messageBoxCount <= 0 &&
         _windowCount <= 0 &&
+        !_allowHeadlessOverride &&
         !_app.Logic().Settings().GlobalSettings().AllowHeadless())
     {
         PostQuitMessage(0);
@@ -1122,12 +1164,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         {
             const auto globalSettings = _app.Logic().Settings().GlobalSettings();
             // Keep the last window in the array so that we can persist it on exit.
-            // We check for AllowHeadless(), as that being true prevents us from ever quitting in the first place.
+            // We check for AllowHeadless() and _allowHeadlessOverride, as either
+            // being true prevents us from ever quitting in the first place.
             // (= If we avoided closing the last window you wouldn't be able to reach a headless state.)
             const auto shouldKeepWindow =
                 _windows.size() == 1 &&
                 globalSettings.ShouldUsePersistedLayout() &&
-                !globalSettings.AllowHeadless();
+                !globalSettings.AllowHeadless() &&
+                !_allowHeadlessOverride;
 
             if (!shouldKeepWindow)
             {

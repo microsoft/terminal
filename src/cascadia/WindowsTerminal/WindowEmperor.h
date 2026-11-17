@@ -95,6 +95,7 @@ private:
     bool _notificationIconShown = false;
     bool _skipPersistence = false;
     bool _needsPersistenceCleanup = false;
+    bool _allowHeadlessOverride = false;
     SafeDispatcherTimer _persistStateTimer;
     SafeDispatcherTimer _handoffTimeoutTimer;
     std::optional<bool> _currentSystemThemeIsDark;

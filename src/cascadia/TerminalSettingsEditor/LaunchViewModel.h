@@ -58,10 +58,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool StartOnUserLoginAvailable();
         safe_void_coroutine PrepareStartOnUserLoginSettings();
-        bool StartOnUserLoginConfigurable();
-        winrt::hstring StartOnUserLoginStatefulHelpText();
         bool StartOnUserLogin();
         safe_void_coroutine StartOnUserLogin(bool enable);
+        bool StartOnUserLoginConfigurable();
+        bool StartOnLoginModeConfigurable();
+        winrt::hstring StartOnUserLoginStatefulHelpText();
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> StartOnLoginModeList();
+        winrt::Windows::Foundation::IInspectable CurrentStartOnLoginMode();
+        void CurrentStartOnLoginMode(const winrt::Windows::Foundation::IInspectable& enumEntry);
 
     private:
         Model::CascadiaSettings _Settings;
@@ -71,6 +76,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeList;
         winrt::Windows::Foundation::Collections::IMap<Model::LaunchMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _LaunchModeMap;
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _StartOnLoginModeList;
+        winrt::Windows::Foundation::Collections::IMap<Model::StartOnLoginMode, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _StartOnLoginModeMap;
 
         winrt::Windows::ApplicationModel::StartupTask _startOnUserLoginTask{ nullptr };
     };

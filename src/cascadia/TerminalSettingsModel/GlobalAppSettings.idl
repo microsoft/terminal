@@ -50,6 +50,13 @@ namespace Microsoft.Terminal.Settings.Model
         AfterCurrentTab,
     };
 
+    enum StartOnLoginMode
+    {
+        Normal,
+        Minimized,
+        Headless,
+    };
+
     enum ConfirmOnClose
     {
         Never = 0,
@@ -66,6 +73,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(StartOnLoginMode, StartOnLoginMode);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, EnableTabDragDrop);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
