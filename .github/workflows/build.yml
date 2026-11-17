@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/cache@v6
         with:
-          path: obj/${{matrix.arch}}/vcpkg
+          path: obj/*/vcpkg
           key: ${{matrix.arch}}-${{hashFiles('vcpkg.json')}}
 
       - uses: actions/cache@v6
@@ -49,7 +49,13 @@ jobs:
       - run: |-
           Import-Module $env:VS_DEVSHELL
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
-          & msbuild OpenConsole.slnx /p:Platform=${{ matrix.arch }} /p:Configuration=Release /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /bl:msbuild.binlog
+          & msbuild OpenConsole.slnx `
+            /p:Platform=${{ matrix.arch }} `
+            /p:Configuration=Release `
+            /p:WindowsTerminalOfficialBuild=true `
+            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /m `
+            /bl:msbuild.binlog
         name: Build
 
       - uses: actions/upload-artifact@v7
