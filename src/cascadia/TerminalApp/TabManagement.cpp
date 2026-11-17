@@ -495,6 +495,11 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        if (!_dockCommitting && !_paneDragToken.empty())
+        {
+            _EndPaneDrag(false);
+        }
+
         // We use _removing flag to suppress _OnTabSelectionChanged events
         // that might get triggered while removing
         _removing = true;
@@ -996,6 +1001,10 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabItemsChanged(const IInspectable& /*sender*/, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
     {
+        if (_dockCommitting)
+        {
+            return;
+        }
         if (_rearranging)
         {
             if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
@@ -1152,7 +1161,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
-        if (!_rearranging && !_removing)
+        if (!_rearranging && !_removing && !_dockCommitting)
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
@@ -1248,7 +1257,8 @@ namespace winrt::TerminalApp::implementation
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
 
-        if (from.has_value() && to.has_value() && to != from)
+        const auto reordered = !_dockConsumed && from.has_value() && to.has_value() && to != from;
+        if (reordered)
         {
             try
             {
@@ -1272,6 +1282,7 @@ namespace winrt::TerminalApp::implementation
 
         from = std::nullopt;
         to = std::nullopt;
+        _EndPaneDrag(reordered);
     }
 
     void TerminalPage::_DismissTabContextMenus()

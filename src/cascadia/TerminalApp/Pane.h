@@ -71,6 +71,17 @@ public:
          const float splitPosition,
          const bool lastFocused = false);
 
+    struct DockLayout
+    {
+        winrt::Windows::Foundation::Rect incoming;
+        float firstPaneRatio;
+    };
+
+    std::vector<std::shared_ptr<Pane>> GetLeafPanes();
+    bool Contains(const std::shared_ptr<Pane>& pane) const noexcept;
+    std::optional<DockLayout> CalculateDockLayout(const std::shared_ptr<Pane>& incoming,
+                                                  winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction) const;
+
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
     winrt::TerminalApp::IPaneContent GetLastFocusedContent();
@@ -309,6 +320,7 @@ private:
     SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
     winrt::Windows::Foundation::Size _GetMinSize() const;
+    winrt::Windows::Foundation::Size _GetMinSizeForDockBorders(Borders borders) const;
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 

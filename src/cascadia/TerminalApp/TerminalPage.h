@@ -17,6 +17,7 @@
 #include "WindowListEntry.g.h"
 #include "WindowListRequest.g.h"
 #include "Toast.h"
+#include "PaneDockingOverlay.h"
 
 #include "WindowsPackageManagerFactory.h"
 
@@ -305,6 +306,21 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+        std::unique_ptr<PaneDockingOverlay> _paneDockingOverlay;
+        winrt::weak_ref<Tab> _dockDestination;
+        winrt::weak_ref<Tab> _dockHoverTab;
+        winrt::hstring _paneDragToken;
+        winrt::TerminalApp::Tab _preDragSelection{ nullptr };
+        winrt::Windows::UI::Xaml::DispatcherTimer _dockHoverTimer{ nullptr };
+        bool _dockCommitting{ false };
+        bool _dockConsumed{ false };
+
+        void _InitializePaneDocking();
+        bool _IsPaneDrag(const winrt::Windows::UI::Xaml::DragEventArgs& args) const;
+        void _PreviewDockTab(const winrt::com_ptr<Tab>& tab);
+        void _DockDragOver(const IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& args);
+        void _DockDrop(const IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& args);
+        void _EndPaneDrag(bool reordered);
 
         bool _activated{ false };
         bool _visible{ true };

@@ -33,6 +33,10 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
+    <ClInclude Include="PaneDockingOverlay.h" />
+    <ClCompile Include="PaneDockingOverlay.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- HERE BE DRAGONS:
       For any types that use XAML information, if their .idl and .h aren't
       marked DependentUpon the corresponding .xaml file, XamlTypeInfo.g.h won't

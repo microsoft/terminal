@@ -18,6 +18,72 @@ using namespace winrt::TerminalApp;
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 
+std::vector<std::shared_ptr<Pane>> Pane::GetLeafPanes()
+{
+    std::vector<std::shared_ptr<Pane>> leaves;
+    WalkTree([&](const auto& pane) {
+        if (pane->_IsLeaf())
+        {
+            leaves.push_back(pane);
+        }
+    });
+    return leaves;
+}
+
+bool Pane::Contains(const std::shared_ptr<Pane>& pane) const noexcept
+{
+    return pane.get() == this || (!_IsLeaf() && (_firstChild->Contains(pane) || _secondChild->Contains(pane)));
+}
+
+Size Pane::_GetMinSizeForDockBorders(const Borders borders) const
+{
+    if (_IsLeaf())
+    {
+        auto size = _content.MinimumSize();
+        size.Width += WI_IsFlagSet(borders, Borders::Left) ? PaneBorderSize : 0;
+        size.Width += WI_IsFlagSet(borders, Borders::Right) ? PaneBorderSize : 0;
+        size.Height += WI_IsFlagSet(borders, Borders::Top) ? PaneBorderSize : 0;
+        size.Height += WI_IsFlagSet(borders, Borders::Bottom) ? PaneBorderSize : 0;
+        return size;
+    }
+    const auto vertical = _splitState == SplitState::Vertical;
+    const auto first = _firstChild->_GetMinSizeForDockBorders(borders | (vertical ? Borders::Right : Borders::Bottom));
+    const auto second = _secondChild->_GetMinSizeForDockBorders(borders | (vertical ? Borders::Left : Borders::Top));
+    return vertical ? Size{ first.Width + second.Width, std::max(first.Height, second.Height) } :
+                      Size{ std::max(first.Width, second.Width), first.Height + second.Height };
+}
+
+std::optional<Pane::DockLayout> Pane::CalculateDockLayout(const std::shared_ptr<Pane>& incoming, const SplitDirection direction) const
+{
+    if (!_IsLeaf() || !incoming || incoming->WalkTree([this](const auto& pane) { return pane.get() == this; }))
+    {
+        return std::nullopt;
+    }
+    const auto vertical = direction == SplitDirection::Left || direction == SplitDirection::Right;
+    const auto before = direction == SplitDirection::Left || direction == SplitDirection::Up;
+    if (!vertical && direction != SplitDirection::Up && direction != SplitDirection::Down)
+    {
+        return std::nullopt;
+    }
+    const auto existingBorder = vertical ? (before ? Borders::Left : Borders::Right) : (before ? Borders::Top : Borders::Bottom);
+    const auto incomingBorder = vertical ? (before ? Borders::Right : Borders::Left) : (before ? Borders::Bottom : Borders::Top);
+    const auto existingMin = _GetMinSizeForDockBorders(_borders | existingBorder);
+    const auto incomingMin = incoming->_GetMinSizeForDockBorders(_borders | incomingBorder);
+    const auto size = _root.ActualSize();
+    const auto full = vertical ? size.x : size.y;
+    const auto firstMin = vertical ? (before ? incomingMin.Width : existingMin.Width) : (before ? incomingMin.Height : existingMin.Height);
+    const auto secondMin = vertical ? (before ? existingMin.Width : incomingMin.Width) : (before ? existingMin.Height : incomingMin.Height);
+    if (full <= 0 || full < firstMin + secondMin ||
+        (vertical ? size.y < std::max(existingMin.Height, incomingMin.Height) : size.x < std::max(existingMin.Width, incomingMin.Width)))
+    {
+        return std::nullopt;
+    }
+    const auto split = std::clamp(full * 0.5f, firstMin, full - secondMin);
+    const auto offset = before ? 0.0f : split;
+    const auto length = before ? split : full - split;
+    return DockLayout{ vertical ? Rect{ offset, 0, length, size.y } : Rect{ 0, offset, size.x, length }, split / full };
+}
+
 // WARNING: Don't do this! This won't work
 //   Duration duration{ std::chrono::milliseconds{ 200 } };
 // Instead, make a duration from a TimeSpan from the time in millis

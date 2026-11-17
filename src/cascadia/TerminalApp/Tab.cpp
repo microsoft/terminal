@@ -701,6 +701,20 @@ namespace winrt::TerminalApp::implementation
         return { original, newPane };
     }
 
+    void Tab::DockPane(std::shared_ptr<Pane> pane, const std::shared_ptr<Pane>& target, const SplitDirection direction, const Pane::DockLayout& layout)
+    {
+        ASSERT_UI_THREAD();
+        THROW_HR_IF(E_INVALIDARG, !_rootPane || !pane || !target || !target->_IsLeaf() || !_rootPane->Contains(target) || _rootPane->Contains(pane) || pane->Contains(target) || !std::isfinite(layout.firstPaneRatio) || layout.firstPaneRatio <= 0 || layout.firstPaneRatio >= 1 || (direction != SplitDirection::Up && direction != SplitDirection::Down && direction != SplitDirection::Left && direction != SplitDirection::Right));
+        const auto incomingActive = pane->GetActivePane();
+        _UpdateActivePane(target);
+        SplitPane(direction, 1.0f - layout.firstPaneRatio, pane);
+        if (incomingActive)
+        {
+            _UpdateActivePane(incomingActive);
+        }
+        _RecalculateAndApplyTabColor();
+    }
+
     // Method Description:
     // - Removes the currently active pane from this tab. If that was the only
     //   remaining pane, then the entire tab is closed as well.
@@ -1521,7 +1535,10 @@ namespace winrt::TerminalApp::implementation
 
                 if (auto tab{ weakThis.get() })
                 {
-                    tab->_DetachEventHandlersFromContent(pane->Id().value());
+                    if (const auto id = pane->Id())
+                    {
+                        tab->_DetachEventHandlersFromContent(*id);
+                    }
 
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {

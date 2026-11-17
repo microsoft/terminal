@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> DetachRoot();
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
+        void DockPane(std::shared_ptr<Pane> pane, const std::shared_ptr<Pane>& target, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction, const Pane::DockLayout& layout);
 
         void AttachColorPicker(winrt::TerminalApp::ColorPickupFlyout& colorPicker);
 
