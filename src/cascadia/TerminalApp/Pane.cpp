@@ -3107,7 +3107,7 @@ void Pane::_PlaceSplitter()
         _splitter.PointerPressed({ this, &Pane::_splitterPointerPressedHandler });
         _splitter.PointerMoved({ this, &Pane::_splitterPointerMovedHandler });
         _splitter.PointerCaptureLost({ this, &Pane::_splitterPointerCaptureLostHandler });
-        // Otherwise a click bubbles up to a parent pane's border and moves focus.
+        // Prevent a click from bubbling up to a parent pane's border and moving focus.
         _splitter.Tapped([](auto&&, auto&& e) { e.Handled(true); });
     }
 
