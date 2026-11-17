@@ -2180,8 +2180,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
         case Controls::Primitives::ScrollEventType::ThumbTrack:
             _isUserDraggingThumb = true;
+            // With a full scrollback, new output evicts the rows under the thumb. Hold it until release.
+            // A detached control's core belongs to another control now, which couldn't resume it.
+            if (!_detached)
+            {
+                _core->PauseOutput(true);
+            }
             break;
         case Controls::Primitives::ScrollEventType::EndScroll:
+            _core->PauseOutput(false);
             if (std::exchange(_isUserDraggingThumb, false) && !_IsClosing())
             {
                 // Output may have moved the viewport while the thumb was held.

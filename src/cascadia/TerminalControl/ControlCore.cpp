@@ -9,6 +9,7 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
+#include <til/atomic.h>
 #include <unicode.hpp>
 
 #include "EventArgs.h"
@@ -263,6 +264,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // WinRT event revokers don't prevent pending calls from proceeding (thread-safe but not race-free).
     void ControlCore::_closeConnection()
     {
+        // Connection.Close() waits for the output thread, which may be parked in _waitWhileOutputPaused().
+        PauseOutput(false);
+
         _connectionOutputEventRevoker.revoke();
         _connectionStateChangedRevoker.revoke();
 
@@ -285,6 +289,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Detach()
     {
+        // Our new control can't know that we were paused, so it would never resume us.
+        PauseOutput(false);
+
         // Disable the renderer, so that it doesn't try to start any new frames
         // for our engines while we're not attached to anything.
         _renderer->TriggerTeardown();
@@ -1893,6 +1900,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _closeConnection();
     }
 
+    // Stops consuming connection output until resumed, so nothing rotates out of the buffer
+    // while the user holds the scrollbar thumb. The connection's reader thread blocks, which
+    // in turn blocks the client through normal pipe backpressure.
+    void ControlCore::PauseOutput(const bool paused) noexcept
+    {
+        _outputPausedBy.store(paused ? GetCurrentThreadId() : 0);
+        if (!paused)
+        {
+            til::atomic_notify_all(_outputPausedBy);
+        }
+    }
+
+    void ControlCore::_waitWhileOutputPaused() noexcept
+    {
+        // Failsafe, in case we somehow miss the resume (e.g. no EndScroll). Holding the thumb this long is rare.
+        static constexpr ULONGLONG timeout = 30000;
+        const auto start = GetTickCount64();
+
+        for (;;)
+        {
+            auto pausedBy = _outputPausedBy.load();
+            // Some connections (e.g. EchoConnection) raise output on the UI thread, which is the
+            // thread that pauses and resumes us. Blocking it would deadlock.
+            if (pausedBy == 0 || pausedBy == GetCurrentThreadId())
+            {
+                return;
+            }
+
+            const auto elapsed = GetTickCount64() - start;
+            if (elapsed >= timeout)
+            {
+                _outputPausedBy.compare_exchange_strong(pausedBy, 0);
+                return;
+            }
+
+            til::atomic_wait(_outputPausedBy, pausedBy, gsl::narrow_cast<DWORD>(timeout - elapsed));
+        }
+    }
+
     void ControlCore::PersistTo(HANDLE handle) const
     {
         const auto lock = _terminal->LockForReading();
@@ -2304,6 +2350,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
     {
+        // Must happen before taking the lock, so the UI thread stays responsive while we're paused.
+        _waitWhileOutputPaused();
+
         try
         {
             {
