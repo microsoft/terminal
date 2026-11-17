@@ -8,6 +8,8 @@
 #include "MockConnection.h"
 #include "../../inc/TestUtils.h"
 
+#include <future>
+
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -50,6 +52,9 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestScrollPositionChangedIsThrottled);
         TEST_METHOD(TestScrollToMarkRaisesVisibleViewport);
+
+        TEST_METHOD(TestPauseOutputHoldsOutputUntilResumed);
+        TEST_METHOD(TestCloseWhileOutputPausedDoesNotHang);
 
         TEST_CLASS_SETUP(ModuleSetup)
         {
@@ -925,5 +930,53 @@ namespace ControlUnitTests
         scrollToMark(Control::ScrollToMarkDirection::Next, 10);
         Log::Comment(L"Next: the mark on row 95 is on the last page, so the viewport stops at row 81");
         scrollToMark(Control::ScrollToMarkDirection::Next, 81);
+    }
+
+    void ControlCoreTests::TestPauseOutputHoldsOutputUntilResumed()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        core->PauseOutput(true);
+
+        Log::Comment(L"Write from another thread, like a real connection's reader thread");
+        auto writer = std::async(std::launch::async, [conn = conn]() {
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
+            conn->WriteInput(winrt_wstring_to_array_view(L"Bar\r\n"));
+        });
+        // Runs before ~future, which would otherwise wait forever on a failed check.
+        const auto resume = wil::scope_exit([&]() { core->PauseOutput(false); });
+
+        Log::Comment(L"While paused, the writer is blocked and the buffer is untouched");
+        VERIFY_ARE_EQUAL(std::future_status::timeout, writer.wait_for(std::chrono::milliseconds{ 250 }));
+        VERIFY_ARE_EQUAL(0, core->CursorPosition().Y);
+
+        Log::Comment(L"After resuming, all of it gets applied");
+        core->PauseOutput(false);
+        VERIFY_ARE_EQUAL(std::future_status::ready, writer.wait_for(std::chrono::seconds{ 5 }));
+        VERIFY_ARE_EQUAL(2, core->CursorPosition().Y);
+        VERIFY_ARE_EQUAL(L"Foo\r\nBar\r\n", core->ReadEntireBuffer());
+    }
+
+    void ControlCoreTests::TestCloseWhileOutputPausedDoesNotHang()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        core->PauseOutput(true);
+
+        auto writer = std::async(std::launch::async, [conn = conn]() {
+            conn->WriteInput(winrt_wstring_to_array_view(L"Foo"));
+        });
+        const auto resume = wil::scope_exit([&]() { core->PauseOutput(false); });
+        VERIFY_ARE_EQUAL(std::future_status::timeout, writer.wait_for(std::chrono::milliseconds{ 250 }));
+
+        Log::Comment(L"Closing releases the blocked writer. A real connection's Close() waits for it.");
+        core->Close();
+        VERIFY_ARE_EQUAL(std::future_status::ready, writer.wait_for(std::chrono::seconds{ 5 }));
     }
 }

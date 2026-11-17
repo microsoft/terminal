@@ -155,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
+        void PauseOutput(bool paused) noexcept;
         void PersistTo(HANDLE handle) const;
         void RestoreFromPath(const wchar_t* path) const;
 
@@ -358,6 +359,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
+        void _waitWhileOutputPaused() noexcept;
         void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
@@ -431,6 +433,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<til::point> _lastHoveredCell;
         uint16_t _lastHoveredId{ 0 };
         std::atomic<bool> _initializedTerminal{ false };
+        // ID of the thread that called PauseOutput(true), or 0 while output flows.
+        std::atomic<DWORD> _outputPausedBy{ 0 };
         bool _isReadOnly{ false };
         bool _closing{ false };
 
