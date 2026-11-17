@@ -19,7 +19,7 @@ $ErrorActionPreference = 'Stop'
 
 $Manifest = [xml](Get-Content $Path)
 $Manifest.Package.Identity.Publisher += ", OID.2.25.311729368913984317654407730594956997722=1"
-$Manifest.Package.Properties.PublisherDisplayName += " (Unpackaged)"
+$Manifest.Package.Properties.PublisherDisplayName += " (Unsigned)"
 
 $writerSettings = [System.Xml.XmlWriterSettings]::new()
 $writerSettings.NewLineChars = "`r`n"
