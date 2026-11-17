@@ -6,14 +6,22 @@ on:
     branches: [ main, dev/dhowett/github-ci ]
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   build:
-    runs-on: windows-2025
+    runs-on: windows-2025-vs2026
     name: Build ${{ matrix.arch }}
     strategy:
       matrix:
         arch: [x64] #, arm64]
     env:
+      BUILD_PLATFORM: |-
+        ${{ case(
+              matrix.arch == 'AnyCPU', 'Any CPU',
+              matrix.arch == 'x86', 'Win32',
+              matrix.arch
+        ) }}
       WT_BRANDING: Canary
       UnpackagedBuildArguments: -PortableMode
     steps:
