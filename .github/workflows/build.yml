@@ -38,12 +38,16 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: obj/*/vcpkg
-          key: vcpkg-${{matrix.arch}}-${{hashFiles('vcpkg.json')}}
+          key: vcpkg-${{hashFiles('vcpkg.json')}}
+          restore-keys:
+            - vcpkg-${{matrix.arch}}-${{hashFiles('vcpkg.json')}}
 
       - uses: actions/cache@v6
         with:
           path: packages
-          key: nuget-${{matrix.arch}}-${{hashFiles('dep/nuget/packages.config')}}
+          key: nuget-${{hashFiles('dep/nuget/packages.config')}}
+          restore-keys:
+            - nuget-${{matrix.arch}}-${{hashFiles('dep/nuget/packages.config')}}
 
       - run: |-
           Import-Module $env:VS_DEVSHELL
