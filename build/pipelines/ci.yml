@@ -88,6 +88,8 @@ stages:
             buildConfigurations: [Release]
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
+            # Build unsigned appx by default, so CI outputs can be more easily tested locally.
+            additionalBuildOptions: '/p:OpenConsoleBuildUnsignedPackage=true'
             ${{ if eq(parameters.runTests, true) }}:
               # Copy the appx files into the bin drop because the LocalTests need them
               afterBuildSteps:
