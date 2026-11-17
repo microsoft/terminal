@@ -60,7 +60,7 @@ namespace ControlUnitTests
             const auto otherOwner = MakeWindow(L"STATIC");
             const auto otherSite = MakeWindow(inputSiteClass, otherOwner.get());
             const auto owner = MakeWindow(L"STATIC");
-            VERIFY_IS_TRUE(FindInputSiteWindow(owner.get()) == owner.get());
+            VERIFY_IS_NULL(FindInputSiteWindow(owner.get()));
 
             const auto site = MakeWindow(inputSiteClass, owner.get());
             VERIFY_IS_TRUE(FindInputSiteWindow(owner.get()) == site.get());
@@ -75,7 +75,7 @@ namespace ControlUnitTests
             VERIFY_IS_TRUE(FindInputSiteWindow(firstOwner.get()) == site.get());
 
             VERIFY_IS_TRUE(SetParent(container.get(), secondOwner.get()) == firstOwner.get());
-            VERIFY_IS_TRUE(FindInputSiteWindow(firstOwner.get()) == firstOwner.get());
+            VERIFY_IS_NULL(FindInputSiteWindow(firstOwner.get()));
             VERIFY_IS_TRUE(FindInputSiteWindow(secondOwner.get()) == site.get());
         }
 
@@ -85,7 +85,7 @@ namespace ControlUnitTests
             auto site = MakeWindow(inputSiteClass, owner.get());
             VERIFY_IS_TRUE(FindInputSiteWindow(owner.get()) == site.get());
             site.reset();
-            VERIFY_IS_TRUE(FindInputSiteWindow(owner.get()) == owner.get());
+            VERIFY_IS_NULL(FindInputSiteWindow(owner.get()));
 
             site = MakeWindow(inputSiteClass, owner.get());
             VERIFY_IS_TRUE(FindInputSiteWindow(owner.get()) == site.get());

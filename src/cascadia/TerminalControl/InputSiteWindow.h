@@ -30,8 +30,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 reinterpret_cast<LPARAM>(&inputSite));
         }
 
-        // The InputSite may not exist yet. Do not borrow another window's TSF
-        // context, or cache this fallback: look again on the next call.
-        return inputSite ? inputSite : owner;
+        // Returns nullptr if the InputSite doesn't exist (yet).
+        return inputSite;
     }
 }

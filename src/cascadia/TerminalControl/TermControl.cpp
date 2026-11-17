@@ -186,14 +186,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // All windows share the same UI thread and ITfThreadMgr, so we must look for the one underneath
             // our own window. Asking TSF instead (e.g. via EnumDocumentMgrs) yields an arbitrary window's.
             const auto owner = reinterpret_cast<HWND>(_termControl->OwningHwnd());
-            const auto hwnd = FindInputSiteWindow(owner);
-            // Only cache a successful lookup. A TermControl never changes windows
-            // (moving a tab creates a new one), so the result never goes stale.
-            if (hwnd != owner)
+            // A TermControl never changes windows (moving a tab creates a new one), so the result never goes stale.
+            _hwnd = FindInputSiteWindow(owner);
+            if (!_hwnd)
             {
-                _hwnd = hwnd;
+                // The InputSite may not exist yet. Don't cache the fallback, so that we look again on the next call.
+                return owner;
             }
-            return hwnd;
         }
         return _hwnd;
     }
