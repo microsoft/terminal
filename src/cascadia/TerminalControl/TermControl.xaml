@@ -1349,6 +1349,7 @@
                        Orientation="Vertical"
                        PointerPressed="_CapturePointer"
                        PointerReleased="_ReleasePointerCapture"
+                       Scroll="_ScrollbarScrollHandler"
                        SmallChange="1"
                        Style="{StaticResource ForkedScrollbarTemplate}"
                        ValueChanged="_ScrollbarChangeHandler"

@@ -549,8 +549,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isInternalScrollBarUpdate = true;
 
         auto scrollBar = ScrollBar();
-        // Don't update the scrollbar at all for fractional rows that round to the same value
-        if (update.newValue && std::lround(scrollBar.Value()) != std::lround(*update.newValue))
+        // Don't update the scrollbar at all for fractional rows that round to the same value.
+        // While the user holds the thumb their position wins; _ScrollbarScrollHandler resyncs on release.
+        if (update.newValue && !_isUserDraggingThumb && std::lround(scrollBar.Value()) != std::lround(*update.newValue))
         {
             scrollBar.Value(*update.newValue);
         }
@@ -2170,6 +2171,33 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto newValue = args.NewValue();
         _interactivity->UpdateScrollbar(static_cast<float>(newValue));
+    }
+
+    void TermControl::_ScrollbarScrollHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                              const Controls::Primitives::ScrollEventArgs& args)
+    {
+        switch (args.ScrollEventType())
+        {
+        case Controls::Primitives::ScrollEventType::ThumbTrack:
+            _isUserDraggingThumb = true;
+            break;
+        case Controls::Primitives::ScrollEventType::EndScroll:
+            if (std::exchange(_isUserDraggingThumb, false) && !_IsClosing())
+            {
+                // Output may have moved the viewport while the thumb was held.
+                const auto scrollBar = ScrollBar();
+                ScrollBarUpdate update{
+                    .newValue = static_cast<double>(_core->ScrollOffset()),
+                    .newMaximum = scrollBar.Maximum(),
+                    .newMinimum = scrollBar.Minimum(),
+                    .newViewportSize = scrollBar.ViewportSize(),
+                };
+                _applyScrollBarUpdate(update);
+            }
+            break;
+        default:
+            break;
+        }
     }
 
     // Method Description:
