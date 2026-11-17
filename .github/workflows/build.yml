@@ -1,9 +1,9 @@
 name: Build
 on:
   push:
-    branches: [ main, dev/dhowett/github-ci ]
+    branches: [ main, dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
   pull_request:
-    branches: [ main, dev/dhowett/github-ci ]
+    branches: [ main, dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     name: Build ${{ matrix.arch }}
     strategy:
       matrix:
-        arch: [x64] #, arm64]
+        arch: [x64, arm64]
     env:
       BUILD_PLATFORM: |-
         ${{ case(
@@ -60,6 +60,8 @@ jobs:
             /p:Configuration=Release `
             /p:WindowsTerminalOfficialBuild=true `
             /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /p:OpenConsoleCleanPCH=true `
+            /p:OpenConsoleBuildUnsignedPackage=true `
             /m `
             /bl:msbuild.binlog
         name: Build
@@ -89,9 +91,22 @@ jobs:
 
           $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\${{matrix.arch}}\Microsoft.UI.Xaml*.appx").FullName
           & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 ${{env.UnpackagedBuildArguments}} -TerminalAppX $Env:WindowsTerminalPackagePath -XamlAppX $XamlAppxPath -Destination $outDir.FullName
+          $UnpackagedZip = Get-ChildItem $outDir *.zip
+
+          "FINAL_PACKAGE_NAME=$(Split-Path -Leaf $Env:WindowsTerminalPackagePath)" >> "$Env:GITHUB_ENV"
+          "FINAL_PACKAGE_PATH=$Env:WindowsTerminalPackagePath" >> "$Env:GITHUB_ENV"
+          "FINAL_ZIP_NAME=$($UnpackagedZip.Name)" >> "$Env:GITHUB_ENV"
+          "FINAL_ZIP_PATH=$($UnpackagedZip.FullName)" >> "$Env:GITHUB_ENV"
         name: Stage Unpackaged and Packaged Builds
 
       - uses: actions/upload-artifact@v7
         with:
-          name: out-${{matrix.arch}}
-          path: _artifacts
+          name: ${{ env.FINAL_PACKAGE_NAME }}
+          path: ${{ env.FINAL_PACKAGE_PATH }}
+          archive: false
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.FINAL_ZIP_NAME }}
+          path: ${{ env.FINAL_ZIP_PATH }}
+          archive: false
