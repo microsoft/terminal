@@ -208,6 +208,9 @@ void TerminalApiTest::CursorBlinkingDefault()
         VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
         term.UpdateAppearance(*settings);
         term.UpdateSettings(*settings);
+        auto unfocusedSettings = winrt::make_self<MockTermSettings>(0, 100, 100);
+        unfocusedSettings->CursorBlinking(!blinking);
+        term.UpdateAppearance(*unfocusedSettings);
         VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
         stateMachine.ProcessString(L"\x1b[?12$p");
         VERIFY_ARE_EQUAL(blinking ? L"\x1b[?12;2$y" : L"\x1b[?12;1$y", response);
@@ -215,6 +218,9 @@ void TerminalApiTest::CursorBlinkingDefault()
         VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
         stateMachine.ProcessString(L"\x1b"
                                    L"c");
+        VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
+        term.UpdateAppearance(*unfocusedSettings);
+        stateMachine.ProcessString(L"\x1b[0 q");
         VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
     }
 }
@@ -273,22 +279,6 @@ void TerminalApiTest::CursorBlinkingSettingsReload()
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
     stateMachine.ProcessString(L"\x1b[?12h");
     term.HardResetWithoutErase();
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-
-    // Appearance changes only update the default used by a subsequent reset.
-    settings->CursorBlinking(true);
-    term.UpdateAppearance(*settings);
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-    term.UpdateAppearance(*settings);
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-    stateMachine.ProcessString(L"\x1b[0 q");
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-    settings->CursorBlinking(false);
-    term.UpdateAppearance(*settings);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-    term.UpdateAppearance(*settings);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-    stateMachine.ProcessString(L"\x1b[0 q");
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
 
     for (auto style = 1; style <= 6; ++style)

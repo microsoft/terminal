@@ -585,13 +585,14 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <local:SettingsCard x:Name="CursorBlinking"
                                 x:Uid="Profile_CursorBlinking"
-                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
+                                Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
+                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
-                                  IsOn="{x:Bind Appearance.CursorBlinking, Mode=TwoWay}"
+                                  IsOn="{x:Bind SourceProfile.CursorBlinking, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     <local:SettingResetButton SettingName="CursorBlinking"
-                                              Target="{x:Bind Appearance}" />
+                                              Target="{x:Bind SourceProfile}" />
                 </StackPanel>
             </local:SettingsCard>
 

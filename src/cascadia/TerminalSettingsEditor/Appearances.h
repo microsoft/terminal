@@ -172,7 +172,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     CUSTOM(FontFeatures)                                                   \
     PROJECTED(_appearance, RetroTerminalEffect)                            \
     PROJECTED(_appearance, CursorShape)                                    \
-    PROJECTED(_appearance, CursorBlinking)                                 \
     PROJECTED(_appearance, CursorHeight)                                   \
     PROJECTED(_appearance, DarkColorSchemeName)                            \
     PROJECTED(_appearance, LightColorSchemeName)                           \

@@ -673,13 +673,13 @@ namespace SettingsModelUnitTests
     void TerminalSettingsTests::CursorBlinkingProfileSetting()
     {
         const auto defaults = winrt::make<implementation::Profile>();
-        VERIFY_IS_TRUE(defaults.DefaultAppearance().CursorBlinking());
+        VERIFY_IS_TRUE(defaults.CursorBlinking());
 
         static constexpr std::string_view settingsJson{ R"({
             "profiles": {
                 "defaults": {
                     "cursorBlinking": false,
-                    "unfocusedAppearance": {}
+                    "unfocusedAppearance": { "cursorBlinking": true }
                 },
                 "list": [
                     { "name": "inherited" },
@@ -702,26 +702,27 @@ namespace SettingsModelUnitTests
         {
             const auto profile = settings->ActiveProfiles().GetAt(i);
             const auto expected = i == 1;
-            const auto appearance = profile.DefaultAppearance();
-            VERIFY_ARE_EQUAL(expected, appearance.CursorBlinking());
-            VERIFY_ARE_EQUAL(expected, appearance.HasCursorBlinking());
+            VERIFY_ARE_EQUAL(expected, profile.CursorBlinking());
+            VERIFY_ARE_EQUAL(expected, profile.HasCursorBlinking());
 
             const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
             VERIFY_ARE_EQUAL(expected, json.isMember("cursorBlinking"));
             if (expected)
             {
                 VERIFY_IS_TRUE(json["cursorBlinking"].asBool());
-                VERIFY_IS_FALSE(json["unfocusedAppearance"]["cursorBlinking"].asBool());
             }
+            VERIFY_IS_FALSE(json["unfocusedAppearance"].isMember("cursorBlinking"));
 
             const auto result = TerminalSettings::CreateWithProfile(*settings, settings->WindowSettingsDefaults(), profile);
             VERIFY_ARE_EQUAL(expected, result.DefaultSettings()->CursorBlinking());
             VERIFY_IS_NOT_NULL(result.UnfocusedSettings());
-            VERIFY_IS_FALSE(result.UnfocusedSettings()->CursorBlinking());
+            VERIFY_ARE_EQUAL(expected, result.UnfocusedSettings()->CursorBlinking());
+            const auto preview = TerminalSettings::CreateForPreviewUnfocused(*settings, settings->WindowSettingsDefaults(), profile);
+            VERIFY_ARE_EQUAL(expected, preview->CursorBlinking());
 
-            appearance.ClearCursorBlinking();
-            VERIFY_IS_FALSE(appearance.CursorBlinking());
-            VERIFY_IS_FALSE(appearance.HasCursorBlinking());
+            profile.ClearCursorBlinking();
+            VERIFY_IS_FALSE(profile.CursorBlinking());
+            VERIFY_IS_FALSE(profile.HasCursorBlinking());
         }
     }
 

@@ -11,7 +11,6 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
-    X(bool, CursorBlinking, true)                                                                                         \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
@@ -34,6 +33,7 @@
 // --------------------------- Core Settings ---------------------------
 //  All of these settings are defined in ICoreSettings.
 #define CORE_SETTINGS(X)                                                                                          \
+    X(bool, CursorBlinking, true)                                                                                 \
     X(int32_t, HistorySize, DEFAULT_HISTORY_SIZE)                                                                 \
     X(int32_t, InitialRows, 30)                                                                                   \
     X(int32_t, InitialCols, 80)                                                                                   \

@@ -218,7 +218,6 @@ namespace winrt::Microsoft::Terminal::Settings
                                                     const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme)
     {
         _CursorShape = appearance.CursorShape();
-        _CursorBlinking = appearance.CursorBlinking();
         _CursorHeight = appearance.CursorHeight();
 
         auto requestedTheme = currentTheme.RequestedTheme();
@@ -336,6 +335,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         _ScrollState = profile.ScrollState();
 
+        _CursorBlinking = profile.CursorBlinking();
         _AntialiasingMode = profile.AntialiasingMode();
 
         if (profile.TabColor())

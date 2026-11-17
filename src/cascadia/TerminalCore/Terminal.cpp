@@ -98,6 +98,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     UpdateAppearance(settings);
 
+    _defaultCursorBlinking = settings.CursorBlinking();
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _answerbackMessage = settings.AnswerbackMessage();
@@ -214,7 +215,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
-    _defaultCursorBlinking = appearance.CursorBlinking();
 
     // We're checking if the main buffer exists here, but then setting the
     // appearance of the active one. If the main buffer exists, then at least

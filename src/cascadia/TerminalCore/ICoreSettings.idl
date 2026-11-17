@@ -103,7 +103,6 @@ namespace Microsoft.Terminal.Core
     interface ICoreAppearance requires ICoreScheme
     {
         CursorStyle CursorShape { get; };
-        Boolean CursorBlinking { get; };
         UInt32 CursorHeight { get; };
         Boolean IntenseIsBold { get; };
         Boolean IntenseIsBright { get; };
@@ -114,6 +113,7 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings requires ICoreAppearance
     {
+        Boolean CursorBlinking { get; };
         Int32 HistorySize { get; };
         Int32 InitialRows { get; };
         Int32 InitialCols { get; };
