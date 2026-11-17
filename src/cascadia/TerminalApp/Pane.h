@@ -235,6 +235,7 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
+    winrt::Windows::UI::Xaml::Controls::Border _splitter{ nullptr };
 
     PaneResources _themeResources;
 
@@ -262,6 +263,9 @@ private:
     bool _zoomed{ false };
     bool _broadcastEnabled{ false };
 
+    std::optional<winrt::Windows::Foundation::Point> _splitterDragOrigin;
+    float _splitterDragOriginPosition{ 0.0f };
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
@@ -276,6 +280,7 @@ private:
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
+    void _PlaceSplitter();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
     Borders _GetCommonBorders();
@@ -315,6 +320,13 @@ private:
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
     void _borderTappedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs& e);
+
+    void _splitterPointerEnteredHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+    void _splitterPointerExitedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+    void _splitterPointerPressedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+    void _splitterPointerMovedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+    void _splitterPointerCaptureLostHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+    void _resetPointerCursor();
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
