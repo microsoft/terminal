@@ -84,7 +84,8 @@ public:
 
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
-                Microsoft::Console::Render::Renderer& renderer);
+                Microsoft::Console::Render::Renderer& renderer,
+                bool cursorBlinking = true);
     void HardResetWithoutErase();
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,

@@ -28,7 +28,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
         TEST_METHOD(CursorBlinkingDefault);
-        TEST_METHOD(CursorBlinkingBeforeInitialization);
+        TEST_METHOD(CursorBlinkingInitialization);
         TEST_METHOD(CursorBlinkingSettingsReload);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
@@ -219,21 +219,30 @@ void TerminalApiTest::CursorBlinkingDefault()
     }
 }
 
-void TerminalApiTest::CursorBlinkingBeforeInitialization()
+void TerminalApiTest::CursorBlinkingInitialization()
 {
     for (const auto blinking : { false, true })
     {
-        Terminal term{ Terminal::TestDummyMarker{} };
-        DummyRenderer renderer{ &term };
-        auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
-        settings->CursorBlinking(blinking);
-        term.UpdateSettings(*settings);
-        term.Create({ 100, 100 }, 0, renderer);
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        term.UpdateSettings(*settings);
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
-        VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        for (const auto applySettingsFirst : { false, true })
+        {
+            Terminal term{ Terminal::TestDummyMarker{} };
+            DummyRenderer renderer{ &term };
+            auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
+            settings->CursorBlinking(blinking);
+            if (applySettingsFirst)
+            {
+                term.UpdateSettings(*settings);
+            }
+            term.Create({ 100, 100 }, 0, renderer, settings->CursorBlinking());
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
+            term._stateMachine->ProcessString(L"\x1b[0 q");
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term.UpdateSettings(*settings);
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
+            VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        }
     }
 }
 
@@ -249,15 +258,16 @@ void TerminalApiTest::CursorBlinkingSettingsReload()
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
     settings->CursorBlinking(true);
     term.UpdateSettings(*settings);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
     stateMachine.ProcessString(L"\x1b[?1049l");
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+    stateMachine.ProcessString(L"\x1b[0 q");
     VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
 
     stateMachine.ProcessString(L"\x1b[?1049h");
     settings->CursorBlinking(false);
     term.UpdateSettings(*settings);
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
     stateMachine.ProcessString(L"\x1b"
                                L"c");
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
@@ -265,23 +275,32 @@ void TerminalApiTest::CursorBlinkingSettingsReload()
     term.HardResetWithoutErase();
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
 
-    // Appearance changes (including the unfocused appearance) update the default.
+    // Appearance changes only update the default used by a subsequent reset.
     settings->CursorBlinking(true);
     term.UpdateAppearance(*settings);
-    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-    stateMachine.ProcessString(L"\x1b[?12l");
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
     term.UpdateAppearance(*settings);
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
     stateMachine.ProcessString(L"\x1b[0 q");
     VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
     settings->CursorBlinking(false);
     term.UpdateAppearance(*settings);
-    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-    stateMachine.ProcessString(L"\x1b[?12h");
+    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
     term.UpdateAppearance(*settings);
     VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
     stateMachine.ProcessString(L"\x1b[0 q");
     VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+
+    for (auto style = 1; style <= 6; ++style)
+    {
+        stateMachine.ProcessString(fmt::format(L"\x1b[{} q", style));
+        const auto blinking = style % 2 == 1;
+        settings->CursorBlinking(!blinking);
+        term.UpdateSettings(*settings);
+        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        stateMachine.ProcessString(L"\x1b[0 q");
+        VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+    }
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()

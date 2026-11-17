@@ -42,13 +42,14 @@ Terminal::Terminal(TestDummyMarker) :
 #endif
 }
 
-void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
+void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer, bool cursorBlinking)
 {
     viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
     viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
     scrollbackLines = std::clamp(scrollbackLines, 0, MaxScrollback);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
+    _defaultCursorBlinking = cursorBlinking;
     const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
@@ -83,7 +84,7 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
                                   Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    Create(viewportSize, settings.HistorySize(), renderer);
+    Create(viewportSize, settings.HistorySize(), renderer, settings.CursorBlinking());
 
     UpdateSettings(settings);
 }
@@ -212,7 +213,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
-    const auto blinkingChanged = _defaultCursorBlinking != appearance.CursorBlinking();
     _defaultCursorShape = cursorShape;
     _defaultCursorBlinking = appearance.CursorBlinking();
 
@@ -222,11 +222,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     if (_mainBuffer)
     {
         _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
-        // Preserve application-selected blinking across unchanged appearance updates.
-        if (blinkingChanged)
-        {
-            SetCursorStyle(DispatchTypes::CursorStyle::UserDefault);
-        }
     }
 
     UpdateColorScheme(appearance);
