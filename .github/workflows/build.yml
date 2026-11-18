@@ -148,10 +148,11 @@ jobs:
           Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
           "BUNDLE_NAME=${BundleName}" >> "$Env:GITHUB_ENV"
           "BUNDLE_PATH=${BundlePath}" >> "$Env:GITHUB_ENV"
+        name: Create MSIX Bundle
 
       - run: |-
           tar -c -v --format=zip -f "GroupPolicyTemplates_${XES_APPXMANIFESTVERSION}.zip" -C "policies" *
-        displayName: Package GPO Templates
+        name: Package GPO Templates
 
       - uses: actions/upload-artifact@v7
         with:
