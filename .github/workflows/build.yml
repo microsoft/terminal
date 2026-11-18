@@ -119,6 +119,60 @@ jobs:
           path: ${{ env.FINAL_ZIP_PATH }}
           archive: false
 
+      - run: |-
+          Get-ChildItem bin -Filter *.pdb | Remove-Item
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bin-${{matrix.arch}}
+          path: bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86, agent: windows-2025-vs2026 }
+          - { arch: x64, agent: windows-2025-vs2026 }
+          - { arch: arm64, agent: windows-11-vs2026-arm }
+    env:
+      BUILD_PLATFORM: |-
+        ${{ case(
+              matrix.arch == 'Any CPU', 'AnyCPU',
+              matrix.arch == 'x86', 'Win32',
+              matrix.arch
+        ) }}
+    runs-on: ${{ matrix.agent }}
+    name: Test ${{ matrix.arch }}
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: bin-${{matrix.arch}}
+          path: "bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}"
+          merge-multiple: true
+
+      - run: |-
+          ./build/scripts/Run-Tests.ps1 `
+            -MatchPattern '*unit.test*.dll' `
+            -Platform ${env:BUILD_PLATFORM} `
+            -Configuration ${env:BUILD_CONFIGURATION} `
+            -LogPath 'tests.wtl' `
+            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
+        name: Run Unit Tests
+
+      - run: |-
+          ./build/scripts/Run-Tests.ps1 `
+            -MatchPattern '*feature.test*.dll' `
+            -Platform ${env:BUILD_PLATFORM} `
+            -Configuration ${env:BUILD_CONFIGURATION} `
+            -LogPath 'tests.wtl' `
+            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
+        name: Run Feature Tests
+        if: ${{ succeeded() && matrix.arch == "x64" || matrix.arch == "arm64" }}
+
   pack:
     name: Package MSIXBundle
     runs-on: windows-2025-vs2026
