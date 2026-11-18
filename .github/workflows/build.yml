@@ -53,7 +53,13 @@ jobs:
       - run: |-
           Import-Module $env:VS_DEVSHELL
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
-          & msbuild OpenConsole.slnx "/p:Platform=${{ matrix.arch }}" /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /t:Restore
+          & msbuild OpenConsole.slnx `
+            "/p:Platform=${{ matrix.arch }}" `
+            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+            /p:WindowsTerminalOfficialBuild=true `
+            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /clp:Verbosity=Minimal `
+            /m /t:Restore
           & nuget restore dep/nuget/packages.config
         name: Restore NuGet Packages
 
@@ -67,6 +73,7 @@ jobs:
             /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
             /p:OpenConsoleCleanPCH=true `
             /p:OpenConsoleBuildUnsignedPackage=true `
+            /clp:Verbosity=Minimal `
             /m `
             /bl:msbuild.binlog
         name: Build
@@ -153,6 +160,7 @@ jobs:
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
             -LogPath 'tests.wtl' `
+            -AdditionalTaefArguments "/logOutput:Low" `
             -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
         name: Run Unit Tests
 
@@ -162,6 +170,7 @@ jobs:
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
             -LogPath 'tests.wtl' `
+            -AdditionalTaefArguments "/logOutput:Low" `
             -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
         name: Run Feature Tests
         if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
