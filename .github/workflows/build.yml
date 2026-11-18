@@ -17,7 +17,7 @@ jobs:
     name: Build ${{ matrix.arch }}
     strategy:
       matrix:
-        arch: [x86, x64, arm64]
+        arch: [x86, x64, arm64, Any CPU]
     env:
       BUILD_PLATFORM: |-
         ${{ case(
