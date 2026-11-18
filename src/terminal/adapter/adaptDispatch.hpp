@@ -196,7 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
 
-        void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
+        void SetOptionalFeatures(const til::enumset<OptionalFeature> features) override;
 
     private:
         enum class Mode
@@ -320,7 +320,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
-        til::enumset<OptionalFeature> _optionalFeatures = { OptionalFeature::ClipboardWrite };
+        til::enumset<OptionalFeature> _optionalFeatures = { OptionalFeature::ClipboardWrite, OptionalFeature::CursorBlinking };
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer
