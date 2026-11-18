@@ -363,36 +363,25 @@ void Window::_CloseWindow() const
 [[nodiscard]] NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto status = STATUS_SUCCESS;
     const auto hWnd = GetWindowHandle();
 
-    // Only activate if the wShowWindow we were passed at process create doesn't explicitly tell us to remain inactive/hidden
-    if (wShowWindow != SW_SHOWNOACTIVATE &&
-        wShowWindow != SW_SHOWMINNOACTIVE &&
-        wShowWindow != SW_HIDE)
+    if (wShowWindow == SW_SHOWMINNOACTIVE ||
+        wShowWindow == SW_MINIMIZE)
     {
-        // Do not check result. On some SKUs, such as WinPE, it's perfectly OK for NULL to be returned.
-        SetActiveWindow(hWnd);
-    }
-    else if (wShowWindow == SW_SHOWMINNOACTIVE)
-    {
-        // If we're minimized and not the active window, set iconic to stop rendering
+        // If we're minimized, set iconic to stop rendering
         gci.Flags |= CONSOLE_IS_ICONIC;
     }
 
-    if (SUCCEEDED_NTSTATUS(status))
-    {
-        // Set up the scrollbars before showing the window.
-        // This matches the way CM_UPDATE_SCROLL_BARS works, which we
-        // could SendMessage() here, but... this saves a whopping 2us. Yay~
-        _resizingWindow++;
-        UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
-        _resizingWindow--;
+    // Set up the scrollbars before showing the window.
+    // This matches the way CM_UPDATE_SCROLL_BARS works, which we
+    // could SendMessage() here, but... this saves a whopping 2us. Yay~
+    _resizingWindow++;
+    UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
+    _resizingWindow--;
 
-        ShowWindow(hWnd, wShowWindow);
-    }
+    ShowWindow(hWnd, wShowWindow);
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
