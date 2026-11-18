@@ -6,17 +6,20 @@ on:
     branches: [ main, dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
   workflow_dispatch:
 
+env:
+  XES_APPXMANIFESTVERSION: 0.0.1.0
+
 jobs:
   build:
     runs-on: windows-2025-vs2026
     name: Build ${{ matrix.arch }}
     strategy:
       matrix:
-        arch: [x64, arm64]
+        arch: [x86, x64, arm64]
     env:
       BUILD_PLATFORM: |-
         ${{ case(
-              matrix.arch == 'AnyCPU', 'Any CPU',
+              matrix.arch == 'Any CPU', 'AnyCPU',
               matrix.arch == 'x86', 'Win32',
               matrix.arch
         ) }}
@@ -113,4 +116,49 @@ jobs:
         with:
           name: ${{ env.FINAL_ZIP_NAME }}
           path: ${{ env.FINAL_ZIP_PATH }}
+          archive: false
+
+  pack:
+    name: Package MSIXBundle
+    env:
+      # TODO: Change this based on Branding
+      BundleStemName: WindowsTerminalDev
+    needs: build
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: *.msix
+          skip-decompress: true
+          merge-multiple: true
+          path: _msix/
+
+      - run: |-
+          $VersionEpoch = 3000
+          $Components = "${XES_APPXMANIFESTVERSION}" -Split "\."
+          $Components[0] = ([int]$Components[0] + $VersionEpoch)
+          $BundleVersion = $Components -Join "."
+          # TODO: I removed the publisher identity from this step. Consider reintroducing it?
+          $BundleName = "${{ env.BundleStemName }}_${XES_APPXMANIFESTVERSION}.msixbundle"
+          New-Item -Type Directory "_bundle"
+          $BundlePath = "_bundle\${BundleName}"
+          .\build\scripts\Create-AppxBundle.ps1 -InputPath '_msix/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+          Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
+          "BUNDLE_NAME=${BundleName}" >> "$Env:GITHUB_ENV"
+          "BUNDLE_PATH=${BundlePath}" >> "$Env:GITHUB_ENV"
+
+      - run: |-
+          tar -c -v --format=zip -f "GroupPolicyTemplates_${XES_APPXMANIFESTVERSION}.zip" -C "policies" *
+        displayName: Package GPO Templates
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.BUNDLE_NAME }}
+          path: ${{ env.BUNDLE_PATH }}
+          archive: false
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
+          path: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
           archive: false
