@@ -78,42 +78,11 @@ jobs:
             msbuild.binlog
             obj/${{matrix.arch}}/vcpkg/**/*.log
 
-      - run: |-
-          $Package = (Get-ChildItem -Recurse -Filter "CascadiaPackage*.msix" | Select -First 1)
-          $PackageFilename = $Package.FullName
-          "WindowsTerminalPackagePath=$PackageFilename" >> "$env:GITHUB_ENV"
-        name: Locate the MSIX
-
-      - run: |-
-          .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $env:WindowsTerminalPackagePath
-        name: Check MSIX for common regressions
-
-      - run: |-
-          $outDir = New-Item -Type Directory "_artifacts" -ErrorAction:Ignore
-          $PackageFilename = Join-Path $outDir.FullName (Split-Path -Leaf $Env:WindowsTerminalPackagePath)
-          Copy-Item $env:WindowsTerminalPackagePath $PackageFilename
-
-          $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\${{matrix.arch}}\Microsoft.UI.Xaml*.appx").FullName
-          & .\build\scripts\New-UnpackagedTerminalDistribution.ps1 ${{env.UnpackagedBuildArguments}} -TerminalAppX $Env:WindowsTerminalPackagePath -XamlAppX $XamlAppxPath -Destination $outDir.FullName
-          $UnpackagedZip = Get-ChildItem $outDir *.zip
-
-          "FINAL_PACKAGE_NAME=$(Split-Path -Leaf $Env:WindowsTerminalPackagePath)" >> "$Env:GITHUB_ENV"
-          "FINAL_PACKAGE_PATH=$Env:WindowsTerminalPackagePath" >> "$Env:GITHUB_ENV"
-          "FINAL_ZIP_NAME=$($UnpackagedZip.Name)" >> "$Env:GITHUB_ENV"
-          "FINAL_ZIP_PATH=$($UnpackagedZip.FullName)" >> "$Env:GITHUB_ENV"
-        name: Stage Unpackaged and Packaged Builds
-
-      - uses: actions/upload-artifact@v7
+      - uses: ./.github/actions/terminal-package-msix-and-portable
+        if: ${{ matrix.arch != 'Any CPU' }}
         with:
-          name: ${{ env.FINAL_PACKAGE_NAME }}
-          path: ${{ env.FINAL_PACKAGE_PATH }}
-          archive: false
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ${{ env.FINAL_ZIP_NAME }}
-          path: ${{ env.FINAL_ZIP_PATH }}
-          archive: false
+          unpackaged-build-arguments: ${{env.UnpackagedBuildArguments}}
+          arch: ${{matrix.arch}}
 
       # This saves ~2GiB per architecture. We won't need these later.
       # Removes:
