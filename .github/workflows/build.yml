@@ -120,6 +120,7 @@ jobs:
 
   pack:
     name: Package MSIXBundle
+    runs-on: windows-2025-vs2026
     env:
       # TODO: Change this based on Branding
       BundleStemName: WindowsTerminalDev
