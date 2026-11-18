@@ -8,6 +8,8 @@ on:
 
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
+  WT_BRANDING: Canary
+  BUILD_CONFIGURATION: Release
 
 jobs:
   build:
@@ -23,7 +25,6 @@ jobs:
               matrix.arch == 'x86', 'Win32',
               matrix.arch
         ) }}
-      WT_BRANDING: Canary
       UnpackagedBuildArguments: -PortableMode
     steps:
       - uses: actions/checkout@v7
@@ -55,7 +56,7 @@ jobs:
       - run: |-
           Import-Module $env:VS_DEVSHELL
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
-          & msbuild OpenConsole.slnx /p:Platform=${{ matrix.arch }} /p:Configuration=Release /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /t:Restore
+          & msbuild OpenConsole.slnx /p:Platform=${{ matrix.arch }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /t:Restore
           & nuget restore dep/nuget/packages.config
         name: Restore NuGet Packages
 
@@ -123,7 +124,13 @@ jobs:
     runs-on: windows-2025-vs2026
     env:
       # TODO: Change this based on Branding
-      BundleStemName: WindowsTerminalDev
+      BundleStemName: |-
+        ${{ case(
+              env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
+              env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
+              env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
+              'WindowsTerminalDev'
+        ) }}
     needs: build
     steps:
       - uses: actions/checkout@v7
