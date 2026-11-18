@@ -119,11 +119,35 @@ jobs:
           path: ${{ env.FINAL_ZIP_PATH }}
           archive: false
 
+      # This saves ~2GiB per architecture. We won't need these later.
+      # Removes:
+      # - All .lib that do not have an associated .exp (which would indicate that they are import libs)
+      # - All .pdbs from those .libs (which were only used during linking)
+      # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
+      # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
+      # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
+      # - console.dll, which apparently breaks XFGCheck? lol.
       - run: |-
-          Get-ChildItem bin -Filter *.pdb | Remove-Item
+          $binDir = 'bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}'
+          $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
+          $StaticLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.lib' | Where-Object FullName -NotIn $ImportLibs
+
+          $Items = @()
+          $Items += $StaticLibs
+          $Items += Get-Item ($StaticLibs.FullName -Replace "lib$","pdb") -ErrorAction:Ignore
+          $Items += Get-ChildItem $binDir -Directory -Filter '*Lib'
+          $Items += Get-ChildItem $binDir -Directory -Filter 'LocalTests_*'
+          $Items += Get-ChildItem "${binDir}\WindowsTerminal" -Filter '*.pdb' -ErrorAction:Ignore
+
+          $Items += Get-ChildItem $binDir -Filter 'console.dll'
+
+          $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
+        name: Delete expensive build outputs before archival
 
       - uses: actions/upload-artifact@v7
         with:
+          # These artifacts are quite large, and we only use them for the tests and packages
+          retention-days: 1
           name: bin-${{matrix.arch}}
           path: bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}
 
