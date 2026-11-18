@@ -19,6 +19,7 @@ jobs:
       matrix:
         arch: [x86, x64, arm64, Any CPU]
     env:
+      DEVSHELL_ARCH: ${{ case(matrix.arch == 'Any CPU', 'x64', matrix.arch) }}
       BUILD_PLATFORM: |-
         ${{ case(
               matrix.arch == 'Any CPU', 'AnyCPU',
@@ -51,14 +52,14 @@ jobs:
 
       - run: |-
           Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
           & msbuild OpenConsole.slnx "/p:Platform=${{ matrix.arch }}" /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} /m /t:Restore
           & nuget restore dep/nuget/packages.config
         name: Restore NuGet Packages
 
       - run: |-
           Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ matrix.arch }} -host_arch=x64"
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
           & msbuild OpenConsole.slnx `
             "/p:Platform=${{ matrix.arch }}" `
             /p:Configuration=Release `
