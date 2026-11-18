@@ -10,6 +10,7 @@
 
 #include "VirtualDesktopUtils.h"
 #include "WindowEmperor.h"
+#include "TerminalProtocolComServer.h"
 #include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;

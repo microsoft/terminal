@@ -225,9 +225,24 @@ namespace winrt::TerminalApp::implementation
 
         uint32_t NumberOfTabs() const;
 
+        // Terminal Protocol Bridge Methods
+        uint32_t TabCount() const;
+        hstring WindowTitle();
+        Windows::Foundation::IAsyncOperation<bool> WaitForInitialized(uint32_t timeoutMs);
+        Windows::Foundation::IReference<uint32_t> FocusedTabIndex() const;
+        Windows::Foundation::IAsyncOperation<Microsoft::Terminal::Protocol::PaneInfo> GetProtocolActivePane();
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVector<Microsoft::Terminal::Protocol::TabInfo>> GetProtocolTabs();
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVector<Microsoft::Terminal::Protocol::PaneInfo>> GetProtocolPanes(uint32_t tabIdFilter);
+        Windows::Foundation::IAsyncOperation<Microsoft::Terminal::Protocol::ProcessStatus> GetProtocolProcessStatus(winrt::guid sessionId);
+        Windows::Foundation::IAsyncOperation<Microsoft::Terminal::Protocol::TabCreationResult> CreateProtocolTab(Microsoft::Terminal::Settings::Model::NewTerminalArgs args, bool background);
+        Windows::Foundation::IAsyncOperation<Microsoft::Terminal::Protocol::TabCreationResult> SplitProtocolPane(winrt::guid sessionId, Microsoft::Terminal::Settings::Model::SplitDirection direction, float size, Microsoft::Terminal::Settings::Model::NewTerminalArgs args, bool background);
+        Windows::Foundation::IAsyncOperation<bool> CloseProtocolPane(winrt::guid sessionId);
+        Windows::Foundation::IAsyncOperation<bool> FocusProtocolPane(winrt::guid sessionId);
+
         til::property_changed_event PropertyChanged;
 
         // -------------------------------- WinRT Events ---------------------------------
+        til::typed_event<IInspectable, winrt::hstring> ProtocolVtSequenceReceived;
         til::typed_event<IInspectable, IInspectable> TitleChanged;
         til::typed_event<IInspectable, IInspectable> CloseWindowRequested;
         til::typed_event<IInspectable, winrt::Windows::UI::Xaml::UIElement> SetTitleBarContent;
