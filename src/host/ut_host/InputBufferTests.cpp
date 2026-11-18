@@ -9,6 +9,8 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/IInputEvent.hpp"
 
+#include <limits>
+
 using namespace WEX::Logging;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
@@ -100,6 +102,164 @@ class InputBufferTests
         {
             VERIFY_ARE_EQUAL(inputBuffer._storage[i], record);
         }
+    }
+
+    TEST_METHOD(FourKiInputQueueFifoAfterGrowthAndWarmReuse)
+    {
+        InputBuffer inputBuffer;
+        std::array<INPUT_RECORD, 4096> records{};
+        for (size_t i = 0; i < records.size(); ++i)
+        {
+            records[i] = MakeKeyEvent(TRUE, 1, static_cast<WORD>('A' + i % 26), 0, static_cast<WCHAR>(L' ' + i % 95), 0);
+        }
+        for (auto epoch = 0; epoch < 3; ++epoch)
+        {
+            for (auto batch = 0; batch < 4; ++batch)
+            {
+                VERIFY_ARE_EQUAL(records.size(), inputBuffer.Write(records));
+            }
+            VERIFY_ARE_EQUAL(records.size() * 4, inputBuffer.GetNumberOfReadyEvents());
+            for (auto batch = 0; batch < 4; ++batch)
+            {
+                InputEventQueue peeked;
+                VERIFY_NT_SUCCESS(inputBuffer.Read(peeked, records.size(), true, false, true, false));
+                VERIFY_ARE_EQUAL(records.size(), peeked.size());
+                const auto before = inputBuffer.GetNumberOfReadyEvents();
+                InputEventQueue read;
+                VERIFY_NT_SUCCESS(inputBuffer.Read(read, records.size(), false, false, true, false));
+                VERIFY_ARE_EQUAL(records.size(), read.size());
+                VERIFY_ARE_EQUAL(before - records.size(), inputBuffer.GetNumberOfReadyEvents());
+                for (size_t i = 0; i < records.size(); ++i)
+                {
+                    VERIFY_ARE_EQUAL(records[i], read[i]);
+                    VERIFY_ARE_EQUAL(records[i], peeked[i]);
+                }
+            }
+            VERIFY_ARE_EQUAL(size_t{ 0 }, inputBuffer.GetNumberOfReadyEvents());
+        }
+    }
+
+    void ReadAndVerify(InputBuffer& buffer, std::span<const INPUT_RECORD> expected, bool peek = false)
+    {
+        InputEventQueue events;
+        VERIFY_NT_SUCCESS(buffer.Read(events, expected.size(), peek, false, true, false));
+        VERIFY_ARE_EQUAL(expected.size(), events.size());
+        for (size_t i = 0; i < std::min(expected.size(), events.size()); ++i)
+        {
+            VERIFY_ARE_EQUAL(expected[i], events[i]);
+        }
+    }
+
+    TEST_METHOD(ReadFourKiReservesBoundedCapacityAndPreservesFifo)
+    {
+        InputBuffer buffer;
+        std::array<INPUT_RECORD, 4096> records{};
+        for (size_t i = 0; i < records.size(); ++i)
+        {
+            records[i] = MakeKeyEvent(TRUE, 1, 'A', 0, static_cast<WCHAR>(L' ' + i % 95), 0);
+        }
+        VERIFY_ARE_EQUAL(records.size(), buffer.Write(records));
+        InputEventQueue peeked;
+        VERIFY_NT_SUCCESS(buffer.Read(peeked, std::numeric_limits<size_t>::max(), true, false, true, false));
+        VERIFY_ARE_EQUAL(records.size(), peeked.capacity());
+        VERIFY_ARE_EQUAL(records.size(), buffer.GetNumberOfReadyEvents());
+        InputEventQueue read;
+        VERIFY_NT_SUCCESS(buffer.Read(read, records.size(), false, false, true, false));
+        VERIFY_ARE_EQUAL(records.size(), read.capacity());
+        VERIFY_ARE_EQUAL(records.size(), read.size());
+        VERIFY_ARE_EQUAL(records.size(), peeked.size());
+        for (size_t i = 0; i < std::min({ records.size(), read.size(), peeked.size() }); ++i)
+        {
+            VERIFY_ARE_EQUAL(records[i], read[i]);
+            VERIFY_ARE_EQUAL(records[i], peeked[i]);
+        }
+        VERIFY_IS_TRUE(buffer._storage.empty());
+    }
+
+    TEST_METHOD(PrependAfterPartialRead)
+    {
+        InputBuffer buffer;
+        const auto a = MakeKeyEvent(TRUE, 1, 'A', 0, L'a', 0);
+        const auto b = MakeKeyEvent(TRUE, 1, 'B', 0, L'b', 0);
+        const auto c = MakeKeyEvent(TRUE, 1, 'C', 0, L'c', 0);
+        const std::array original{ a, b, c };
+        VERIFY_ARE_EQUAL(original.size(), buffer.Write(original));
+        ReadAndVerify(buffer, std::span{ original }.first(1));
+        const std::array prepend{ c, a };
+        VERIFY_ARE_EQUAL(prepend.size(), buffer.Prepend(prepend));
+        ReadAndVerify(buffer, std::array{ c, a, b, c });
+        VERIFY_IS_TRUE(buffer._storage.empty());
+    }
+
+    TEST_METHOD(FlushAllButKeysAfterPartialRead)
+    {
+        InputBuffer buffer;
+        const auto a = MakeKeyEvent(TRUE, 1, 'A', 0, L'a', 0);
+        const auto b = MakeKeyEvent(TRUE, 1, 'B', 0, L'b', 0);
+        INPUT_RECORD menu{};
+        menu.EventType = MENU_EVENT;
+        const std::array original{ a, menu, b, menu, a };
+        VERIFY_ARE_EQUAL(original.size(), buffer.Write(original));
+        ReadAndVerify(buffer, std::span{ original }.first(1));
+        buffer.FlushAllButKeys();
+        VERIFY_ARE_EQUAL(size_t{ 2 }, buffer.GetNumberOfReadyEvents());
+        ReadAndVerify(buffer, std::array{ b, a });
+    }
+
+    TEST_METHOD(PeekDoesNotAdvanceQueueHead)
+    {
+        InputBuffer buffer;
+        const auto a = MakeKeyEvent(TRUE, 1, 'A', 0, L'a', 0);
+        const auto b = MakeKeyEvent(TRUE, 1, 'B', 0, L'b', 0);
+        const std::array original{ a, b };
+        VERIFY_ARE_EQUAL(original.size(), buffer.Write(original));
+        ReadAndVerify(buffer, std::span{ original }.first(1));
+        const std::array remaining{ b };
+        ReadAndVerify(buffer, remaining, true);
+        ReadAndVerify(buffer, remaining, true);
+        VERIFY_ARE_EQUAL(size_t{ 1 }, buffer._storage._head);
+        ReadAndVerify(buffer, remaining);
+        VERIFY_IS_TRUE(buffer._storage.empty());
+    }
+
+    TEST_METHOD(SingleWriteCoalescesAfterHeadAdvance)
+    {
+        InputBuffer buffer;
+        const auto a = MakeKeyEvent(TRUE, 1, 'A', 0, L'a', 0);
+        const auto b = MakeKeyEvent(TRUE, 1, 'B', 0, L'b', 0);
+        const std::array original{ a, b, b };
+        VERIFY_ARE_EQUAL(original.size(), buffer.Write(original));
+        ReadAndVerify(buffer, std::span{ original }.first(1));
+        VERIFY_ARE_EQUAL(size_t{ 1 }, buffer.Write(b));
+        VERIFY_ARE_EQUAL(size_t{ 2 }, buffer.GetNumberOfReadyEvents());
+        ReadAndVerify(buffer, std::array{ b, MakeKeyEvent(TRUE, 2, 'B', 0, L'b', 0) });
+    }
+
+    TEST_METHOD(QueueCompactionPreservesFifoAtCapacity)
+    {
+        InputBuffer buffer;
+        auto& storage = buffer._storage;
+        storage.reserve(8);
+        const auto capacity = storage._records.capacity();
+        std::vector<INPUT_RECORD> records(capacity);
+        for (size_t i = 0; i < records.size(); ++i)
+        {
+            records[i] = MakeKeyEvent(TRUE, 1, 'A', 0, static_cast<WCHAR>(L'a' + i % 26), 0);
+        }
+        VERIFY_ARE_EQUAL(records.size(), buffer.Write(records));
+        ReadAndVerify(buffer, std::span{ records }.first(2));
+        VERIFY_ARE_EQUAL(size_t{ 2 }, storage._head);
+        const std::array append{ MakeKeyEvent(TRUE, 1, 'X', 0, L'X', 0),
+                                 MakeKeyEvent(TRUE, 1, 'Y', 0, L'Y', 0),
+                                 MakeKeyEvent(TRUE, 1, 'Z', 0, L'Z', 0) };
+        // The first push must reclaim the consumed prefix without growing.
+        VERIFY_ARE_EQUAL(size_t{ 1 }, buffer.Write(append[0]));
+        VERIFY_ARE_EQUAL(size_t{ 0 }, storage._head);
+        VERIFY_ARE_EQUAL(capacity, storage._records.capacity());
+        VERIFY_ARE_EQUAL(size_t{ 2 }, buffer.Write(std::span{ append }.subspan(1)));
+        records.insert(records.end(), append.begin(), append.end());
+        ReadAndVerify(buffer, std::span{ records }.subspan(2));
+        VERIFY_IS_TRUE(storage.empty());
     }
 
     TEST_METHOD(InputBufferCoalescesMouseEvents)

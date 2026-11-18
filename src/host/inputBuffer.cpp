@@ -380,6 +380,10 @@ try
     assert(OutEvents.empty());
 
     const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+    const auto mode = Unicode ? ReadingMode::InputEventsW : ReadingMode::InputEventsA;
+    const auto cached = _readingMode == mode ? std::min(AmountToRead, _cachedInputEvents.size()) : 0;
+    // Bound the hint by queued records, not the caller's buffer size. ANSI and stream reads can expand it.
+    OutEvents.reserve(cached + std::min(AmountToRead - cached, _storage.size()));
 
     if (Peek)
     {
@@ -454,7 +458,7 @@ try
 
     if (!Peek)
     {
-        _storage.erase(_storage.begin(), it);
+        _storage.erase_front(it);
     }
 
     Cache(Unicode, OutEvents, AmountToRead);
@@ -499,7 +503,7 @@ size_t InputBuffer::Prepend(const std::span<const INPUT_RECORD>& inEvents)
         // this way to handle any coalescing that might occur.
 
         // get all of the existing records, "emptying" the buffer
-        std::deque<INPUT_RECORD> existingStorage;
+        InputQueue existingStorage;
         existingStorage.swap(_storage);
 
         // write the prepend records
@@ -680,6 +684,7 @@ void InputBuffer::_WriteBuffer(const std::span<const INPUT_RECORD>& inEvents, _O
     eventsWritten = 0;
     const auto initialInEventsSize = inEvents.size();
     const auto vtInputMode = IsInVirtualTerminalInputMode();
+    _storage.reserve(_storage.size() + initialInEventsSize);
 
     for (const auto& inEvent : inEvents)
     {

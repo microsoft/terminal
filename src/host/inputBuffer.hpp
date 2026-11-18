@@ -10,7 +10,9 @@
 #include "../server/ObjectHeader.h"
 #include "../terminal/input/terminalInput.hpp"
 
+#include <algorithm>
 #include <deque>
+#include <vector>
 
 namespace Microsoft::Console::Render
 {
@@ -72,6 +74,88 @@ private:
         InputEventsW,
     };
 
+    class InputQueue
+    {
+    public:
+        using iterator = std::vector<INPUT_RECORD>::iterator;
+
+        iterator begin() noexcept { return _records.begin() + _head; }
+        iterator end() noexcept { return _records.end(); }
+        bool empty() const noexcept { return _head == _records.size(); }
+        size_t size() const noexcept { return _records.size() - _head; }
+        INPUT_RECORD& front() noexcept { return til::at(_records, _head); }
+        INPUT_RECORD& back() noexcept { return _records.back(); }
+        INPUT_RECORD& operator[](size_t index) noexcept { return til::at(_records, _head + index); }
+
+        void clear() noexcept
+        {
+            _records.clear();
+            _head = 0;
+        }
+
+        void reserve(const size_t count)
+        {
+            if (count > _records.capacity())
+            {
+                // Grow geometrically, not once per batch of records.
+                const auto capacity = _records.capacity();
+                const auto growth = std::min(capacity / 2, _records.max_size() - capacity);
+                _records.reserve(std::max(count, capacity + growth));
+                _compact();
+            }
+        }
+
+        void push_back(const INPUT_RECORD& record)
+        {
+            if (_records.size() == _records.capacity())
+            {
+                _compact();
+            }
+            _records.push_back(record);
+        }
+
+        void erase_front(const iterator last) noexcept
+        {
+            _head = gsl::narrow_cast<size_t>(last - _records.begin());
+            if (empty())
+            {
+                clear();
+            }
+        }
+
+        void erase(const iterator first, const iterator last) noexcept
+        {
+            _records.erase(first, last);
+            if (empty())
+            {
+                clear();
+            }
+        }
+
+        void swap(InputQueue& other) noexcept
+        {
+            _records.swap(other._records);
+            std::swap(_head, other._head);
+        }
+
+    private:
+        void _compact() noexcept
+        {
+            if (_head != 0)
+            {
+                _records.erase(_records.begin(), begin());
+                _head = 0;
+            }
+        }
+
+        std::vector<INPUT_RECORD> _records;
+        size_t _head = 0;
+
+#ifdef UNIT_TESTING
+        friend class InputBufferTests;
+#endif
+    };
+
     std::string _cachedTextA;
     std::string_view _cachedTextReaderA;
     std::wstring _cachedTextW;
@@ -79,7 +163,7 @@ private:
     std::deque<INPUT_RECORD> _cachedInputEvents;
     ReadingMode _readingMode = ReadingMode::StringA;
 
-    std::deque<INPUT_RECORD> _storage;
+    InputQueue _storage;
     INPUT_RECORD _writePartialByteSequence{};
     bool _writePartialByteSequenceAvailable = false;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
