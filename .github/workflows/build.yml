@@ -171,20 +171,21 @@ jobs:
             -LogPath 'tests.wtl' `
             -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
         name: Run Feature Tests
-        if: ${{ succeeded() && matrix.arch == "x64" || matrix.arch == "arm64" }}
+        if: ${{ succeeded() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
 
   pack:
     name: Package MSIXBundle
     runs-on: windows-2025-vs2026
     env:
       # TODO: Change this based on Branding
-      BundleStemName: |-
-        ${{ case(
-              env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
-              env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
-              env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
-              'WindowsTerminalDev'
-        ) }}
+      BundleStemName: Microsoft.WindowsTerminalCanary
+      # cannot be evaluated as env. is illegal at this level  
+      # ${{ case(
+      #       env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
+      #       env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
+      #       env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
+      #       'WindowsTerminalDev'
+      # ) }}
     needs: build
     steps:
       - uses: actions/checkout@v7
