@@ -129,7 +129,7 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          pattern: *.msix
+          pattern: '*.msix'
           skip-decompress: true
           merge-multiple: true
           path: _msix/
