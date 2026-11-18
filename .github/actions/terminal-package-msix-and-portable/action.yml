@@ -11,17 +11,20 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: |-
+    - shell: pwsh
+      run: |-
         $Package = (Get-ChildItem -Recurse -Filter "CascadiaPackage*.msix" | Select -First 1)
         $PackageFilename = $Package.FullName
         "WindowsTerminalPackagePath=$PackageFilename" >> "$env:GITHUB_ENV"
       name: Locate the MSIX
 
-    - run: |-
+    - shell: pwsh
+      run: |-
         .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $env:WindowsTerminalPackagePath
       name: Check MSIX for common regressions
 
-    - run: |-
+    - shell: pwsh
+      run: |-
         $outDir = New-Item -Type Directory "_artifacts" -ErrorAction:Ignore
 
         $XamlAppxPath = (Get-Item "src\cascadia\CascadiaPackage\AppPackages\*\Dependencies\${{inputs.arch}}\Microsoft.UI.Xaml*.appx").FullName
