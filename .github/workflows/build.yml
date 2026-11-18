@@ -137,11 +137,11 @@ jobs:
 
       - run: |-
           $VersionEpoch = 3000
-          $Components = "${XES_APPXMANIFESTVERSION}" -Split "\."
+          $Components = "${env:XES_APPXMANIFESTVERSION}" -Split "\."
           $Components[0] = ([int]$Components[0] + $VersionEpoch)
           $BundleVersion = $Components -Join "."
           # TODO: I removed the publisher identity from this step. Consider reintroducing it?
-          $BundleName = "${{ env.BundleStemName }}_${XES_APPXMANIFESTVERSION}.msixbundle"
+          $BundleName = "${{ env.BundleStemName }}_${env:XES_APPXMANIFESTVERSION}.msixbundle"
           New-Item -Type Directory "_bundle"
           $BundlePath = "_bundle\${BundleName}"
           .\build\scripts\Create-AppxBundle.ps1 -InputPath '_msix/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
@@ -151,7 +151,7 @@ jobs:
         name: Create MSIX Bundle
 
       - run: |-
-          tar -c -v --format=zip -f "GroupPolicyTemplates_${XES_APPXMANIFESTVERSION}.zip" -C "policies" *
+          tar -c -v --format=zip -f "GroupPolicyTemplates_${env:XES_APPXMANIFESTVERSION}.zip" -C "policies" *
         name: Package GPO Templates
 
       - uses: actions/upload-artifact@v7
