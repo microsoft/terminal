@@ -285,7 +285,8 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         // redundant, implicit IMM32 TSF client, which would unnecessarily bloat the process.
         // (It is implicitly created during DefWindowProcW(WM_ACTIVATE).)
         // The high word of wParam indicates whether we are minimized.
-        if (!g.tsf && !HIWORD(wParam))
+        // (Set breakpoint on `msctf!CThreadInputMgr::CreateDocumentMgr`.)
+        if (!g.tsf && LOWORD(wParam) != WA_INACTIVE && !HIWORD(wParam))
         {
             // The TSF implementation doesn't care per-se if it's STA or MTA,
             // but it does require it to be initialized. STA because we're the UI thread.

@@ -365,13 +365,6 @@ void Window::_CloseWindow() const
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto hWnd = GetWindowHandle();
 
-    if (wShowWindow == SW_SHOWMINNOACTIVE ||
-        wShowWindow == SW_MINIMIZE)
-    {
-        // If we're minimized, set iconic to stop rendering
-        gci.Flags |= CONSOLE_IS_ICONIC;
-    }
-
     // Set up the scrollbars before showing the window.
     // This matches the way CM_UPDATE_SCROLL_BARS works, which we
     // could SendMessage() here, but... this saves a whopping 2us. Yay~
@@ -380,6 +373,9 @@ void Window::_CloseWindow() const
     _resizingWindow--;
 
     ShowWindow(hWnd, wShowWindow);
+
+    // If we're minimized, set iconic to stop rendering
+    WI_UpdateFlag(gci.Flags, CONSOLE_IS_ICONIC, IsIconic(hWnd) != FALSE);
 
     return STATUS_SUCCESS;
 }
