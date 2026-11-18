@@ -80,6 +80,7 @@ jobs:
             obj/${{matrix.arch}}/vcpkg/**/*.log
 
       - uses: ./.github/actions/terminal-package-msix-and-portable
+        name: Finalize and upload MSIX and unpackaged ZIP
         if: ${{ matrix.arch != 'Any CPU' }}
         with:
           unpackaged-build-arguments: ${{env.UnpackagedBuildArguments}}
@@ -100,9 +101,11 @@ jobs:
 
           $Items = @()
           $Items += $StaticLibs
-          $Items += Get-Item ($StaticLibs.FullName -Replace "lib$","pdb") -ErrorAction:Ignore
-          $Items += Get-ChildItem $binDir -Directory -Filter '*Lib'
-          $Items += Get-ChildItem $binDir -Directory -Filter 'LocalTests_*'
+          If ($StaticLibs.Length -Gt 0) {
+            $Items += Get-Item ($StaticLibs.FullName -Replace "lib$","pdb") -ErrorAction:Ignore
+          }
+          $Items += Get-ChildItem $binDir -Directory -Filter '*Lib' -ErrorAction:Ignore
+          $Items += Get-ChildItem $binDir -Directory -Filter 'LocalTests_*' -ErrorAction:Ignore
           $Items += Get-ChildItem "${binDir}\WindowsTerminal" -Filter '*.pdb' -ErrorAction:Ignore
 
           $Items += Get-ChildItem $binDir -Filter 'console.dll'
