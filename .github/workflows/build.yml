@@ -171,7 +171,7 @@ jobs:
             -LogPath 'tests.wtl' `
             -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
         name: Run Feature Tests
-        if: ${{ succeeded() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
+        if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
 
   pack:
     name: Package MSIXBundle
