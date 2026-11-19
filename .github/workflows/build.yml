@@ -352,7 +352,7 @@ jobs:
           Import-Module $env:VS_DEVSHELL
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
           & msbuild OpenConsole.slnx `
-            "/p:Platform=${{ matrix.arch }}" `
+            "/p:Platform=Any CPU" `
             /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
             /p:WindowsTerminalOfficialBuild=true `
             /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
