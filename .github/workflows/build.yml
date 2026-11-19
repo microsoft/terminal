@@ -176,6 +176,31 @@ jobs:
         name: Run Feature Tests
         if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
 
+      - run: |-
+          ./build/scripts/Run-Tests.ps1 `
+            -MatchPattern '*LocalTests*.dll' `
+            -Platform ${env:BUILD_PLATFORM} `
+            -Configuration ${env:BUILD_CONFIGURATION} `
+            -LogPath 'tests.wtl' `
+            -AdditionalTaefArguments "/logOutput:Low" `
+            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
+        name: Run Local Tests
+        if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
+
+      - run: |-
+          .\build\Helix\ConvertWttLogToXUnit.ps1 -WttInputPath 'tests.wtl' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '${env:BUILD_PLATFORM}.${env:BUILD_CONFIGURATION}'
+          .\build\Helix\OutputTestErrorsForAzureDevops.ps1 -XUnitOutputPath onBuildMachineResults.xml
+        if: always()
+        name: Convert WTT to XML and log failures
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-${{matrix.arch}}
+          path: |-
+            *.wtl
+            *onBuildMachineResults.xml
+
   pack-msix:
     name: Package MSIXBundle
     runs-on: windows-2025-vs2026
