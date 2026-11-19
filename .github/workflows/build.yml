@@ -1,9 +1,10 @@
 name: Build
 on:
   push:
-    branches: [ main, dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
+    branches:
+      - main
   pull_request:
-    branches: [ main, dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
+    branches: [ '**' ]
   workflow_dispatch:
 
 env:
