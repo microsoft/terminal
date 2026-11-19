@@ -1035,6 +1035,6 @@ BOOL Window::PostUpdateFrameColor() const
     // Called under lock.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto frameColor = gci.GetRenderSettings().GetColorAlias(ColorAlias::FrameBackground);
-    PostMessageW(GetWindowHandle(), CM_UPDATE_FRAME_COLOR, 0, static_cast<LPARAM>(frameColor));
+    return PostMessageW(GetWindowHandle(), CM_UPDATE_FRAME_COLOR, 0, static_cast<LPARAM>(frameColor));
 }
 #pragma endregion
