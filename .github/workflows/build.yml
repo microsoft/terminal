@@ -7,6 +7,8 @@ on:
     branches: [ '**' ]
   workflow_dispatch:
 
+permissions: {}
+
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
   XES_PACKAGEVERSIONNUMBER: 0.0.0.1-ci
