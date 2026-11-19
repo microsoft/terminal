@@ -30,8 +30,6 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../interactivity/win32/windowUiaProvider.hpp"
 
-#include "CustomWindowMessages.h"
-
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS WS_OVERLAPPEDWINDOW
@@ -1361,12 +1359,5 @@ BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 
 void Window::RenderFrameColorChangedCallback()
 {
-    // Called under console lock.
-    auto& g = ServiceLocator::LocateGlobals();
-    const auto& gci = g.getConsoleInformation();
-    const auto frameColor = gci.GetRenderSettings().GetColorAlias(ColorAlias::FrameBackground);
-    PostMessageW(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(),
-                 CM_UPDATE_FRAME_COLOR,
-                 0,
-                 static_cast<LPARAM>(frameColor));
+    ServiceLocator::LocateConsoleWindow()->PostUpdateFrameColor();
 }

@@ -81,6 +81,7 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateScrollBars() const;
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
+        BOOL PostUpdateFrameColor() const;
 
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);
