@@ -241,13 +241,19 @@ jobs:
       - uses: nuget/setup-nuget@v4
 
       - uses: actions/download-artifact@v8
-        with: { name: bin-x64, path: bin/x64/${{env.BUILD_CONFIGURATION}} }
+        with: 
+          name: bin-x64
+          path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
       - uses: actions/download-artifact@v8
-        with: { name: bin-x86, path: bin/Win32/${{env.BUILD_CONFIGURATION}} }
+        with: 
+          name: bin-x86
+          path: bin/Win32/${{env.BUILD_CONFIGURATION}} 
 
       - uses: actions/download-artifact@v8
-        with: { name: bin-arm64, path: bin/ARM64/${{env.BUILD_CONFIGURATION}} }
+        with:
+          name: bin-arm64
+          path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
 
       - run: |-
           New-Item -Type Directory package
