@@ -29,6 +29,10 @@ jobs:
         ) }}
       UnpackagedBuildArguments: -PortableMode
     steps:
+      - run: |-
+          "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
+        name: Prepare BIN_DIR
+
       - uses: actions/checkout@v7
 
       - run: |-
@@ -103,7 +107,7 @@ jobs:
       # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
       # - console.dll, which apparently breaks XFGCheck? lol.
       - run: |-
-          $binDir = 'bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}'
+          $binDir = $env:ARCH_BIN_DIR
           $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
           $StaticLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.lib' | Where-Object FullName -NotIn $ImportLibs
 
@@ -120,6 +124,12 @@ jobs:
 
           $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
         name: Delete expensive build outputs before archival
+
+      - run: |-
+          $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "${env:ARCH_BIN_DIR}/TestHostApp/TestHostApp.build.appxrecipe"
+          $dir = New-Item -Type Directory "${env:ARCH_BIN_DIR}/_testDeps"
+          $deps | Copy-Item -Destination $dir -Verbose
+        name: Prepare test dependencies
 
       - uses: actions/upload-artifact@v7
         with:
@@ -154,16 +164,20 @@ jobs:
     name: ${{ matrix.pass }} tests on ${{ matrix.arch }}
     needs: build
     steps:
+      - run: |-
+          "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
+        name: Prepare BIN_DIR
+
       - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
         with:
           name: bin-${{matrix.arch}}
-          path: "bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}"
+          path: ${{env.ARCH_BIN_DIR}}
           merge-multiple: true
 
       - run: |-
-          $deps = Get-ChildItem -Recurse "bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}/_testDeps"
+          $deps = Get-ChildItem -Recurse "${env:ARCH_BIN_DIR}/_testDeps"
           $deps | % {
             Write-Host "Installing $($_.FullName)..."
             Add-AppxPackage -Path $_.FullName -ErrorAction:Ignore
@@ -173,12 +187,12 @@ jobs:
 
       - run: |-
           ./build/scripts/Run-Tests.ps1 `
-            -MatchPattern '${{ env.TEST_GLOB }}' `
+            -MatchPattern ${env:TEST_GLOB} `
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
             -LogPath 'tests.wtl' `
             -AdditionalTaefArguments "/logOutput:Low" `
-            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
+            -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
       - run: |-
