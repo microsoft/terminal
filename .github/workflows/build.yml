@@ -43,30 +43,13 @@ jobs:
           "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
         name: Discover Visual Studio
 
-      - uses: nuget/setup-nuget@v4
-
-      - uses: actions/cache@v6
+      - uses: ./.github/actions/terminal-restore-nuget-vcpkg
+        name: Restore NuGet and vcpkg
         with:
-          path: obj/*/vcpkg
-          key: vcpkg-${{matrix.arch}}-${{hashFiles('vcpkg.json')}}
-
-      - uses: actions/cache@v6
-        with:
-          path: packages
-          key: nuget-${{hashFiles('dep/nuget/packages.config')}}
-
-      - run: |-
-          Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
-          & msbuild OpenConsole.slnx `
-            "/p:Platform=${{ matrix.arch }}" `
-            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-            /p:WindowsTerminalOfficialBuild=true `
-            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
-            /clp:Verbosity=Minimal `
-            /m /t:Restore
-          & nuget restore dep/nuget/packages.config
-        name: Restore NuGet Packages
+          arch: ${{ matrix.arch }}
+          config: ${{ env.BUILD_CONFIGURATION }}
+          vs-instance: ${{ env.VS_INSTANCE }}
+          vs-devshell: ${{ env.VS_DEVSHELL }}
 
       - run: |-
           Import-Module $env:VS_DEVSHELL
@@ -311,8 +294,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: nuget/setup-nuget@v4
-
       - uses: actions/download-artifact@v8
         with:
           name: bin-x64
@@ -341,25 +322,13 @@ jobs:
           "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
         name: Discover Visual Studio
 
-      - uses: nuget/setup-nuget@v4
-
-      - uses: actions/cache@v6
+      - uses: ./.github/actions/terminal-restore-nuget-vcpkg
+        name: Restore NuGet and vcpkg
         with:
-          path: packages
-          key: nuget-${{hashFiles('dep/nuget/packages.config')}}
-
-      - run: |-
-          Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
-          & msbuild OpenConsole.slnx `
-            "/p:Platform=Any CPU" `
-            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-            /p:WindowsTerminalOfficialBuild=true `
-            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
-            /clp:Verbosity=Minimal `
-            /m /t:Restore
-          & nuget restore dep/nuget/packages.config
-        name: Restore NuGet Packages
+          arch: Any CPU
+          config: ${{ env.BUILD_CONFIGURATION }}
+          vs-instance: ${{ env.VS_INSTANCE }}
+          vs-devshell: ${{ env.VS_DEVSHELL }}
 
       - run: |-
           Import-Module $env:VS_DEVSHELL

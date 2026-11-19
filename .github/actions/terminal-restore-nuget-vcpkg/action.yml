@@ -1,0 +1,46 @@
+name: Restore NuGet and vcpkg
+description: Part of Terminal's build process
+inputs:
+  vs-devshell:
+    description: Path to Visual Studio's powershell module
+    required: true
+  vs-instance:
+    description: Which instance of Visual Studio to use
+    required: true
+  arch:
+    description: Build architecture
+    required: true
+  configuration:
+    description: Build config
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: nuget/setup-nuget@v4
+
+    - uses: actions/cache@v6
+      with:
+        path: obj/*/vcpkg
+        key: vcpkg-${{inputs.arch}}-${{hashFiles('vcpkg.json')}}
+
+    - uses: actions/cache@v6
+      with:
+        path: packages
+        key: nuget-${{hashFiles('dep/nuget/packages.config')}}
+
+    - shell: pwsh
+      env:
+        VS_DEVSHELL: ${{ inputs.vs-devshell }}
+        VS_INSTANCE: ${{ inputs.vs-instance }}
+        DEVSHELL_ARCH: ${{ case(inputs.arch == 'Any CPU', 'x64', matrix.arch) }}
+      run: |-
+        Import-Module $env:VS_DEVSHELL
+        Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
+        & msbuild OpenConsole.slnx `
+          "/p:Platform=${{ inputs.arch }}" `
+          /p:Configuration=${{ inputs.configuration }} `
+          /p:WindowsTerminalOfficialBuild=true `
+          /clp:Verbosity=Minimal `
+          /m /t:Restore
+        & nuget restore dep/nuget/packages.config
+      name: Restore NuGet Packages
