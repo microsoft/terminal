@@ -1,4 +1,4 @@
-name: Package Terminal Applications 
+name: Package Terminal Applications
 description: Part of Terminal's build process for making unpackaged builds and eventually signing MSIX
 inputs:
   unpackaged-build-arguments:
