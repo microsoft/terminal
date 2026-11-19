@@ -304,6 +304,9 @@ jobs:
           path: ${{ env.PACKAGE_PATH }}
           archive: false
 
+  pack-conpty:
+    name: Package WPF Control
+    runs-on: windows-2025-vs2026
     needs: build
     steps:
       - uses: actions/checkout@v7
