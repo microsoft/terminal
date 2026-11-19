@@ -9,7 +9,7 @@ on:
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
   XES_PACKAGEVERSIONNUMBER: 0.0.0.1-ci
-  WT_BRANDING: Canary
+  WT_BRANDING: Dev # Release, Preview, Canary, Dev
   BUILD_CONFIGURATION: Release
 
 jobs:
