@@ -8,6 +8,7 @@ on:
 
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
+  XES_PACKAGEVERSIONNUMBER: 0.0.0.1-ci
   WT_BRANDING: Canary
   BUILD_CONFIGURATION: Release
 
@@ -175,7 +176,7 @@ jobs:
         name: Run Feature Tests
         if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
 
-  pack:
+  pack-msix:
     name: Package MSIXBundle
     runs-on: windows-2025-vs2026
     env:
@@ -228,4 +229,36 @@ jobs:
         with:
           name: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
           path: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
+          archive: false
+
+  pack-conpty:
+    name: Package ConPTY
+    runs-on: windows-2025-vs2026
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: nuget/setup-nuget@v4
+
+      - uses: actions/download-artifact@v8
+        with: { name: bin-x64, path: bin/x64/${{env.BUILD_CONFIGURATION}} }
+
+      - uses: actions/download-artifact@v8
+        with: { name: bin-x86, path: bin/Win32/${{env.BUILD_CONFIGURATION}} }
+
+      - uses: actions/download-artifact@v8
+        with: { name: bin-arm64, path: bin/ARM64/${{env.BUILD_CONFIGURATION}} }
+
+      - run: |-
+          New-Item -Type Directory package
+          nuget pack src/winconpty/package/winconpty.nuspec -OutputDirectory package -Version ${{env.XES_PACKAGEVERSIONNUMBER}}
+          $i = Get-Item package/*.nupkg
+          "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
+          "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
+        name: NuGet Pack
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: ${{ env.PACKAGE_PATH }}
           archive: false
