@@ -56,7 +56,7 @@ jobs:
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
           & msbuild OpenConsole.slnx `
             "/p:Platform=${{ matrix.arch }}" `
-            /p:Configuration=Release `
+            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
             /p:WindowsTerminalOfficialBuild=true `
             /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
             /p:OpenConsoleCleanPCH=true `
@@ -333,7 +333,7 @@ jobs:
           Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
           & msbuild OpenConsole.slnx `
             "/p:Platform=Any CPU" `
-            /p:Configuration=Release `
+            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
             /p:WindowsTerminalOfficialBuild=true `
             /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
             /p:Version=$env:XES_PACKAGEVERSIONNUMBER `
