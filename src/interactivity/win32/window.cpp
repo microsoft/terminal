@@ -1359,5 +1359,6 @@ BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 
 void Window::RenderFrameColorChangedCallback()
 {
-    ServiceLocator::LocateConsoleWindow()->PostUpdateFrameColor();
+    // If we get this callback, we are guaranteed to have a Win32::Window.
+    static_cast<Window*>(ServiceLocator::LocateConsoleWindow())->PostUpdateFrameColor();
 }
