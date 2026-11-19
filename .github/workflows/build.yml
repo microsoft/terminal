@@ -132,10 +132,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { arch: x86, agent: windows-2025-vs2026 }
-          - { arch: x64, agent: windows-2025-vs2026 }
-          - { arch: arm64, agent: windows-11-vs2026-arm }
+        arch: [x86, x64, arm64]
+        pass: [Unit, Feature, Local]
+        exclude:
+          - { arch: x86, pass: Feature }
+          - { arch: x86, pass: Local }
     env:
       BUILD_PLATFORM: |-
         ${{ case(
@@ -143,8 +144,14 @@ jobs:
               matrix.arch == 'x86', 'Win32',
               matrix.arch
         ) }}
-    runs-on: ${{ matrix.agent }}
-    name: Test ${{ matrix.arch }}
+      TEST_GLOB: |-
+        ${{ case(
+              matrix.pass == 'Local', '*LocalTests*.dll',
+              matrix.pass == 'Feature', '*feature.test*.dll',
+              '*unit.test*.dll'
+        ) }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-vs2026-arm' || 'windows-2025-vs2026' }}
+    name: ${{ matrix.pass }} tests on ${{ matrix.arch }}
     needs: build
     steps:
       - uses: actions/checkout@v7
@@ -156,45 +163,28 @@ jobs:
           merge-multiple: true
 
       - run: |-
-          ./build/scripts/Run-Tests.ps1 `
-            -MatchPattern '*unit.test*.dll' `
-            -Platform ${env:BUILD_PLATFORM} `
-            -Configuration ${env:BUILD_CONFIGURATION} `
-            -LogPath 'tests.wtl' `
-            -AdditionalTaefArguments "/logOutput:Low" `
-            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
-        name: Run Unit Tests
-
-      - run: |-
-          ./build/scripts/Run-Tests.ps1 `
-            -MatchPattern '*feature.test*.dll' `
-            -Platform ${env:BUILD_PLATFORM} `
-            -Configuration ${env:BUILD_CONFIGURATION} `
-            -LogPath 'tests.wtl' `
-            -AdditionalTaefArguments "/logOutput:Low" `
-            -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
-        name: Run Feature Tests
-        if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
-
-      - run: |-
           $deps = Get-ChildItem -Recurse "bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}/_testDeps"
           $deps | % {
             Write-Host "Installing $($_.FullName)..."
             Add-AppxPackage -Path $_.FullName -ErrorAction:Ignore
           }
+        name: Prepare test dependencies
+        if: ${{ success() && matrix.pass == 'Local' }}
+
+      - run: |-
           ./build/scripts/Run-Tests.ps1 `
-            -MatchPattern '*LocalTests*.dll' `
+            -MatchPattern '${{ env.TEST_GLOB }}' `
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
             -LogPath 'tests.wtl' `
             -AdditionalTaefArguments "/logOutput:Low" `
             -Root "bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}"
-        name: Run Local Tests
-        if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
+        name: Run Tests
 
       - run: |-
           .\build\Helix\ConvertWttLogToXUnit.ps1 -WttInputPath 'tests.wtl' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '${env:BUILD_PLATFORM}.${env:BUILD_CONFIGURATION}'
           .\build\Helix\OutputTestErrorsForAzureDevops.ps1 -XUnitOutputPath onBuildMachineResults.xml
+        shell: powershell # These scripts prefer PowerShell 5.1 for right now...
         if: always()
         name: Convert WTT to XML and log failures
 
