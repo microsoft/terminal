@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - "**"
-  push:
-    branches: [ dev/dhowett/github-ci, dev/duhowett/hax/github-ci ]
 
 permissions: {}
 
