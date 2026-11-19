@@ -76,6 +76,11 @@ HRESULT RenderEngineBase::PaintImageSlice(const ImageSlice& /*imageSlice*/,
     return S_FALSE;
 }
 
+HRESULT RenderEngineBase::PaintGraphics(const GraphicsPaintInfo& /*info*/) noexcept
+{
+    return S_FALSE;
+}
+
 // Method Description:
 // - By default, no one should need continuous redraw. It ruins performance
 //   in terms of CPU, memory, and battery life to just paint forever.

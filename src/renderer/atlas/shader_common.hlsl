@@ -18,6 +18,9 @@
 #define SHADING_TYPE_CURSOR             9
 #define SHADING_TYPE_FILLED_RECT       10
 
+// Depends on the background texture
+#define SHADING_TYPE_BACKGROUND_NON_DEFAULT 11
+
 struct VSData
 {
     float2 vertex : SV_Position;

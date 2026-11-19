@@ -105,3 +105,56 @@ void Microsoft::Console::Render::Atlas::ColorGlyphRunDraw(ID2D1DeviceContext4* d
 }
 
 TIL_FAST_MATH_END
+
+// Creates a bitmap of the image. Images larger than the maximum bitmap size of
+// the device are downscaled, and `scale` receives the factor that was applied.
+bool Microsoft::Console::Render::Atlas::CreateGraphicsBitmap(ID2D1DeviceContext* renderTarget, const GraphicsImage& image, ID2D1Bitmap** bitmap, f32x2& scale) noexcept
+try
+{
+    const auto width = image.size.width;
+    const auto height = image.size.height;
+    if (width <= 0 || height <= 0 || image.pixels.size() < static_cast<size_t>(width) * height)
+    {
+        return false;
+    }
+
+    const auto maxSize = static_cast<f32>(renderTarget->GetMaximumBitmapSize());
+    const auto factor = std::min(1.0f, maxSize / static_cast<f32>(std::max(width, height)));
+    const auto scaledWidth = std::max(1, static_cast<i32>(static_cast<f32>(width) * factor));
+    const auto scaledHeight = std::max(1, static_cast<i32>(static_cast<f32>(height) * factor));
+
+    auto data = image.pixels.data();
+    std::vector<u32> scaled;
+    if (scaledWidth != width || scaledHeight != height)
+    {
+        scaled.resize(static_cast<size_t>(scaledWidth) * scaledHeight);
+        for (i32 y = 0; y < scaledHeight; y++)
+        {
+            const auto src = &image.pixels[static_cast<size_t>(y) * height / scaledHeight * width];
+            const auto dst = &scaled[static_cast<size_t>(y) * scaledWidth];
+            for (i32 x = 0; x < scaledWidth; x++)
+            {
+                dst[x] = src[static_cast<size_t>(x) * width / scaledWidth];
+            }
+        }
+        data = scaled.data();
+    }
+
+    const D2D1_SIZE_U size{ static_cast<UINT32>(scaledWidth), static_cast<UINT32>(scaledHeight) };
+    const D2D1_BITMAP_PROPERTIES properties{
+        .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
+        .dpiX = 96,
+        .dpiY = 96,
+    };
+    if (FAILED_LOG(renderTarget->CreateBitmap(size, data, size.width * 4, &properties, bitmap)))
+    {
+        return false;
+    }
+    scale = { static_cast<f32>(scaledWidth) / static_cast<f32>(width), static_cast<f32>(scaledHeight) / static_cast<f32>(height) };
+    return true;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}

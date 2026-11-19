@@ -5,6 +5,7 @@
 #include "renderer.hpp"
 
 #include <til/atomic.h>
+#include <til/unicode.h>
 
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
@@ -1144,6 +1145,10 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Prepare the appropriate line transform for the current row and viewport offset.
             LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, _viewport.Left()));
 
+            // Graphics below the text are painted first, so that engines
+            // that draw immediately can layer the text on top of them.
+            _PaintGraphics(pEngine, buffer, r, screenPosition.y, true);
+
             // Ask the helper to paint through this specific line.
             _PaintBufferOutputHelper(pEngine, it, screenPosition);
 
@@ -1153,8 +1158,206 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             {
                 LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, _viewport.Left()));
             }
+
+            _PaintGraphics(pEngine, buffer, r, screenPosition.y, false);
         }
     }
+}
+
+// Routine Description:
+// - Paints the graphics placements covering a row, as well as the images
+//   displayed by any graphics placeholder characters in the row.
+// Arguments:
+// - pEngine - The render engine to paint with.
+// - buffer - The text buffer the row belongs to.
+// - row - The row to paint.
+// - targetRow - The screen row the row is displayed on.
+// - belowText - Whether to paint the graphics below the text (z-index < 0) or the rest.
+void Renderer::_PaintGraphics(_In_ IRenderEngine* const pEngine, const TextBuffer& buffer, const ROW& row, const til::CoordType targetRow, const bool belowText)
+{
+    for (const auto& ref : row.GetGraphics())
+    {
+        const auto& placement = *ref.placement;
+        if ((placement.z < 0) != belowText)
+        {
+            continue;
+        }
+        const GraphicsPaintInfo info{
+            .image = placement.image,
+            .geometry = placement.geometry,
+            .anchorColumn = placement.column,
+            .rowIndex = ref.row,
+            .clipLeft = placement.column,
+            .clipRight = til::CoordTypeMax,
+            .targetRow = targetRow,
+            .viewportLeft = _viewport.Left(),
+            .z = placement.z,
+            .order = placement.image->id,
+            .key = placement.revision,
+        };
+        LOG_IF_FAILED(pEngine->PaintGraphics(info));
+    }
+
+    // Placeholder images are always below the text.
+    const auto store = buffer.TryGetGraphicsStore();
+    if (belowText && store && row.GetText().find(GraphicsPlaceholder::Character) != std::wstring_view::npos) [[unlikely]]
+    {
+        _PaintGraphicsPlaceholders(pEngine, *store, row, targetRow);
+    }
+}
+
+static uint32_t s_GraphicsIdFromColor(const TextColor& color) noexcept
+{
+    if (color.IsRgb())
+    {
+        const auto rgb = color.GetRGB();
+        return (GetRValue(rgb) << 16) | (GetGValue(rgb) << 8) | GetBValue(rgb);
+    }
+    if (color.IsIndex16() || color.IsIndex256() || color.IsLegacy())
+    {
+        return color.GetIndex();
+    }
+    return 0;
+}
+
+// Routine Description:
+// - Paints the images displayed by the graphics placeholder characters in a
+//   row. Consecutive placeholders referring to adjacent cells of the same
+//   image are painted together.
+// Arguments:
+// - pEngine - The render engine to paint with.
+// - store - The graphics store of the buffer.
+// - row - The row to paint.
+// - targetRow - The screen row the row is displayed on.
+void Renderer::_PaintGraphicsPlaceholders(_In_ IRenderEngine* const pEngine, const GraphicsStore& store, const ROW& row, const til::CoordType targetRow)
+{
+    struct Cell
+    {
+        uint32_t foreground = 0;
+        uint32_t underline = 0;
+        int row = 0;
+        int column = 0;
+        int msb = 0;
+    };
+
+    std::optional<Cell> previous;
+    Cell run;
+    til::CoordType runStart = 0;
+    til::CoordType runLength = 0;
+
+    const auto flush = [&]() {
+        if (runLength == 0)
+        {
+            return;
+        }
+        const auto imageId = run.foreground | (static_cast<uint32_t>(run.msb) << 24);
+        const auto image = store.Find(imageId);
+        const auto virtualPlacement = image ? store.FindVirtualPlacement(imageId, run.underline) : nullptr;
+        if (virtualPlacement && run.row < virtualPlacement->rows)
+        {
+            const GraphicsPaintInfo info{
+                .image = image,
+                .geometry = {
+                    .source = til::rect{ til::point{}, image->size },
+                    .columns = virtualPlacement->columns,
+                    .rows = virtualPlacement->rows,
+                    .virtualCellSize = { 1, 1 },
+                },
+                .anchorColumn = runStart - run.column,
+                .rowIndex = run.row,
+                .clipLeft = runStart,
+                .clipRight = runStart + runLength,
+                .targetRow = targetRow,
+                .viewportLeft = _viewport.Left(),
+                .z = -1,
+                .order = imageId,
+                .key = image->revision ^ (static_cast<uint64_t>(virtualPlacement->columns) << 32) ^ (static_cast<uint64_t>(virtualPlacement->rows) << 48),
+            };
+            LOG_IF_FAILED(pEngine->PaintGraphics(info));
+        }
+        runLength = 0;
+    };
+
+    const auto width = gsl::narrow_cast<til::CoordType>(row.size());
+    for (til::CoordType x = 0; x < width; x++)
+    {
+        const auto glyph = row.GlyphAt(x);
+        if (!glyph.starts_with(GraphicsPlaceholder::Character) || row.DbcsAttrAt(x) == DbcsAttribute::Trailing)
+        {
+            previous.reset();
+            flush();
+            continue;
+        }
+
+        const auto attr = row.GetAttrByColumn(x);
+        Cell cell{
+            .foreground = s_GraphicsIdFromColor(attr.GetForeground()),
+            .underline = s_GraphicsIdFromColor(attr.GetUnderlineColor()),
+        };
+
+        // Decode up to 3 diacritics: the row, the column and the most significant byte of the image id.
+        int values[3]{};
+        size_t count = 0;
+        auto diacritics = glyph.substr(GraphicsPlaceholder::Character.size());
+        while (!diacritics.empty() && count < std::size(values))
+        {
+            char32_t ch = diacritics.front();
+            size_t length = 1;
+            if (til::is_leading_surrogate(diacritics.front()) && diacritics.size() >= 2 && til::is_trailing_surrogate(diacritics[1]))
+            {
+                ch = til::combine_surrogates(diacritics[0], diacritics[1]);
+                length = 2;
+            }
+            const auto value = GraphicsPlaceholder::DiacriticValue(ch);
+            if (value < 0)
+            {
+                break;
+            }
+            til::at(values, count++) = value;
+            diacritics = diacritics.substr(length);
+        }
+
+        // Missing values are inherited from the placeholder to the left.
+        const auto continues = previous && previous->foreground == cell.foreground && previous->underline == cell.underline;
+        cell.row = count >= 1 ? values[0] : (continues ? previous->row : 0);
+        if (count >= 2)
+        {
+            cell.column = values[1];
+        }
+        else
+        {
+            cell.column = continues && previous->row == cell.row ? previous->column + 1 : 0;
+        }
+        if (count >= 3)
+        {
+            cell.msb = values[2];
+        }
+        else
+        {
+            cell.msb = continues && previous->row == cell.row && previous->column + 1 == cell.column ? previous->msb : 0;
+        }
+
+        const auto extendsRun = runLength > 0 &&
+                                run.foreground == cell.foreground &&
+                                run.underline == cell.underline &&
+                                run.msb == cell.msb &&
+                                run.row == cell.row &&
+                                run.column + runLength == cell.column &&
+                                runStart + runLength == x;
+        if (extendsRun)
+        {
+            runLength++;
+        }
+        else
+        {
+            flush();
+            run = cell;
+            runStart = x;
+            runLength = 1;
+        }
+        previous = cell;
+    }
+    flush();
 }
 
 void Renderer::_PaintBufferOutputComposition(const ROW& r, ROW& scratch, const Composition& activeComposition) const
@@ -1365,8 +1568,10 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                     containsWideCharacter = true;
                 }
 
-                // Advance the cluster and column counts.
-                _clusterBuffer.emplace_back(it->Chars(), columnCount);
+                // Advance the cluster and column counts. Graphics placeholders
+                // are drawn as images, so their text is replaced with a space.
+                const auto chars = it->Chars();
+                _clusterBuffer.emplace_back(chars.starts_with(GraphicsPlaceholder::Character) ? std::wstring_view{ L" " } : chars, columnCount);
                 it += std::max(it->Columns(), 1); // prevent infinite loop for no visible columns
                 cols += columnCount;
 

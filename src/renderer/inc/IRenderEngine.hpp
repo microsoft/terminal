@@ -22,12 +22,89 @@ Author(s):
 #include "IRenderData.hpp"
 #include "RenderSettings.hpp"
 #include "../../buffer/out/LineRendition.hpp"
+#include "../../buffer/out/GraphicsImage.hpp"
 #include "../../buffer/out/ImageSlice.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4100) // '...': unreferenced formal parameter
 namespace Microsoft::Console::Render
 {
+    // A horizontal strip of a graphics placement, covering a single row.
+    struct GraphicsPaintInfo
+    {
+        std::shared_ptr<const GraphicsImage> image;
+        GraphicsGeometry geometry;
+        // The buffer column of the placement's top-left cell.
+        til::CoordType anchorColumn = 0;
+        // The row of the placement that is being painted.
+        til::CoordType rowIndex = 0;
+        // The range of buffer columns the strip is clipped to.
+        til::CoordType clipLeft = 0;
+        til::CoordType clipRight = 0;
+        til::CoordType targetRow = 0;
+        til::CoordType viewportLeft = 0;
+        int32_t z = 0;
+        uint32_t order = 0;
+        // Uniquely identifies the placement's appearance, for caching.
+        uint64_t key = 0;
+    };
+
+    struct GraphicsStrip
+    {
+        // The part of the image to draw, in image pixels.
+        GraphicsRect source;
+        // Where to draw it, in pixels relative to the top-left corner of the target row.
+        til::rect target;
+    };
+
+    // Computes the part of a placement that's visible in the target row, given the
+    // actual cell size and the width of the viewport in cells. Returns false if
+    // nothing is visible.
+    inline bool ComputeGraphicsStrip(const GraphicsPaintInfo& info, const til::size cellSize, const til::CoordType viewportWidth, GraphicsStrip& strip) noexcept
+    {
+        const auto dest = info.geometry.Destination(cellSize);
+        if (dest.right <= dest.left || dest.bottom <= dest.top)
+        {
+            return false;
+        }
+
+        // These coordinates are relative to the placement's top-left cell,
+        // until they get translated to the target row at the very end.
+        const auto cellWidth = static_cast<float>(cellSize.width);
+        const auto cellHeight = static_cast<float>(cellSize.height);
+        const auto originX = static_cast<float>(static_cast<int64_t>(info.anchorColumn) - info.viewportLeft) * cellWidth;
+        const auto bandTop = static_cast<float>(info.rowIndex) * cellHeight;
+        const auto clipLeft = std::max(static_cast<float>(static_cast<int64_t>(info.clipLeft) - info.anchorColumn) * cellWidth, -originX);
+        const auto clipRight = std::min(static_cast<float>(static_cast<int64_t>(info.clipRight) - info.anchorColumn) * cellWidth, static_cast<float>(viewportWidth) * cellWidth - originX);
+        const GraphicsRect visible{
+            std::max(dest.left, clipLeft),
+            std::max(dest.top, bandTop),
+            std::min(dest.right, clipRight),
+            std::min(dest.bottom, bandTop + cellHeight),
+        };
+        strip.target = {
+            lroundf(visible.left + originX),
+            lroundf(visible.top - bandTop),
+            lroundf(visible.right + originX),
+            lroundf(visible.bottom - bandTop),
+        };
+        if (strip.target.right <= strip.target.left || strip.target.bottom <= strip.target.top)
+        {
+            return false;
+        }
+
+        const auto& source = info.geometry.source;
+        const auto scaleX = static_cast<float>(source.width()) / (dest.right - dest.left);
+        const auto scaleY = static_cast<float>(source.height()) / (dest.bottom - dest.top);
+        strip.source = {
+            source.left + (visible.left - dest.left) * scaleX,
+            source.top + (visible.top - dest.top) * scaleY,
+            source.left + (visible.right - dest.left) * scaleX,
+            source.top + (visible.bottom - dest.top) * scaleY,
+        };
+        return true;
+    }
+
     struct RenderFrameInfo
     {
         std::span<const til::point_span> searchHighlights;
@@ -81,6 +158,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PaintBufferLine(std::span<const Cluster> clusters, til::point coord, bool fTrimLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF gridlineColor, COLORREF underlineColor, size_t cchLine, til::point coordTarget) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintImageSlice(const ImageSlice& imageSlice, til::CoordType targetRow, til::CoordType viewportLeft) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintGraphics(const GraphicsPaintInfo& info) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintSelection(const til::rect& rect) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, const RenderSettings& renderSettings, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
