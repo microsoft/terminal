@@ -44,7 +44,6 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         BOOL PostUpdateScrollBars() const noexcept override;
         BOOL PostUpdateWindowSize() const noexcept override;
-        BOOL PostUpdateFrameColor() const noexcept override;
 
         void UpdateWindowSize(const til::size coordSizeInChars) noexcept override;
         void UpdateWindowText() noexcept override;
