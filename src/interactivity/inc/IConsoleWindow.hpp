@@ -49,6 +49,7 @@ namespace Microsoft::Console::Types
         virtual BOOL PostUpdateScrollBars() const = 0;
 
         virtual BOOL PostUpdateWindowSize() const = 0;
+        virtual BOOL PostUpdateFrameColor() const = 0;
 
         virtual void UpdateWindowSize(const til::size coordSizeInChars) = 0;
         virtual void UpdateWindowText() = 0;

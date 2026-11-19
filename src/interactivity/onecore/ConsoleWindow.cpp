@@ -95,6 +95,11 @@ BOOL ConsoleWindow::PostUpdateWindowSize() const noexcept
     return FALSE;
 }
 
+BOOL ConsoleWindow::PostUpdateFrameColor() const noexcept
+{
+    return FALSE;
+}
+
 void ConsoleWindow::UpdateWindowSize(const til::size /*coordSizeInChars*/) noexcept
 {
 }
