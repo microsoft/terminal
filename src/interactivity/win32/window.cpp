@@ -332,6 +332,8 @@ void Window::_UpdateSystemMetrics() const
 
                     // Locate window theming modules and try to set the dark mode.
                     LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
+
+                    g.pRender->SetFrameColorChangedCallback(&Window::RenderFrameColorChangedCallback);
                 }
             }
         }
@@ -1353,4 +1355,10 @@ BOOL Window::MapRect(_Inout_ til::rect* lpRect)
 BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint->as_win32_point());
+}
+
+void Window::RenderFrameColorChangedCallback()
+{
+    // If we get this callback, we are guaranteed to have a Win32::Window.
+    static_cast<Window*>(ServiceLocator::LocateConsoleWindow())->PostUpdateFrameColor();
 }

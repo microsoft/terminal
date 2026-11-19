@@ -791,6 +791,14 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         break;
     }
 
+    case CM_UPDATE_FRAME_COLOR:
+    {
+        COLORREF color = static_cast<COLORREF>(lParam);
+        DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &color, sizeof(COLORREF));
+        DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &color, sizeof(COLORREF));
+        break;
+    }
+
     default:
     CallDefWin:
     {
@@ -1022,4 +1030,11 @@ BOOL Window::PostUpdateExtendedEditKeys() const
     return PostMessageW(GetWindowHandle(), CM_UPDATE_EDITKEYS, 0, 0);
 }
 
+BOOL Window::PostUpdateFrameColor() const
+{
+    // Called under lock.
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto frameColor = gci.GetRenderSettings().GetColorAlias(ColorAlias::FrameBackground);
+    return PostMessageW(GetWindowHandle(), CM_UPDATE_FRAME_COLOR, 0, static_cast<LPARAM>(frameColor));
+}
 #pragma endregion
