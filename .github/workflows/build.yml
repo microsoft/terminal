@@ -34,7 +34,7 @@ jobs:
           "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
         name: Prepare BIN_DIR
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: |-
           $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
@@ -67,7 +67,7 @@ jobs:
             /bl:msbuild.binlog
         name: Build
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: logs-${{matrix.arch}}
@@ -116,7 +116,7 @@ jobs:
         if: ${{ success() && matrix.arch != 'Any CPU' }}
         name: Prepare test dependencies
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           # These artifacts are quite large, and we only use them for the tests and packages
           retention-days: 1
@@ -153,9 +153,9 @@ jobs:
           "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
         name: Prepare BIN_DIR
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-${{matrix.arch}}
           path: ${{env.ARCH_BIN_DIR}}
@@ -187,7 +187,7 @@ jobs:
         if: always()
         name: Convert WTT to XML and log failures
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: test-${{matrix.arch}}
@@ -200,9 +200,9 @@ jobs:
     runs-on: windows-2025-vs2026
     needs: build
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: '*.msix'
           skip-decompress: true
@@ -236,13 +236,13 @@ jobs:
           tar -c -v --format=zip -f "GroupPolicyTemplates_${env:XES_APPXMANIFESTVERSION}.zip" -C "policies" *
         name: Package GPO Templates
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.BUNDLE_NAME }}
           path: ${{ env.BUNDLE_PATH }}
           archive: false
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
           path: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
@@ -253,21 +253,21 @@ jobs:
     runs-on: windows-2025-vs2026
     needs: build
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: nuget/setup-nuget@v4
+      - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-x64
           path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-x86
           path: bin/Win32/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-arm64
           path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
@@ -280,7 +280,7 @@ jobs:
           "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
         name: NuGet Pack
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.PACKAGE_NAME }}
           path: ${{ env.PACKAGE_PATH }}
@@ -291,24 +291,24 @@ jobs:
     runs-on: windows-2025-vs2026
     needs: build
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-x64
           path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-x86
           path: bin/Win32/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-arm64
           path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: bin-Any CPU
           path: bin/AnyCPU/${{env.BUILD_CONFIGURATION}}
@@ -349,7 +349,7 @@ jobs:
           "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
         name: Pack
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.PACKAGE_NAME }}
           path: ${{ env.PACKAGE_PATH }}

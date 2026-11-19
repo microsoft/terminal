@@ -16,14 +16,14 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: nuget/setup-nuget@v4
+    - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
 
-    - uses: actions/cache@v6
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: obj/*/vcpkg
         key: vcpkg-${{inputs.arch}}-${{hashFiles('vcpkg.json')}}
 
-    - uses: actions/cache@v6
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: packages
         key: nuget-${{hashFiles('dep/nuget/packages.config')}}
