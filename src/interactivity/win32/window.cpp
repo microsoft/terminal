@@ -30,6 +30,8 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../interactivity/win32/windowUiaProvider.hpp"
 
+#include "CustomWindowMessages.h"
+
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS WS_OVERLAPPEDWINDOW
@@ -332,6 +334,8 @@ void Window::_UpdateSystemMetrics() const
 
                     // Locate window theming modules and try to set the dark mode.
                     LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
+
+                    g.pRender->SetFrameColorChangedCallback(&Window::RenderFrameColorChangedCallback);
                 }
             }
         }
@@ -1353,4 +1357,16 @@ BOOL Window::MapRect(_Inout_ til::rect* lpRect)
 BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint->as_win32_point());
+}
+
+void Window::RenderFrameColorChangedCallback()
+{
+    // Called under console lock.
+    auto& g = ServiceLocator::LocateGlobals();
+    const auto& gci = g.getConsoleInformation();
+    const auto frameColor = gci.GetRenderSettings().GetColorAlias(ColorAlias::FrameBackground);
+    PostMessageW(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(),
+                 CM_UPDATE_FRAME_COLOR,
+                 0,
+                 static_cast<LPARAM>(frameColor));
 }

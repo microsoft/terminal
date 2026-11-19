@@ -147,6 +147,8 @@ namespace Microsoft::Console::Interactivity::Win32
         [[nodiscard]] static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
                                                                const Window* const pWindow);
 
+        static void RenderFrameColorChangedCallback();
+
         // The size/position of the window on the most recent update.
         // This is remembered so we can figure out which
         // size the client was resized from.

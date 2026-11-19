@@ -791,6 +791,14 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         break;
     }
 
+    case CM_UPDATE_FRAME_COLOR:
+    {
+        COLORREF color = static_cast<COLORREF>(lParam);
+        DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &color, sizeof(COLORREF));
+        DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &color, sizeof(COLORREF));
+        break;
+    }
+
     default:
     CallDefWin:
     {
