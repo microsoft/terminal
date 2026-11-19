@@ -10,7 +10,7 @@ inputs:
   arch:
     description: Build architecture
     required: true
-  configuration:
+  config:
     description: Build config
     required: true
 runs:
@@ -38,7 +38,7 @@ runs:
         Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
         & msbuild OpenConsole.slnx `
           "/p:Platform=${{ inputs.arch }}" `
-          /p:Configuration=${{ inputs.configuration }} `
+          /p:Configuration=${{ inputs.config }} `
           /p:WindowsTerminalOfficialBuild=true `
           /clp:Verbosity=Minimal `
           /m /t:Restore
