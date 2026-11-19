@@ -305,9 +305,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
-
         bool _isInternalScrollBarUpdate;
+        bool _isUserDraggingThumb{ false };
 
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
@@ -376,6 +375,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _PointerExitedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _MouseWheelHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _ScrollbarChangeHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs& e);
+        void _ScrollbarScrollHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Controls::Primitives::ScrollEventArgs& e);
 
         void _QuickFixButton_PointerEntered(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _QuickFixButton_PointerExited(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
@@ -424,7 +424,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
 
         winrt::Windows::Foundation::Point _toPosInDips(const Core::Point terminalCellPos);
-        void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
+        void _applyScrollBarUpdate(const ScrollBarUpdate& update);
 
         void _pasteTextWithBroadcast(const winrt::hstring& text);
 
@@ -475,7 +475,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Windows::UI::ViewManagement::AccessibilitySettings::HighContrastChanged_revoker HighContrastChanged;
 
             til::event_revoker interactivityOpenHyperlink;
-            til::event_revoker interactivityScrollPositionChanged;
             til::event_revoker PasteFromClipboard;
             til::event_revoker ContextMenuRequested;
         } _revokers{};
