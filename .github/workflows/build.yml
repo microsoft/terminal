@@ -197,16 +197,6 @@ jobs:
   pack-msix:
     name: Package MSIXBundle
     runs-on: windows-2025-vs2026
-    env:
-      # TODO: Change this based on Branding
-      BundleStemName: Microsoft.WindowsTerminalCanary
-      # cannot be evaluated as env. is illegal at this level
-      # ${{ case(
-      #       env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
-      #       env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
-      #       env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
-      #       'WindowsTerminalDev'
-      # ) }}
     needs: build
     steps:
       - uses: actions/checkout@v7
@@ -218,13 +208,21 @@ jobs:
           merge-multiple: true
           path: _msix/
 
+      # Yes, this contains a gnarly GitHub Actions expression. We can't evaluate env in the env context,
+      # and Actions does not support computed non-env variables like Azure DevOps does.
       - run: |-
+          $BundleStemName = ${{ case(
+            env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
+            env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
+            env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
+            'WindowsTerminalDev'
+          ) }}
           $VersionEpoch = 3000
           $Components = "${env:XES_APPXMANIFESTVERSION}" -Split "\."
           $Components[0] = ([int]$Components[0] + $VersionEpoch)
           $BundleVersion = $Components -Join "."
           # TODO: I removed the publisher identity from this step. Consider reintroducing it?
-          $BundleName = "${{ env.BundleStemName }}_${env:XES_APPXMANIFESTVERSION}.msixbundle"
+          $BundleName = "${BundleStemName}_${env:XES_APPXMANIFESTVERSION}.msixbundle"
           New-Item -Type Directory "_bundle"
           $BundlePath = "_bundle\${BundleName}"
           .\build\scripts\Create-AppxBundle.ps1 -InputPath '_msix/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
