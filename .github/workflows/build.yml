@@ -93,7 +93,7 @@ jobs:
 
       - uses: ./.github/actions/terminal-package-msix-and-portable
         name: Finalize and upload MSIX and unpackaged ZIP
-        if: ${{ matrix.arch != 'Any CPU' }}
+        if: ${{ success() && matrix.arch != 'Any CPU' }}
         with:
           unpackaged-build-arguments: ${{env.UnpackagedBuildArguments}}
           arch: ${{matrix.arch}}
@@ -129,6 +129,7 @@ jobs:
           $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "${env:ARCH_BIN_DIR}/TestHostApp/TestHostApp.build.appxrecipe"
           $dir = New-Item -Type Directory "${env:ARCH_BIN_DIR}/_testDeps"
           $deps | Copy-Item -Destination $dir -Verbose
+        if: ${{ success() && matrix.arch != 'Any CPU' }}
         name: Prepare test dependencies
 
       - uses: actions/upload-artifact@v7
@@ -161,7 +162,7 @@ jobs:
               '*unit.test*.dll'
         ) }}
     runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-vs2026-arm' || 'windows-2025-vs2026' }}
-    name: ${{ matrix.pass }} tests on ${{ matrix.arch }}
+    name: ${{ matrix.arch }} ${{ matrix.pass }} Tests
     needs: build
     steps:
       - run: |-
