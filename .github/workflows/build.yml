@@ -177,6 +177,11 @@ jobs:
         if: ${{ success() && matrix.arch == 'x64' || matrix.arch == 'arm64' }}
 
       - run: |-
+          $deps = Get-ChildItem -Recurse "bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}/_testDeps"
+          $deps | % {
+            Write-Host "Installing $($_.FullName)..."
+            Add-AppxPackage -Path $_.FullName -ErrorAction:Ignore
+          }
           ./build/scripts/Run-Tests.ps1 `
             -MatchPattern '*LocalTests*.dll' `
             -Platform ${env:BUILD_PLATFORM} `
