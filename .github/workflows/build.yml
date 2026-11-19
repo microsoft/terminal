@@ -214,12 +214,12 @@ jobs:
       # Yes, this contains a gnarly GitHub Actions expression. We can't evaluate env in the env context,
       # and Actions does not support computed non-env variables like Azure DevOps does.
       - run: |-
-          $BundleStemName = ${{ case(
+          $BundleStemName = "${{ case(
             env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
             env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
             env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
             'WindowsTerminalDev'
-          ) }}
+          ) }}"
           $VersionEpoch = 3000
           $Components = "${env:XES_APPXMANIFESTVERSION}" -Split "\."
           $Components[0] = ([int]$Components[0] + $VersionEpoch)
