@@ -216,7 +216,7 @@ jobs:
     env:
       # TODO: Change this based on Branding
       BundleStemName: Microsoft.WindowsTerminalCanary
-      # cannot be evaluated as env. is illegal at this level  
+      # cannot be evaluated as env. is illegal at this level
       # ${{ case(
       #       env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
       #       env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
@@ -275,14 +275,14 @@ jobs:
       - uses: nuget/setup-nuget@v4
 
       - uses: actions/download-artifact@v8
-        with: 
+        with:
           name: bin-x64
           path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
       - uses: actions/download-artifact@v8
-        with: 
+        with:
           name: bin-x86
-          path: bin/Win32/${{env.BUILD_CONFIGURATION}} 
+          path: bin/Win32/${{env.BUILD_CONFIGURATION}}
 
       - uses: actions/download-artifact@v8
         with:
@@ -296,6 +296,86 @@ jobs:
           "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
           "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
         name: NuGet Pack
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: ${{ env.PACKAGE_PATH }}
+          archive: false
+
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: nuget/setup-nuget@v4
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: bin-x64
+          path: bin/x64/${{env.BUILD_CONFIGURATION}}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: bin-x86
+          path: bin/Win32/${{env.BUILD_CONFIGURATION}}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: bin-arm64
+          path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: bin-Any CPU
+          path: bin/AnyCPU/${{env.BUILD_CONFIGURATION}}
+
+      - run: |-
+          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+          $instance = & $vsWhere -path $devShell -property instanceId
+          "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
+          "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
+        name: Discover Visual Studio
+
+      - uses: nuget/setup-nuget@v4
+
+      - uses: actions/cache@v6
+        with:
+          path: packages
+          key: nuget-${{hashFiles('dep/nuget/packages.config')}}
+
+      - run: |-
+          Import-Module $env:VS_DEVSHELL
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+          & msbuild OpenConsole.slnx `
+            "/p:Platform=${{ matrix.arch }}" `
+            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+            /p:WindowsTerminalOfficialBuild=true `
+            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /clp:Verbosity=Minimal `
+            /m /t:Restore
+          & nuget restore dep/nuget/packages.config
+        name: Restore NuGet Packages
+
+      - run: |-
+          Import-Module $env:VS_DEVSHELL
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+          & msbuild OpenConsole.slnx `
+            "/p:Platform=Any CPU" `
+            /p:Configuration=Release `
+            /p:WindowsTerminalOfficialBuild=true `
+            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /p:Version=$env:XES_PACKAGEVERSIONNUMBER `
+            /p:NoBuild=true `
+            /p:IncludeSymbols=false `
+            /clp:Verbosity=Minimal `
+            /m `
+            /t:Terminal\wpf\WpfTerminalControl:Pack
+
+          $i = Get-ChildItem bin -Recurse -Filter *Wpf*.nupkg | ? Name -NotLike "*symbol*"
+          "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
+          "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
+        name: Pack
 
       - uses: actions/upload-artifact@v7
         with:
