@@ -24,114 +24,114 @@ env:
   BUILD_CONFIGURATION: Release
 
 jobs:
-  build:
-    runs-on: windows-2025-vs2026
-    name: Build ${{ matrix.arch }}
-    strategy:
-      matrix:
-        arch: [x86, x64, arm64, Any CPU]
-    env:
-      DEVSHELL_ARCH: ${{ case(matrix.arch == 'Any CPU', 'x64', matrix.arch) }}
-      BUILD_PLATFORM: |-
-        ${{ case(
-              matrix.arch == 'Any CPU', 'AnyCPU',
-              matrix.arch == 'x86', 'Win32',
-              matrix.arch
-        ) }}
-      UnpackagedBuildArguments: -PortableMode
-    steps:
-      - run: |-
-          "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
-        name: Prepare BIN_DIR
+# build:
+#   runs-on: windows-2025-vs2026
+#   name: Build ${{ matrix.arch }}
+#   strategy:
+#     matrix:
+#       arch: [x86, x64, arm64, Any CPU]
+#   env:
+#     DEVSHELL_ARCH: ${{ case(matrix.arch == 'Any CPU', 'x64', matrix.arch) }}
+#     BUILD_PLATFORM: |-
+#       ${{ case(
+#             matrix.arch == 'Any CPU', 'AnyCPU',
+#             matrix.arch == 'x86', 'Win32',
+#             matrix.arch
+#       ) }}
+#     UnpackagedBuildArguments: -PortableMode
+#   steps:
+#     - run: |-
+#         "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
+#       name: Prepare BIN_DIR
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - run: |-
-          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
-          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
-          $instance = & $vsWhere -path $devShell -property instanceId
-          "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
-          "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
-        name: Discover Visual Studio
+#     - run: |-
+#         $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+#         $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+#         $instance = & $vsWhere -path $devShell -property instanceId
+#         "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
+#         "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
+#       name: Discover Visual Studio
 
-      - uses: ./.github/actions/terminal-restore-nuget-vcpkg
-        name: Restore NuGet and vcpkg
-        with:
-          arch: ${{ matrix.arch }}
-          config: ${{ env.BUILD_CONFIGURATION }}
-          vs-instance: ${{ env.VS_INSTANCE }}
-          vs-devshell: ${{ env.VS_DEVSHELL }}
+#     - uses: ./.github/actions/terminal-restore-nuget-vcpkg
+#       name: Restore NuGet and vcpkg
+#       with:
+#         arch: ${{ matrix.arch }}
+#         config: ${{ env.BUILD_CONFIGURATION }}
+#         vs-instance: ${{ env.VS_INSTANCE }}
+#         vs-devshell: ${{ env.VS_DEVSHELL }}
 
-      - run: |-
-          Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
-          & msbuild OpenConsole.slnx `
-            "/p:Platform=${{ matrix.arch }}" `
-            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-            /p:WindowsTerminalOfficialBuild=true `
-            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
-            /p:OpenConsoleCleanPCH=true `
-            /p:OpenConsoleBuildUnsignedPackage=true `
-            /clp:Verbosity=Minimal `
-            /m `
-            /bl:msbuild.binlog
-        name: Build
+#     - run: |-
+#         Import-Module $env:VS_DEVSHELL
+#         Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=${{ env.DEVSHELL_ARCH }} -host_arch=x64"
+#         & msbuild OpenConsole.slnx `
+#           "/p:Platform=${{ matrix.arch }}" `
+#           /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+#           /p:WindowsTerminalOfficialBuild=true `
+#           /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+#           /p:OpenConsoleCleanPCH=true `
+#           /p:OpenConsoleBuildUnsignedPackage=true `
+#           /clp:Verbosity=Minimal `
+#           /m `
+#           /bl:msbuild.binlog
+#       name: Build
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: logs-${{matrix.arch}}
-          path: |-
-            msbuild.binlog
-            obj/${{matrix.arch}}/vcpkg/**/*.log
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       if: always()
+#       with:
+#         name: logs-${{matrix.arch}}
+#         path: |-
+#           msbuild.binlog
+#           obj/${{matrix.arch}}/vcpkg/**/*.log
 
-      - uses: ./.github/actions/terminal-package-msix-and-portable
-        name: Finalize and upload MSIX and unpackaged ZIP
-        if: ${{ success() && matrix.arch != 'Any CPU' }}
-        with:
-          unpackaged-build-arguments: ${{env.UnpackagedBuildArguments}}
-          arch: ${{matrix.arch}}
+#     - uses: ./.github/actions/terminal-package-msix-and-portable
+#       name: Finalize and upload MSIX and unpackaged ZIP
+#       if: ${{ success() && matrix.arch != 'Any CPU' }}
+#       with:
+#         unpackaged-build-arguments: ${{env.UnpackagedBuildArguments}}
+#         arch: ${{matrix.arch}}
 
-      # This saves ~2GiB per architecture. We won't need these later.
-      # Removes:
-      # - All .lib that do not have an associated .exp (which would indicate that they are import libs)
-      # - All .pdbs from those .libs (which were only used during linking)
-      # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
-      # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
-      # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
-      # - console.dll, which apparently breaks XFGCheck? lol.
-      - run: |-
-          $binDir = $env:ARCH_BIN_DIR
-          $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
-          $StaticLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.lib' | Where-Object FullName -NotIn $ImportLibs
+#     # This saves ~2GiB per architecture. We won't need these later.
+#     # Removes:
+#     # - All .lib that do not have an associated .exp (which would indicate that they are import libs)
+#     # - All .pdbs from those .libs (which were only used during linking)
+#     # - Directories ending in Lib (static lib projects that we fully linked into DLLs which may also contain unnecessary resources)
+#     # - All LocalTests_ project outputs, as they were subsumed into TestHostApp
+#     # - All PDB files inside the WindowsTerminal/ output, which do not belong there.
+#     # - console.dll, which apparently breaks XFGCheck? lol.
+#     - run: |-
+#         $binDir = $env:ARCH_BIN_DIR
+#         $ImportLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.exp' | ForEach-Object { $_.FullName -Replace "exp$","lib" }
+#         $StaticLibs = Get-ChildItem $binDir -Recurse -File -Filter '*.lib' | Where-Object FullName -NotIn $ImportLibs
 
-          $Items = @()
-          $Items += $StaticLibs
-          If ($StaticLibs.Length -Gt 0) {
-            $Items += Get-Item ($StaticLibs.FullName -Replace "lib$","pdb") -ErrorAction:Ignore
-          }
-          $Items += Get-ChildItem $binDir -Directory -Filter '*Lib' -ErrorAction:Ignore
-          $Items += Get-ChildItem $binDir -Directory -Filter 'LocalTests_*' -ErrorAction:Ignore
-          $Items += Get-ChildItem "${binDir}\WindowsTerminal" -Filter '*.pdb' -ErrorAction:Ignore
+#         $Items = @()
+#         $Items += $StaticLibs
+#         If ($StaticLibs.Length -Gt 0) {
+#           $Items += Get-Item ($StaticLibs.FullName -Replace "lib$","pdb") -ErrorAction:Ignore
+#         }
+#         $Items += Get-ChildItem $binDir -Directory -Filter '*Lib' -ErrorAction:Ignore
+#         $Items += Get-ChildItem $binDir -Directory -Filter 'LocalTests_*' -ErrorAction:Ignore
+#         $Items += Get-ChildItem "${binDir}\WindowsTerminal" -Filter '*.pdb' -ErrorAction:Ignore
 
-          $Items += Get-ChildItem $binDir -Filter 'console.dll'
+#         $Items += Get-ChildItem $binDir -Filter 'console.dll'
 
-          $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
-        name: Delete expensive build outputs before archival
+#         $Items | Remove-Item -Recurse -Force -Verbose -ErrorAction:Ignore
+#       name: Delete expensive build outputs before archival
 
-      - run: |-
-          $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "${env:ARCH_BIN_DIR}/TestHostApp/TestHostApp.build.appxrecipe"
-          $dir = New-Item -Type Directory "${env:ARCH_BIN_DIR}/_testDeps"
-          $deps | Copy-Item -Destination $dir -Verbose
-        if: ${{ success() && matrix.arch != 'Any CPU' }}
-        name: Prepare test dependencies
+#     - run: |-
+#         $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "${env:ARCH_BIN_DIR}/TestHostApp/TestHostApp.build.appxrecipe"
+#         $dir = New-Item -Type Directory "${env:ARCH_BIN_DIR}/_testDeps"
+#         $deps | Copy-Item -Destination $dir -Verbose
+#       if: ${{ success() && matrix.arch != 'Any CPU' }}
+#       name: Prepare test dependencies
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          # These artifacts are quite large, and we only use them for the tests and packages
-          retention-days: 1
-          name: bin-${{matrix.arch}}
-          path: bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       with:
+#         # These artifacts are quite large, and we only use them for the tests and packages
+#         retention-days: 1
+#         name: bin-${{matrix.arch}}
+#         path: bin/${{env.BUILD_PLATFORM}}/${{env.BUILD_CONFIGURATION}}
 
   test:
     strategy:
@@ -157,7 +157,7 @@ jobs:
         ) }}
     runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-vs2026-arm' || 'windows-2025-vs2026' }}
     name: ${{ matrix.arch }} ${{ matrix.pass }} Tests
-    needs: build
+#   needs: build
     steps:
       - run: |-
           "ARCH_BIN_DIR=bin/${env:BUILD_PLATFORM}/${env:BUILD_CONFIGURATION}" >> "$Env:GITHUB_ENV"
@@ -167,6 +167,8 @@ jobs:
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
+          github-token: ${{github.token}}
+          run-id: 44781287958 # grabbed from main
           name: bin-${{matrix.arch}}
           path: ${{env.ARCH_BIN_DIR}}
           merge-multiple: true
@@ -205,162 +207,162 @@ jobs:
             *.wtl
             *onBuildMachineResults.xml
 
-  pack-msix:
-    name: Package MSIXBundle
-    runs-on: windows-2025-vs2026
-    needs: build
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+# pack-msix:
+#   name: Package MSIXBundle
+#   runs-on: windows-2025-vs2026
+#   needs: build
+#   steps:
+#     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: '*.msix'
-          skip-decompress: true
-          merge-multiple: true
-          path: _msix/
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         pattern: '*.msix'
+#         skip-decompress: true
+#         merge-multiple: true
+#         path: _msix/
 
-      # Yes, this contains a gnarly GitHub Actions expression. We can't evaluate env in the env context,
-      # and Actions does not support computed non-env variables like Azure DevOps does.
-      - run: |-
-          $BundleStemName = "${{ case(
-            env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
-            env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
-            env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
-            'WindowsTerminalDev'
-          ) }}"
-          $VersionEpoch = 3000
-          $Components = "${env:XES_APPXMANIFESTVERSION}" -Split "\."
-          $Components[0] = ([int]$Components[0] + $VersionEpoch)
-          $BundleVersion = $Components -Join "."
-          # TODO: I removed the publisher identity from this step. Consider reintroducing it?
-          $BundleName = "${BundleStemName}_${env:XES_APPXMANIFESTVERSION}.msixbundle"
-          New-Item -Type Directory "_bundle"
-          $BundlePath = "_bundle\${BundleName}"
-          .\build\scripts\Create-AppxBundle.ps1 -InputPath '_msix/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
-          Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
-          "BUNDLE_NAME=${BundleName}" >> "$Env:GITHUB_ENV"
-          "BUNDLE_PATH=${BundlePath}" >> "$Env:GITHUB_ENV"
-        name: Create MSIX Bundle
+#     # Yes, this contains a gnarly GitHub Actions expression. We can't evaluate env in the env context,
+#     # and Actions does not support computed non-env variables like Azure DevOps does.
+#     - run: |-
+#         $BundleStemName = "${{ case(
+#           env.WT_BRANDING == 'Canary', 'Microsoft.WindowsTerminalCanary',
+#           env.WT_BRANDING == 'Preview', 'Microsoft.WindowsTerminalPreview',
+#           env.WT_BRANDING == 'Release', 'Microsoft.WindowsTerminal',
+#           'WindowsTerminalDev'
+#         ) }}"
+#         $VersionEpoch = 3000
+#         $Components = "${env:XES_APPXMANIFESTVERSION}" -Split "\."
+#         $Components[0] = ([int]$Components[0] + $VersionEpoch)
+#         $BundleVersion = $Components -Join "."
+#         # TODO: I removed the publisher identity from this step. Consider reintroducing it?
+#         $BundleName = "${BundleStemName}_${env:XES_APPXMANIFESTVERSION}.msixbundle"
+#         New-Item -Type Directory "_bundle"
+#         $BundlePath = "_bundle\${BundleName}"
+#         .\build\scripts\Create-AppxBundle.ps1 -InputPath '_msix/' -ProjectName CascadiaPackage -BundleVersion $BundleVersion -OutputPath $BundlePath
+#         Write-Host "##vso[task.setvariable variable=MsixBundlePath]${BundlePath}"
+#         "BUNDLE_NAME=${BundleName}" >> "$Env:GITHUB_ENV"
+#         "BUNDLE_PATH=${BundlePath}" >> "$Env:GITHUB_ENV"
+#       name: Create MSIX Bundle
 
-      - run: |-
-          tar -c -v --format=zip -f "GroupPolicyTemplates_${env:XES_APPXMANIFESTVERSION}.zip" -C "policies" *
-        name: Package GPO Templates
+#     - run: |-
+#         tar -c -v --format=zip -f "GroupPolicyTemplates_${env:XES_APPXMANIFESTVERSION}.zip" -C "policies" *
+#       name: Package GPO Templates
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ${{ env.BUNDLE_NAME }}
-          path: ${{ env.BUNDLE_PATH }}
-          archive: false
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       with:
+#         name: ${{ env.BUNDLE_NAME }}
+#         path: ${{ env.BUNDLE_PATH }}
+#         archive: false
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
-          path: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
-          archive: false
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       with:
+#         name: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
+#         path: GroupPolicyTemplates_${{ env.XES_APPXMANIFESTVERSION }}.zip
+#         archive: false
 
-  pack-conpty:
-    name: Package ConPTY
-    runs-on: windows-2025-vs2026
-    needs: build
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+# pack-conpty:
+#   name: Package ConPTY
+#   runs-on: windows-2025-vs2026
+#   needs: build
+#   steps:
+#     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
+#     - uses: nuget/setup-nuget@fd55a6f3b34392fa83fde1454582407d8c714123 # v4.0
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-x64
-          path: bin/x64/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-x64
+#         path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-x86
-          path: bin/Win32/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-x86
+#         path: bin/Win32/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-arm64
-          path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-arm64
+#         path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
 
-      - run: |-
-          New-Item -Type Directory package
-          nuget pack src/winconpty/package/winconpty.nuspec -OutputDirectory package -Version ${{env.XES_PACKAGEVERSIONNUMBER}}
-          $i = Get-Item package/*.nupkg
-          "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
-          "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
-        name: NuGet Pack
+#     - run: |-
+#         New-Item -Type Directory package
+#         nuget pack src/winconpty/package/winconpty.nuspec -OutputDirectory package -Version ${{env.XES_PACKAGEVERSIONNUMBER}}
+#         $i = Get-Item package/*.nupkg
+#         "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
+#         "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
+#       name: NuGet Pack
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ${{ env.PACKAGE_NAME }}
-          path: ${{ env.PACKAGE_PATH }}
-          archive: false
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       with:
+#         name: ${{ env.PACKAGE_NAME }}
+#         path: ${{ env.PACKAGE_PATH }}
+#         archive: false
 
-  pack-wpf:
-    name: Package WPF Control
-    runs-on: windows-2025-vs2026
-    needs: build
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+# pack-wpf:
+#   name: Package WPF Control
+#   runs-on: windows-2025-vs2026
+#   needs: build
+#   steps:
+#     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-x64
-          path: bin/x64/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-x64
+#         path: bin/x64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-x86
-          path: bin/Win32/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-x86
+#         path: bin/Win32/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-arm64
-          path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-arm64
+#         path: bin/ARM64/${{env.BUILD_CONFIGURATION}}
 
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: bin-Any CPU
-          path: bin/AnyCPU/${{env.BUILD_CONFIGURATION}}
+#     - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+#       with:
+#         name: bin-Any CPU
+#         path: bin/AnyCPU/${{env.BUILD_CONFIGURATION}}
 
-      - run: |-
-          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
-          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
-          $instance = & $vsWhere -path $devShell -property instanceId
-          "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
-          "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
-        name: Discover Visual Studio
+#     - run: |-
+#         $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+#         $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+#         $instance = & $vsWhere -path $devShell -property instanceId
+#         "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
+#         "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
+#       name: Discover Visual Studio
 
-      - uses: ./.github/actions/terminal-restore-nuget-vcpkg
-        name: Restore NuGet and vcpkg
-        with:
-          arch: Any CPU
-          config: ${{ env.BUILD_CONFIGURATION }}
-          vs-instance: ${{ env.VS_INSTANCE }}
-          vs-devshell: ${{ env.VS_DEVSHELL }}
+#     - uses: ./.github/actions/terminal-restore-nuget-vcpkg
+#       name: Restore NuGet and vcpkg
+#       with:
+#         arch: Any CPU
+#         config: ${{ env.BUILD_CONFIGURATION }}
+#         vs-instance: ${{ env.VS_INSTANCE }}
+#         vs-devshell: ${{ env.VS_DEVSHELL }}
 
-      - run: |-
-          Import-Module $env:VS_DEVSHELL
-          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
-          & msbuild OpenConsole.slnx `
-            "/p:Platform=Any CPU" `
-            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
-            /p:WindowsTerminalOfficialBuild=true `
-            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
-            /p:Version=$env:XES_PACKAGEVERSIONNUMBER `
-            /p:NoBuild=true `
-            /p:IncludeSymbols=false `
-            /clp:Verbosity=Minimal `
-            /m `
-            /t:Terminal\wpf\WpfTerminalControl:Pack
+#     - run: |-
+#         Import-Module $env:VS_DEVSHELL
+#         Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+#         & msbuild OpenConsole.slnx `
+#           "/p:Platform=Any CPU" `
+#           /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+#           /p:WindowsTerminalOfficialBuild=true `
+#           /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+#           /p:Version=$env:XES_PACKAGEVERSIONNUMBER `
+#           /p:NoBuild=true `
+#           /p:IncludeSymbols=false `
+#           /clp:Verbosity=Minimal `
+#           /m `
+#           /t:Terminal\wpf\WpfTerminalControl:Pack
 
-          $i = Get-ChildItem bin -Recurse -Filter *Wpf*.nupkg | ? Name -NotLike "*symbol*"
-          "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
-          "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
-        name: Pack
+#         $i = Get-ChildItem bin -Recurse -Filter *Wpf*.nupkg | ? Name -NotLike "*symbol*"
+#         "PACKAGE_NAME=$($i.Name)" >> "$Env:GITHUB_ENV"
+#         "PACKAGE_PATH=$($i.FullName)" >> "$Env:GITHUB_ENV"
+#       name: Pack
 
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ${{ env.PACKAGE_NAME }}
-          path: ${{ env.PACKAGE_PATH }}
-          archive: false
+#     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+#       with:
+#         name: ${{ env.PACKAGE_NAME }}
+#         path: ${{ env.PACKAGE_PATH }}
+#         archive: false
