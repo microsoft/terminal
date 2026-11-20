@@ -7,7 +7,15 @@ on:
     branches: [ '**' ]
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  actions: read
+  contents: read
+  checks: write
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  # Cancel PR/off-main-branch runs so only the latest one has to complete.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
@@ -177,25 +185,26 @@ jobs:
             -MatchPattern ${env:TEST_GLOB} `
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
-            -LogPath 'tests.wtl' `
-            -AdditionalTaefArguments "/logOutput:Low" `
+            -AdditionalTaefArguments "/logOutput:Low","/logger:trx" `
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      - run: |-
-          .\build\Helix\ConvertWttLogToXUnit.ps1 -WttInputPath 'tests.wtl' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '${env:BUILD_PLATFORM}.${env:BUILD_CONFIGURATION}'
-          .\build\Helix\OutputTestErrorsForAzureDevops.ps1 -XUnitOutputPath onBuildMachineResults.xml
-        shell: powershell # These scripts prefer PowerShell 5.1 for right now...
-        if: always()
-        name: Convert WTT to XML and log failures
+      - uses: dorny/test-reporter@a66eeec6fc8d89b687e16a3fbd7bfa9a4d4d0cfd # (DHOWETT TEST)
+        if: ${{ always() }}
+        with:
+          name: ${{matrix.arch}} ${{matrix.pass}} Test Results
+          reporter: dotnet-trx
+          list-suites: failed
+          list-tests: failed
+          list-files: failed
+          path: '**/*.trx'
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: test-${{matrix.arch}}
+          name: test-${{matrix.pass}}-${{matrix.arch}}
           path: |-
-            *.wtl
-            *onBuildMachineResults.xml
+            **/*.trx
 
   pack-msix:
     name: Package MSIXBundle
