@@ -182,13 +182,6 @@ jobs:
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      - run: |-
-          .\build\Helix\ConvertWttLogToXUnit.ps1 -WttInputPath 'tests.wtl' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix "${env:BUILD_PLATFORM}.${env:BUILD_CONFIGURATION}"
-          .\build\Helix\OutputTestErrorsForAzureDevops.ps1 -XUnitOutputPath onBuildMachineResults.xml
-        shell: powershell # These scripts prefer PowerShell 5.1 for right now...
-        if: always()
-        name: Convert WTT to XML and log failures
-
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
