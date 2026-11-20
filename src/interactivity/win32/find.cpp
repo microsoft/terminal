@@ -63,6 +63,8 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
                 searcher.FindNext(reverse);
             }
 
+            ServiceLocator::LocateGlobals().accessibilityNotifier.AnnounceSearchResults(searcher.CurrentMatch(), searcher.Results().size());
+
             if (searcher.SelectCurrent())
             {
                 return TRUE;
