@@ -2593,6 +2593,14 @@ Pane::SnapChildrenSizeResult Pane::_CalcSnappedChildrenSizes(const bool widthOrH
         lastSizeTree = sizeTree;
         _AdvanceSnappedDimension(widthOrHeight, sizeTree);
 
+        // GH#19467, GH#20729: If _AdvanceSnappedDimension failed to make any
+        // forward progress (e.g. because GridUnitSize() returned zero before
+        // font initialization), break to prevent deadlocking the UI thread.
+        if (sizeTree.size <= lastSizeTree.size)
+        {
+            break;
+        }
+
         if (sizeTree.size == fullSize)
         {
             // If we just hit exactly the requested value, then just return the
@@ -2745,7 +2753,11 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             else
             {
                 const auto cellSize = snappable.GridUnitSize();
-                sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+                const auto step = widthOrHeight ? cellSize.Width : cellSize.Height;
+                // GH#19467, GH#20729: If GridUnitSize() returns zero (font metrics
+                // not yet initialized at startup), fall back to 1 pixel to guarantee
+                // forward progress and prevent an infinite loop on the UI thread.
+                sizeNode.size += step > 0 ? step : 1.0f;
             }
         }
         else
