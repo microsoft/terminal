@@ -12,6 +12,11 @@ permissions:
   contents: read
   checks: write
 
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  # Cancel PR/off-main-branch runs so only the latest one has to complete.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 env:
   XES_APPXMANIFESTVERSION: 0.0.1.0
   XES_PACKAGEVERSIONNUMBER: 0.0.0.1-ci
