@@ -543,11 +543,11 @@
     <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
   </data>
   <data name="Profile_AllowVtCursorBlinking.Header" xml:space="preserve">
-    <value>Allow cursor blinking</value>
-    <comment>Header for a toggle controlling whether the cursor is allowed to blink.</comment>
+    <value>Allow applications to change cursor blinking</value>
+    <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
   </data>
   <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
-    <value>Allow the cursor to blink. When disabled, cursor blinking is forced off, even if applications request it. Applications can still change the cursor shape or show and hide it.</value>
+    <value>Allow applications to change cursor blinking.</value>
     <comment>Description for the cursor blinking compatibility toggle.</comment>
   </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
