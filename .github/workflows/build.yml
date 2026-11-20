@@ -203,8 +203,7 @@ jobs:
         with:
           name: test-${{matrix.pass}}-${{matrix.arch}}
           path: |-
-            *.wtl
-            *onBuildMachineResults.xml
+            **/*.trx
 
 # pack-msix:
 #   name: Package MSIXBundle
