@@ -23,7 +23,6 @@ namespace Microsoft::Console::TSF
 
         HRESULT Initialize();
         void Uninitialize() noexcept;
-        HWND FindWindowOfActiveTSF() noexcept;
         void AssociateFocus(IDataProvider* provider);
         void Focus(IDataProvider* provider);
         void Unfocus(IDataProvider* provider);

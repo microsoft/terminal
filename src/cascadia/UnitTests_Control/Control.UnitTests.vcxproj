@@ -30,6 +30,7 @@
   <ItemGroup>
     <ClCompile Include="ControlCoreTests.cpp" />
     <ClCompile Include="ControlInteractivityTests.cpp" />
+    <ClCompile Include="InputSiteWindowTests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
