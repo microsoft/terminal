@@ -3237,6 +3237,9 @@ void AdaptDispatch::_EraseAll()
 
     // Also reset the line rendition for the erased rows.
     textBuffer.ResetLineRenditionRange(newPageTop, newPageBottom);
+
+    // Clear scroll marks in the erased rows so they don't remain stale in the scrollbar.
+    textBuffer.ClearMarksInRange({ 0, newPageTop }, { pageWidth, newPageBottom });
 }
 
 //Routine Description:
