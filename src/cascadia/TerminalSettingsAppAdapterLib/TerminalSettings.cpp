@@ -57,6 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyWindowSettings(windowSettings);
+        settings->_CodePage = profile.CodePage();
         settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
