@@ -1,5 +1,3 @@
-!include $(BASEDIR)\onecore\windows\core\console\console_clang_feature.inc
-
 !include ..\sources.inc
 # -------------------------------------
 # Windows Console 

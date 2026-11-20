@@ -165,6 +165,8 @@ public:
 
     void SearchMissingCommand(const std::wstring_view command) override;
 
+    void ShowNotification(const std::wstring_view title, const std::wstring_view body) override;
+
 #pragma endregion
 
     void ClearMark();
@@ -233,6 +235,7 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
+    void SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
@@ -341,6 +344,7 @@ private:
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
+    std::function<void(std::wstring_view, std::wstring_view)> _pfnShowNotification;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
@@ -349,7 +353,7 @@ private:
     ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 
     std::optional<std::wstring> _title;
-    std::wstring _startingTitle;
+    std::optional<std::wstring> _startingTitle;
     std::optional<til::color> _startingTabColor;
 
     std::vector<til::point_span> _searchHighlights;
@@ -380,9 +384,7 @@ private:
     std::wstring _workingDirectory;
     bool _highContrastMode = false;
 
-    // This default fake font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
-    FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
+    FontInfo _fontInfo;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the til::point that remains selected when you extend a selection in any direction

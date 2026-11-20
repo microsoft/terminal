@@ -224,7 +224,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto selectedCommand = _filteredActionsView().SelectedItem();
         const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
-        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
         {
             _switchToTab(filteredCommand);
         }
@@ -385,7 +385,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler
     // Return value:
     // - whether the key was handled
-    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
+    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool /*extended*/, const bool down)
     {
         auto handled = false;
         if (_currentMode == CommandPaletteMode::TabSwitchMode)

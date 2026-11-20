@@ -2103,7 +2103,7 @@ void AdaptDispatch::QueryKittyKeyboardProtocol()
 }
 
 // CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
-void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
+void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags) noexcept
 {
     if (_api.IsConPTY())
     {
@@ -2115,7 +2115,7 @@ void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 }
 
 // CSI < count u - Pops one or more entries from the kitty keyboard stack
-void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
+void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count) noexcept
 {
     if (_api.IsConPTY())
     {
@@ -2612,6 +2612,12 @@ void AdaptDispatch::ForwardIndex()
 // - title - The string to set the title to.
 void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
+    if (title.size() > 1000)
+    {
+        // Xterm imposes a limit of 1000 characters on titles
+        // set by an OSC.
+        return;
+    }
     _api.SetWindowTitle(title);
 }
 
@@ -2620,16 +2626,7 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // OSC 7 uses file URIs, which may not always work.
 void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
 {
-    // Ensure that the URI has a null terminator.
-    std::wstring path{ uri };
-
-    // PathCreateFromUrlW supports writing to the input pointer,
-    // and the resulting path can never be longer than the URI.
-    const auto ptr = path.data();
-    auto len = gsl::narrow<DWORD>(path.size());
-    THROW_IF_FAILED(PathCreateFromUrlW(ptr, ptr, &len, 0));
-    path.resize(len);
-
+    const auto path = Utils::FileUriToPath(uri);
     if (til::is_legal_path(path))
     {
         _api.SetWorkingDirectory(path);
@@ -3002,17 +2999,15 @@ void AdaptDispatch::SoftReset()
     SetGraphicsRendition({}); // Normal rendition.
     SetCharacterProtectionAttribute({}); // Default (unprotected)
 
-    // Reset the saved cursor state.
-    // Note that XTerm only resets the main buffer state, but that
-    // seems likely to be a bug. Most other terminals reset both.
-    _savedCursorState.at(0) = {}; // Main buffer
-    _savedCursorState.at(1) = {}; // Alt buffer
+    // Reset only the active saved cursor state.
+    // This matches xterm behavior when DECSTR is processed while using
+    // the alternate screen buffer (GH#19918).
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0) = {};
 
-    // The TerminalOutput state in these buffers must be reset to
+    // The TerminalOutput state in this buffer must be reset to
     // the same state as the _termOutput instance, which is not
     // necessarily equivalent to a full reset.
-    _savedCursorState.at(0).TermOutput = _termOutput;
-    _savedCursorState.at(1).TermOutput = _termOutput;
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0).TermOutput = _termOutput;
 
     // Soft reset the Sixel parser if in use.
     if (_sixelParser)
@@ -3875,6 +3870,41 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - OSC 777 - Handles urxvt requests. Currently, the only supported request is for desktop notifications.
+//   The format is: OSC 777;notify;title;body ST
+// Arguments:
+// - string: contains the parameters that define the notification
+void AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
+{
+    if (!_optionalFeatures.test(OptionalFeature::DesktopNotification))
+    {
+        return;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return;
+    }
+
+    til::split_iterator split{ string, L';' };
+    const auto action = split.next();
+    if (action == L"notify")
+    {
+        // The body is everything after "notify;title;". We can't just use
+        // parts[2] because the body itself may contain semicolons.
+        const auto title = split.next();
+        const auto body = split.remaining();
+        _api.ShowNotification(title, body);
+    }
+    else
+    {
+        _api.UnknownSequence();
+    }
+}
+
+// Method Description:
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:
@@ -3946,7 +3976,15 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         // with the constructed bit pattern.
         if (ch != AsciiChars::ESC)
         {
-            _fontBuffer->AddSixelData(ch);
+            try
+            {
+                _fontBuffer->AddSixelData(ch);
+            }
+            catch (...)
+            {
+                // Ignore all further content.
+                return false;
+            }
         }
         else if (_fontBuffer->FinalizeSixelData())
         {

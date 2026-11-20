@@ -126,6 +126,7 @@ void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
         break;
     case Mode::LineFeed:
         WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+        GetStateMachine().InjectSequence(InjectionType::LNM);
         break;
     case Mode::BracketedPaste:
         ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
@@ -456,6 +457,10 @@ void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, un
     // Not implemented for conhost.
 }
 void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingCommand*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::ShowNotification(std::wstring_view /*title*/, std::wstring_view /*body*/)
 {
     // Not implemented for conhost.
 }

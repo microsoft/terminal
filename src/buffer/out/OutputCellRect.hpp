@@ -44,6 +44,6 @@ private:
     OutputCell* _FindRowOffset(const til::CoordType row);
     const OutputCell* _FindRowOffset(const til::CoordType row) const;
 
-    til::CoordType _cols;
-    til::CoordType _rows;
+    til::CoordType _cols{ 0 };
+    til::CoordType _rows{ 0 };
 };

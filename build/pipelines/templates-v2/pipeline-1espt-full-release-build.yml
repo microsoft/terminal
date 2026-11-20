@@ -78,6 +78,7 @@ extends:
     - 1ES.PT.ViaStartRight
     pool:
       name: SHINE-INT-L
+      demands: ImageOverride -equals SHINE-VS18-Latest
       os: windows
     sdl:
       tsa:
@@ -120,6 +121,8 @@ extends:
                 - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
                 - template: ./build/pipelines/templates-v2/steps-install-terrapin.yml@self
+                  parameters:
+                    nugetFeed: "https://pkgs.dev.azure.com/microsoft/_packaging/WindowsTerminal/nuget/v3/index.json"
 
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
@@ -162,6 +165,7 @@ extends:
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -176,12 +180,15 @@ extends:
                 generateSbom: false # Handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
           - ${{ if eq(parameters.buildConPTY, true) }}:
             - template: ./build/pipelines/templates-v2/job-package-conpty.yml@self
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -194,12 +201,15 @@ extends:
                 generateSbom: false # this is handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -212,6 +222,8 @@ extends:
                 generateSbom: false # this is handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
       - stage: Publish
         displayName: Publish
@@ -224,6 +236,7 @@ extends:
             parameters:
               pool:
                 name: SHINE-INT-S
+                demands: ImageOverride -equals SHINE-VS18-Latest
                 os: windows
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}

@@ -335,6 +335,11 @@ void FontBuffer::_addSixelValue(const VTInt value) noexcept
 void FontBuffer::_endOfSixelLine()
 {
     // Move down six rows to the get to the next sixel position.
+    if (_currentCharBuffer >= _buffer.end() || _sixelRow >= MAX_HEIGHT) [[unlikely]]
+    {
+        // Advancing the cursor beyond the last row is not OK.
+        THROW_HR(E_OUTOFMEMORY);
+    }
     std::advance(_currentCharBuffer, 6);
     _sixelRow += 6;
 

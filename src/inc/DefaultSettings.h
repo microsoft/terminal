@@ -21,7 +21,7 @@ constexpr COLORREF OPACITY_OPAQUE = 0xff000000;
 constexpr auto DEFAULT_FOREGROUND = COLOR_WHITE;
 constexpr auto DEFAULT_BACKGROUND = COLOR_BLACK;
 
-constexpr short DEFAULT_HISTORY_SIZE = 9001;
+constexpr til::CoordType DEFAULT_HISTORY_SIZE = 16384;
 
 #pragma warning(push)
 #pragma warning(disable : 26426)
@@ -32,6 +32,10 @@ constexpr uint16_t DEFAULT_FONT_WEIGHT = 400; // normal
 
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
+
+// VT theoretical minimum (DECSTBM / DECSLRM). A 1-cell viewport can hang
+// TextBuffer::Reflow on a wide glyph (GH#19996).
+constexpr int MINIMUM_VISIBLE_CELLS = 2;
 
 constexpr std::wstring_view DEFAULT_PADDING{ L"8, 8, 8, 8" };
 constexpr std::wstring_view DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };

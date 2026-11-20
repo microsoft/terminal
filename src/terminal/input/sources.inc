@@ -30,6 +30,7 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 SOURCES= \
     ..\terminalInput.cpp \
     ..\mouseInput.cpp \
+    ..\TestHook.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

@@ -19,6 +19,7 @@
 #include "CharSentEventArgs.g.h"
 #include "StringSentEventArgs.g.h"
 #include "SearchMissingCommandEventArgs.g.h"
+#include "ShowNotificationEventArgs.g.h"
 #include "WindowSizeChangedEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -232,6 +233,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         til::property<winrt::hstring> MissingCommand;
         til::property<til::CoordType> BufferRow;
+    };
+
+    struct ShowNotificationEventArgs : public ShowNotificationEventArgsT<ShowNotificationEventArgs>
+    {
+    public:
+        ShowNotificationEventArgs(const winrt::hstring& title, const winrt::hstring& body) :
+            Title(title),
+            Body(body) {}
+
+        til::property<winrt::hstring> Title;
+        til::property<winrt::hstring> Body;
     };
 
     struct WindowSizeChangedEventArgs : public WindowSizeChangedEventArgsT<WindowSizeChangedEventArgs>

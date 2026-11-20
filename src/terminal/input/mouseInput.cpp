@@ -521,6 +521,6 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
     _encodeRegular(enc, key);
 
     std::wstring str;
-    _formatEncodingHelper(enc, str);
+    _formatEncodingHelper(enc, key, str);
     return str;
 }

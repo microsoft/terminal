@@ -336,6 +336,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return sentinel{};
         }
 
+        typename iterator::value_type next() noexcept
+        {
+            const auto part = value();
+            advance();
+            return part;
+        }
+
+        typename iterator::value_type remaining() noexcept
+        {
+            return { _it, _end };
+        }
+
     private:
         bool valid() const noexcept
         {
@@ -370,6 +382,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     namespace details
     {
         // Just like std::wcstoul, but without annoying locales and null-terminating strings.
+        // Don't use this, use parse_unsigned and parse_signed instead.
         template<typename T, typename Traits>
         _TIL_INLINEPREFIX constexpr std::optional<uint64_t> parse_u64(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
         {
@@ -385,7 +398,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             uint64_t accumulator = 0;
             uint64_t base_uint64 = base;
 
-            if (base <= 0)
+            if (base == 0)
             {
                 base_uint64 = 10;
 
@@ -410,7 +423,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
             }
 
-            if (ptr == end || base_uint64 > 36)
+            if (ptr == end || base_uint64 < 2 || base_uint64 > 36)
             {
                 return {};
             }
@@ -455,8 +468,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         template<std::unsigned_integral R, typename T, typename Traits>
-        constexpr std::optional<R> parse_unsigned(const std::basic_string_view<T, Traits>& str, int base = 0) noexcept
+        constexpr std::optional<R> parse_unsigned(std::basic_string_view<T, Traits> str, int base = 0) noexcept
         {
+            if (str.starts_with('+'))
+            {
+                str = str.substr(1);
+            }
+
             if constexpr (std::is_same_v<R, uint64_t>)
             {
                 return details::parse_u64<>(str, base);
@@ -476,7 +494,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr std::optional<R> parse_signed(std::basic_string_view<T, Traits> str, int base = 0) noexcept
         {
             const bool hasSign = str.starts_with(L'-');
-            if (hasSign)
+            if (hasSign || str.starts_with('+'))
             {
                 str = str.substr(1);
             }
@@ -488,8 +506,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return {};
             }
 
-            const auto r = gsl::narrow_cast<R>(*opt);
-            return hasSign ? -r : r;
+            const auto value = hasSign ? uint64_t{ 0 } - *opt : *opt;
+            return gsl::narrow_cast<R>(value);
         }
     }
 

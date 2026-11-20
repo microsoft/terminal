@@ -1,8 +1,8 @@
 aaaaabbb
+ABANDONFONT
 abbcc
 abcc
 abgr
-ABANDONFONT
 ABORTIFHUNG
 ACCESSTOKEN
 acidev
@@ -12,7 +12,6 @@ acp
 actctx
 ACTCTXW
 ADDALIAS
-ADDREF
 ADDSTRING
 ADDTOOL
 adml
@@ -29,6 +28,7 @@ allocing
 alpc
 ALTERNATENAME
 ALTF
+ALTGR
 ALTNUMPAD
 ALWAYSTIP
 ansicpg
@@ -76,6 +76,7 @@ autoscrolling
 Autowrap
 AVerify
 awch
+AZERTY
 azurecr
 backgrounded
 Backgrounder
@@ -84,6 +85,7 @@ backstory
 Bazz
 bbccb
 bbwe
+bcde
 bcount
 bcx
 bcz
@@ -164,14 +166,13 @@ changelist
 CHARSETINFO
 chshdng
 CHT
+CInput
 CLASSSTRING
 cleartype
 CLICKACTIVE
 clickdown
 CLIENTID
 clipbrd
-CLIPCHILDREN
-CLIPSIBLINGS
 closetest
 cloudconsole
 cloudvault
@@ -241,12 +242,15 @@ consoletaeftemplates
 consoleuwp
 CONSOLEWINDOWOWNER
 consrv
+consteval
 constexprable
 contentfiles
+contentproperty
 conterm
 contsf
 contypes
 conwinuserrefs
+cooldown
 COPYCOLOR
 COPYDATA
 COPYDATASTRUCT
@@ -330,7 +334,6 @@ dblclk
 Dcd
 DCOMMON
 DComposition
-DDESHARE
 DDevice
 DEADCHAR
 debugtype
@@ -377,6 +380,8 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+decommitted
+decommitting
 DECPCCM
 DECPCTERM
 DECPS
@@ -436,6 +441,7 @@ DELAYLOAD
 DELETEONRELEASE
 depersist
 deprioritized
+DESTROYCLIPBOARD
 devicecode
 Dext
 DFF
@@ -596,6 +602,7 @@ fte
 Ftm
 Fullscreens
 FUNCTIONCALL
+Furia
 fuzzmain
 fuzzmap
 fuzzwrapper
@@ -662,6 +669,7 @@ GHIJK
 GHIJKL
 gitcheckin
 gitfilters
+gksks
 gle
 GLOBALFOCUS
 GLYPHENTRY
@@ -810,6 +818,7 @@ Ith
 IUI
 IWIC
 IXP
+izz
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -840,6 +849,8 @@ kinda
 KIYEOK
 KKP
 KLF
+klid
+KLLF
 KLMNO
 KOK
 KPRIORITY
@@ -1102,6 +1113,7 @@ NOSELECTION
 NOSENDCHANGING
 NOSIZE
 NOSNAPSHOT
+NOTELLSHELL
 NOTHOUSANDS
 NOTICKS
 NOTIMEOUTIFNOTHUNG
@@ -1136,7 +1148,7 @@ nullopts
 NUMSCROLL
 NUnit
 nupkg
-NVIDIA
+nvidia
 NVT
 OACR
 ocolor
@@ -1169,6 +1181,7 @@ osc
 OSDEPENDSROOT
 OSG
 OSGENG
+otm
 OUTOFCONTEXT
 Outptr
 outstr
@@ -1213,7 +1226,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCWCH
 PCWCHAR
 PCWSTR
 pdbs
@@ -1331,7 +1343,6 @@ PSobject
 psp
 PSPCB
 psr
-PSTR
 psz
 ptch
 ptsz
@@ -1341,7 +1352,7 @@ pvar
 pwch
 PWDDMCONSOLECONTEXT
 pws
-pwstr
+PWSTR
 pwsz
 pythonw
 QUERYOPEN
@@ -1552,6 +1563,7 @@ SLGP
 SLIST
 slmult
 sln
+slnf
 slnx
 slpit
 SManifest
@@ -1594,6 +1606,7 @@ STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
 stl
+storyboards
 STRINGTABLE
 STRSAFE
 STUBHEAD
@@ -1682,6 +1695,7 @@ TMAE
 TMPF
 tmultiple
 tofrom
+Tombstoning
 toolbars
 TOOLINFO
 TOOLWINDOW
@@ -1746,6 +1760,7 @@ Unittesting
 unittests
 unknwn
 UNORM
+unsend
 untextured
 UPDATEDISPLAY
 UPDOWN
@@ -1753,6 +1768,7 @@ UPKEY
 upss
 uregex
 URegular
+urxvt
 usebackq
 USECALLBACK
 USECOLOR
@@ -1779,6 +1795,7 @@ uwa
 uwp
 uwu
 uxtheme
+VADs
 Vanara
 vararg
 vclib
@@ -1838,6 +1855,7 @@ wcs
 WCSHELPER
 wcsrev
 wcswidth
+WCT
 wddm
 wddmcon
 WDDMCONSOLECONTEXT
@@ -1971,7 +1989,6 @@ yact
 YCast
 YCENTER
 YCount
-yizz
 YLimit
 YPan
 YSubstantial

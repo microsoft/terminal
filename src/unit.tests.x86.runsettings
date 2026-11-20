@@ -56,7 +56,6 @@ Included items must then not match any entries in the exclude list to remain inc
               <Exclude>  
                 <Function>^Fabrikam\.UnitTest\..*</Function>           
                 <Function>^std::.*</Function>  
-                <Function>^ATL::.*</Function>  
                 <Function>.*::__GetTestMethodInfo.*</Function>  
                 <Function>^Microsoft::VisualStudio::CppCodeCoverageFramework::.*</Function>  
                 <Function>^Microsoft::VisualStudio::CppUnitTestFramework::.*</Function>  
@@ -83,7 +82,6 @@ Included items must then not match any entries in the exclude list to remain inc
             <!-- Match the path of the source files in which each method is defined: -->  
             <Sources>  
               <Exclude>  
-                <Source>.*\\atlmfc\\.*</Source>  
                 <Source>.*\\vctools\\.*</Source>  
                 <Source>.*\\public\\sdk\\.*</Source>  
                 <Source>.*\\microsoft sdks\\.*</Source>  

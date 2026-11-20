@@ -97,7 +97,7 @@ jobs:
             ${{ else }}:
               OutputBuildPlatform: ${{ platform }}
   variables:
-    MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
+    MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\MakeAppx.exe'
     Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
     # Azure DevOps abhors a vacuum
     # If these are blank, expansion will fail later on... which will result in direct substitution of the variable *names*
@@ -196,12 +196,12 @@ jobs:
 
   - ${{ if eq(parameters.publishArtifacts, true) }}:
     - publish: $(Build.SourcesDirectory)/msbuild.binlog
-      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+      artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}-$(System.JobAttempt)
       condition: always()
       displayName: Publish Build Log
     - ${{ if eq(parameters.enableCaching, true) }}:
       - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
-        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
+        artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}-$(System.JobAttempt)
         condition: always()
         displayName: Publish MSBuildCache Logs
   - ${{ else }}:

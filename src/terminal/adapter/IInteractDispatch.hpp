@@ -20,6 +20,8 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    enum class DeviceAttribute : uint64_t;
+
     class IInteractDispatch
     {
     public:
@@ -30,6 +32,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool IsVtInputEnabled() const = 0;
 
+        virtual void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) = 0;
         virtual void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) = 0;
         virtual void WriteCtrlKey(const INPUT_RECORD& event) = 0;
         virtual void WriteString(std::wstring_view string) = 0;

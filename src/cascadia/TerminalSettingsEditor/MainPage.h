@@ -46,9 +46,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
-        MainPage(const Model::CascadiaSettings& settings);
+        MainPage(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings);
 
-        void UpdateSettings(const Model::CascadiaSettings& settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings);
 
         safe_void_coroutine SettingsSearchBox_TextChanged(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs& args);
         void SettingsSearchBox_QuerySubmitted(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs& args);
@@ -56,6 +56,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void SettingsNav_ItemInvoked(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs& args);
+        void SettingsNav_PaneOpened(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Windows::Foundation::IInspectable& args);
+        void SettingsNav_PaneClosed(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Windows::Foundation::IInspectable& args);
         void SaveButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void ResetButton_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& sender, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args);
@@ -80,25 +82,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
+        Model::WindowSettings _windowSettingsSource{ nullptr };
+        Model::WindowSettings _windowSettingsClone{ nullptr };
 
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
-        void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
-        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
+        void _CreateAndNavigateToNewProfile(const Model::Profile& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
         void _SetupColorSchemesEventHandling();
         void _SetupActionsEventHandling();
+        void _SetupProfilesPageEventHandling();
         void _NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus);
 
         void _PreNavigateHelper();
-        void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _LazyLoadProfileDefaultsViewModel();
+        void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage = BreadcrumbSubPage::None, hstring elementToFocus = {});
+        void _NavigateToSearchResult(const IInspectable& result);
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
-        Microsoft::UI::Xaml::Controls::NavigationViewItem _FindProfileNavItem(winrt::guid profileGuid) const;
+        Editor::ProfileViewModel _FindProfileViewModelByGuid(winrt::guid profileGuid) const;
+
+        void _AppendProfilesRootCrumb();
+        void _SelectNavItemByTag(std::wstring_view tag);
+
+        void _AnnounceNavPaneState(bool opened);
 
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();
@@ -106,13 +117,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         safe_void_coroutine _UpdateSearchIndex();
 
         winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel _profileDefaultsVM{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ActionsViewModel _actionsVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilesPageViewModel _profilesPageVM{ nullptr };
 
         Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable>> _currentSearch{ nullptr };
+        Windows::Foundation::IInspectable _highlightedSearchResult{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;

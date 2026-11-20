@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Definir nome da janela</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Abrir workspace "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Abrir workspace</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Renomear janela...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>Reiniciar conexão</value>
+    <value>Reiniciar sessão</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Abrir o scratchpad</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Abrir o diretório de trabalho atual</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Workspaces...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Fechar guia</value>

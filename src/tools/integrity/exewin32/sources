@@ -21,6 +21,7 @@ C_DEFINES=-DUNICODE
 TARGETLIBS=\
         $(MINCORE_EXTERNAL_SDK_LIB_PATH_L)\mincore.lib \
         $(WINCORE_OBJ_PATH)\console\open\src\tools\integrity\lib\$(O)\conintegritylib.lib \
+        $(ONECORE_EXTERNAL_SDK_LIB_PATH)\ntdll.lib \
 
 SOURCES=main.cpp  \
         res.rc \

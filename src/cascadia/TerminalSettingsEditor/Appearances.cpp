@@ -12,6 +12,7 @@
 #include "Appearances.g.cpp"
 
 using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Data;
@@ -223,7 +224,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // into the path TextBox, we properly update the checkbox and stored
                 // _lastBgImagePath. Without this, then we'll permanently hide the text
                 // box, prevent it from ever being changed again.
-                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible", L"CurrentBackgroundImagePath");
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsEnabled", L"CurrentBackgroundImagePath");
             }
             else if (viewModelProperty == L"BackgroundImageAlignment")
             {
@@ -231,27 +232,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Foreground")
             {
-                _NotifyChanges(L"ForegroundPreview");
+                _NotifyChanges(L"ForegroundPreview", L"ForegroundAccessibleName");
             }
             else if (viewModelProperty == L"Background")
             {
-                _NotifyChanges(L"BackgroundPreview");
+                _NotifyChanges(L"BackgroundPreview", L"BackgroundAccessibleName");
             }
             else if (viewModelProperty == L"SelectionBackground")
             {
-                _NotifyChanges(L"SelectionBackgroundPreview");
+                _NotifyChanges(L"SelectionBackgroundPreview", L"SelectionBackgroundAccessibleName");
             }
             else if (viewModelProperty == L"CursorColor")
             {
-                _NotifyChanges(L"CursorColorPreview");
+                _NotifyChanges(L"CursorColorPreview", L"CursorColorAccessibleName");
             }
             else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
             {
-                _NotifyChanges(L"CurrentColorScheme");
+                _NotifyChanges(L"CurrentColorScheme", L"ColorScheme", L"HasColorScheme");
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
-                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview", L"ForegroundAccessibleName", L"BackgroundAccessibleName", L"SelectionBackgroundAccessibleName", L"CursorColorAccessibleName");
             }
         });
 
@@ -1002,7 +1003,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool AppearanceViewModel::BackgroundImageSettingsVisible() const
+    bool AppearanceViewModel::BackgroundImageSettingsEnabled() const
     {
         return !BackgroundImagePath().Path().empty();
     }
@@ -1010,8 +1011,81 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AppearanceViewModel::ClearColorScheme()
     {
         ClearDarkColorSchemeName();
+        ClearLightColorSchemeName();
         _NotifyChanges(L"CurrentColorScheme");
     }
+
+    bool AppearanceViewModel::HasSetting(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            return HasDarkColorSchemeName() || HasLightColorSchemeName();
+        }
+#define HANDLE(Setting)        \
+    if (n == L## #Setting)     \
+    {                          \
+        return Has##Setting(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return false;
+    }
+
+    void AppearanceViewModel::ClearSetting(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            ClearColorScheme();
+            return;
+        }
+#define HANDLE(Setting)    \
+    if (n == L## #Setting) \
+    {                      \
+        Clear##Setting();  \
+        return;            \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+    }
+
+    Windows::Foundation::IInspectable AppearanceViewModel::SettingOverrideSource(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            return DarkColorSchemeNameOverrideSource();
+        }
+#define HANDLE(Setting)                   \
+    if (n == L## #Setting)                \
+    {                                     \
+        return Setting##OverrideSource(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return nullptr;
+    }
+
+    // Every inheritable setting must ALSO be projected in Appearances.idl and
+    // given a reset button in the relevant *.xaml, neither of which is
+    // generated here. If you add or remove a setting, this count changes and
+    // forces you to revisit those places before bumping it.
+#define APPEARANCE_COUNT(target, name) +1
+#define APPEARANCE_COUNT_CUSTOM(name) +1
+    static_assert(0 APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_COUNT, APPEARANCE_COUNT_CUSTOM) == 24,
+                  "The set of inheritable appearance settings changed. Update this count, then make "
+                  "sure the new/removed setting is also reflected in Appearances.idl and in the XAML "
+                  "reset buttons.");
+#undef APPEARANCE_COUNT
+#undef APPEARANCE_COUNT_CUSTOM
+#undef APPEARANCE_INHERITABLE_SETTINGS
 
     Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
     {
@@ -1069,6 +1143,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
     {
         return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
+    }
+
+    hstring AppearanceViewModel::ForegroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Foreground/Header"), ColorToHexString(ForegroundPreview()));
+    }
+
+    hstring AppearanceViewModel::BackgroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_Background/Header"), ColorToHexString(BackgroundPreview()));
+    }
+
+    hstring AppearanceViewModel::SelectionBackgroundAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_SelectionBackground/Header"), ColorToHexString(SelectionBackgroundPreview()));
+    }
+
+    hstring AppearanceViewModel::CursorColorAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_CursorColor/Header"), ColorToHexString(CursorColorPreview()));
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
@@ -1129,11 +1223,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
         }
 
-        const auto showAllFontsCheckboxTooltip{ ToolTipService::GetToolTip(ShowAllFontsCheckbox()) };
-        Automation::AutomationProperties::SetFullDescription(ShowAllFontsCheckbox(), unbox_value<hstring>(showAllFontsCheckboxTooltip));
-
-        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
-        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+        Automation::AutomationProperties::SetFullDescription(ShowAllFontsCheckbox(), RS_(L"Profile_FontFaceShowAllFonts/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), RS_(L"Profile_UseDesktopImage/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        Automation::AutomationProperties::SetName(BackgroundImageBrowse(), RS_(L"Profile_BackgroundImageBrowse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
@@ -1151,8 +1243,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& controlToFocus{ strongThis->FindName(elementToFocus).try_as<Controls::Control>() })
                 {
-                    controlToFocus.as<FrameworkElement>().StartBringIntoView();
-                    controlToFocus.Focus(FocusState::Programmatic);
+                    const auto& target{ winrt::Microsoft::Terminal::Settings::ResolveFocusTarget(controlToFocus) };
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(strongThis.as<FrameworkElement>(), target);
                 }
                 strongThis->_loadedRevoker.revoke();
             }
@@ -1188,13 +1280,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_GotFocus(const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&)
     {
+        const auto box = sender.as<AutoSuggestBox>();
         _updateFontNameFilter({});
-        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+        box.IsSuggestionListOpen(true);
+        _fontFaceBoxHasUserInput = false;
     }
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        _updateFontName(sender.as<AutoSuggestBox>().Text());
+        const auto box = sender.as<AutoSuggestBox>();
+        if (_fontFaceBoxHasUserInput)
+        {
+            _updateFontName(box.Text());
+        }
+        else
+        {
+            // AutoSuggestBox restores its cached user query when Tab closes the suggestion list.
+            // Programmatic Text updates don't synchronize that cache, so restore the committed value.
+            box.Text(Appearance().FontFace());
+        }
     }
 
     void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
@@ -1221,8 +1325,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             fontSpec = fontName;
         }
 
-        sender.Text(fontSpec);
-
         // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
         // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
         // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
@@ -1233,11 +1335,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
         // So, we update the model manually and assign focus to the parent container.
         //
-        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
-        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
-        _updateFontName(fontSpec);
-        sender.Focus(FocusState::Unfocused);
-        FontFaceContainer().Focus(FocusState::Programmatic);
+        // Queue the selected-suggestion commit so AutoSuggestBox can finish processing Enter before we change its text/model.
+        // Do not manually unfocus the AutoSuggestBox here. Its Focus(FocusState::Unfocused) path crashes during keyboard commits.
+        Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, weakSender{ winrt::make_weak(sender) }, fontSpec{ std::move(fontSpec) }]() {
+            if (const auto self{ weakThis.get() })
+            {
+                self->_fontFaceBoxHasUserInput = false;
+
+                if (const auto box{ weakSender.get() })
+                {
+                    box.Text(fontSpec);
+                }
+
+                self->_updateFontName(fontSpec);
+                self->FontFaceContainer().Focus(FocusState::Programmatic);
+            }
+        });
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1246,6 +1359,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return;
         }
+
+        _fontFaceBoxHasUserInput = true;
 
         const auto fontSpec = sender.Text();
         std::wstring_view filter{ fontSpec };

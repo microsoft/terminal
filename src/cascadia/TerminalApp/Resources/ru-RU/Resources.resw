@@ -149,10 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>При загрузке параметров пользователя возникли ошибки</value>
   </data>
-  <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>"{0}" не работает на вашем компьютере. Это может помешать терминалу получать ввод с клавиатуры.</value>
-    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
-  </data>
   <data name="Ok" xml:space="preserve">
     <value>ОК</value>
   </data>
@@ -496,23 +492,47 @@
     <value>Уведомления третьих лиц</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
-  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Закрыть все</value>
-  </data>
-  <data name="QuitDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>Закрыть все окна?</value>
   </data>
-  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
-    <value>Отмена</value>
-  </data>
-  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
     <value>Закрыть все</value>
   </data>
-  <data name="CloseAllDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>Закрыть все вкладки?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>Закрыть все</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>Закрыть эту вкладку?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>Закрыть вкладку</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>Закрыть эту панель?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>Закрыть область</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>Закрыть эти вкладки?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>Закрыть вкладки</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>Закрыть эти панели?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>Закрыть панели</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>Больше не спрашивать</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>Отмена</value>
@@ -719,6 +739,46 @@
     <value>окно без названия</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NewWindowMenuItem" xml:space="preserve">
+    <value>Новое окно</value>
+    <comment>Menu item to open a new terminal window.</comment>
+  </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>Присвойте имя этому окну...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>Переименуйте это окно...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0} (без имени)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>Удалить рабочую область?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>Открыть рабочую область</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>Удалить "{0}"?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>Вы действительно хотите удалить "{0}"? Сеансы, связанные с этой рабочей областью, также будут удалены.</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>Отмена</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
   <data name="WindowRenamer.Subtitle" xml:space="preserve">
     <value>Введите новое имя:</value>
   </data>
@@ -745,6 +805,14 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>Активность на вкладке "{0}"</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>Активность на вкладке "{0}" (окно "{1}")</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Открыть новую вкладку в указанном начальном каталоге</value>
   </data>
@@ -768,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Это окно терминала запущено от имени администратора</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Рабочие области</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Найдено рекомендаций: {0}</value>
@@ -881,10 +952,10 @@
     <value>Если этот параметр настроен, команда будет добавлена к стандартной команде профиля, а не заменит ее.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>Перезапустить подключение</value>
+    <value>Перезапустить сеанс</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>Перезапустить соединение с активной панелью.</value>
+    <value>Перезапустите сеанс в активной панели</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>Фрагменты</value>
@@ -928,5 +999,11 @@
   </data>
   <data name="InvalidRegex" xml:space="preserve">
     <value>Обнаружено недопустимое регулярное выражение.</value>
+  </data>
+  <data name="CmdAppHelpFooter" xml:space="preserve">
+    <value>Примечание. Нераспознанные аргументы автоматически передаются в подкоманду "new-tab".
+Например, "wt -p "Ubuntu" -d C:\" эквивалентно "wt new-tab -p "Ubuntu" -d C:\".
+Для просмотра всех доступных параметров выполните команду "wt new-tab --help".</value>
+    <comment>{Locked="wt","new-tab","-p","-d","--help"}</comment>
   </data>
 </root>

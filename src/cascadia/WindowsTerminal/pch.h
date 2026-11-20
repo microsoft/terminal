@@ -32,6 +32,7 @@ Abstract:
 #include <shellscalingapi.h>
 #include <windowsx.h>
 #include <ShObjIdl.h>
+#include <shlobj_core.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL

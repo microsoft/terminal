@@ -32,7 +32,7 @@
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
-#define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
+#define CONSOLE_WINDOW_FLAGS WS_OVERLAPPEDWINDOW
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
 // Window class name
@@ -45,13 +45,7 @@ using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
 
-Window::Window() :
-    _fIsInFullscreen(false),
-    _pSettings(nullptr),
-    _hWnd(nullptr),
-    _pUiaProvider(nullptr),
-    _fWasMaximizedBeforeFullscreen(false),
-    _dpiBeforeFullscreen(0)
+Window::Window()
 {
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcWindowBeforeFullscreen, sizeof(_rcWindowBeforeFullscreen));
@@ -388,10 +382,14 @@ void Window::_CloseWindow() const
 
     if (SUCCEEDED_NTSTATUS(status))
     {
-        ShowWindow(hWnd, wShowWindow);
+        // Set up the scrollbars before showing the window.
+        // This matches the way CM_UPDATE_SCROLL_BARS works, which we
+        // could SendMessage() here, but... this saves a whopping 2us. Yay~
+        _resizingWindow++;
+        UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
+        _resizingWindow--;
 
-        auto& siAttached = GetScreenInfo();
-        siAttached.UpdateScrollBars();
+        ShowWindow(hWnd, wShowWindow);
     }
 
     return status;
@@ -421,7 +419,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
-        Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
 
         if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
@@ -434,7 +431,6 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
         // we're iconic
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
-        Tracing::s_TraceWindowViewport(ScreenInfo.GetViewport());
     }
 
     ScreenInfo.UpdateScrollBars();
@@ -641,28 +637,6 @@ void Window::_UpdateWindowSize(const til::size sizeNew)
             siAttached.UpdateScrollBars();
         }
 
-        // MSFT: 12092729
-        // To fix an issue with 3rd party applications that wrap our console, notify that the screen buffer size changed
-        // when the window viewport is updated.
-        // ---
-        // - The specific scenario that this impacts is ConEmu (wrapping our console) to use Bash in WSL.
-        // - The reason this is a problem is because ConEmu has to programmatically manipulate our buffer and window size
-        //   one after another to get our dimensions to change.
-        // - The WSL layer watches our Buffer change message to know when to get the new Window size and send it into the
-        //   WSL environment. This isn't technically correct to use a Buffer message to know when Window changes, but
-        //   it's not totally their fault because we do not provide a Window changed message at all.
-        // - If our window is adjusted directly, the Buffer and Window dimensions are both updated simultaneously under lock
-        //   and WSL gets one message and updates appropriately.
-        // - If ConEmu updates it via the API, one is updated, then the other with an unlocked time interval.
-        //   The WSL layer will potentially get the Window size that hasn't been updated yet or is out of sync before the
-        //   other API call is completed which results in the application in the WSL environment thinking the window is
-        //   a different size and outputting VT sequences with an invalid assumption.
-        // - If we make it so a Window change also emits a Buffer change message, then WSL will be notified appropriately
-        //   and can pass that information into the WSL environment.
-        // - To Windows apps that weren't expecting this information, it should cause no harm because they should just receive
-        //   an additional Buffer message with the same size again and do nothing special.
-        ScreenBufferSizeChange(siAttached.GetActiveBuffer().GetBufferSize().Dimensions());
-
         _resizingWindow--;
     }
 
@@ -822,16 +796,9 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
 void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
 {
-    // If this is the main buffer, make sure we enable both of the scroll bars.
-    // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
-    if (!state.isAltBuffer)
-    {
-        EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
-    }
-
     SCROLLINFO si{
         .cbSize = sizeof(SCROLLINFO),
-        .fMask = static_cast<UINT>(state.isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+        .fMask = SIF_ALL,
     };
 
     si.nMax = state.maxSize.width;
@@ -843,6 +810,12 @@ void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
     si.nPage = state.viewport.height();
     si.nPos = state.viewport.top;
     SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
+
+    if (_scrollBarsDisabled != state.isAltBuffer)
+    {
+        EnableScrollBar(_hWnd, SB_BOTH, state.isAltBuffer ? ESB_DISABLE_BOTH : ESB_ENABLE_BOTH);
+        _scrollBarsDisabled = state.isAltBuffer;
+    }
 }
 
 // Routine Description:
