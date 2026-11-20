@@ -245,10 +245,10 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // - iconPath: the full icon path, including the index if present
     // - iconPathWithoutIndex: the place to store the icon path, sans the index if present
     // Return Value:
-    // - nullopt if the iconPath is not an exe/dll/lnk file in the first place
-    // - 0 if the iconPath is an exe/dll/lnk file but does not contain an index (i.e. we default
+    // - nullopt if the iconPath is not an exe/dll/lnk/ico file in the first place
+    // - 0 if the iconPath is an exe/dll/lnk/ico file but does not contain an index (i.e. we default
     //   to the first icon in the file)
-    // - the icon index if the iconPath is an exe/dll/lnk file and contains an index
+    // - the icon index if the iconPath is an exe/dll/lnk/ico file and contains an index
     static std::optional<int> _getIconIndex(const winrt::hstring& iconPath, std::wstring_view& iconPathWithoutIndex)
     {
         const auto pathView = std::wstring_view{ iconPath };
@@ -259,10 +259,11 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         // split the path on the comma
         iconPathWithoutIndex = pathView.substr(0, commaIndex);
 
-        // It's an exe, dll, or lnk, so we need to extract the icon from the file.
+        // It's an exe, dll, lnk, or ico, so we need to extract the icon from the file.
         if (!til::ends_with(iconPathWithoutIndex, L".exe") &&
             !til::ends_with(iconPathWithoutIndex, L".dll") &&
-            !til::ends_with(iconPathWithoutIndex, L".lnk"))
+            !til::ends_with(iconPathWithoutIndex, L".lnk") &&
+            !til::ends_with(iconPathWithoutIndex, L".ico"))
         {
             return std::nullopt;
         }
