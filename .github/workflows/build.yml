@@ -191,11 +191,14 @@ jobs:
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      - uses: dorny/test-reporter@8de19bf5224c4b6830f0de21aeedf510189b565a # (DHOWETT TEST)
+      - uses: dorny/test-reporter@a66eeec6fc8d89b687e16a3fbd7bfa9a4d4d0cfd # (DHOWETT TEST)
         if: ${{ always() }}
         with:
           name: ${{matrix.arch}} ${{matrix.pass}} Test Results
           reporter: dotnet-trx
+          list-suites: failed
+          list-tests: failed
+          list-files: failed
           path: '**/*.trx'
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
