@@ -84,14 +84,6 @@ jobs:
       filePath: build\Helix\ConvertWttLogToXUnit.ps1
       arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
 
-  - task: PowerShell@2
-    displayName: 'Manually log test failures'
-    condition: always()
-    inputs:
-      targetType: filePath
-      filePath: build\Helix\OutputTestErrorsForAzureDevops.ps1
-      arguments: -XUnitOutputPath 'onBuildMachineResults.xml'
-
   - task: PublishTestResults@2
     displayName: 'Upload converted test logs'
     condition: always()
