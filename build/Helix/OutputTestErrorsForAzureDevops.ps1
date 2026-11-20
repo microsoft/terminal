@@ -23,15 +23,25 @@ $testResults = [xml](Get-Content -Path $XUnitOutputPath)
 #     <collection total="524" passed="520" failed="4" skipped="1" name="Test collection" time="8943">
 #       <test name="ControlCoreTests::TestSimpleClickSelection" type="ControlCoreTests" method="TestSimpleClickSelection" time="0.016" result="Fail">
 
+function Write-TestFailureLog($name) {
+    if ([string]::IsNullOrEmpty($env:GITHUB_ACTION)) {
+        # This particular format is taken from the Azure DevOps documentation:
+        # https://github.com/microsoft/azure-pipelines-tasks/blob/master/docs/authoring/commands.md
+        # This will treat this line as an error message
+        Write-Output "##vso[task.logissue type=error]${name} Failed"
+    } else {
+        # As above, but for GitHub
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-an-error-message
+        Write-Output "::error::${name} Failed"
+    }
+}
+
 # Iterate over all the assemblies and print all the tests that failed
 foreach ($assembly in $testResults.assemblies.assembly) {
     foreach ($collection in $assembly.collection) {
         foreach ($test in $collection.test) {
             if ($test.result -eq "Fail") {
-                # This particular format is taken from the Azure DevOps documentation:
-                # https://github.com/microsoft/azure-pipelines-tasks/blob/master/docs/authoring/commands.md
-                # This will treat this line as an error message
-                Write-Output "##vso[task.logissue type=error]$($test.name) Failed"
+                Write-TestFailureLog $test.name
             }
         }
     }
