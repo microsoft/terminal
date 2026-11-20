@@ -187,7 +187,6 @@ jobs:
             -MatchPattern ${env:TEST_GLOB} `
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
-            -LogPath 'tests.wtl' `
             -AdditionalTaefArguments "/logOutput:Low","/logger:trx" `
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
