@@ -324,6 +324,27 @@ static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL ke
 }
 
 // Function Description:
+// - Resets the conpty's VT state, without erasing the buffer.
+// Arguments:
+// - pPty: A pointer to a PseudoConsole struct.
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the reset message to the pty.
+static HRESULT _ResetPseudoConsole(_In_ const PseudoConsole* const pPty) noexcept
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+    unsigned short signalPacket[1];
+    signalPacket[0] = PTY_SIGNAL_RESET_VT_STATE;
+
+    const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
 // - Shows or hides the internal HWND used by ConPTY. This should be kept in
 //   sync with the hosting application's window.
 // Arguments:
@@ -530,6 +551,22 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC, BOOL keepCurs
     if (SUCCEEDED(hr))
     {
         hr = _ClearPseudoConsole(pPty, keepCursorRow);
+    }
+    return hr;
+}
+
+// Function Description:
+// - Reset the VT state of the conpty without erasing the buffer, clearing any
+//   modes (such as scrolling margins) left behind by a client that exited
+//   without cleaning up after itself.
+// - This is used to support GH#20715.
+extern "C" HRESULT WINAPI ConptyResetPseudoConsole(_In_ HPCON hPC)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ResetPseudoConsole(pPty);
     }
     return hr;
 }
