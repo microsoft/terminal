@@ -758,7 +758,7 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
 
 void HwndTerminal::TsfDataProvider::HandleOutput(std::wstring_view text)
 {
-    _terminal->_core->SendInput(text);
+    _terminal->_core->WriteInputString(text, MT::Control::WriteInputStringType::Raw);
 }
 
 Microsoft::Console::Render::Renderer* HwndTerminal::TsfDataProvider::GetRenderer()

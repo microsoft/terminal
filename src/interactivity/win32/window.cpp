@@ -332,6 +332,8 @@ void Window::_UpdateSystemMetrics() const
 
                     // Locate window theming modules and try to set the dark mode.
                     LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
+
+                    g.pRender->SetFrameColorChangedCallback(&Window::RenderFrameColorChangedCallback);
                 }
             }
         }
@@ -363,36 +365,21 @@ void Window::_CloseWindow() const
 [[nodiscard]] NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto status = STATUS_SUCCESS;
     const auto hWnd = GetWindowHandle();
 
-    // Only activate if the wShowWindow we were passed at process create doesn't explicitly tell us to remain inactive/hidden
-    if (wShowWindow != SW_SHOWNOACTIVATE &&
-        wShowWindow != SW_SHOWMINNOACTIVE &&
-        wShowWindow != SW_HIDE)
-    {
-        // Do not check result. On some SKUs, such as WinPE, it's perfectly OK for NULL to be returned.
-        SetActiveWindow(hWnd);
-    }
-    else if (wShowWindow == SW_SHOWMINNOACTIVE)
-    {
-        // If we're minimized and not the active window, set iconic to stop rendering
-        gci.Flags |= CONSOLE_IS_ICONIC;
-    }
+    // Set up the scrollbars before showing the window.
+    // This matches the way CM_UPDATE_SCROLL_BARS works, which we
+    // could SendMessage() here, but... this saves a whopping 2us. Yay~
+    _resizingWindow++;
+    UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
+    _resizingWindow--;
 
-    if (SUCCEEDED_NTSTATUS(status))
-    {
-        // Set up the scrollbars before showing the window.
-        // This matches the way CM_UPDATE_SCROLL_BARS works, which we
-        // could SendMessage() here, but... this saves a whopping 2us. Yay~
-        _resizingWindow++;
-        UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
-        _resizingWindow--;
+    ShowWindow(hWnd, wShowWindow);
 
-        ShowWindow(hWnd, wShowWindow);
-    }
+    // If we're minimized, set iconic to stop rendering
+    WI_UpdateFlag(gci.Flags, CONSOLE_IS_ICONIC, IsIconic(hWnd) != FALSE);
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -1353,4 +1340,10 @@ BOOL Window::MapRect(_Inout_ til::rect* lpRect)
 BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint->as_win32_point());
+}
+
+void Window::RenderFrameColorChangedCallback()
+{
+    // If we get this callback, we are guaranteed to have a Win32::Window.
+    static_cast<Window*>(ServiceLocator::LocateConsoleWindow())->PostUpdateFrameColor();
 }

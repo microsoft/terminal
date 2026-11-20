@@ -113,7 +113,6 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings requires ICoreAppearance
     {
-        Boolean CursorBlinking { get; };
         Int32 HistorySize { get; };
         Int32 InitialRows { get; };
         Int32 InitialCols { get; };
@@ -134,6 +133,7 @@ namespace Microsoft.Terminal.Core
         Boolean AllowOscNotifications { get; };
         Boolean TrimBlockSelection { get; };
         Boolean DetectURLs { get; };
+        Boolean CursorBlinking { get; };
 
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor { get; };

@@ -1152,10 +1152,12 @@ nvidia
 NVT
 OACR
 ocolor
+OCPCH
 oemcp
 OEMFONT
 OEMFORMAT
 OEMs
+OIDTo
 OLEAUT
 OLECHAR
 onebranch

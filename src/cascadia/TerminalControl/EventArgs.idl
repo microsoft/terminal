@@ -68,12 +68,6 @@ namespace Microsoft.Terminal.Control
         byte[] Rtf { get; }; // UTF-8, as required by "Rich Text Format"
     }
 
-    runtimeclass PasteFromClipboardEventArgs
-    {
-        void HandleClipboardData(String data);
-        Boolean BracketedPasteEnabled { get; };
-    }
-
     runtimeclass OpenHyperlinkEventArgs
     {
         OpenHyperlinkEventArgs(String uri);
@@ -152,6 +146,7 @@ namespace Microsoft.Terminal.Control
     runtimeclass StringSentEventArgs
     {
         String Text { get; };
+        UInt32 Type { get; }; // We cannot forward-declare WriteInputStringType, and as of GH#20164 this whole event is getting deleted anyway.
     }
 
     runtimeclass SearchMissingCommandEventArgs

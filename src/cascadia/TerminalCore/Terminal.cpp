@@ -214,8 +214,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
-    _defaultCursorShape = cursorShape;
-
     // We're checking if the main buffer exists here, but then setting the
     // appearance of the active one. If the main buffer exists, then at least
     // one buffer exists and _activeBuffer() will work
@@ -223,6 +221,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
+
+    _defaultCursorShape = cursorShape;
 
     UpdateColorScheme(appearance);
 }
