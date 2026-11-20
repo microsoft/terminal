@@ -113,6 +113,7 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings requires ICoreAppearance
     {
+        Boolean CursorBlinking { get; };
         Int32 HistorySize { get; };
         Int32 InitialRows { get; };
         Int32 InitialCols { get; };

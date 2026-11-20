@@ -216,11 +216,11 @@ void ConhostInternalGetSet::UseMainScreenBuffer()
 // Arguments:
 // - <none>
 // Return Value:
-// - the default cursor style.
-CursorType ConhostInternalGetSet::GetUserDefaultCursorStyle() const
+// - the default cursor shape and blinking state.
+std::pair<CursorType, bool> ConhostInternalGetSet::GetUserDefaultCursorStyle() const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetCursorType();
+    return { gci.GetCursorType(), true };
 }
 
 // Routine Description:

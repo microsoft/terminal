@@ -143,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, Commandline)                    \
     X(_profile, StartingDirectory)              \
     X(_profile, AntialiasingMode)               \
+    X(_profile, CursorBlinking)                 \
     X(_profile.DefaultAppearance(), Opacity)    \
     X(_profile.DefaultAppearance(), UseAcrylic) \
     X(_profile, HistorySize)                    \

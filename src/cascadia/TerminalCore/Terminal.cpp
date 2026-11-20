@@ -42,17 +42,19 @@ Terminal::Terminal(TestDummyMarker) :
 #endif
 }
 
-void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
+void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer, bool cursorBlinking)
 {
     viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
     viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
     scrollbackLines = std::clamp(scrollbackLines, 0, MaxScrollback);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
+    _defaultCursorBlinking = cursorBlinking;
     const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
+    _mainBuffer->GetCursor().SetIsBlinking(_defaultCursorBlinking);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -82,7 +84,7 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
                                   Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    Create(viewportSize, settings.HistorySize(), renderer);
+    Create(viewportSize, settings.HistorySize(), renderer, settings.CursorBlinking());
 
     UpdateSettings(settings);
 }
@@ -96,6 +98,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     UpdateAppearance(settings);
 
+    _defaultCursorBlinking = settings.CursorBlinking();
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _answerbackMessage = settings.AnswerbackMessage();
@@ -211,6 +214,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
+    _defaultCursorShape = cursorShape;
+
     // We're checking if the main buffer exists here, but then setting the
     // appearance of the active one. If the main buffer exists, then at least
     // one buffer exists and _activeBuffer() will work
@@ -218,8 +223,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _activeBuffer().GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
-
-    _defaultCursorShape = cursorShape;
 
     UpdateColorScheme(appearance);
 }

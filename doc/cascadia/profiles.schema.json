@@ -2900,7 +2900,7 @@
         },
         "compatibility.allowCursorBlinking": {
           "default": true,
-          "description": "Allows cursor blinking. When false, cursor blinking is forced off, including when applications request blinking with mode ?12 or DECSCUSR. Applications can still change the cursor shape or show and hide it.",
+          "description": "Allows applications to change cursor blinking.",
           "type": "boolean"
         },
         "compatibility.allowOSC52": {
@@ -3036,6 +3036,11 @@
             }
           ],
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
+        },
+        "cursorBlinking": {
+          "default": true,
+          "description": "Sets the default cursor blinking state, restored by DECSCUSR 0 and RIS. Applications can change this state.",
+          "type": "boolean"
         },
         "cursorHeight": {
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
