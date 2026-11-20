@@ -191,7 +191,7 @@ jobs:
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      - uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+      - uses: dorny/test-reporter@027da9a111984cc608cf8e28098c6ac73e6367f6 # (DHOWETT TEST)
         if: ${{ always() }}
         with:
           name: ${{matrix.arch}} ${{matrix.pass}} Test Results
