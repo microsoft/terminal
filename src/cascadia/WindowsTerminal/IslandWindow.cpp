@@ -495,7 +495,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     }
     case WM_ENABLE:
     {
-        if (_interopWindowHandle != nullptr)
+        if (wparam && _interopWindowHandle != nullptr && GetActiveWindow() == GetHandle())
         {
             // send focus to the child window
             SetFocus(_interopWindowHandle);
@@ -562,6 +562,13 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     {
         if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
         {
+            // WPF_RESTORETOMAXIMIZED requires an activating SW_SHOWMINIMIZED.
+            // A non-activating minimized launch instead maximizes on the first restore.
+            if (std::exchange(_maximizeOnFirstRestore, false) && wparam == SIZE_RESTORED)
+            {
+                ShowWindow(GetHandle(), SW_MAXIMIZE);
+                return 0;
+            }
             WindowVisibilityChanged.raise(true);
             MaximizeChanged.raise(wparam == SIZE_MAXIMIZED);
         }
@@ -1081,7 +1088,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.top,
                  windowPos.width(),
                  windowPos.height(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+                 SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:
@@ -1103,7 +1110,7 @@ void IslandWindow::_SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcW
                  rcMonitor.top,
                  rcMonitor.right - rcMonitor.left,
                  rcMonitor.bottom - rcMonitor.top,
-                 SWP_FRAMECHANGED);
+                 SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:

@@ -1130,7 +1130,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.top,
                  windowPos.width(),
                  windowPos.height(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+                 SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:

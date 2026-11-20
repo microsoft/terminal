@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _LaunchModeList.RemoveAt(6); // fullscreenFocus
         _LaunchModeList.RemoveAt(3); // maximizedFullscreen
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(StartOnLoginMode, StartOnLoginMode, StartOnLoginMode, L"Globals_StartOnLoginMode", L"Content");
 
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -391,7 +392,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto strongThis{ get_strong() };
         auto task{ co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName) };
         _startOnUserLoginTask = std::move(task);
-        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+        _NotifyChanges(L"StartOnUserLogin", L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText");
     }
 
     bool LaunchViewModel::StartOnUserLoginConfigurable()
@@ -440,7 +441,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     safe_void_coroutine LaunchViewModel::StartOnUserLogin(bool enable)
     {
-        if (!_startOnUserLoginTask)
+        if (!StartOnUserLoginConfigurable() || StartOnUserLogin() == enable)
         {
             co_return;
         }
@@ -455,6 +456,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _startOnUserLoginTask.Disable();
         }
         // Any of these could have changed in response to an attempt to enable (e.g. it was disabled in task manager since our last check)
-        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+        _NotifyChanges(L"StartOnUserLogin", L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText");
     }
 }

@@ -15,6 +15,7 @@ public:
     AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& logic, winrt::TerminalApp::WindowRequestedArgs args) noexcept;
 
     void Initialize();
+    bool IsInitialized() const noexcept { return _isWindowInitialized == WindowInitializedState::Initialized; }
     void Close();
 
     int64_t GetLastActivatedTime() const noexcept;

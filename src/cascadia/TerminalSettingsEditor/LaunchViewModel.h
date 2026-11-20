@@ -51,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope, _Settings.WindowSettingsDefaults().DefaultInputScope);
         GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _Settings.GlobalSettings().FirstWindowPreference);
         GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _Settings.GlobalSettings().WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(StartOnLoginMode, Model::StartOnLoginMode, _Settings.GlobalSettings().StartOnLoginMode);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), CenterOnLaunch);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_Settings.WindowSettingsDefaults(), InitialRows);
@@ -58,10 +59,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool StartOnUserLoginAvailable();
         safe_void_coroutine PrepareStartOnUserLoginSettings();
-        bool StartOnUserLoginConfigurable();
-        winrt::hstring StartOnUserLoginStatefulHelpText();
         bool StartOnUserLogin();
         safe_void_coroutine StartOnUserLogin(bool enable);
+        bool StartOnUserLoginConfigurable();
+        winrt::hstring StartOnUserLoginStatefulHelpText();
 
     private:
         Model::CascadiaSettings _Settings;

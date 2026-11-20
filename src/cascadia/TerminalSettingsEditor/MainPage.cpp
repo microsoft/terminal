@@ -42,6 +42,19 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    void MainPage::WindowActivated()
+    {
+        // Startup Apps can change the OS-owned task while this page stays open.
+        if (const auto page = contentFrame().Content().try_as<Editor::Launch>())
+        {
+            // WM_ACTIVATE may be an input-synchronous SendMessage. Querying
+            // StartupTask calls out to COM, so do it after the activation returns.
+            Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [vm = page.ViewModel()] {
+                winrt::get_self<LaunchViewModel>(vm)->PrepareStartOnUserLoginSettings();
+            });
+        }
+    }
+
     // GH#19927 - Walk the visual tree of the given element to find any
     // Popups and set the theme on their Child element. In XAML Islands,
     // popup children render in the PopupRoot (separate from the content

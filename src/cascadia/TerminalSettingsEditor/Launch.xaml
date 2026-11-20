@@ -118,6 +118,18 @@
                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(ViewModel.StartOnUserLoginStatefulHelpText), Mode=OneWay}" />
                     </StackPanel>
                 </local:SettingsCard>
+
+                <!--  Start on Login Mode  -->
+                <local:SettingsCard x:Name="StartOnLoginMode"
+                                    x:Uid="Globals_StartOnLoginMode"
+                                    IsEnabled="{x:Bind ViewModel.StartOnUserLogin, Mode=OneWay}"
+                                    Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind ViewModel.StartOnLoginModeList}"
+                              SelectedItem="{x:Bind ViewModel.CurrentStartOnLoginMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingsCard>
             </local:SettingsExpander.Items>
         </local:SettingsExpander>
 

@@ -5425,6 +5425,17 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
 
+        if (activated && _settingsTab)
+        {
+            if (const auto& pane = _GetTabImpl(_settingsTab)->GetRootPane())
+            {
+                if (const auto settings = pane->GetContent().try_as<SettingsPaneContent>())
+                {
+                    settings->SettingsUI().WindowActivated();
+                }
+            }
+        }
+
         _adjustProcessPriorityThrottled->Run();
 
         if (const auto& tab{ _GetFocusedTabImpl() })

@@ -77,6 +77,12 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
     _window->MakeWindow();
+    if (_launchShowWindowCommand == SW_SHOWMINNOACTIVE)
+    {
+        // XAML can focus a tab (and activate the hidden HWND) during layout,
+        // before we have an opportunity to show the window minimized.
+        EnableWindow(_window->GetHandle(), FALSE);
+    }
 
     // Does window creation mean the window was activated (WM_ACTIVATE)? No.
     // But it simplifies `WindowEmperor::_mostRecentWindow()`, because now the creation of a
@@ -1265,7 +1271,7 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
     // wShowCmd passed into the original process.
     auto nCmdShow = _launchShowWindowCommand;
 
-    if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
+    if (nCmdShow != SW_SHOWMINNOACTIVE && WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
     }
@@ -1280,6 +1286,15 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
     }
 
     ShowWindow(_window->GetHandle(), nCmdShow);
+    if (nCmdShow == SW_SHOWMINNOACTIVE)
+    {
+        if (WI_IsFlagSet(_launchMode, LaunchMode::MaximizedMode))
+        {
+            _window->MaximizeOnFirstRestore();
+            _windowLogic.Maximized(true); // Preserve the saved state even if the user never restores it.
+        }
+        EnableWindow(_window->GetHandle(), TRUE);
+    }
 
     // If we didn't start the window hidden (in one way or another), then try to
     // pull ourselves to the foreground. Don't necessarily do a whole "summon",

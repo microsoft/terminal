@@ -50,6 +50,7 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
     void ShowWindowChanged(const bool showOrHide);
+    void MaximizeOnFirstRestore() noexcept { _maximizeOnFirstRestore = true; }
     virtual void SetShowTabsFullscreen(const bool newShowTabsFullscreen);
 
     void FlashTaskbar();
@@ -154,6 +155,7 @@ protected:
     void _resetSystemMenu();
 
 private:
+    bool _maximizeOnFirstRestore{ false };
     // This minimum width allows for width the tabs fit
     static constexpr float minimumWidth = 460;
 

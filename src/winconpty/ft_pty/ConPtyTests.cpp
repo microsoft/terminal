@@ -102,6 +102,7 @@ class ConPtyTests
     TEST_METHOD(CreateConPtyBadSize);
     TEST_METHOD(GoodCreate);
     TEST_METHOD(GoodCreateMultiple);
+    TEST_METHOD(StartupDoesNotRestoreWindow);
     TEST_METHOD(SurvivesOnBreakOutput);
     TEST_METHOD(DiesOnClose);
     TEST_METHOD(ReleasePseudoConsole);
@@ -233,6 +234,18 @@ void ConPtyTests::GoodCreateMultiple()
     auto closePty2 = wil::scope_exit([&] {
         _ClosePseudoConsoleMembers(&pcon2);
     });
+}
+
+void ConPtyTests::StartupDoesNotRestoreWindow()
+{
+    const auto pty = createPseudoConsole();
+    wil::unique_process_information pi;
+    VERIFY_SUCCEEDED(AttachPseudoConsole(pty.hpcon.get(), L"cmd.exe /d /c echo ready", pi.addressof()));
+    VERIFY_SUCCEEDED(ConptyReleasePseudoConsole(pty.hpcon.get()));
+
+    const auto output = readOutputToEOF(pty.pipes);
+    VERIFY_ARE_NOT_EQUAL(std::string::npos, output.find("ready"));
+    VERIFY_ARE_EQUAL(std::string::npos, output.find("\x1b[1t"));
 }
 
 void ConPtyTests::SurvivesOnBreakOutput()

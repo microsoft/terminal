@@ -6,6 +6,8 @@
 #include "resource.h"
 #include "../types/inc/User32Utils.hpp"
 #include <WilErrorReporting.h>
+#include <WtExeUtils.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -82,6 +84,20 @@ static void EnsureNativeArchitecture()
     }
 }
 
+static bool IsStartupTaskActivation()
+{
+    if (IsPackaged())
+    {
+        try
+        {
+            const auto activation = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
+            return activation && activation.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::StartupTask;
+        }
+        CATCH_LOG();
+    }
+    return false;
+}
+
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
@@ -121,5 +137,5 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int nCmdShow)
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
     const auto emperor = std::make_shared<::WindowEmperor>();
-    emperor->HandleCommandlineArgs(nCmdShow);
+    emperor->HandleCommandlineArgs(nCmdShow, IsStartupTaskActivation());
 }

@@ -33,6 +33,9 @@ static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4c414e494d524554; // 'TERM
 #else
 static constexpr ULONG_PTR TERMINAL_HANDOFF_MAGIC = 0x4d524554; // 'TERM'
 #endif
+// Older instances ignore this rather than treating a startup task as a
+// request to summon an existing window.
+static constexpr ULONG_PTR TERMINAL_STARTUP_TASK_MAGIC = TERMINAL_HANDOFF_MAGIC + 1;
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -148,7 +151,7 @@ static Handoff deserializeHandoffPayload(const uint8_t* beg, const uint8_t* end)
 
 // Either acquires unique ownership over the given `className` mutex,
 // or attempts to pass the commandline to the existing instance.
-static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, int nCmdShow)
+static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, int nCmdShow, bool startupTask)
 {
     // If the process that owns the mutex has not finished creating the window yet,
     // FindWindowW will return nullptr. We'll retry a few times just in case.
@@ -172,14 +175,14 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
         {
             auto payload = serializeHandoffPayload(nCmdShow);
             const COPYDATASTRUCT cds{
-                .dwData = TERMINAL_HANDOFF_MAGIC,
+                .dwData = startupTask ? TERMINAL_STARTUP_TASK_MAGIC : TERMINAL_HANDOFF_MAGIC,
                 .cbData = gsl::narrow<DWORD>(payload.size()),
                 .lpData = payload.data(),
             };
 
             // Allow the existing instance to gain foreground rights.
             DWORD processId = 0;
-            if (GetWindowThreadProcessId(hwnd, &processId) && processId)
+            if (!startupTask && GetWindowThreadProcessId(hwnd, &processId) && processId)
             {
                 AllowSetForegroundWindow(processId);
             }
@@ -271,6 +274,7 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     _handoffTimeoutTimer.Stop();
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
+    _waitingForFirstWindow = false;
 
     if (_windowCount == 1)
     {
@@ -469,7 +473,7 @@ void WindowEmperor::_setupAumid(const std::wstring& aumid)
     }
 }
 
-void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
+void WindowEmperor::HandleCommandlineArgs(int nCmdShow, bool startupTask)
 {
     // When running without package identity, set an explicit AppUserModelID so
     // that toast notifications (and other shell features like taskbar grouping)
@@ -535,7 +539,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     // Windows Terminal is a single-instance application. Either acquire ownership
     // over the mutex, or hand off the command line to the existing instance.
-    const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow);
+    const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow, startupTask);
     if (!mutex)
     {
         // The command line has been handed off. We can now exit.
@@ -555,6 +559,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
     _app = winrt::TerminalApp::App{};
     _app.Logic().ReloadSettings();
+
+    _keepAliveForHeadlessLogin = startupTask && _app.Logic().Settings().GlobalSettings().StartOnLoginMode() == StartOnLoginMode::Headless;
+    _waitingForFirstWindow = _keepAliveForHeadlessLogin;
 
     _createMessageWindow(windowClassName.c_str());
     _setupGlobalHotkeys();
@@ -578,27 +585,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto env = stringFromDoubleNullTerminated(envMem.get());
         const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
         const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
-
-        // Restore persisted windows.
-        const auto state = ApplicationState::SharedInstance();
-        const auto layouts = state.PersistedWindowLayouts();
-        if (layouts && layouts.Size() > 0)
-        {
-            _needsPersistenceCleanup = true;
-
-            uint32_t startIdx = 0;
-            for (const auto layout : layouts)
-            {
-                hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
-                startIdx += 1;
-            }
-        }
-
         const auto args = commandlineToArgArray(GetCommandLineW());
 
-        if (args.size() == 2 && args[1] == L"-Embedding")
+        if (startupTask)
         {
+            _handleStartupTask(cwd, env, showCmd, true);
+        }
+        else if (args.size() == 2 && args[1] == L"-Embedding")
+        {
+            _restoreWindowLayouts(cwd, env, showCmd);
             // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
             // But if we don't receive any handoff within a reasonable timeout, we should exit.
             _handoffTimeoutTimer.Interval(5s);
@@ -609,6 +604,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         }
         else
         {
+            _restoreWindowLayouts(cwd, env, showCmd);
             // Create another window if needed: There aren't any yet, OR we got an explicit command line.
             if (_windows.empty() || args.size() != 1)
             {
@@ -789,6 +785,70 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
     window->OnDirectKeyEvent(vkey, scanCode, extended, keyDown);
 }
 
+bool WindowEmperor::_restoreWindowLayouts(std::wstring_view cwd, std::wstring_view env, uint32_t showCmd)
+{
+    const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+    if (!layouts || layouts.Size() == 0)
+    {
+        return false;
+    }
+
+    _needsPersistenceCleanup = true;
+    if (!_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    {
+        return false;
+    }
+
+    // Keep the entire saved snapshot intact while XAML initializes these
+    // windows: creating even a single window can pump messages.
+    _restoringWindowLayouts = true;
+    const auto reset = wil::scope_exit([this] { _restoringWindowLayouts = false; });
+    for (uint32_t i = 0; i < layouts.Size(); ++i)
+    {
+        const hstring argv[]{ L"wt", L"-w", L"new", L"-s", winrt::to_hstring(i) };
+        _dispatchCommandlineCommon(argv, cwd, env, showCmd);
+    }
+    return true;
+}
+
+void WindowEmperor::_handleStartupTask(wil::zwstring_view cwd, wil::zwstring_view env, uint32_t showCmd, bool coldStart)
+{
+    const auto mode = _app.Logic().Settings().GlobalSettings().StartOnLoginMode();
+    if (mode == StartOnLoginMode::Headless)
+    {
+        // A forwarded headless login keeps the existing process alive without summoning its windows.
+        _keepAliveForHeadlessLogin = true;
+        return;
+    }
+
+    const auto minimized = mode == StartOnLoginMode::Minimized;
+    if (minimized)
+    {
+        showCmd = SW_SHOWMINNOACTIVE;
+    }
+    if ((coldStart || _waitingForFirstWindow) && !_restoringWindowLayouts && _restoreWindowLayouts(cwd, env, showCmd))
+    {
+        return;
+    }
+
+    const hstring argv[]{ L"wt" };
+    winrt::TerminalApp::CommandlineArgs command;
+    command.Commandline(argv);
+    command.CurrentDirectory(cwd);
+    command.CurrentEnvironment(env);
+    command.ShowWindowCommand(showCmd);
+    if (minimized)
+    {
+        // Bypass windowingBehavior: don't send a tab to (or minimize) a
+        // window the user may already be working in.
+        CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs{ 0, command });
+    }
+    else
+    {
+        _dispatchCommandline(std::move(command));
+    }
+}
+
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
     _assertIsMainThread();
@@ -803,6 +863,14 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
 
     if (exitCode != 0)
     {
+        return;
+    }
+
+    if (_waitingForFirstWindow && !_restoringWindowLayouts &&
+        _restoreWindowLayouts(args.CurrentDirectory(), args.CurrentEnvironment(), args.ShowWindowCommand()) &&
+        !args.Connection() && args.Commandline().size() == 1)
+    {
+        // Just like a cold launch, a plain "wt" needs no extra default window.
         return;
     }
 
@@ -875,7 +943,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
 }
 
-void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand)
+void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, std::wstring_view currentDirectory, std::wstring_view envString, uint32_t showWindowCommand)
 {
     winrt::TerminalApp::CommandlineArgs c;
     c.Commandline(args);
@@ -1076,14 +1144,17 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
-// Posts a WM_QUIT as soon as we have no reason to exist anymore.
-// That basically means no windows and no message boxes.
+bool WindowEmperor::_allowsHeadless() const
+{
+    return _keepAliveForHeadlessLogin || _app.Logic().Settings().GlobalSettings().AllowHeadless();
+}
+
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
     if (
         _messageBoxCount <= 0 &&
         _windowCount <= 0 &&
-        !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+        !_allowsHeadless())
     {
         PostQuitMessage(0);
     }
@@ -1120,14 +1191,11 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         {
         case WM_CLOSE_TERMINAL_WINDOW:
         {
-            const auto globalSettings = _app.Logic().Settings().GlobalSettings();
-            // Keep the last window in the array so that we can persist it on exit.
-            // We check for AllowHeadless(), as that being true prevents us from ever quitting in the first place.
-            // (= If we avoided closing the last window you wouldn't be able to reach a headless state.)
+            // Only keep the last window for persistence if closing it actually exits the process.
             const auto shouldKeepWindow =
                 _windows.size() == 1 &&
-                globalSettings.ShouldUsePersistedLayout() &&
-                !globalSettings.AllowHeadless();
+                _app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout() &&
+                !_allowsHeadless();
 
             if (!shouldKeepWindow)
             {
@@ -1273,7 +1341,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             }
             return 0;
         case WM_COPYDATA:
-            if (const auto cds = reinterpret_cast<COPYDATASTRUCT*>(lParam); cds->dwData == TERMINAL_HANDOFF_MAGIC)
+            if (const auto cds = reinterpret_cast<COPYDATASTRUCT*>(lParam); cds->dwData == TERMINAL_HANDOFF_MAGIC || cds->dwData == TERMINAL_STARTUP_TASK_MAGIC)
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
                 const auto argv = commandlineToArgArray(handoff.args.c_str());
@@ -1281,7 +1349,11 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 // wt.exe with "--from-toast". That instance hands off here via
                 // WM_COPYDATA. We already handle activation in-process via the
                 // toast's Activated event, so just ignore this handoff.
-                if (argv.size() != 2 || argv[1] != L"--from-toast")
+                if (cds->dwData == TERMINAL_STARTUP_TASK_MAGIC)
+                {
+                    _handleStartupTask(handoff.cwd, handoff.env, handoff.show, false);
+                }
+                else if (argv.size() != 2 || argv[1] != L"--from-toast")
                 {
                     _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
                 }
@@ -1337,8 +1409,20 @@ void WindowEmperor::_setupSessionPersistence(bool enabled)
     _persistStateTimer.Start();
 }
 
+bool WindowEmperor::_canPersistSession() const noexcept
+{
+    // Neither a timer tick nor shutdown should replace a saved session with
+    // an empty or partially initialized set of windows.
+    return !_waitingForFirstWindow && !_restoringWindowLayouts &&
+           (!_needsPersistenceCleanup || std::none_of(_windows.begin(), _windows.end(), [](const auto& w) { return !w->IsInitialized(); }));
+}
+
 void WindowEmperor::_persistState(const ApplicationState& state) const
 {
+    if (!_canPersistSession())
+    {
+        return;
+    }
     // Calling an `ApplicationState` setter triggers a write to state.json.
     // With this if condition we avoid an unnecessary write when persistence is disabled.
     if (state.PersistedWindowLayouts())
@@ -1362,10 +1446,8 @@ void WindowEmperor::_finalizeSessionPersistence() const
 {
     using namespace std::string_view_literals;
 
-    if (_skipPersistence)
+    if (_skipPersistence || !_canPersistSession())
     {
-        // We received WM_ENDSESSION and persisted the state.
-        // We don't need to persist it again.
         return;
     }
 

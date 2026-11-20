@@ -37,6 +37,7 @@ namespace SettingsModelUnitTests
         TEST_CLASS(SerializationTests);
 
         TEST_METHOD(GlobalSettings);
+        TEST_METHOD(StartOnLoginModes);
         TEST_METHOD(Profile);
         TEST_METHOD(ColorScheme);
         TEST_METHOD(Actions);
@@ -148,6 +149,25 @@ namespace SettingsModelUnitTests
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
         RoundtripTest<implementation::GlobalAppSettings>(smallGlobalsString);
+    }
+
+    void SerializationTests::StartOnLoginModes()
+    {
+        Json::Value json{ Json::objectValue };
+        const auto defaults = implementation::GlobalAppSettings::FromJson(json);
+        VERIFY_IS_TRUE(defaults->StartOnLoginMode() == StartOnLoginMode::Normal);
+        VERIFY_IS_FALSE(defaults->ToJson().isMember("startOnLoginMode"));
+
+        for (const auto& [text, mode] : { std::pair{ "normal", StartOnLoginMode::Normal },
+                                          std::pair{ "minimized", StartOnLoginMode::Minimized },
+                                          std::pair{ "headless", StartOnLoginMode::Headless } })
+        {
+            json["startOnLoginMode"] = text;
+            const auto settings = implementation::GlobalAppSettings::FromJson(json);
+            VERIFY_IS_TRUE(settings->StartOnLoginMode() == mode);
+            VERIFY_IS_FALSE(settings->AllowHeadless());
+            VERIFY_ARE_EQUAL(std::string{ text }, settings->ToJson()["startOnLoginMode"].asString());
+        }
     }
 
     void SerializationTests::Profile()

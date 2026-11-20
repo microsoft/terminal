@@ -47,5 +47,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean StartOnUserLoginAvailable { get; };
         Boolean StartOnUserLoginConfigurable { get; };
         String StartOnUserLoginStatefulHelpText { get; };
+
+        IInspectable CurrentStartOnLoginMode;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> StartOnLoginModeList { get; };
     }
 }

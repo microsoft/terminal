@@ -498,7 +498,9 @@ void InteractivityFactory::SetVisibility(const bool isVisible) noexcept
 // - <none>
 void InteractivityFactory::_WritePseudoWindowCallback(bool showOrHide)
 {
-    if (_suppressVisibilityChange.load(std::memory_order_relaxed))
+    // CreateWindowExW itself sends WM_SIZE(SIZE_RESTORED) before returning
+    // the HWND. That is not a request from a client to restore its terminal.
+    if (!_pseudoConsoleWindowHwnd || _suppressVisibilityChange.load(std::memory_order_relaxed))
     {
         return;
     }
