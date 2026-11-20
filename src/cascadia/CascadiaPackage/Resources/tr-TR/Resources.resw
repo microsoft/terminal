@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!-- 
-    Microsoft ResX Schema 
-    
+  <!--
+    Microsoft ResX Schema
+
     Version 2.0
-    
-    The primary goals of this format is to allow a simple XML format 
-    that is mostly human readable. The generation and parsing of the 
-    various data types are done through the TypeConverter classes 
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
     associated with the data types.
-    
+
     Example:
-    
+
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-                
-    There are any number of "resheader" rows that contain simple 
+
+    There are any number of "resheader" rows that contain simple
     name/value pairs.
-    
-    Each data row contains a name, and value. The row also contains a 
-    type or mimetype. Type corresponds to a .NET class that support 
-    text/value conversion through the TypeConverter architecture. 
-    Classes that don't support this are serialized and stored with the 
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
     mimetype set.
-    
-    The mimetype is used for serialized objects, and tells the 
-    ResXResourceReader how to depersist the object. This is currently not 
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
     extensible. For a given mimetype the value must be set accordingly:
-    
-    Note - application/x-microsoft.net.object.binary.base64 is the format 
-    that the ResXResourceWriter will generate, however the reader can 
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
     read any of the formats listed below.
-    
+
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-    
+
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with 
+    value   : The object must be serialized with
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array 
+    value   : The object must be serialized into a byte array
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -121,54 +121,78 @@
     <value>Terminal</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppNameCan" xml:space="preserve">
     <value>Terminal Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppNamePre" xml:space="preserve">
-    <value>Terminal Önizlemesi</value>
+    <value>Terminal Önizleme</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreName" xml:space="preserve">
     <value>Windows Terminal</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppStoreNameDev" xml:space="preserve">
+    <value>Windows Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppStoreNameCan" xml:space="preserve">
     <value>Windows Terminal Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}. "Canary" in this context means an unstable or nightly build of a software product, not the bird.</comment>
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
-    <value>Windows Terminal Önizlemesi</value>
+    <value>Windows Terminal Önizleme</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortName" xml:space="preserve">
     <value>Terminal</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppShortNameDev" xml:space="preserve">
+    <value>Terminal Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppShortNameCan" xml:space="preserve">
     <value>Terminal Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
-    <value>Terminal Önizlemesi</value>
+    <value>Terminal Önizleme</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppDescription" xml:space="preserve">
     <value>Yeni Windows Terminal</value>
   </data>
+  <data name="AppDescriptionDev" xml:space="preserve">
+    <value>Windows Terminal (Resmi Olmayan Geliştirici Sürümü)</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
+  <data name="AppDescriptionCan" xml:space="preserve">
+    <value>Windows Terminal (Canary derlemesi)</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppDescriptionPre" xml:space="preserve">
     <value>Yakında kullanıma sunulacak özelliklerin önizlemesini içeren Windows Terminal</value>
   </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
+    <value>Terminal'de (&amp;Dev) Aç</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Canary" xml:space="preserve">
-    <value>Terminalde (&amp;Canary) Aç</value>
+    <value>Terminal'de (&amp;Canary) Aç</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Canary version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
-    <value>Terminal Önizlemesinde &amp;Aç</value>
+    <value>Terminal Önizleme'de &amp;Aç</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
-    <value>&amp;Terminalde Aç</value>
+    <value>&amp;Terminal'de Aç</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
 </root>
