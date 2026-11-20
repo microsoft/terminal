@@ -152,7 +152,7 @@ public:
 
     std::pair<CursorType, bool> GetUserDefaultCursorStyle() const override
     {
-        return { CursorType::Legacy, true };
+        return { CursorType::Legacy, _defaultCursorBlinking };
     }
 
     void ShowWindow(bool showOrHide) override
@@ -394,6 +394,7 @@ public:
     TextAttribute _expectedAttribute = {};
     unsigned int _expectedCodePage = 0;
     bool _isPty = false;
+    bool _defaultCursorBlinking = true;
 
     bool _returnResponseResult = false;
 
@@ -2210,6 +2211,7 @@ public:
 
         using namespace std::string_view_literals;
 
+        _testGetSet->PrepData();
         _pDispatch->SetOptionalFeatures(ITermDispatch::OptionalFeature::ChecksumReport);
 
         Log::Comment(L"Test 1: ASCII characters");
@@ -3913,6 +3915,44 @@ public:
         _testGetSet->_expectedMenuJson = LR"({ "foo": "what;ever", "bar": 2 })";
         _testGetSet->_expectedReplaceLength = 20;
         _pDispatch->DoVsCodeAction(LR"(Completions;10;20;30;{ "foo": "what;ever", "bar": 2 })");
+    }
+
+    TEST_METHOD(CursorBlinkingDisabledAcrossPages)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:DefaultBlinking", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+        bool defaultBlinking;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"DefaultBlinking", defaultBlinking));
+        _testGetSet->PrepData();
+        _testGetSet->_defaultCursorBlinking = defaultBlinking;
+        auto& pages = _pDispatch->_pages;
+        _pDispatch->SetMode(DispatchTypes::ModeParams::ATT610_StartCursorBlink);
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+        _pDispatch->PagePositionAbsolute(2);
+        VERIFY_ARE_EQUAL(2, pages.ActivePage().Number());
+        VERIFY_ARE_EQUAL(1, pages.VisiblePage().Number());
+        VERIFY_IS_TRUE(pages.ActivePage().Cursor().IsBlinking());
+        VERIFY_IS_TRUE(pages.VisiblePage().Cursor().IsBlinking());
+
+        _pDispatch->SetOptionalFeatures({});
+        VERIFY_ARE_EQUAL(defaultBlinking, pages.ActivePage().Cursor().IsBlinking());
+        VERIFY_ARE_EQUAL(defaultBlinking, pages.VisiblePage().Cursor().IsBlinking());
+        _pDispatch->SetMode(DispatchTypes::ModeParams::ATT610_StartCursorBlink);
+        VERIFY_ARE_EQUAL(defaultBlinking, pages.ActivePage().Cursor().IsBlinking());
+        _pDispatch->ResetMode(DispatchTypes::ModeParams::ATT610_StartCursorBlink);
+        VERIFY_ARE_EQUAL(defaultBlinking, pages.ActivePage().Cursor().IsBlinking());
+
+        for (const auto page : { 3, 1, 2 })
+        {
+            _pDispatch->PagePositionAbsolute(page);
+            VERIFY_ARE_EQUAL(defaultBlinking, pages.ActivePage().Cursor().IsBlinking());
+            _pDispatch->SetMode(DispatchTypes::ModeParams::DECPCCM_PageCursorCouplingMode);
+            VERIFY_ARE_EQUAL(defaultBlinking, pages.VisiblePage().Cursor().IsBlinking());
+        }
+        _pDispatch->HardReset(false);
+        VERIFY_ARE_EQUAL(defaultBlinking, pages.ActivePage().Cursor().IsBlinking());
     }
 
     TEST_METHOD(PageMovementTests)
