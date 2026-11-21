@@ -476,10 +476,14 @@ void InteractivityFactory::SetVisibility(const bool isVisible) noexcept
     }
     case WM_ACTIVATE:
     {
-        if (const auto ownerHwnd = _owner.load(std::memory_order_relaxed))
+        // Forward activation of GetConsoleWindow() to the terminal, but don't
+        // take focus back when the pseudo window is being deactivated (GH#13388).
+        if (LOWORD(wParam) != WA_INACTIVE)
         {
-            SetFocus(ownerHwnd);
-            return 0;
+            if (const auto ownerHwnd = _owner.load(std::memory_order_relaxed))
+            {
+                SetFocus(ownerHwnd);
+            }
         }
         return 0;
     }
