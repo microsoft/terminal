@@ -1831,7 +1831,7 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
+    else if (_isNumericParamValue(wch) || _isParameterDelimiter(wch))
     {
         _ActionParam(wch);
     }

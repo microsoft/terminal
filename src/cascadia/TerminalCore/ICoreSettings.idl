@@ -113,7 +113,6 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings requires ICoreAppearance
     {
-        // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize { get; };
         Int32 InitialRows { get; };
         Int32 InitialCols { get; };

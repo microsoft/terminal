@@ -21,7 +21,7 @@ constexpr COLORREF OPACITY_OPAQUE = 0xff000000;
 constexpr auto DEFAULT_FOREGROUND = COLOR_WHITE;
 constexpr auto DEFAULT_BACKGROUND = COLOR_BLACK;
 
-constexpr short DEFAULT_HISTORY_SIZE = 9001;
+constexpr til::CoordType DEFAULT_HISTORY_SIZE = 16384;
 
 #pragma warning(push)
 #pragma warning(disable : 26426)

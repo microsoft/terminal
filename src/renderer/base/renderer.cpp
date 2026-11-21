@@ -1075,7 +1075,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
     const auto& activeComposition = _pData->GetActiveComposition();
     auto& buffer = _pData->GetTextBuffer();
-    auto& scratchRow = buffer.GetScratchpadRow();
+    ROW* scratchRow = nullptr;
 
     // This is effectively the number of cells on the visible screen that need to be redrawn.
     // The origin is always 0, 0 because it represents the screen itself, not the underlying buffer.
@@ -1117,14 +1117,16 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // We have to use some tricks here with const_cast, because the code after it relies on TextBufferCellIterator,
             // which isn't compatible with the scratchpad row. This forces us to back up and modify the actual row `r`.
             const auto restore = wil::scope_exit([&] {
-                if (row == compositionRow)
+                if (row == compositionRow && scratchRow)
                 {
-                    const_cast<ROW&>(r).CopyFrom(scratchRow);
+                    const_cast<ROW&>(r).CopyFrom(*scratchRow);
                 }
             });
             if (row == compositionRow)
             {
-                _PaintBufferOutputComposition(r, scratchRow, activeComposition);
+                // The lambda above captures scratchRow by reference and will restore through it later.
+                scratchRow = &buffer.GetScratchpadRow();
+                _PaintBufferOutputComposition(r, *scratchRow, activeComposition);
             }
 
             // Convert the screen coordinates of the line to an equivalent
