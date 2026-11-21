@@ -3104,7 +3104,7 @@ void AdaptDispatch::HardReset(bool erase)
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
-    _pages.ActivePage().Cursor().SetIsBlinking(true);
+    _pages.ActivePage().Cursor().SetIsBlinking(_api.GetUserDefaultCursorStyle().second);
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3252,8 +3252,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     switch (cursorStyle)
     {
     case DispatchTypes::CursorStyle::UserDefault:
-        fEnableBlinking = true;
-        actualType = _api.GetUserDefaultCursorStyle();
+        std::tie(actualType, fEnableBlinking) = _api.GetUserDefaultCursorStyle();
         break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         fEnableBlinking = true;
