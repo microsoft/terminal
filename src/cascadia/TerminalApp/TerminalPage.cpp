@@ -3786,6 +3786,8 @@ namespace winrt::TerminalApp::implementation
 
     TermControl TerminalPage::_SetupControl(const TermControl& term)
     {
+        term.WindowActivationChanged(_activated);
+
         // GH#12515: ConPTY assumes it's hidden at the start. If we're not, let it know now.
         if (_visible)
         {
@@ -5164,9 +5166,7 @@ namespace winrt::TerminalApp::implementation
             const auto acrylicBrush = Media::AcrylicBrush();
             // Make sure that we use the same backdrop source as TermControl.
             // If we don't, it'll cause the same flickering as in GH #14384
-            acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
-                                              Media::AcrylicBackgroundSource::Backdrop :
-                                              Media::AcrylicBackgroundSource::HostBackdrop);
+            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
@@ -5393,9 +5393,22 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::WindowActivated(const bool activated)
     {
-        // Stash if we're activated. Use that when we reload
-        // the settings, change active panes, etc.
-        _activated = activated;
+        if (_activated != activated)
+        {
+            _activated = activated;
+            for (const auto& tab : _tabs)
+            {
+                if (const auto rootPane = _GetTabImpl(tab)->GetRootPane())
+                {
+                    rootPane->WalkTree([activated](const auto& pane) {
+                        if (const auto control = pane->GetTerminalControl())
+                        {
+                            control.WindowActivationChanged(activated);
+                        }
+                    });
+                }
+            }
+        }
         _updateThemeColors();
 
         _adjustProcessPriorityThrottled->Run();

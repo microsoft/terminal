@@ -1103,19 +1103,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // changed from what was in the original settings.
         if (_core->UseAcrylic() && !transparentBg)
         {
+            const auto backdropStyle = _windowActivated.has_value() || settings.EnableUnfocusedAcrylic() ?
+                                           Media::AcrylicBackgroundSource::Backdrop :
+                                           Media::AcrylicBackgroundSource::HostBackdrop;
+
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
             auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>();
 
-            // Instantiate a brush if there's not already one there
-            if (acrylic == nullptr)
+            if (!acrylic || acrylic.BackgroundSource() != backdropStyle)
             {
                 acrylic = Media::AcrylicBrush{};
+                acrylic.BackgroundSource(backdropStyle);
             }
-
-            const auto backdropStyle =
-                _core->Settings().EnableUnfocusedAcrylic() ? Media::AcrylicBackgroundSource::Backdrop : Media::AcrylicBackgroundSource::HostBackdrop;
-            acrylic.BackgroundSource(backdropStyle);
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
@@ -1124,6 +1124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // Apply brush settings
             acrylic.TintOpacity(_core->Opacity());
+            acrylic.AlwaysUseFallback(_ShouldUseAcrylicFallback());
 
             // Apply brush to control if it's not already there
             if (RootGrid().Background() != acrylic)
@@ -1141,6 +1142,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         BackgroundBrush(RootGrid().Background());
+    }
+
+    bool TermControl::_ShouldUseAcrylicFallback()
+    {
+        return !_windowActivated.value_or(true) && !_core->Settings().EnableUnfocusedAcrylic();
     }
 
     // Method Description:
@@ -2875,6 +2881,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::WindowVisibilityChanged(const bool showOrHide)
     {
         _core->WindowVisibilityChanged(showOrHide);
+    }
+
+    void TermControl::WindowActivationChanged(const bool activated)
+    {
+        if (_IsClosing() || _windowActivated == activated)
+        {
+            return;
+        }
+
+        // HostBackdrop can get the activation state wrong in XAML Islands.
+        // Use the top-level window's activation instead (GH#20944).
+        _windowActivated = activated;
+        if (const auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            if (acrylic.BackgroundSource() == Media::AcrylicBackgroundSource::HostBackdrop)
+            {
+                _InitializeBackgroundBrush();
+            }
+            else
+            {
+                acrylic.AlwaysUseFallback(_ShouldUseAcrylicFallback());
+            }
+        }
     }
 
     // Method Description:

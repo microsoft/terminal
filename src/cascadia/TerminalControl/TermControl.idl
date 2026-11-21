@@ -135,6 +135,7 @@ namespace Microsoft.Terminal.Control
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         void WindowVisibilityChanged(Boolean showOrHide);
+        void WindowActivationChanged(Boolean activated);
 
         void ScrollViewport(Int32 viewTop);
 
