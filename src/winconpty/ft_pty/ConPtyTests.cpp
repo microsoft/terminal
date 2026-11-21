@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include <conpty-static.h>
+#include <ForegroundBoost.h>
 
 #include "../winconpty.h"
 
@@ -339,3 +340,241 @@ void ConPtyTests::ReleasePseudoConsole()
     const auto output = readOutputToEOF(pty.pipes);
     VERIFY_ARE_NOT_EQUAL(std::string::npos, output.find("foobar"));
 }
+
+class ForegroundBoostTests
+{
+    BEGIN_TEST_CLASS(ForegroundBoostTests)
+        TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:30")
+    END_TEST_CLASS()
+
+    TEST_METHOD(OutputOnlyClientIsPublishedBeforeInput)
+    {
+        Run(false, true);
+    }
+
+    TEST_METHOD(DisconnectRemovesLivingClient)
+    {
+        Run(true, true);
+    }
+
+    TEST_METHOD(UnconfiguredChannelDoesNotPublishClients)
+    {
+        Run(false, false);
+    }
+
+    static void Send(const PTY& pty, const char* text, DWORD length)
+    {
+        DWORD written{};
+        VERIFY_IS_TRUE(WriteFile(pty.pipes.in.get(), text, length, &written, nullptr));
+        VERIFY_ARE_EQUAL(length, written);
+    }
+
+    struct Channel
+    {
+        wil::unique_handle section;
+        wil::unique_mapview_ptr<Microsoft::Console::ForegroundBoostSharedState> state;
+        wil::unique_event changed;
+        wil::unique_handle host;
+
+        Channel(HPCON hpcon, bool enabled)
+        {
+            using namespace Microsoft::Console;
+            section.reset(CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(ForegroundBoostSharedState), nullptr));
+            VERIFY_IS_NOT_NULL(section.get());
+            state.reset(static_cast<ForegroundBoostSharedState*>(
+                MapViewOfFile(section.get(), FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(ForegroundBoostSharedState))));
+            VERIFY_IS_NOT_NULL(state.get());
+            new (state.get()) ForegroundBoostSharedState{};
+            changed.create(wil::EventOptions::None);
+            if (enabled)
+            {
+                VERIFY_SUCCEEDED(ConptyConfigureForegroundBoost(hpcon, section.get(), changed.get(), host.addressof()));
+                VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(changed.get(), 5000));
+            }
+        }
+
+        void WaitForClient(DWORD pid)
+        {
+            if (pid)
+            {
+                WaitForClients({ pid });
+            }
+            else
+            {
+                WaitForClients({});
+            }
+        }
+
+        void WaitForClients(std::initializer_list<DWORD> processIds)
+        {
+            const auto deadline = GetTickCount64() + 5000;
+            for (;;)
+            {
+                Microsoft::Console::ForegroundBoostSnapshot snapshot;
+                const auto hr = state->Read(snapshot);
+                if (hr != HRESULT_FROM_WIN32(ERROR_RETRY))
+                {
+                    VERIFY_SUCCEEDED(hr);
+                    if (static_cast<size_t>(snapshot.count) == processIds.size() &&
+                        std::ranges::all_of(processIds, [&snapshot](const auto pid) {
+                            return std::ranges::any_of(snapshot.clients, [pid](const auto& client) { return client.processId == pid; });
+                        }))
+                    {
+                        return;
+                    }
+                }
+                const auto now = GetTickCount64();
+                THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_TIMEOUT), now >= deadline);
+                VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(changed.get(), gsl::narrow_cast<DWORD>(deadline - now)));
+            }
+        }
+    };
+
+    static void WaitForOutput(const PTY& pty, HANDLE client, std::string& output, const char* marker)
+    {
+        const auto deadline = GetTickCount64() + 8000;
+        while (output.find(marker) == std::string::npos)
+        {
+            THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_TIMEOUT), GetTickCount64() >= deadline);
+            DWORD available{}, read{};
+            THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(pty.pipes.out.get(), nullptr, 0, nullptr, &available, nullptr));
+            if (available)
+            {
+                std::array<char, 1024> buffer{};
+                THROW_IF_WIN32_BOOL_FALSE(ReadFile(pty.pipes.out.get(), buffer.data(), (std::min)(available, DWORD{ 1024 }), &read, nullptr));
+                output.append(buffer.data(), read);
+            }
+            else
+            {
+                THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_PROCESS_ABORTED), WaitForSingleObject(client, 10) != WAIT_TIMEOUT);
+            }
+        }
+    }
+
+    TEST_METHOD(ActualApiRegistersAndClearsWithoutChangingClass)
+    {
+        const auto pty = createPseudoConsole();
+        const auto host = reinterpret_cast<PseudoConsole*>(pty.hpcon.get())->hConPtyProcess;
+        const auto before = GetPriorityClass(host);
+        VERIFY_ARE_NOT_EQUAL(0ul, before);
+        const auto window = CreateWindowExW(0, L"STATIC", L"Foreground boost API test", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+        VERIFY_IS_NOT_NULL(window);
+        const auto destroy = wil::scope_exit([&] { DestroyWindow(window); });
+        HANDLE processes[]{ host };
+        VERIFY_SUCCEEDED(Microsoft::Console::SetForegroundBoostProcesses(window, 1, processes));
+        VERIFY_ARE_EQUAL(before, GetPriorityClass(host));
+        VERIFY_SUCCEEDED(Microsoft::Console::SetForegroundBoostProcesses(window, 0, nullptr));
+        VERIFY_ARE_EQUAL(before, GetPriorityClass(host));
+    }
+
+    TEST_METHOD(ExistingAndNewClientsArePublishedWithoutInput)
+    {
+        const auto pty = createPseudoConsole();
+        std::array<wil::unique_process_information, 2> clients;
+        const auto terminate = wil::scope_exit([&] {
+            for (const auto& client : clients)
+            {
+                if (client.hProcess && WaitForSingleObject(client.hProcess, 0) == WAIT_TIMEOUT)
+                {
+                    LOG_IF_WIN32_BOOL_FALSE(TerminateProcess(client.hProcess, ERROR_CANCELLED));
+                    LOG_HR_IF(HRESULT_FROM_WIN32(ERROR_TIMEOUT), WaitForSingleObject(client.hProcess, 5000) != WAIT_OBJECT_0);
+                }
+            }
+        });
+        const std::wstring command = L"powershell.exe -NoProfile -NonInteractive -Command \"[Console]::WriteLine('FOREGROUND_CLIENT_READY'); Start-Sleep -Seconds 30\"";
+        VERIFY_SUCCEEDED(AttachPseudoConsole(pty.hpcon.get(), command, clients[0].addressof()));
+        std::string output;
+        WaitForOutput(pty, clients[0].hProcess, output, "FOREGROUND_CLIENT_READY");
+        Channel channel{ pty.hpcon.get(), true };
+        channel.WaitForClients({ clients[0].dwProcessId });
+
+        output.clear();
+        VERIFY_SUCCEEDED(AttachPseudoConsole(pty.hpcon.get(), command, clients[1].addressof()));
+        WaitForOutput(pty, clients[1].hProcess, output, "FOREGROUND_CLIENT_READY");
+        channel.WaitForClients({ clients[0].dwProcessId, clients[1].dwProcessId });
+
+        VERIFY_IS_TRUE(TerminateProcess(clients[1].hProcess, ERROR_CANCELLED));
+        VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(clients[1].hProcess, 5000));
+        channel.WaitForClients({ clients[0].dwProcessId });
+    }
+
+    static void Run(bool disconnect, bool enabled)
+    {
+        const auto pty = createPseudoConsole();
+        Channel channel{ pty.hpcon.get(), enabled };
+        const auto host = reinterpret_cast<PseudoConsole*>(pty.hpcon.get())->hConPtyProcess;
+        wil::unique_event disconnectEvent;
+        const auto disconnectName = L"Local\\OpenConsoleForegroundDisconnect-" + std::to_wstring(GetCurrentProcessId());
+        std::wstring command = L"powershell.exe -NoProfile -NonInteractive -Command \"[Console]::WriteLine('FOREGROUND_CLIENT_READY'); Start-Sleep -Seconds 30\"";
+        if (disconnect)
+        {
+            disconnectEvent.create(wil::EventOptions::ManualReset, disconnectName.c_str());
+            command = LR"PS(powershell.exe -NoProfile -NonInteractive -Command "Add-Type -TypeDefinition '
+using System.Runtime.InteropServices;
+public static class ForegroundBoostTestClient {
+    [DllImport(\"kernel32.dll\")] public static extern bool FreeConsole();
+}
+'; [Console]::WriteLine('FOREGROUND_CLIENT_READY');
+[void][System.Threading.EventWaitHandle]::OpenExisting(')PS" +
+                      disconnectName +
+                      LR"PS(').WaitOne();
+if (-not [ForegroundBoostTestClient]::FreeConsole()) { exit 1 };
+Start-Sleep -Seconds 30")PS";
+        }
+        wil::unique_process_information client;
+        const auto terminate = wil::scope_exit([&] {
+            if (client.hProcess && WaitForSingleObject(client.hProcess, 0) == WAIT_TIMEOUT)
+            {
+                LOG_IF_WIN32_BOOL_FALSE(TerminateProcess(client.hProcess, ERROR_CANCELLED));
+                LOG_HR_IF(HRESULT_FROM_WIN32(ERROR_TIMEOUT), WaitForSingleObject(client.hProcess, 5000) != WAIT_OBJECT_0);
+            }
+        });
+        VERIFY_SUCCEEDED(AttachPseudoConsole(pty.hpcon.get(), command, client.addressof()));
+        std::string output;
+        WaitForOutput(pty, client.hProcess, output, "FOREGROUND_CLIENT_READY");
+        channel.WaitForClient(enabled ? client.dwProcessId : 0);
+        VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(host));
+        VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(client.hProcess));
+        if (enabled)
+        {
+            Microsoft::Console::ForegroundBoostSnapshot snapshot;
+            VERIFY_SUCCEEDED(channel.state->Read(snapshot));
+            FILETIME creation{}, exit{}, kernel{}, user{};
+            VERIFY_IS_TRUE(GetProcessTimes(client.hProcess, &creation, &exit, &kernel, &user));
+            VERIFY_ARE_EQUAL(0l, CompareFileTime(&creation, &snapshot.clients[0].creationTime));
+        }
+        if (disconnect)
+        {
+            VERIFY_IS_TRUE(SetEvent(disconnectEvent.get()));
+            channel.WaitForClient(0);
+            VERIFY_ARE_EQUAL(DWORD{ WAIT_TIMEOUT }, WaitForSingleObject(client.hProcess, 0));
+        }
+        for (size_t cycle = 0; cycle < 2; ++cycle)
+        {
+            if (enabled)
+            {
+                VERIFY_IS_TRUE(ResetEvent(channel.changed.get()));
+            }
+            Send(pty, "\x1b[O", 3);
+            if (enabled)
+            {
+                VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(channel.changed.get(), 5000));
+            }
+            channel.WaitForClient(enabled && !disconnect ? client.dwProcessId : 0);
+            VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(host));
+            VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(client.hProcess));
+            if (enabled)
+            {
+                VERIFY_IS_TRUE(ResetEvent(channel.changed.get()));
+            }
+            Send(pty, "\x1b[I", 3);
+            if (enabled)
+            {
+                VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(channel.changed.get(), 5000));
+            }
+            channel.WaitForClient(enabled && !disconnect ? client.dwProcessId : 0);
+            VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(host));
+            VERIFY_ARE_EQUAL(DWORD{ NORMAL_PRIORITY_CLASS }, GetPriorityClass(client.hProcess));
+        }
+    }
+};

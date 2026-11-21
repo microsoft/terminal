@@ -7,6 +7,7 @@
     <ProjectName>TerminalAdapter.UnitTests</ProjectName>
     <TargetName>ConAdapter.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />

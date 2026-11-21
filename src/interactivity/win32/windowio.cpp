@@ -13,6 +13,7 @@
 #include "../../host/init.hpp"
 #include "../../host/scrolling.hpp"
 #include "../inc/ServiceLocator.hpp"
+#include <TerminalThemeHelpers.h>
 
 #pragma hdrstop
 
@@ -899,6 +900,12 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 
     const auto hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
     SetConsoleWindowOwner(hwnd, ProcessData);
+
+    if (!gci.IsInVtIoMode())
+    {
+        LOG_IF_FAILED(gci.ProcessHandleList.ConfigureWindowProcessPolicies(
+            hwnd, TerminalTrySetWindowAssociatedProcesses, Microsoft::Console::SetForegroundBoostProcesses));
+    }
 
     LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 

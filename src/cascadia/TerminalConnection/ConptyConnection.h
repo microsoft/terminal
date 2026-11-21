@@ -9,12 +9,14 @@
 
 #include <til/env.h>
 #include <til/ticket_lock.h>
+#include <ForegroundBoost.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConptyConnection : ConptyConnectionT<ConptyConnection>, BaseTerminalConnection<ConptyConnection>
     {
         explicit ConptyConnection();
+        ~ConptyConnection();
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
         void InitializeFromHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo);
 
@@ -31,6 +33,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void ReparentWindow(const uint64_t newParent);
         uint64_t RootProcessHandle() noexcept;
+        winrt::com_array<uint64_t> AcquireForegroundBoostProcessHandles();
+        til::event<Windows::Foundation::TypedEventHandler<TerminalConnection::ConptyConnection, Windows::Foundation::IInspectable>> ForegroundBoostClientsChanged;
 
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
@@ -63,6 +67,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _indicateExitWithStatus(unsigned int status) noexcept;
         static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;
+        void _StartForegroundBoostTracking();
+        void _StopForegroundBoostTracking() noexcept;
 
         til::CoordType _rows = 120;
         til::CoordType _cols = 30;
@@ -81,6 +87,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
+        wil::srwlock _foregroundBoostLock;
+        wil::unique_handle _foregroundBoostSection;
+        wil::unique_mapview_ptr<::Microsoft::Console::ForegroundBoostSharedState> _foregroundBoostState;
+        wil::unique_event _foregroundBoostChanged;
+        wil::unique_handle _foregroundBoostHost;
+        wil::unique_threadpool_wait _foregroundBoostWait;
+        bool _foregroundBoostStopping = false;
 
         til::ticket_lock _writeLock;
         wil::unique_event _writeOverlappedEvent;

@@ -41,7 +41,8 @@ namespace Microsoft::Console
             ShowHideWindow = 1,
             ClearBuffer = 2,
             SetParent = 3,
-            ResizeWindow = 8
+            ResizeWindow = 8,
+            ForegroundBoostChannel = 9
         };
 
         struct ResizeWindowData
@@ -63,6 +64,12 @@ namespace Microsoft::Console
         struct SetParentData
         {
             uint64_t handle;
+        };
+
+        struct ForegroundBoostChannelData
+        {
+            uint64_t section;
+            uint64_t changed;
         };
 
         [[nodiscard]] HRESULT _InputThread() noexcept;

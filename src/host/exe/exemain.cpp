@@ -8,6 +8,9 @@
 #include "../server/Entrypoints.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../inc/conint.h"
+#include <ForegroundBoost.h>
+
+extern "C" __declspec(dllexport) const DWORD OpenConsoleInputForegroundBoostProtocol = Microsoft::Console::ForegroundBoostProtocol;
 
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "CConsoleHandoff.h"

@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "winconpty.h"
+#include <ForegroundBoost.h>
 
 #ifdef __INSIDE_WINDOWS
 #include <strsafe.h>
@@ -382,6 +383,58 @@ HRESULT _ReparentPseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const 
 
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
+
+extern "C" HRESULT WINAPI ConptyConfigureForegroundBoost(HPCON hPC, HANDLE section, HANDLE changed, HANDLE* host)
+try
+{
+    RETURN_HR_IF(E_INVALIDARG, !hPC || !section || !changed || !host);
+    *host = nullptr;
+    const auto pty = reinterpret_cast<PseudoConsole*>(hPC);
+    const auto path = wil::QueryFullProcessImageNameW<std::wstring>(pty->hConPtyProcess);
+    // Older hosts terminate on unknown signal IDs. Check capability before sending.
+    wil::unique_hmodule module{ LoadLibraryExW(path.c_str(), nullptr, DONT_RESOLVE_DLL_REFERENCES) };
+    RETURN_LAST_ERROR_IF_NULL(module);
+    const auto protocol = reinterpret_cast<const DWORD*>(GetProcAddress(module.get(), "OpenConsoleInputForegroundBoostProtocol"));
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED),
+                 !protocol || *protocol != Microsoft::Console::ForegroundBoostProtocol);
+    wil::unique_handle hostHandle;
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), pty->hConPtyProcess, GetCurrentProcess(), hostHandle.addressof(), PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, 0));
+    HANDLE remoteSection{}, remoteChanged{};
+    bool sent = false;
+    const auto cleanup = wil::scope_exit([&]() noexcept {
+        if (!sent)
+        {
+            for (const auto handle : { remoteSection, remoteChanged })
+            {
+                if (handle)
+                {
+                    wil::unique_handle local;
+                    LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(pty->hConPtyProcess, handle, GetCurrentProcess(), local.addressof(), 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS));
+                }
+            }
+        }
+    });
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), section, pty->hConPtyProcess, &remoteSection, FILE_MAP_READ | FILE_MAP_WRITE, FALSE, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), changed, pty->hConPtyProcess, &remoteChanged, EVENT_MODIFY_STATE, FALSE, 0));
+#pragma pack(push, 1)
+    struct Packet
+    {
+        unsigned short signal;
+        uint64_t section;
+        uint64_t changed;
+    };
+#pragma pack(pop)
+    const Packet packet{ Microsoft::Console::ForegroundBoostSignal,
+                         reinterpret_cast<uint64_t>(remoteSection),
+                         reinterpret_cast<uint64_t>(remoteChanged) };
+    DWORD written{};
+    RETURN_IF_WIN32_BOOL_FALSE(WriteFile(pty->hSignal, &packet, sizeof(packet), &written, nullptr));
+    RETURN_HR_IF(E_UNEXPECTED, written != sizeof(packet));
+    sent = true;
+    *host = hostHandle.release();
+    return S_OK;
+}
+CATCH_RETURN()
 
 // Function Description:
 // - This closes each of the members of a PseudoConsole. It does not free the

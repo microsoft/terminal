@@ -25,6 +25,7 @@
     <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="mutex.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="ForegroundBoostTests.cpp" />
     <ClCompile Include="PointTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="ReplaceTests.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\inc\til\colorbrewer.h" />
     <ClInclude Include="..\..\inc\til\enumset.h" />
     <ClInclude Include="..\..\inc\til\env.h" />
+    <ClInclude Include="..\..\inc\ForegroundBoost.h" />
     <ClInclude Include="..\..\inc\til\flat_set.h" />
     <ClInclude Include="..\..\inc\til\generational.h" />
     <ClInclude Include="..\..\inc\til\hash.h" />

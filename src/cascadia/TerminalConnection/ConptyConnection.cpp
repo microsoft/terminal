@@ -448,6 +448,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
         }
 
+        _StartForegroundBoostTracking();
         THROW_IF_FAILED(ConptyReleasePseudoConsole(_hPC.get()));
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -507,6 +508,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _transitionToState(ConnectionState::Failed);
 
         // Tear down any state we may have accumulated.
+        _StopForegroundBoostTracking();
         _hPC.reset();
     }
 
@@ -664,10 +666,148 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return reinterpret_cast<uint64_t>(_piClient.hProcess);
     }
 
+    ConptyConnection::~ConptyConnection()
+    {
+        _StopForegroundBoostTracking();
+    }
+
+    void ConptyConnection::_StartForegroundBoostTracking()
+    {
+        using namespace ::Microsoft::Console;
+        wil::unique_handle section{ CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(ForegroundBoostSharedState), nullptr) };
+        THROW_LAST_ERROR_IF_NULL(section);
+        wil::unique_mapview_ptr<ForegroundBoostSharedState> state{ static_cast<ForegroundBoostSharedState*>(
+            MapViewOfFile(section.get(), FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(ForegroundBoostSharedState))) };
+        THROW_LAST_ERROR_IF_NULL(state);
+        new (state.get()) ForegroundBoostSharedState{};
+        wil::unique_event changed;
+        changed.create(wil::EventOptions::None);
+        wil::unique_handle host;
+        THROW_IF_FAILED(ConptyConfigureForegroundBoost(_hPC.get(), section.get(), changed.get(), host.addressof()));
+        const auto initialized = WaitForSingleObject(changed.get(), 5000);
+        THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_TIMEOUT), initialized == WAIT_TIMEOUT);
+        THROW_LAST_ERROR_IF(initialized == WAIT_FAILED);
+        wil::unique_threadpool_wait notificationWait{ CreateThreadpoolWait([](PTP_CALLBACK_INSTANCE, void* context, PTP_WAIT wait, TP_WAIT_RESULT) noexcept {
+            const auto self = static_cast<ConptyConnection*>(context);
+            try
+            {
+                self->ForegroundBoostClientsChanged.raise(*self, nullptr);
+            }
+            CATCH_LOG();
+            const auto guard = self->_foregroundBoostLock.lock_shared();
+            if (!self->_foregroundBoostStopping)
+            {
+                SetThreadpoolWait(wait, self->_foregroundBoostChanged.get(), nullptr);
+            }
+        },
+                                                                           this,
+                                                                           nullptr) };
+        THROW_LAST_ERROR_IF_NULL(notificationWait);
+        const auto guard = _foregroundBoostLock.lock_exclusive();
+        THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_CANCELLED), _foregroundBoostStopping);
+        _foregroundBoostSection = std::move(section);
+        _foregroundBoostState = std::move(state);
+        _foregroundBoostChanged = std::move(changed);
+        _foregroundBoostHost = std::move(host);
+        _foregroundBoostWait = std::move(notificationWait);
+        SetThreadpoolWait(_foregroundBoostWait.get(), _foregroundBoostChanged.get(), nullptr);
+    }
+
+    void ConptyConnection::_StopForegroundBoostTracking() noexcept
+    {
+        wil::unique_threadpool_wait wait;
+        {
+            const auto guard = _foregroundBoostLock.lock_exclusive();
+            _foregroundBoostStopping = true;
+            if (_foregroundBoostWait)
+            {
+                SetThreadpoolWait(_foregroundBoostWait.get(), nullptr, nullptr);
+                wait = std::move(_foregroundBoostWait);
+            }
+        }
+        if (wait)
+        {
+            WaitForThreadpoolWaitCallbacks(wait.get(), TRUE);
+        }
+        const auto guard = _foregroundBoostLock.lock_exclusive();
+        _foregroundBoostHost.reset();
+        _foregroundBoostState.reset();
+        _foregroundBoostSection.reset();
+        _foregroundBoostChanged.reset();
+    }
+
+    winrt::com_array<uint64_t> ConptyConnection::AcquireForegroundBoostProcessHandles()
+    {
+        using namespace ::Microsoft::Console;
+        const auto guard = _foregroundBoostLock.lock_exclusive();
+        if (!_foregroundBoostState)
+        {
+            return {};
+        }
+        const auto hostState = WaitForSingleObject(_foregroundBoostHost.get(), 0);
+        THROW_LAST_ERROR_IF(hostState == WAIT_FAILED);
+        if (hostState == WAIT_OBJECT_0)
+        {
+            return {};
+        }
+        ForegroundBoostSnapshot snapshot;
+        THROW_IF_FAILED(_foregroundBoostState->Read(snapshot));
+        std::vector<wil::unique_handle> handles;
+        handles.reserve(static_cast<size_t>(snapshot.count) + 1);
+        auto& host = handles.emplace_back();
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), _foregroundBoostHost.get(), GetCurrentProcess(), host.addressof(), 0, FALSE, DUPLICATE_SAME_ACCESS));
+        
+        for (LONG i = 0; i < snapshot.count; ++i)
+        {
+            const auto& client = snapshot.clients[i];
+            wil::unique_handle process{ OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE,
+                                                    FALSE,
+                                                    client.processId) };
+            if (!process)
+            {
+                const auto error = GetLastError();
+                if (error == ERROR_INVALID_PARAMETER)
+                {
+                    LOG_WIN32(error);
+                    continue;
+                }
+                THROW_WIN32(error);
+            }
+
+            const auto processState = WaitForSingleObject(process.get(), 0);
+            THROW_LAST_ERROR_IF(processState == WAIT_FAILED);
+            
+            if (processState == WAIT_OBJECT_0)
+            {
+                continue;
+            }
+
+            FILETIME creation{}, exit{}, kernel{}, user{};
+            THROW_IF_WIN32_BOOL_FALSE(GetProcessTimes(process.get(), &creation, &exit, &kernel, &user));
+            
+            if (CompareFileTime(&creation, &client.creationTime) != 0)
+            {
+                LOG_HR_MSG(HRESULT_FROM_WIN32(ERROR_INVALID_DATA), "Console client PID was reused");
+                continue;
+            }
+            handles.emplace_back(std::move(process));
+        }
+        const auto count = gsl::narrow_cast<uint32_t>(handles.size());
+        winrt::com_array<uint64_t> result(count);
+
+        for (uint32_t i = 0; i < count; ++i)
+        {
+            result[i] = reinterpret_cast<uint64_t>(handles[i].release());
+        }
+        
+        return result;
+    }
+
     void ConptyConnection::Close() noexcept
     try
     {
         _transitionToState(ConnectionState::Closing);
+        _StopForegroundBoostTracking();
 
         // This will signal ConPTY to send out a CTRL_CLOSE_EVENT to all attached clients.
         // Once they're all disconnected it'll close its half of the pipes.

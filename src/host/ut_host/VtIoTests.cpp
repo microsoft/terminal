@@ -129,6 +129,21 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
         VERIFY_IS_TRUE(io.GetDeviceAttributes().test(DeviceAttribute::RectangularAreaOperations));
     }
 
+    TEST_METHOD(StandaloneWindowPoliciesAreNotConfiguredForConpty)
+    {
+        auto& console = ServiceLocator::LocateGlobals().getConsoleInformation();
+        console.LockConsole();
+        const auto unlock = wil::scope_exit([&] { console.UnlockConsole(); });
+        VERIFY_IS_TRUE(console.IsInVtIoMode());
+        const auto unexpectedPolicyCall = +[](HWND, DWORD, PHANDLE) -> HRESULT {
+            VERIFY_FAIL(L"A ConPTY host must not associate clients with a standalone window.");
+            return E_UNEXPECTED;
+        };
+        VERIFY_ARE_EQUAL(HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED),
+                         console.ProcessHandleList.ConfigureWindowProcessPolicies(
+                             GetDesktopWindow(), unexpectedPolicyCall, unexpectedPolicyCall));
+    }
+
     TEST_METHOD(SetConsoleCursorPosition)
     {
         THROW_IF_FAILED(routines.SetConsoleCursorPositionImpl(*screenInfo, { 2, 3 }));

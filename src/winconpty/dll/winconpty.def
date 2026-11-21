@@ -9,6 +9,7 @@ EXPORTS
     ConptyReparentPseudoConsole
     ConptyReleasePseudoConsole
     ConptyPackPseudoConsole
+    ConptyConfigureForegroundBoost
 
     ; Compatibility aliases for P/Invoke; only required for compatibility
     ; with the ConPTY surface exported from kernel32.

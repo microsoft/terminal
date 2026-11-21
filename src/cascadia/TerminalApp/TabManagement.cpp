@@ -1131,7 +1131,7 @@ namespace winrt::TerminalApp::implementation
                 _UpdateBackground(profile);
             }
 
-            _adjustProcessPriorityThrottled->Run();
+            _adjustForegroundBoost();
         }
         CATCH_LOG();
     }

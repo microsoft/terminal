@@ -49,3 +49,5 @@ CONPTY_EXPORT HRESULT WINAPI ConptyReleasePseudoConsole(HPCON hPC);
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
+
+CONPTY_EXPORT HRESULT WINAPI ConptyConfigureForegroundBoost(HPCON hPC, HANDLE section, HANDLE changed, HANDLE* host);

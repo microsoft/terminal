@@ -63,6 +63,8 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
     if (it != _processes.end())
     {
         _processes.erase(it);
+        _PublishForegroundBoostClients();
+        LOG_IF_FAILED(_UpdateWindowProcessPolicies());
         delete pProcessData;
     }
     else
@@ -274,6 +276,132 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(const bool fForeground)
 
     // Do this for conhost.exe itself, too.
     _ModifyProcessForegroundRights(GetCurrentProcess(), fForeground);
+
+    // Connecting clients must be registered with USER before applying window policies.
+    _PublishForegroundBoostClients();
+    LOG_IF_FAILED(_UpdateWindowProcessPolicies());
+}
+
+HRESULT ConsoleProcessList::ConfigureWindowProcessPolicies(HWND window,
+                                                           WindowProcessPolicyCallback associateProcesses,
+                                                           WindowProcessPolicyCallback boostProcesses) noexcept
+{
+    const auto& console = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(console.IsConsoleLocked());
+    RETURN_HR_IF(E_INVALIDARG, !window || !associateProcesses || !boostProcesses);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED), console.IsInVtIoMode());
+
+    _policyWindow = window;
+    _associateWindowProcesses = associateProcesses;
+    _boostWindowProcesses = boostProcesses;
+    return _UpdateWindowProcessPolicies();
+}
+
+HRESULT ConsoleProcessList::_UpdateWindowProcessPolicies() const noexcept
+try
+{
+    const auto& console = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(console.IsConsoleLocked());
+    if (!_policyWindow || console.IsInVtIoMode())
+    {
+        return S_OK;
+    }
+
+    std::vector<HANDLE> processes;
+    HRESULT snapshotStatus = S_OK;
+    try
+    {
+        processes.reserve(_processes.size());
+        for (const auto process : _processes)
+        {
+            const auto handle = process->GetRawHandle();
+            THROW_HR_IF(E_HANDLE, !handle);
+            processes.push_back(handle);
+        }
+    }
+    catch (...)
+    {
+        snapshotStatus = wil::ResultFromCaughtException();
+        LOG_IF_FAILED(snapshotStatus);
+        processes.clear();
+    }
+
+    const auto count = gsl::narrow<DWORD>(processes.size());
+    auto qosStatus = _associateWindowProcesses(_policyWindow, count, count ? processes.data() : nullptr);
+    if (qosStatus == S_FALSE)
+    {
+        qosStatus = HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+    }
+    LOG_IF_FAILED(qosStatus);
+    const auto boostStatus = _boostWindowProcesses(_policyWindow, count, count ? processes.data() : nullptr);
+    LOG_IF_FAILED(boostStatus);
+    auto boostClearStatus = S_OK;
+    if (FAILED(boostStatus))
+    {
+        boostClearStatus = _boostWindowProcesses(_policyWindow, 0, nullptr);
+        LOG_IF_FAILED(boostClearStatus);
+    }
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "StandaloneConsoleQosGroup",
+                      TraceLoggingValue(reinterpret_cast<uintptr_t>(_policyWindow), "hwnd"),
+                      TraceLoggingUInt32(count, "ProcessCount"),
+                      TraceLoggingHResult(snapshotStatus, "SnapshotStatus"),
+                      TraceLoggingHResult(qosStatus, "QosStatus"),
+                      TraceLoggingHResult(boostStatus, "BoostStatus"),
+                      TraceLoggingHResult(boostClearStatus, "BoostClearStatus"));
+    for (const auto process : processes)
+    {
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "StandaloneConsoleQosMember",
+                          TraceLoggingUInt32(GetProcessId(process), "TargetProcessId"),
+                          TraceLoggingHResult(qosStatus, "QosStatus"),
+                          TraceLoggingHResult(boostStatus, "BoostStatus"));
+    }
+    return FAILED(qosStatus) ? qosStatus : FAILED(boostStatus) ? boostStatus : snapshotStatus;
+}
+CATCH_RETURN();
+
+void ConsoleProcessList::ConfigureForegroundBoostChannel(wil::unique_handle section, wil::unique_handle changed)
+{
+    using namespace Microsoft::Console;
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    wil::unique_mapview_ptr<ForegroundBoostSharedState> state{ static_cast<ForegroundBoostSharedState*>(
+        MapViewOfFile(section.get(), FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, sizeof(ForegroundBoostSharedState))) };
+    THROW_LAST_ERROR_IF_NULL(state);
+    THROW_HR_IF(HRESULT_FROM_WIN32(ERROR_REVISION_MISMATCH),
+                static_cast<DWORD>(state->version) != ForegroundBoostProtocol);
+    _foregroundBoostState = std::move(state);
+    _foregroundBoostSection = std::move(section);
+    _foregroundBoostChanged = std::move(changed);
+    _PublishForegroundBoostClients();
+}
+
+void ConsoleProcessList::_PublishForegroundBoostClients() noexcept
+{
+    if (!_foregroundBoostState)
+    {
+        return;
+    }
+    Microsoft::Console::ForegroundBoostSnapshot snapshot;
+    for (const auto process : _processes)
+    {
+        if (static_cast<size_t>(snapshot.count) == snapshot.clients.size())
+        {
+            snapshot.status = HRESULT_FROM_WIN32(ERROR_MORE_DATA);
+            LOG_IF_FAILED(snapshot.status);
+            break;
+        }
+        FILETIME creation{}, exit{}, kernel{}, user{};
+        if (!GetProcessTimes(process->GetRawHandle(), &creation, &exit, &kernel, &user))
+        {
+            snapshot.status = HRESULT_FROM_WIN32(GetLastError());
+            LOG_IF_FAILED(snapshot.status);
+            break;
+        }
+        snapshot.clients[snapshot.count++] = { process->dwProcessId, creation };
+    }
+    _foregroundBoostState->Publish(snapshot);
+    LOG_IF_WIN32_BOOL_FALSE(SetEvent(_foregroundBoostChanged.get()));
 }
 
 // Routine Description:
