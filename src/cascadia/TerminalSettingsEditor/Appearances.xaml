@@ -362,25 +362,32 @@
                 <!--  Font Size  -->
                 <local:SettingsCard x:Name="FontSize"
                                     x:Uid="Profile_FontSize"
+                                    Description="{x:Bind Appearance.FontSizeDescription, Mode=OneWay}"
                                     Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
-                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                        <muxc:NumberBox x:Name="_fontSizeBox"
-                                        x:Uid="Profile_FontSizeBox"
-                                        LargeChange="10"
-                                        Maximum="128"
-                                        Minimum="1"
-                                        SmallChange="1"
-                                        Style="{StaticResource NumberBoxSettingStyle}"
-                                        Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
-                        <local:SettingResetButton SettingName="FontSize"
-                                                  Target="{x:Bind Appearance}" />
+                    <StackPanel>
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <muxc:NumberBox x:Name="_fontSizeBox"
+                                            x:Uid="Profile_FontSizeBox"
+                                            LargeChange="10"
+                                            Maximum="128"
+                                            Minimum="1"
+                                            SmallChange="1"
+                                            Style="{StaticResource NumberBoxSettingStyle}"
+                                            Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+                            <local:SettingResetButton SettingName="FontSize"
+                                                      Target="{x:Bind Appearance}" />
+                        </StackPanel>
+                        <CheckBox x:Uid="Profile_ConhostFontSize"
+                                  Margin="0,4,0,0"
+                                  IsChecked="{x:Bind Appearance.ConhostFontSize, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingsCard>
 
                 <!--  Line Height  -->
                 <local:SettingsCard x:Name="LineHeight"
                                     x:Uid="Profile_LineHeight"
-                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
+                                    Style="{StaticResource ExpanderAlignedSettingsCardStyle}"
+                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Appearance.ConhostFontSize), Mode=OneWay}">
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <muxc:NumberBox x:Name="_lineHeightBox"
                                         x:Uid="Profile_LineHeightBox"
