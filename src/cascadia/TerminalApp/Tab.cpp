@@ -315,12 +315,18 @@ namespace winrt::TerminalApp::implementation
     // - Called after construction of a Tab object to bind event handlers to its
     //   associated Pane and TermControl objects
     // Arguments:
-    // - <none>
+    // - windowSettings: the settings for the window this tab is being added to
     // Return Value:
     // - <none>
-    void Tab::Initialize()
+    void Tab::Initialize(const WindowSettings& windowSettings)
     {
         ASSERT_UI_THREAD();
+
+        // GH#20749: Only apply the tab-level window settings here. Don't call
+        // UpdateSettings, because that would also push profile-only settings
+        // into each pane, clobbering any overrides from NewTerminalArgs (like
+        // --suppressApplicationTitle) that the panes were created with.
+        _UpdateHeaderControlMaxWidth(windowSettings);
 
         _rootPane->WalkTree([&](const auto& pane) {
             // Attach event handlers to each new pane
