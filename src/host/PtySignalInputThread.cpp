@@ -155,6 +155,28 @@ try
             _DoSetWindowParent(reparentMessage);
             break;
         }
+        case PtySignal::ForegroundBoostChannel:
+        {
+            ForegroundBoostChannelData message{};
+
+            if (!_GetData(&message, sizeof(message)))
+            {
+                return S_OK;
+            }
+
+            wil::unique_handle section{ reinterpret_cast<HANDLE>(message.section) };
+            wil::unique_handle changed{ reinterpret_cast<HANDLE>(message.changed) };
+            
+            try
+            {
+                LockConsole();
+                const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+                ServiceLocator::LocateGlobals().getConsoleInformation().ProcessHandleList.ConfigureForegroundBoostChannel(std::move(section), std::move(changed));
+            }
+            
+            CATCH_LOG();
+            break;
+        }
         default:
             THROW_HR(E_UNEXPECTED);
         }

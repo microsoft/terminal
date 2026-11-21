@@ -7,7 +7,7 @@
 
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <TerminalThemeHelpers.h>
-#include <til/hash.h>
+#include <ForegroundBoost.h>
 #include <til/unicode.h>
 #include <Utils.h>
 
@@ -477,16 +477,6 @@ namespace winrt::TerminalApp::implementation
             _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
         }
 
-        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
-            DispatcherQueue::GetForCurrentThread(),
-            til::throttled_func_options{
-                .delay = std::chrono::milliseconds{ 100 },
-                .debounce = true,
-                .trailing = true,
-            },
-            [=]() {
-                _adjustProcessPriority();
-            });
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
@@ -2055,6 +2045,19 @@ namespace winrt::TerminalApp::implementation
         term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
+        if (const auto connection = term.Connection())
+        {
+            if (const auto pty = connection.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
+            {
+                pty.ForegroundBoostClientsChanged([weak = get_weak()](auto&&, auto&&) -> safe_void_coroutine {
+                    if (const auto page = weak.get())
+                    {
+                        co_await wil::resume_foreground(page->Dispatcher());
+                        page->_adjustForegroundBoost();
+                    }
+                });
+            }
+        }
 
         term.PropertyChanged([weakThis = get_weak()](auto& /*sender*/, auto& e) {
             if (auto page{ weakThis.get() })
@@ -2806,7 +2809,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateBackground(profile);
         }
 
-        _adjustProcessPriorityThrottled->Run();
+        _adjustForegroundBoost();
     }
 
     uint32_t TerminalPage::NumberOfTabs() const
@@ -5029,7 +5032,7 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
-            _adjustProcessPriorityThrottled->Run();
+            _adjustForegroundBoost();
 
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
             {
@@ -5293,102 +5296,79 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_adjustProcessPriority() const
+    void TerminalPage::_adjustForegroundBoost() const
     {
-        // Windowing is single-threaded, so this will not cause a race condition.
-        static uint64_t s_lastUpdateHash{ 0 };
-        static bool s_supported{ true };
-
-        if (!s_supported || !_hostingHwnd.has_value())
+        if (!_hostingHwnd)
         {
             return;
         }
-
-        std::array<HANDLE, 32> processes;
-        auto it = processes.begin();
-        const auto end = processes.end();
-
-        auto&& appendFromControl = [&](auto&& control) {
-            if (it == end)
+        winrt::com_array<uint64_t> handles;
+        const auto closeHandles = wil::scope_exit([&]() noexcept {
+            for (const auto handle : handles)
             {
-                return;
+                CloseHandle(reinterpret_cast<HANDLE>(handle));
             }
-            if (control)
+        });
+        HRESULT snapshotStatus = S_OK;
+        try
+        {
+            if (const auto control = _GetActiveControl())
             {
-                if (const auto conn{ control.Connection() })
+                if (const auto connection = control.Connection())
                 {
-                    if (const auto pty{ conn.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>() })
+                    if (const auto pty = connection.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
                     {
-                        if (const uint64_t process{ pty.RootProcessHandle() }; process != 0)
-                        {
-                            *it++ = reinterpret_cast<HANDLE>(process);
-                        }
+                        handles = pty.AcquireForegroundBoostProcessHandles();
                     }
                 }
             }
-        };
-
-        auto&& appendFromTab = [&](auto&& tabImpl) {
-            if (const auto pane{ tabImpl->GetRootPane() })
-            {
-                pane->WalkTree([&](auto&& child) {
-                    if (const auto& control{ child->GetTerminalControl() })
-                    {
-                        appendFromControl(control);
-                    }
-                });
-            }
-        };
-
-        if (!_activated)
+        }
+        catch (...)
         {
-            // When a window is out of focus, we want to attach all of the processes
-            // under it to the window so they all go into the background at the same time.
-            for (auto&& tab : _tabs)
+            snapshotStatus = wil::ResultFromCaughtException();
+            LOG_IF_FAILED(snapshotStatus);
+        }
+        std::array<HANDLE, 32> processes{};
+        DWORD count = 0;
+
+        if (handles.size() > processes.size())
+        {
+            snapshotStatus = HRESULT_FROM_WIN32(ERROR_MORE_DATA);
+            LOG_IF_FAILED(snapshotStatus);
+        }
+
+        if (SUCCEEDED(snapshotStatus))
+        {
+            for (const auto handle : handles)
             {
-                if (auto tabImpl{ _GetTabImpl(tab) })
-                {
-                    appendFromTab(tabImpl);
-                }
+                processes[count++] = reinterpret_cast<HANDLE>(handle);
             }
         }
-        else
+        // Keep this association on focus loss so QoS continues to follow the window's visibility.
+        auto qosStatus = TerminalTrySetWindowAssociatedProcesses(
+            _hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        
+        if (qosStatus == S_FALSE)
         {
-            // When a window is in focus, propagate our foreground boost (if we have one)
-            // to current all panes in the current tab.
-            if (auto tabImpl{ _GetFocusedTabImpl() })
-            {
-                appendFromTab(tabImpl);
-            }
+            qosStatus = HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
         }
+        LOG_IF_FAILED(qosStatus);
+        const auto hr = ::Microsoft::Console::SetForegroundBoostProcesses(
+            _hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        LOG_IF_FAILED(hr);
+        auto boostClearStatus = S_OK;
 
-        const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
-        const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
-
-        if (hash == s_lastUpdateHash)
+        if (FAILED(hr))
         {
-            return;
+            boostClearStatus = ::Microsoft::Console::SetForegroundBoostProcesses(_hostingHwnd.value(), 0, nullptr);
+            LOG_IF_FAILED(boostClearStatus);
         }
-
-        s_lastUpdateHash = hash;
-        const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
-
-        if (S_FALSE == hr)
+        TraceLoggingWrite(g_hTerminalAppProvider, "AdditionalForegroundBoostGroup", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingBoolean(_activated, "Active"), TraceLoggingUInt32(count, "ProcessCount"), TraceLoggingHResult(snapshotStatus, "SnapshotStatus"), TraceLoggingHResult(qosStatus, "QosStatus"), TraceLoggingHResult(boostClearStatus, "BoostClearStatus"), TraceLoggingHResult(hr));
+        
+        for (DWORD i = 0; i < count; ++i)
         {
-            // Don't bother trying again or logging. The wrapper tells us it's unsupported.
-            s_supported = false;
-            return;
+            TraceLoggingWrite(g_hTerminalAppProvider, "AdditionalForegroundBoostMember", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingUInt32(GetProcessId(processes[i]), "TargetProcessId"), TraceLoggingHResult(hr));
         }
-
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "CalledNewQoSAPI",
-            TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
-            TraceLoggingValue(count),
-            TraceLoggingHResult(hr));
-#ifdef _DEBUG
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to TerminalTrySetWindowAssociatedProcesses; return=0x{:08x}\n"), count, hr).c_str());
-#endif
     }
 
     void TerminalPage::WindowActivated(const bool activated)
@@ -5398,7 +5378,7 @@ namespace winrt::TerminalApp::implementation
         _activated = activated;
         _updateThemeColors();
 
-        _adjustProcessPriorityThrottled->Run();
+        _adjustForegroundBoost();
 
         if (const auto& tab{ _GetFocusedTabImpl() })
         {

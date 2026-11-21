@@ -18,6 +18,7 @@ Revision History:
 #pragma once
 
 #include "ProcessHandle.h"
+#include "../inc/ForegroundBoost.h"
 
 // this structure is used to store relevant information from the console for ctrl processing so we can do it without
 // holding the console lock.
@@ -34,6 +35,8 @@ struct ConsoleProcessTerminationRecord
 class ConsoleProcessList
 {
 public:
+    using WindowProcessPolicyCallback = HRESULT (*)(HWND, DWORD, PHANDLE);
+
     [[nodiscard]] HRESULT AllocProcessData(const DWORD dwProcessId,
                                            const DWORD dwThreadId,
                                            const ULONG ulProcessGroupId,
@@ -54,11 +57,24 @@ public:
                                          _Inout_ size_t* const pcProcessList) const;
 
     void ModifyConsoleProcessFocus(const bool fForeground);
+    void ConfigureForegroundBoostChannel(wil::unique_handle section, wil::unique_handle changed);
+    [[nodiscard]] HRESULT ConfigureWindowProcessPolicies(HWND window,
+                                                         WindowProcessPolicyCallback associateProcesses,
+                                                         WindowProcessPolicyCallback boostProcesses) noexcept;
 
     bool IsEmpty() const;
 
 private:
     std::vector<ConsoleProcessHandle*> _processes;
+    wil::unique_handle _foregroundBoostSection;
+    wil::unique_mapview_ptr<Microsoft::Console::ForegroundBoostSharedState> _foregroundBoostState;
+    wil::unique_handle _foregroundBoostChanged;
+    HWND _policyWindow = nullptr;
+    WindowProcessPolicyCallback _associateWindowProcesses = nullptr;
+    WindowProcessPolicyCallback _boostWindowProcesses = nullptr;
+
+    void _PublishForegroundBoostClients() noexcept;
+    [[nodiscard]] HRESULT _UpdateWindowProcessPolicies() const noexcept;
 
     void _ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const;
 };
