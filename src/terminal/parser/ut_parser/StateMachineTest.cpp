@@ -161,6 +161,11 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
 
     TEST_METHOD(DcsDataStringsReceivedByHandler);
 
+    TEST_METHOD(InputApcStringFlushedVerbatim);
+    TEST_METHOD(InputSosStringFlushedVerbatim);
+    TEST_METHOD(InputApcStringAbortedByCsiStaysDropped);
+    TEST_METHOD(OutputApcStringNotPassedThrough);
+
     TEST_METHOD(VtParameterSubspanTest);
 };
 
@@ -200,6 +205,58 @@ void StateMachineTest::PassThroughUnhandled()
 
     VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
     VERIFY_ARE_EQUAL(String(L" 12345 Hello World"), String(engine.printed.c_str()));
+}
+
+// GH#1173: On the input path an APC string (as used by the kitty graphics
+// protocol) must be flushed verbatim through ActionPassThroughString, exactly
+// like a DCS string already is, instead of being dropped.
+void StateMachineTest::InputApcStringFlushedVerbatim()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
+
+    machine.ProcessString(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\");
+
+    VERIFY_ARE_EQUAL(String(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\"), String(engine.passedThrough.c_str()));
+}
+
+// SOS and PM share the string state with APC; they get the same treatment.
+void StateMachineTest::InputSosStringFlushedVerbatim()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
+
+    machine.ProcessString(L"\x1bXsome sos string\x1b\\");
+
+    VERIFY_ARE_EQUAL(String(L"\x1bXsome sos string\x1b\\"), String(engine.passedThrough.c_str()));
+}
+
+// An APC string aborted by something other than its ST stays dropped, and the
+// following sequence must not leak the pending flush.
+void StateMachineTest::InputApcStringAbortedByCsiStaysDropped()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
+
+    machine.ProcessString(L"\x1b_Ga=q;AAAA\x1b[31m");
+
+    VERIFY_ARE_EQUAL(String(L""), String(engine.passedThrough.c_str()));
+}
+
+// The output path is unaffected: APC strings are still not relayed through the
+// engine there (the caller relays the raw string itself in ConPTY mode).
+void StateMachineTest::OutputApcStringNotPassedThrough()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    auto& engine{ *enginePtr.get() };
+    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/false };
+
+    machine.ProcessString(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\");
+
+    VERIFY_ARE_EQUAL(String(L""), String(engine.passedThrough.c_str()));
 }
 
 void StateMachineTest::RunStorageBeforeEscape()

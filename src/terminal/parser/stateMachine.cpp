@@ -442,6 +442,24 @@ void StateMachine::_ActionPrintString(const std::wstring_view string)
 void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
+
+    // GH#1173: If an SOS/PM/APC string was pending on the input path, this
+    // ESC dispatch is that string's terminator (ESC \ = ST). Flush the whole
+    // string verbatim through ActionPassThroughString - the same treatment
+    // DCS strings already get - instead of dropping it and letting the ST be
+    // misinterpreted as an Alt+\ keypress. The run still holds every
+    // character since the last ground state, so FlushToTerminal relays the
+    // complete sequence.
+    if (_pendingSosPmApcFlush)
+    {
+        _pendingSosPmApcFlush = false;
+        if (wch == L'\\') // ESC \ = ST: the string is complete
+        {
+            FlushToTerminal();
+            return;
+        }
+    }
+
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionEscDispatch(_identifier.Finalize(wch));
     }));
@@ -761,6 +779,7 @@ void StateMachine::_EnterGround() noexcept
 {
     _state = VTStates::Ground;
     _cachedSequence.reset(); // entering ground means we've completed the pending sequence
+    _pendingSosPmApcFlush = false; // ... and any pending SOS/PM/APC flush with it
     _trace.TraceStateChange(L"Ground");
 }
 
@@ -1850,6 +1869,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     if (isFromAnywhereChar && !(_state == VTStates::Escape && _isEngineForInput))
     {
         _ActionInterrupt();
+        // A CAN/SUB aborts any pending SOS/PM/APC string; drop it like DCS does.
+        _pendingSosPmApcFlush = false;
         _ActionExecute(wch);
         _EnterGround();
     }
@@ -1871,6 +1892,12 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::OscParam)
     {
         _ActionInterrupt();
+        // GH#1173: On the input path, an ESC while we're inside a SOS/PM/APC
+        // string is the beginning of that string's terminator (ESC \). Mark the
+        // string as pending so _ActionEscDispatch flushes it verbatim once the
+        // ST lands - matching what the DCS passthrough already does. If what
+        // follows is not an ST, the string was aborted and stays dropped.
+        _pendingSosPmApcFlush = _isEngineForInput && _state == VTStates::SosPmApcString;
         _EnterEscape();
     }
     else

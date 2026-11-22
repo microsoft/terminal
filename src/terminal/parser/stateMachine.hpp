@@ -224,6 +224,9 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
+        // True while an SOS/PM/APC string is pending a verbatim flush on the
+        // input path (set when ESC terminates the string, consumed on ST).
+        bool _pendingSosPmApcFlush = false;
         til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
