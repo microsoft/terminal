@@ -228,9 +228,9 @@ void StateMachineTest::InputSosStringFlushedVerbatim()
     auto& engine{ *enginePtr.get() };
     StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
 
-    machine.ProcessString(L"\x1bXsome sos string\x1b\\");
+    machine.ProcessString(L"\x1bX some sos string\x1b\\");
 
-    VERIFY_ARE_EQUAL(String(L"\x1bXsome sos string\x1b\\"), String(engine.passedThrough.c_str()));
+    VERIFY_ARE_EQUAL(String(L"\x1bX some sos string\x1b\\"), String(engine.passedThrough.c_str()));
 }
 
 // An APC string aborted by something other than its ST stays dropped, and the
