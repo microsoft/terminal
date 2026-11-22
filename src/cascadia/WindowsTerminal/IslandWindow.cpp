@@ -1368,6 +1368,15 @@ static void _setWindowRegion(const HWND hwnd, const til::rect* rect) noexcept
     }
 }
 
+// Cloaks or uncloaks the window. DWM doesn't draw cloaked windows at all
+// (including any of its own transitions), but they otherwise behave as if
+// they were visible.
+static void _setCloaked(const HWND hwnd, const bool cloaked) noexcept
+{
+    const BOOL value = cloaked;
+    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &value, sizeof(value)));
+}
+
 // Method Description:
 // - Helper for performing a sliding animation. This slides the _entire_
 //   window (frame and all) in from (or out past) the edge it's docked to.
@@ -1386,13 +1395,12 @@ static void _setWindowRegion(const HWND hwnd, const til::rect* rect) noexcept
 // - This function does the entire animation on the main thread (the UI thread),
 //   and **DOES NOT YIELD IT**. The window will be animating for the entire
 //   duration of dropdownDuration.
-// - When appearing, the window must already be at its final position, hidden
-//   with an empty region. When this returns, the window will be in its final
-//   position, with no region.
+// - When appearing, the window must already be at its final position, and
+//   cloaked. When this returns, the window will be in its final position,
+//   uncloaked, with no region.
 // - When disappearing, the window must be visible. When this returns, the
-//   window will be back in its original position, but hidden with an empty
-//   region. The caller is responsible for removing the region once the window
-//   has been minimized.
+//   window will be back in its original position, but cloaked. The caller is
+//   responsible for uncloaking it once the window has been minimized.
 // Arguments:
 // - dropdownDuration: The duration to play the animation, in milliseconds.
 // - appearing: if true, slide the window in. Otherwise, slide it out.
@@ -1560,15 +1568,10 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
 
     if (appearing)
     {
-        // Put the window entirely past the edge. It's still hidden by the
-        // empty region our caller gave it.
+        // Put the window entirely past the edge while it's still cloaked,
+        // then uncloak it. Nothing of it is visible yet.
         applyFrame(extent, true);
-        if (slide && !needsRegion)
-        {
-            // Nothing past the edge is on screen, so we can drop the region
-            // entirely, keeping the DWM shadow and rounded corners.
-            _setWindowRegion(hwnd, nullptr);
-        }
+        _setCloaked(hwnd, false);
     }
 
     const auto duration = std::chrono::milliseconds{ dropdownDuration };
@@ -1601,10 +1604,10 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
     else
     {
         applyFrame(extent, false);
-        // Hide the window entirely, then put it back where it belongs, so
-        // that it's restored to the right place next time.
-        const til::rect empty{};
-        _setWindowRegion(hwnd, &empty);
+        // Cloak the window, then put it back where it belongs (without a
+        // region), so that it's restored to the right place next time.
+        _setCloaked(hwnd, true);
+        _setWindowRegion(hwnd, nullptr);
         SetWindowPos(hwnd, nullptr, finalRect.left, finalRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
 }
@@ -1633,15 +1636,16 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
 
     const auto restoreTransitions = _suppressDwmTransitions(_window.get());
 
-    // Hide the entire window (including its frame) with an empty region
-    // before we show it. Otherwise, the window would flash at its full size
-    // before the animation starts.
-    const til::rect empty{};
-    _setWindowRegion(_window.get(), &empty);
+    // Cloak the entire window (including its frame) before we restore it.
+    // DWM doesn't draw cloaked windows at all, so this hides both the
+    // standard restore animation and the window at its full size, until
+    // _doSlideAnimation has moved it past the docked edge.
+    _setCloaked(_window.get(), true);
+    // Make sure we never leave the window cloaked, even if something throws.
+    auto uncloak = wil::scope_exit([this]() { _setCloaked(_window.get(), false); });
 
-    // First, restore the window. SetWindowPlacement has a fun undocumented
-    // piece of functionality where it will restore the window position
-    // _without_ the animation, so use that instead of ShowWindow(SW_RESTORE).
+    // First, restore the window. Use SetWindowPlacement rather than
+    // ShowWindow(SW_RESTORE), to restore it to its docked position.
     WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
@@ -1665,21 +1669,21 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
 void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 {
     const auto restoreTransitions = _suppressDwmTransitions(_window.get());
+    // Uncloak once we're minimized, so the window is visible the next time
+    // it's restored (with or without an animation).
+    auto uncloak = wil::scope_exit([this]() { _setCloaked(_window.get(), false); });
 
-    // First, animate the window sliding up. This leaves the window hidden by
-    // an empty region, in its original position.
+    // First, animate the window sliding up. This leaves the window cloaked,
+    // in its original position.
     _doSlideAnimation(dropdownDuration, false);
 
-    // Then, use SetWindowPlacement to minimize without the animation.
+    // Then minimize it. It's cloaked, so the standard minimize animation
+    // won't be visible.
     WINDOWPLACEMENT wpc{};
     wpc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_MINIMIZE;
     SetWindowPlacement(_window.get(), &wpc);
-
-    // Now that we're minimized, remove the region, so the window is visible
-    // the next time it's restored (with or without an animation).
-    _setWindowRegion(_window.get(), nullptr);
 }
 
 // Method Description:
