@@ -621,7 +621,11 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     }
     case WM_MOVE:
     {
-        WindowMoved.raise();
+        // Don't dismiss popups etc. for every frame of a slide animation.
+        if (!_slideAnimating)
+        {
+            WindowMoved.raise();
+        }
         break;
     }
     case WM_CLOSE:
@@ -680,7 +684,9 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     {
         // GH#10274 - if the docked window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
-        if (_docked())
+        // Don't do this while we're sliding the window in or out though,
+        // since that intentionally moves the window past its docked edge.
+        if (_docked() && !_slideAnimating)
         {
             // Retrieve the suggested dimensions and make a rect and size.
             auto lpwpos = (LPWINDOWPOS)lparam;
@@ -1344,92 +1350,276 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
     }
 }
 
+// Sets the region of the top-level window, which clips _everything_ about the
+// window, including the DWM frame. Pass nullptr to remove the region.
+static void _setWindowRegion(const HWND hwnd, const til::rect* rect) noexcept
+{
+    if (!rect)
+    {
+        SetWindowRgn(hwnd, nullptr, TRUE);
+        return;
+    }
+
+    wil::unique_hrgn rgn{ CreateRectRgn(rect->left, rect->top, rect->right, rect->bottom) };
+    // On success, the system owns the region, so we must not delete it.
+    if (rgn && SetWindowRgn(hwnd, rgn.get(), TRUE))
+    {
+        rgn.release();
+    }
+}
+
 // Method Description:
-// - Helper for performing a sliding animation. This will animate our _Xaml
-//   Island_, either growing down or shrinking up, using SetWindowRgn.
+// - Helper for performing a sliding animation. This slides the _entire_
+//   window (frame and all) in from (or out past) the edge it's docked to.
+// - We can't resize the window during the animation, because that would
+//   resize (and reflow) all the terminal buffers. Instead, we only ever move
+//   the window, and use a region on the top-level window to clip off any part
+//   of it that's past the docked edge.
+// - If there's no monitor on the other side of the docked edge, we don't need
+//   a region at all - the part of the window past the edge is just off-screen.
+//   That's the best case, because a region on a top-level window disables the
+//   DWM shadow and rounded corners.
+// - If there's a monitor on the other side of the edge with a different DPI,
+//   then moving the window onto it would trigger a DPI change (and a resize),
+//   so in that case we leave the window where it is and just "wipe" it in with
+//   a region instead.
 // - This function does the entire animation on the main thread (the UI thread),
 //   and **DOES NOT YIELD IT**. The window will be animating for the entire
 //   duration of dropdownDuration.
-// - At the end of the animation, we'll reset the window region, so that it's as
-//   if nothing occurred.
+// - When appearing, the window must already be at its final position, hidden
+//   with an empty region. When this returns, the window will be in its final
+//   position, with no region.
+// - When disappearing, the window must be visible. When this returns, the
+//   window will be back in its original position, but hidden with an empty
+//   region. The caller is responsible for removing the region once the window
+//   has been minimized.
 // Arguments:
-// - dropdownDuration: The duration to play the animation, in milliseconds. If
-//   0, we won't perform a dropdown animation.
-// - down: if true, increase the height from top to bottom. otherwise, decrease
-//   the height, from bottom to top.
+// - dropdownDuration: The duration to play the animation, in milliseconds.
+// - appearing: if true, slide the window in. Otherwise, slide it out.
 // Return Value:
 // - <none>
 void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool appearing)
 {
-    til::rect fullWindowSize{ GetWindowRect() };
-    const auto fullWidth = fullWindowSize.width();
-    const auto fullHeight = fullWindowSize.height();
+    using winrt::Microsoft::Terminal::Settings::Model::DockPosition;
 
-    // Determine which axis to animate based on the dock side.
-    const auto side = _dockingSettings ? _dockingSettings.Side() : winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top;
-    const bool horizontal = (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left || side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right);
+    const auto hwnd = _window.get();
+    const til::rect finalRect{ GetWindowRect() };
+    const auto width = finalRect.width();
+    const auto height = finalRect.height();
 
-    const double animationDuration = dropdownDuration; // use floating-point math throughout
-    const auto start = std::chrono::system_clock::now();
+    auto side = _dockingSettings ? _dockingSettings.Side() : DockPosition::Top;
+    if (side == DockPosition::None)
+    {
+        side = DockPosition::Top;
+    }
+    const auto horizontal = side == DockPosition::Left || side == DockPosition::Right;
+    const auto extent = horizontal ? width : height;
 
-    // Do at most dropdownDuration frames. After that, just bail straight to the
-    // final state.
+    // The area the window will occupy past its docked edge, once it's slid out
+    // entirely.
+    RECT beyondEdge{ finalRect.left, finalRect.top, finalRect.right, finalRect.bottom };
+    switch (side)
+    {
+    case DockPosition::Top:
+        beyondEdge.top -= height;
+        beyondEdge.bottom = finalRect.top;
+        break;
+    case DockPosition::Bottom:
+        beyondEdge.top = finalRect.bottom;
+        beyondEdge.bottom += height;
+        break;
+    case DockPosition::Left:
+        beyondEdge.left -= width;
+        beyondEdge.right = finalRect.left;
+        break;
+    case DockPosition::Right:
+        beyondEdge.left = finalRect.right;
+        beyondEdge.right += width;
+        break;
+    }
+
+    struct MonitorCheck
+    {
+        RECT area;
+        UINT dpi;
+        bool anyMonitor;
+        bool dpiMismatch;
+    } check{ beyondEdge, GetDpiForWindow(hwnd), false, false };
+
+    EnumDisplayMonitors(
+        nullptr, &beyondEdge, [](HMONITOR hmon, HDC, LPRECT, LPARAM lParam) -> BOOL {
+            auto& check = *reinterpret_cast<MonitorCheck*>(lParam);
+            MONITORINFO mi{};
+            mi.cbSize = sizeof(mi);
+            RECT overlap{};
+            if (GetMonitorInfoW(hmon, &mi) && IntersectRect(&overlap, &check.area, &mi.rcMonitor))
+            {
+                check.anyMonitor = true;
+                UINT dpiX = USER_DEFAULT_SCREEN_DPI;
+                UINT dpiY = USER_DEFAULT_SCREEN_DPI;
+                if (FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)) || dpiX != check.dpi)
+                {
+                    check.dpiMismatch = true;
+                }
+            }
+            return TRUE;
+        },
+        reinterpret_cast<LPARAM>(&check));
+
+    const auto slide = !check.dpiMismatch;
+    const auto needsRegion = check.anyMonitor;
+
+    // Moves the window / sets the region such that `hidden` pixels of the
+    // window are hidden past the docked edge.
+    const auto applyFrame = [&](const til::CoordType hidden, const bool growing) {
+        // When sliding, clip off the part of the window that's past the edge.
+        // When wiping, clip off the far side of the window instead.
+        til::point offset{};
+        til::rect visible{ 0, 0, width, height };
+        switch (side)
+        {
+        case DockPosition::Top:
+            offset.y = -hidden;
+            if (slide)
+            {
+                visible.top = hidden;
+            }
+            else
+            {
+                visible.bottom = height - hidden;
+            }
+            break;
+        case DockPosition::Bottom:
+            offset.y = hidden;
+            if (slide)
+            {
+                visible.bottom = height - hidden;
+            }
+            else
+            {
+                visible.top = hidden;
+            }
+            break;
+        case DockPosition::Left:
+            offset.x = -hidden;
+            if (slide)
+            {
+                visible.left = hidden;
+            }
+            else
+            {
+                visible.right = width - hidden;
+            }
+            break;
+        case DockPosition::Right:
+            offset.x = hidden;
+            if (slide)
+            {
+                visible.right = width - hidden;
+            }
+            else
+            {
+                visible.left = hidden;
+            }
+            break;
+        }
+
+        const auto move = [&]() {
+            const auto origin = finalRect.origin() + offset;
+            SetWindowPos(hwnd, nullptr, origin.x, origin.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+        };
+
+        if (!slide)
+        {
+            _setWindowRegion(hwnd, &visible);
+        }
+        else if (!needsRegion)
+        {
+            move();
+        }
+        else if (growing)
+        {
+            // Move first, then grow the region: the old (smaller) region at
+            // the new position never shows anything past the edge.
+            move();
+            _setWindowRegion(hwnd, &visible);
+        }
+        else
+        {
+            // Shrink the region first, then move, for the same reason.
+            _setWindowRegion(hwnd, &visible);
+            move();
+        }
+    };
+
+    // While we're animating, we're intentionally moving the window off of its
+    // docked position (possibly onto another monitor). Don't let our
+    // WM_WINDOWPOSCHANGING / WM_MOVE handling interfere with that.
+    _slideAnimating = true;
+    auto resetAnimating = wil::scope_exit([this]() { _slideAnimating = false; });
+
+    if (appearing)
+    {
+        // Put the window entirely past the edge. It's still hidden by the
+        // empty region our caller gave it.
+        applyFrame(extent, true);
+        if (slide && !needsRegion)
+        {
+            // Nothing past the edge is on screen, so we can drop the region
+            // entirely, keeping the DWM shadow and rounded corners.
+            _setWindowRegion(hwnd, nullptr);
+        }
+    }
+
+    const auto duration = std::chrono::milliseconds{ dropdownDuration };
+    const auto start = std::chrono::steady_clock::now();
+    // Bound the number of frames, just in case DwmFlush returns immediately.
     for (uint32_t i = 0; i < dropdownDuration; i++)
     {
-        const auto end = std::chrono::system_clock::now();
-        const auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        const auto dt = static_cast<double>(millis.count());
-
-        if (dt > animationDuration)
+        const auto elapsed = std::chrono::steady_clock::now() - start;
+        if (elapsed >= duration)
         {
             break;
         }
 
-        const auto progress = dt / animationDuration;
-        // When appearing, animate from 0 to full. When disappearing, animate from full to 0.
-        const auto fraction = appearing ? progress : (1.0 - progress);
+        const auto progress = std::chrono::duration<double>(elapsed) / duration;
+        // Ease out when appearing (decelerate into place), and ease in when
+        // disappearing (accelerate away).
+        const auto hiddenFraction = appearing ? std::pow(1.0 - progress, 3.0) : std::pow(progress, 3.0);
+        applyFrame(::base::saturated_cast<til::CoordType>(std::lround(hiddenFraction * extent)), appearing);
 
-        int left = 0, top = 0, right = fullWidth, bottom = fullHeight;
-
-        if (horizontal)
-        {
-            const auto currentWidth = ::base::saturated_cast<int>(fraction * fullWidth);
-            if (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left)
-            {
-                // Grow from left edge
-                right = currentWidth;
-            }
-            else // Right
-            {
-                // Grow from right edge
-                left = fullWidth - currentWidth;
-            }
-        }
-        else
-        {
-            const auto currentHeight = ::base::saturated_cast<int>(fraction * fullHeight);
-            if (side == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top)
-            {
-                // Grow from top edge
-                bottom = currentHeight;
-            }
-            else // Bottom
-            {
-                // Grow from bottom edge
-                top = fullHeight - currentHeight;
-            }
-        }
-
-        wil::unique_hrgn rgn{ CreateRectRgn(left, top, right, bottom) };
-        SetWindowRgn(_interopWindowHandle, rgn.get(), true);
-
-        // Go immediately into another frame. This prevents the window from
-        // doing anything else (tearing our state). A Sleep() here will cause a
-        // weird stutter, and causes the animation to not be as smooth.
+        // Wait for DWM to present this frame before we do the next one. This
+        // keeps us in step with the compositor.
+        DwmFlush();
     }
 
-    // Reset the window.
-    SetWindowRgn(_interopWindowHandle, nullptr, true);
+    if (appearing)
+    {
+        applyFrame(0, true);
+        _setWindowRegion(hwnd, nullptr);
+    }
+    else
+    {
+        applyFrame(extent, false);
+        // Hide the window entirely, then put it back where it belongs, so
+        // that it's restored to the right place next time.
+        const til::rect empty{};
+        _setWindowRegion(hwnd, &empty);
+        SetWindowPos(hwnd, nullptr, finalRect.left, finalRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    }
+}
+
+// Disables the DWM minimize/restore transitions for the window until the
+// returned object is destroyed. Otherwise, DWM will play its own "zoom"
+// transition on top of our slide animation.
+[[nodiscard]] static auto _suppressDwmTransitions(const HWND hwnd) noexcept
+{
+    BOOL disable = TRUE;
+    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &disable, sizeof(disable)));
+    return wil::scope_exit([hwnd]() noexcept {
+        BOOL disable = FALSE;
+        LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &disable, sizeof(disable)));
+    });
 }
 
 void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
@@ -1440,6 +1630,14 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     // GetForegroundWindow after the SetWindowPlacement call, _we_ will be the
     // foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
+
+    const auto restoreTransitions = _suppressDwmTransitions(_window.get());
+
+    // Hide the entire window (including its frame) with an empty region
+    // before we show it. Otherwise, the window would flash at its full size
+    // before the animation starts.
+    const til::rect empty{};
+    _setWindowRegion(_window.get(), &empty);
 
     // First, restore the window. SetWindowPlacement has a fun undocumented
     // piece of functionality where it will restore the window position
@@ -1466,7 +1664,10 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
 
 void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 {
-    // First, animate the window sliding up.
+    const auto restoreTransitions = _suppressDwmTransitions(_window.get());
+
+    // First, animate the window sliding up. This leaves the window hidden by
+    // an empty region, in its original position.
     _doSlideAnimation(dropdownDuration, false);
 
     // Then, use SetWindowPlacement to minimize without the animation.
@@ -1475,6 +1676,10 @@ void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
     GetWindowPlacement(_window.get(), &wpc);
     wpc.showCmd = SW_MINIMIZE;
     SetWindowPlacement(_window.get(), &wpc);
+
+    // Now that we're minimized, remove the region, so the window is visible
+    // the next time it's restored (with or without an animation).
+    _setWindowRegion(_window.get(), nullptr);
 }
 
 // Method Description:

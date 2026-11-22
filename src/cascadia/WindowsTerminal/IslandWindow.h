@@ -144,6 +144,7 @@ protected:
     winrt::Microsoft::Terminal::Settings::Model::Docking _dockingSettings{ nullptr };
     bool _centered{ false };
     bool _autoHideWindow{ false };
+    bool _slideAnimating{ false };
 
     void _applyDocking();
     til::rect _getDockedSize(HMONITOR hmon);
