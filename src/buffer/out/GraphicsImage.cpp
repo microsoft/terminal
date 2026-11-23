@@ -42,9 +42,9 @@ static constexpr char32_t s_placeholderDiacritics[]{
 
 int GraphicsPlaceholder::DiacriticValue(const char32_t ch) noexcept
 {
-#pragma warning(suppress : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
-    const auto it = std::lower_bound(std::begin(s_placeholderDiacritics), std::end(s_placeholderDiacritics), ch);
-    return it != std::end(s_placeholderDiacritics) && *it == ch ? gsl::narrow_cast<int>(it - std::begin(s_placeholderDiacritics)) : -1;
+    const std::span diacritics{ s_placeholderDiacritics };
+    const auto it = std::ranges::lower_bound(diacritics, ch);
+    return it != diacritics.end() && *it == ch ? gsl::narrow_cast<int>(it - diacritics.begin()) : -1;
 }
 
 size_t GraphicsImage::ByteSize() const noexcept

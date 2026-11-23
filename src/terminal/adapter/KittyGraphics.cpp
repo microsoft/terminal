@@ -10,6 +10,7 @@
 
 #include <unordered_set>
 #include <wincodec.h>
+#define ZLIB_CONST
 #include <zlib.h>
 
 using namespace Microsoft::Console::Types;
@@ -168,13 +169,14 @@ namespace
             return false;
         }
         out.resize(gsl::narrow_cast<size_t>(toRead));
+        const std::span buffer{ out };
         size_t total = 0;
-        while (total < out.size())
+        while (total < buffer.size())
         {
             DWORD read = 0;
-            const auto chunk = gsl::narrow_cast<DWORD>(std::min<size_t>(out.size() - total, 1 << 30));
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-            if (!ReadFile(file.get(), out.data() + total, chunk, &read, nullptr) || read == 0)
+            const auto remaining = buffer.subspan(total);
+            const auto chunk = gsl::narrow_cast<DWORD>(std::min<size_t>(remaining.size(), 1 << 30));
+            if (!ReadFile(file.get(), remaining.data(), chunk, &read, nullptr) || read == 0)
             {
                 return false;
             }
@@ -217,8 +219,8 @@ namespace
         {
             return false;
         }
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        out.assign(view.get() + offset, view.get() + offset + toRead);
+        const auto mapped = std::span{ view.get(), gsl::narrow_cast<size_t>(mappedSize) }.subspan(gsl::narrow_cast<size_t>(offset), gsl::narrow_cast<size_t>(toRead));
+        out.assign(mapped.begin(), mapped.end());
         return true;
     }
 
@@ -262,14 +264,12 @@ namespace
         auto cleanup = wil::scope_exit([&]() noexcept { inflateEnd(&stream); });
 
         output.resize(expectedSize ? expectedSize : std::max<size_t>(input.size() * 4, 4096));
-#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
-        stream.next_in = const_cast<Bytef*>(input.data());
+        stream.next_in = input.data();
         stream.avail_in = gsl::narrow_cast<uInt>(input.size());
         size_t produced = 0;
         for (;;)
         {
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-            stream.next_out = output.data() + produced;
+            stream.next_out = std::span{ output }.subspan(produced).data();
             stream.avail_out = gsl::narrow_cast<uInt>(std::min<size_t>(output.size() - produced, UINT_MAX));
             const auto before = stream.avail_out;
             const auto result = inflate(&stream, Z_NO_FLUSH);
@@ -1024,8 +1024,7 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     case L'f':
     case L't':
     {
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-        const auto path = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
+        const auto path = til::u8u16(std::string{ data.begin(), data.end() });
         std::wstring finalPath;
         if (!readFile(path, control.Get('O'), control.Get('S'), bytes, finalPath))
         {
@@ -1042,8 +1041,7 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     }
     case L's':
     {
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-        const auto name = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
+        const auto name = til::u8u16(std::string{ data.begin(), data.end() });
         if (!readSharedMemory(name, control.Get('O'), control.Get('S'), bytes))
         {
             error = { L"EBADF", L"Failed to read shared memory" };

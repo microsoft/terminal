@@ -345,6 +345,38 @@ ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
     return r;
 }
 
+// Removes the graphics references matching the predicate from every committed row.
+bool TextBuffer::EraseGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate)
+{
+    auto erased = false;
+    const auto committed = gsl::narrow_cast<uintptr_t>(_commitWatermark - _buffer.get());
+    for (uintptr_t offset = 0; offset < committed; offset += _bufferRowStride)
+    {
+        auto& graphics = reinterpret_cast<ROW*>(_buffer.get() + offset)->GetMutableGraphics();
+        if (!graphics.empty())
+        {
+            erased |= std::erase_if(graphics, predicate) != 0;
+        }
+    }
+    return erased;
+}
+
+bool TextBuffer::AnyGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate) const
+{
+    const auto committed = gsl::narrow_cast<uintptr_t>(_commitWatermark - _buffer.get());
+    for (uintptr_t offset = 0; offset < committed; offset += _bufferRowStride)
+    {
+        for (const auto& ref : reinterpret_cast<const ROW*>(_buffer.get() + offset)->GetGraphics())
+        {
+            if (predicate(ref))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 #pragma warning(pop)
 #pragma endregion
 
@@ -993,43 +1025,6 @@ const GraphicsStore* TextBuffer::TryGetGraphicsStore() const noexcept
 {
     return _graphicsStore.get();
 }
-
-#pragma warning(push)
-#pragma warning(disable : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
-#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
-
-// Removes the graphics references matching the predicate from every committed row.
-bool TextBuffer::EraseGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate)
-{
-    auto erased = false;
-    for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
-    {
-        auto& graphics = reinterpret_cast<ROW*>(it)->GetMutableGraphics();
-        if (!graphics.empty())
-        {
-            erased |= std::erase_if(graphics, predicate) != 0;
-        }
-    }
-    return erased;
-}
-
-bool TextBuffer::AnyGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate) const
-{
-    for (auto it = _buffer.get(); it < _commitWatermark; it += _bufferRowStride)
-    {
-        for (const auto& ref : reinterpret_cast<const ROW*>(it)->GetGraphics())
-        {
-            if (predicate(ref))
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-#pragma warning(pop)
 
 bool TextBuffer::EraseGraphicsInRows(const til::CoordType rowBegin, const til::CoordType rowEnd)
 {
