@@ -2,7 +2,7 @@ parameters:
   buildConfiguration: 'Release'
   buildPlatform: ''
   artifactStem: ''
-  testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
+  testLogPath: 'pgo.trx'
 
 jobs:
 - job: PGO${{ parameters.buildPlatform }}${{ parameters.buildConfiguration }}
@@ -69,7 +69,7 @@ jobs:
         -Configuration '$(BuildConfiguration)'
         -LogPath '${{ parameters.testLogPath }}'
         -Root "$(Terminal.BinDir)"
-        -AdditionalTaefArguments '/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
+        -AdditionalTaefArguments '/logger:trx','/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
 
   - task: CopyFiles@2
     displayName: 'Copy PGO outputs to Artifacts'
