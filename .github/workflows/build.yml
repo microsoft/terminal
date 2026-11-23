@@ -189,44 +189,9 @@ jobs:
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      # TAEF uses "Skipped" instead of "NotExecuted" for skipped tests,
-      # and leaves out a timing field expected by the result reporter.
-      # We also massage the C++-style namespaces to C#-style namespaces
-      # for prettier final output.
-      # (The result reporter expects standard `dotnet test` output)
+      # See the synopsis in Convert-TeTrxToMsTest for more info
       - run: |-
-          $ErrorActionPreference = "Stop"
-          $trxFile = (Join-Path $PWD "Te.trx")
-          $trx=[xml](Get-Content $trxFile)
-          $trx.TestRun.Results.UnitTestResult | Where-Object outcome -eq "Skipped" | ForEach-Object {
-            $_.outcome = "NotExecuted"
-          }
-          $earliestStart = ($trx.TestRun.Results.UnitTestResult | Measure -Min { [datetime]$_.startTime }).Minimum
-          $latestEnd = ($trx.TestRun.Results.UnitTestResult | Measure -Max { [datetime]$_.endTime }).Maximum
-
-          $start = $trx.CreateAttribute("start")
-          $start.InnerText = $earliestStart.ToString("o")
-          $finish = $trx.CreateAttribute("finish")
-          $finish.InnerText = $latestEnd.ToString("o")
-
-          $times = $trx.CreateElement("Times")
-          $times.Attributes.Append($start)
-          $times.Attributes.Append($finish)
-          $trx.TestRun.AppendChild($times)
-
-          $trx.TestRun.TestDefinitions.UnitTest | ForEach-Object {
-            $c = $_.TestMethod.name -Split "::"
-            $_.TestMethod.className = ($c[0..($c.Length-2)]) -Join "."
-            $_.TestMethod.name = $c[$c.Length-1]
-            $_.name = ($c -Join ".")
-          }
-
-          $trx.TestRun.Results.UnitTestResult | ForEach-Object {
-            $c = $_.testName -Split "::"
-            $_.testName = ($c -Join ".")
-          }
-
-          $trx.Save($trxFile)
+          ./build/scripts/Convert-TeTrxToMsTest.ps1 -Path Te.trx -OutputPath Te.trx
         name: Convert TRX to more common format for test-reporter
 
       - uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
