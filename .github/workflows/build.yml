@@ -194,6 +194,7 @@ jobs:
       # See the synopsis in Convert-TeTrxToMsTest for more info
       - run: |-
           ./build/scripts/Convert-TeTrxToMsTest.ps1 -Path ${env:TRX_FILENAME} -OutputPath ${env:TRX_FILENAME}
+        if: always()
         name: Convert TRX to more common format for test-reporter
 
       # Test results are aggregated and reported by a common job named test-report.
