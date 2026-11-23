@@ -1201,7 +1201,7 @@ void TextBuffer::ResizeTraditional(til::size newSize)
 
     // The rows have been copied, so the old ones must be destroyed before their
     // memory is released, or the resources they own (like images) would leak.
-    _destroy();
+    _destroy(_buffer.get());
 
     // NOTE: Keep this in sync with _reserve().
     _buffer = std::move(newBuffer._buffer);
