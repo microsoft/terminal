@@ -191,6 +191,8 @@ jobs:
 
       # TAEF uses "Skipped" instead of "NotExecuted" for skipped tests,
       # and leaves out a timing field expected by the result reporter.
+      # We also massage the C++-style namespaces to C#-style namespaces
+      # for prettier final output.
       # (The result reporter expects standard `dotnet test` output)
       - run: |-
           $ErrorActionPreference = "Stop"
@@ -211,6 +213,18 @@ jobs:
           $times.Attributes.Append($start)
           $times.Attributes.Append($finish)
           $trx.TestRun.AppendChild($times)
+
+          $trx.TestRun.TestDefinitions.UnitTest | ForEach-Object {
+            $c = $_.TestMethod.name -Split "::"
+            $_.TestMethod.className = ($c[0..($c.Length-2)]) -Join "."
+            $_.TestMethod.name = $c[$c.Length-1]
+            $_.name = ($c -Join ".")
+          }
+
+          $trx.TestRun.Results.UnitTestResult | ForEach-Object {
+            $c = $_.testName -Split "::"
+            $_.testName = ($c -Join ".")
+          }
 
           $trx.Save($trxFile)
         name: Convert TRX to more common format for test-reporter
