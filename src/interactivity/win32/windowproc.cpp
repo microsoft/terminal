@@ -79,7 +79,7 @@ struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
         coordCursor.y = std::clamp(coordCursor.y, 0, viewport.height() - 1);
 
         // Convert from columns/rows to pixels.
-        const auto coordFont = screenBuffer.GetCurrentFont().GetSize();
+        const auto coordFont = screenBuffer.GetCurrentFont().GetCellSizeInPhysicalPx();
         POINT ptSuggestion{
             .x = coordCursor.x * coordFont.width,
             .y = coordCursor.y * coordFont.height,
@@ -284,7 +284,9 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         // NOTE: Initializing a TSF on WM_ACTIVATE (or earlier) ensures that we don't get a
         // redundant, implicit IMM32 TSF client, which would unnecessarily bloat the process.
         // (It is implicitly created during DefWindowProcW(WM_ACTIVATE).)
-        if (!g.tsf)
+        // The high word of wParam indicates whether we are minimized.
+        // (Set breakpoint on `msctf!CThreadInputMgr::CreateDocumentMgr`.)
+        if (!g.tsf && LOWORD(wParam) != WA_INACTIVE && !HIWORD(wParam))
         {
             // The TSF implementation doesn't care per-se if it's STA or MTA,
             // but it does require it to be initialized. STA because we're the UI thread.
@@ -717,6 +719,8 @@ static constexpr TsfDataProvider s_tsfDataProvider;
 
     case CM_UPDATE_SCROLL_BARS:
     {
+        // NOTE: A similar logic exists in `Window::ActivateAndShow`,
+        // which performs an eager scrollbar update before the window is shown.
         const auto state = ScreenInfo.FetchScrollBarState();
 
         // EnableScrollbar() and especially SetScrollInfo() are prohibitively expensive functions nowadays.
@@ -786,6 +790,14 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         {
             Clipboard::Instance().CopyText(clipboardText.value());
         }
+        break;
+    }
+
+    case CM_UPDATE_FRAME_COLOR:
+    {
+        COLORREF color = static_cast<COLORREF>(lParam);
+        DwmSetWindowAttribute(hWnd, DWMWA_BORDER_COLOR, &color, sizeof(COLORREF));
+        DwmSetWindowAttribute(hWnd, DWMWA_CAPTION_COLOR, &color, sizeof(COLORREF));
         break;
     }
 
@@ -860,19 +872,18 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
     // Get the current DPI and font size.
     HWND hwnd = GetWindowHandle();
     UINT dpiCurrent = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hwnd);
-    const auto& fontInfoCurrent = GetScreenInfo().GetCurrentFont();
-    til::size fontSizeCurrent = fontInfoCurrent.GetSize();
+    const auto& si = GetScreenInfo();
+    const auto& fontInfoDesired = si.GetDesiredFont();
+    til::size fontSizeCurrent = si.GetCurrentFont().GetCellSizeInPhysicalPx();
 
     // Scale the current font to the new DPI and get the new font size.
-    FontInfoDesired fontInfoDesired(fontInfoCurrent);
-    FontInfo fontInfoNew(L"", 0, 0, { 0, 0 }, 0);
-    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(
-            dpiNew, fontInfoDesired, fontInfoNew)))
+    FontInfo fontInfoNew;
+    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(dpiNew, fontInfoDesired, fontInfoNew)))
     {
         // On failure, return FALSE, which scales the window linearly for DPI.
         return FALSE;
     }
-    til::size fontSizeNew = fontInfoNew.GetSize();
+    til::size fontSizeNew = fontInfoNew.GetCellSizeInPhysicalPx();
 
     // The provided size is the window rect, which includes non-client area
     // (caption bars, resize borders, scroll bars, etc). We want to scale the
@@ -1021,4 +1032,11 @@ BOOL Window::PostUpdateExtendedEditKeys() const
     return PostMessageW(GetWindowHandle(), CM_UPDATE_EDITKEYS, 0, 0);
 }
 
+BOOL Window::PostUpdateFrameColor() const
+{
+    // Called under lock.
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto frameColor = gci.GetRenderSettings().GetColorAlias(ColorAlias::FrameBackground);
+    return PostMessageW(GetWindowHandle(), CM_UPDATE_FRAME_COLOR, 0, static_cast<LPARAM>(frameColor));
+}
 #pragma endregion

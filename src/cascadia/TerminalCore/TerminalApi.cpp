@@ -244,7 +244,8 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
     _assertLocked();
 
     // the new alt buffer is exactly the size of the viewport.
-    _altBufferSize = _mutableViewport.Dimensions();
+    // Using the active viewport ensures that re-entering the alt buffer doesn't use the stale main viewport dimensions.
+    _altBufferSize = _GetMutableViewport().Dimensions();
 
     const auto cursorSize = _mainBuffer->GetCursor().GetSize();
 

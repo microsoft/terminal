@@ -2284,7 +2284,8 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_tabStatus.IsInputBroadcastActive())
                 {
                     tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
-                                                    e.Text());
+                                                    e.Text(),
+                                                    static_cast<winrt::Microsoft::Terminal::Control::WriteInputStringType>(e.Type()));
                 }
             }
         });

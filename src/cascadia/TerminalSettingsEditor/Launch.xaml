@@ -11,7 +11,8 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -107,6 +108,7 @@
                     <StackPanel Orientation="Vertical">
                         <CheckBox x:Name="StartOnUserLogin"
                                   x:Uid="Globals_StartOnUserLogin_Checkbox"
+                                  search:Label="True"
                                   IsChecked="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                                   IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}" />
                         <TextBlock FontSize="{ThemeResource SettingsCardDescriptionFontSize}"

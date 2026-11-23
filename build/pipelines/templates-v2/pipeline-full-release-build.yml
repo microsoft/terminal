@@ -133,6 +133,8 @@ stages:
             buildPlatforms: ${{ parameters.buildPlatforms }}
             generateSbom: ${{ parameters.generateSbom }}
             codeSign: ${{ parameters.codeSign }}
+            beforeBuildSteps:
+              - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
       - ${{ if eq(parameters.buildConPTY, true) }}:
         - template: ./job-package-conpty.yml
@@ -141,6 +143,8 @@ stages:
             buildPlatforms: ${{ parameters.buildPlatforms }}
             generateSbom: ${{ parameters.generateSbom }}
             codeSign: ${{ parameters.codeSign }}
+            beforeBuildSteps:
+              - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
       - ${{ if eq(parameters.buildWPF, true) }}:
         - template: ./job-build-package-wpf.yml
@@ -149,6 +153,8 @@ stages:
             buildPlatforms: ${{ parameters.buildPlatforms }}
             generateSbom: ${{ parameters.generateSbom }}
             codeSign: ${{ parameters.codeSign }}
+            beforeBuildSteps:
+              - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
   - stage: Publish
     displayName: Publish

@@ -35,6 +35,7 @@ class TerminalCoreUnitTests::TerminalBufferTests final
     TEST_CLASS(TerminalBufferTests);
 
     TEST_METHOD(TestSimpleBufferWriting);
+    TEST_METHOD(TestClearScreenAndScrollback);
 
     TEST_METHOD(TestWrappingCharByChar);
     TEST_METHOD(TestWrappingALongString);
@@ -94,6 +95,71 @@ void TerminalBufferTests::TestSimpleBufferWriting()
     VERIFY_ARE_EQUAL(32, secondView.BottomExclusive());
 
     TestUtils::VerifyExpectedString(termTb, L"Hello World", { 0, 0 });
+}
+
+void TerminalBufferTests::TestClearScreenAndScrollback()
+{
+    static constexpr auto virtualSize = [](const void* address) -> int {
+        MEMORY_BASIC_INFORMATION info;
+        const auto r = VirtualQuery(address, &info, sizeof(info));
+        return r ? gsl::narrow_cast<int>(info.RegionSize) : 0;
+    };
+    static constexpr auto virtualState = [](const void* address) -> int {
+        MEMORY_BASIC_INFORMATION info;
+        const auto r = VirtualQuery(address, &info, sizeof(info));
+        return r ? gsl::narrow_cast<int>(info.State) : 0;
+    };
+
+    term->Create({ TerminalViewWidth, TerminalViewHeight }, 4096, *emptyRenderer);
+    auto& buffer = *term->_mainBuffer;
+    auto& stateMachine = *term->_stateMachine;
+
+    // Rotate by 17 so the retained viewport wraps around
+    // the allocation and overlaps its destination.
+    stateMachine.ProcessString(std::wstring(17, L'\n'));
+    stateMachine.ProcessString(L"\x1b]133;A\aold\x1b]133;D;1\a");
+    stateMachine.ProcessString(std::wstring(buffer.TotalRowCount() - 1, L'\n'));
+    stateMachine.ProcessString(L"\x1b[H\x1b]133;A\aa\x1b]133;D;0\a\x1b[6;1H\x1b]133;A\ab");
+
+    VERIFY_ARE_EQUAL(17, buffer.GetFirstRowIndex());
+    // These offsets map to the first and last physical rows after the rotation.
+    const auto firstRow = &buffer.GetRowByOffset(-17);
+    const auto lastRow = &buffer.GetRowByOffset(-18);
+    VERIFY_ARE_EQUAL(MEM_COMMIT, virtualState(lastRow));
+
+    // Erasing the scrollback should rotate the buffer
+    // and decommit the now unused memory.
+    stateMachine.ProcessString(L"\x1b[3J");
+
+    VERIFY_ARE_EQUAL(0, term->GetViewport().Top());
+    VERIFY_ARE_EQUAL(0, buffer.GetFirstRowIndex());
+    TestUtils::VerifyExpectedString(buffer, L"a", { 0, 0 });
+    TestUtils::VerifyExpectedString(buffer, L"b", { 0, 5 });
+    const auto marks = buffer.GetMarkRows();
+    VERIFY_ARE_EQUAL(size_t{ 2 }, marks.size());
+    VERIFY_ARE_EQUAL(0, marks[0].row);
+    VERIFY_ARE_EQUAL(MarkCategory::Success, marks[0].data.category);
+    VERIFY_IS_TRUE(marks[0].data.exitCode.has_value());
+    VERIFY_ARE_EQUAL(0u, *marks[0].data.exitCode);
+    VERIFY_ARE_EQUAL(5, marks[1].row);
+    VERIFY_ARE_EQUAL(MarkCategory::Prompt, marks[1].data.category);
+    VERIFY_IS_FALSE(marks[1].data.exitCode.has_value());
+
+    VERIFY_ARE_EQUAL(MEM_RESERVE, virtualState(lastRow));
+    VERIFY_ARE_EQUAL(MEM_COMMIT, virtualState(firstRow));
+    VERIFY_IS_LESS_THAN(virtualSize(firstRow), 1024 * 1024);
+
+    stateMachine.ProcessString(L"\x1b[H\x1b[2J\x1b[3J");
+
+    VERIFY_ARE_EQUAL(0, term->GetViewport().Top());
+    VERIFY_IS_TRUE(buffer.GetMarkRows().empty());
+    for (auto y = 0; y < TerminalViewHeight; ++y)
+    {
+        VERIFY_ARE_EQUAL(0, buffer.GetRowByOffset(y).MeasureRight());
+    }
+
+    stateMachine.ProcessString(L"new text");
+    TestUtils::VerifyExpectedString(buffer, L"new text", { 0, 0 });
 }
 
 void TerminalBufferTests::TestWrappingCharByChar()

@@ -82,7 +82,8 @@
                                 x:Uid="Profile_HistorySize"
                                 Style="{StaticResource ExpanderAlignedSettingsCardStyle}">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                    <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                    <muxc:NumberBox x:Name="HistorySizeBox"
+                                    x:Uid="Profile_HistorySizeBox"
                                     LargeChange="100"
                                     Minimum="0"
                                     SmallChange="10"

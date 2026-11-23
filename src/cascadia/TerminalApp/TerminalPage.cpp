@@ -323,6 +323,11 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    bool TerminalPage::_tabDragDropEnabled() const
+    {
+        return CanDragDrop() && _settings.GlobalSettings().EnableTabDragDrop();
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -333,7 +338,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        const auto canDragDrop = CanDragDrop();
+        const auto canDragDrop = _tabDragDropEnabled();
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -3127,9 +3132,7 @@ namespace winrt::TerminalApp::implementation
     // - Sends the text back to the TermControl through the event's
     //   `HandleClipboardData` member function.
     // - Does some of this in a background thread, as to not hang/crash the UI thread.
-    // Arguments:
-    // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable sender, const PasteFromClipboardEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable sender, const IInspectable /* args */)
     try
     {
         // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
@@ -3137,8 +3140,13 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto windowSettings = _currentWindowSettings();
-        const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
-        const auto sourceId = sender.try_as<IContentHandle>().Id();
+        const auto control = sender.as<TermControl>();
+        // TODO GH#20164 these were added to ease the transition to broadcast group management; fill them in
+        // Used to determine whether to emit empty pastes and strip extra whitespace
+        const auto anyHasBracketedPaste = control && !control.ReadOnly() && control.BracketedPasteEnabled();
+        // Used to determine whether to warn on multi-line paste
+        // If none lack bracketed paste, we can skip the warning.
+        const auto anyHasUnbracketedPaste = !anyHasBracketedPaste;
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
@@ -3149,8 +3157,11 @@ namespace winrt::TerminalApp::implementation
             text = clipboard::read();
         }
 
-        if (!bracketedPaste && windowSettings.TrimPaste())
+        if (!anyHasBracketedPaste && windowSettings.TrimPaste())
         {
+            // Warning - when broadcast is enabled, this will trim the paste for all receivers.
+            // Until we propagate this decision-making elsewhere, this is safer; broadcast will not auto-submit commands in other panes.
+            // Tracked in GH#20164
             text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
@@ -3158,7 +3169,7 @@ namespace winrt::TerminalApp::implementation
         // Bracketed Paste provides an application a way to know whether the
         // user pasted, even if there was no applicable content on it. This
         // behavior is observed in GNOME Terminal, among others.
-        if (!bracketedPaste && text.empty())
+        if (!anyHasBracketedPaste && text.empty())
         {
             co_return;
         }
@@ -3170,7 +3181,7 @@ namespace winrt::TerminalApp::implementation
             // NOTE that this is unsafe, because a shell that doesn't support bracketed paste
             // will allow an attacker to enable the mode, not realize that, and then accept
             // the paste as if it was a series of legitimate commands. See GH#13014.
-            warnMultiLine = !bracketedPaste;
+            warnMultiLine = anyHasUnbracketedPaste;
             break;
         case WarnAboutMultiLinePaste::Always:
             warnMultiLine = true;
@@ -3240,42 +3251,31 @@ namespace winrt::TerminalApp::implementation
         // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
-        eventArgs.HandleClipboardData(text);
-
-        // GH#18821: If broadcast input is active, paste the same text into all other
-        // panes on the tab. We do this here (rather than re-reading the
-        // clipboard per-pane) so that only one paste warning is shown.
-        co_await wil::resume_foreground(dispatcher);
-        if (const auto strongThis = weakThis.get())
-        {
-            if (const auto& tab{ strongThis->_GetFocusedTabImpl() })
-            {
-                if (tab->TabStatus().IsInputBroadcastActive())
-                {
-                    tab->GetRootPane()->WalkTree([&](auto&& pane) {
-                        if (const auto control = pane->GetTerminalControl())
-                        {
-                            if (control.ContentId() != sourceId && !control.ReadOnly())
-                            {
-                                control.RawWriteString(text);
-                            }
-                        }
-                    });
-                }
-            }
-        }
+        control.WriteInputString(text, WriteInputStringType::Clipboard);
     }
     CATCH_LOG();
 
     safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
+        const auto strongThis = get_strong();
+
         try
         {
             auto uriString{ eventArgs.Uri() };
             auto parsed = winrt::Windows::Foundation::Uri(uriString);
-            if (_IsUriSupported(parsed))
+
+            std::wstring filePath;
+            wil::zwstring_view launchTarget{ uriString.c_str(), uriString.size() };
+
+            if (parsed.SchemeName() == L"file")
             {
-                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+                filePath = Utils::FileUriToPath(uriString);
+                launchTarget = filePath;
+            }
+
+            if (_IsUriSupported(parsed, launchTarget))
+            {
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed, launchTarget) };
 
                 if (!shouldLaunch)
                 {
@@ -3297,7 +3297,17 @@ namespace winrt::TerminalApp::implementation
 
                 if (shouldLaunch)
                 {
-                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    SHELLEXECUTEINFOW info{ sizeof(info) };
+                    info.fMask = SEE_MASK_FLAG_NO_UI;
+                    info.hwnd = _hostingHwnd.value_or(nullptr);
+                    info.lpVerb = L"open";
+                    info.lpFile = launchTarget.c_str();
+                    info.nShow = SW_SHOWNORMAL;
+                    if (!ShellExecuteExW(&info))
+                    {
+                        const auto error = HRESULT_FROM_WIN32(GetLastError());
+                        _ShowCouldNotOpenDialog(winrt::hresult_error{ error }.message(), uriString);
+                    }
                 }
             }
             else
@@ -3338,9 +3348,10 @@ namespace winrt::TerminalApp::implementation
     // - Determines if the given URI is currently supported
     // Arguments:
     // - The parsed URI
+    // - The original URI, or the decoded filesystem path for file URIs
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri, const std::wstring_view launchTarget)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
@@ -3348,27 +3359,48 @@ namespace winrt::TerminalApp::implementation
         }
         if (parsedUri.SchemeName() == L"file")
         {
-            const auto host = parsedUri.Host();
-            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
-            // and we allow it
-            if (host == L"")
-            {
-                return true;
-            }
-
-            // GH#10188: WSL paths are okay. We'll let those through.
-            if (host == L"wsl$" || host == L"wsl.localhost")
-            {
-                return true;
-            }
-
             // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
             // comparing that value against what is returned by GetComputerNameExW and making sure they match.
             // However, ShellExecute does not seem to be happy with file URIs of the form
             //          file://{hostname}/path/to/file.ext
             // and so while we could do the hostname matching, we do not know how to actually open the URI
             // if its given in that form. So for now we ignore all hostnames other than localhost
-            return false;
+
+            if (til::starts_with(launchTarget, LR"(\\)"))
+            {
+                // "%2F" decodes to "/" and is not normalized by `PathCreateFromUrlW`!
+                const auto serverEnd = launchTarget.find_first_of(L"\\/", 2);
+                const auto server = til::safe_slice_abs(launchTarget, 2, serverEnd);
+                return til::equals_insensitive_ascii(server, L"wsl$") ||
+                       til::equals_insensitive_ascii(server, L"wsl.localhost");
+            }
+            else
+            {
+                // Relative file URIs would be weird, right? Reject them.
+                //
+                // NOTE: std::filesystem::path::is_absolute() would permit paths
+                // like `//foo/` as absolute, which feels overly permissive here.
+                if (launchTarget.size() < 3)
+                {
+                    return false;
+                }
+
+                // This is how STL implemented std::filesystem:_Is_drive_prefix().
+                // I thought it was such a neat trick, that I wanted to use it here.
+                // It's very ugly, but kind of beautiful. Obviously, this only works
+                // in little-endian, but who would do big-endian in this day and age.
+                uint32_t prefix;
+                memcpy(&prefix, launchTarget.data(), sizeof(prefix)); // load from possibly unaligned address
+                prefix &= 0xFFFFFFDFu; // transform lowercase drive letters into uppercase ones
+                prefix -= (static_cast<unsigned int>(L':') << (sizeof(wchar_t) * CHAR_BIT)) | L'A';
+                if (prefix >= 26)
+                {
+                    return false;
+                }
+
+                const auto slash = launchTarget[2];
+                return slash == L'\\' || slash == L'/';
+            }
         }
 
         // In this case, the app manually output a URI other than file:// or
@@ -3378,7 +3410,7 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri, std::wstring_view launchTarget) const
     {
         // Calling all LLMs and NPCs who report that this code is vulnerable:
         // file URIs pointing to remote locations are *always* considered unsafe.
@@ -3397,11 +3429,17 @@ namespace winrt::TerminalApp::implementation
         }
         if (schemeName == L"file")
         {
+            // ShellExecuteExW ignores trailing spaces, dots, and slashes in file paths.
+            const auto beg = launchTarget.find_last_not_of(L" .\\/");
+            if (beg != std::wstring_view::npos)
+            {
+                launchTarget = launchTarget.substr(0, beg + 1);
+            }
+
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
-            const auto filename = parsedUri.Path();
             for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
             {
-                if (til::ends_with_insensitive_ascii(filename, e))
+                if (!e.empty() && til::ends_with_insensitive_ascii(launchTarget, e))
                 {
                     return false;
                 }
@@ -3647,16 +3685,6 @@ namespace winrt::TerminalApp::implementation
                 { plain.data(), plain.size() },
                 { reinterpret_cast<const char*>(html.data()), html.size() },
                 { reinterpret_cast<const char*>(rtf.data()), rtf.size() });
-        }
-    }
-
-    // Method Description:
-    // - Paste text from the Windows Clipboard to the focused terminal
-    void TerminalPage::_PasteText()
-    {
-        if (const auto& control{ _GetActiveControl() })
-        {
-            control.PasteTextFromClipboard();
         }
     }
 
@@ -4148,6 +4176,10 @@ namespace winrt::TerminalApp::implementation
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_currentWindowSettings().DisableAnimations());
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
+
+        const auto canDragDrop = _tabDragDropEnabled();
+        _tabView.CanReorderTabs(canDragDrop);
+        _tabView.CanDragTabs(canDragDrop);
 
         // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
@@ -5130,7 +5162,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // Make sure that we use the same backdrop source as TermControl.
+            // If we don't, it'll cause the same flickering as in GH #14384
+            acrylicBrush.BackgroundSource(_currentWindowSettings().EnableUnfocusedAcrylic() ?
+                                              Media::AcrylicBackgroundSource::Backdrop :
+                                              Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);

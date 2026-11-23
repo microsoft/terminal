@@ -5,6 +5,7 @@
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
     <UseWpf>true</UseWpf>
+    <LangVersion>9.0</LangVersion>
 
     <RepoBinPath>$(MSBuildThisFileDirectory)..\..\..\bin\</RepoBinPath>
     <IntermediateOutputPath>$(RepoBinPath)..\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
@@ -53,15 +54,15 @@
       </None>
 
       <None Include="$(RepoBinPath)\Win32\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-x86\native\</PackagePath>
       </None>
       <None Include="$(RepoBinPath)\x64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
       </None>
       <None Include="$(RepoBinPath)\ARM64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-arm64\native\</PackagePath>
       </None>
     </ItemGroup>

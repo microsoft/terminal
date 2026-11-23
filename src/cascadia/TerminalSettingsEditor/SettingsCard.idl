@@ -10,7 +10,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Vertical
     };
 
-    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Primitives.ButtonBase
+    // Unlike the toolkit, we need to derive from Button for proper UIA behavior.
+    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Button
     {
         SettingsCard();
 

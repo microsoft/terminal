@@ -89,6 +89,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool Initialize(const float actualWidth,
                         const float actualHeight,
                         const float compositionScale);
+        bool InitializeWithHwnd(const float actualWidth,
+                                const float actualHeight,
+                                const float compositionScale,
+                                const uint64_t hwnd);
         void EnablePainting();
 
         void Detach();
@@ -124,8 +128,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::color ForegroundColor() const;
         til::color BackgroundColor() const;
 
-        void SendInput(std::wstring_view wstr);
-        void PasteText(const winrt::hstring& hstr);
+        void WriteInputString(const std::wstring_view& str, WriteInputStringType type);
         bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const CopyFormat formats);
         void SelectAll();
         void ClearSelection();
@@ -264,6 +267,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
+        winrt::Windows::Foundation::Size RenderedSize();
+        void ResizeToDimensions(uint32_t width, uint32_t height, winrt::Windows::Foundation::Size& newSizeInPixels);
+
         void PreviewInput(std::wstring_view input);
 
         using TimerHandle = ::Microsoft::Console::Render::TimerHandle;
@@ -328,6 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _handleControlC();
         void _sendInputToConnection(std::wstring_view wstr);
+        void _sendInput(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
         void _terminalWarningBell();
