@@ -1,0 +1,27 @@
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['Build']
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+      if: ${{ always() }}
+      with:
+        reporter: dotnet-trx
+        # List every passing test suite (because it looks cool), but only expand the test
+        # details for the ones which failed.
+        list-suites: all
+        list-tests: failed
+        path: '**/*.trx'
+        artifact: '/^test-(\w+)-(\w+)$/'
+        name: 'Test Results ($1 $2)'
