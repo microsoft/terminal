@@ -46,7 +46,7 @@ jobs:
       pwsh: true
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -AdditionalTaefArguments "/logger:trx" -LogPath unit.trx -Root "$(Terminal.BinDir)"
+      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath unit.trx -Root "$(Terminal.BinDir)"
 
   - ${{ if or(eq(parameters.platform, 'x64'), eq(parameters.platform, 'arm64')) }}:
     - task: PowerShell@2
@@ -55,7 +55,7 @@ jobs:
         pwsh: true
         targetType: filePath
         filePath: build\scripts\Run-Tests.ps1
-        arguments: -MatchPattern '*feature.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -AdditionalTaefArguments "/logger:trx" -LogPath feature.trx -Root "$(Terminal.BinDir)"
+        arguments: -MatchPattern '*feature.test*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath feature.trx -Root "$(Terminal.BinDir)"
 
     # Load-bearing: This needs to be Windows PowerShell, not pwsh, due to Add-AppxPackage not working in pwsh.
     - powershell: |-
@@ -72,7 +72,7 @@ jobs:
         pwsh: true
         targetType: filePath
         filePath: build\scripts\Run-Tests.ps1
-        arguments: -MatchPattern '*LocalTests*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -AdditionalTaefArguments "/logger:trx" -LogPath local.trx -Root "$(Terminal.BinDir)"
+        arguments: -MatchPattern '*LocalTests*.dll' -Platform '$(OutputBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath local.trx -Root "$(Terminal.BinDir)"
       condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'))
 
   - task: PublishTestResults@2

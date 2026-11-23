@@ -155,6 +155,7 @@ jobs:
               matrix.pass == 'Feature', '*feature.test*.dll',
               '*unit.test*.dll'
         ) }}
+      TRX_FILENAME: test-${{matrix.arch}}-${{matrix.pass}}.trx
     runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-vs2026-arm' || 'windows-2025-vs2026' }}
     name: ${{ matrix.arch }} ${{ matrix.pass }} Tests
     needs: build
@@ -185,13 +186,14 @@ jobs:
             -MatchPattern ${env:TEST_GLOB} `
             -Platform ${env:BUILD_PLATFORM} `
             -Configuration ${env:BUILD_CONFIGURATION} `
-            -AdditionalTaefArguments "/logOutput:Low","/logger:trx" `
+            -LogPath ${env:TRX_FILENAME} `
+            -AdditionalTaefArguments "/logOutput:Low" `
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
       # See the synopsis in Convert-TeTrxToMsTest for more info
       - run: |-
-          ./build/scripts/Convert-TeTrxToMsTest.ps1 -Path Te.trx -OutputPath Te.trx
+          ./build/scripts/Convert-TeTrxToMsTest.ps1 -Path ${env:TRX_FILENAME} -OutputPath ${env:TRX_FILENAME}
         name: Convert TRX to more common format for test-reporter
 
       - uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
@@ -203,14 +205,14 @@ jobs:
           # details for the ones which failed.
           list-suites: all
           list-tests: failed
-          path: 'Te.trx'
+          path: '*.trx'
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: test-${{matrix.pass}}-${{matrix.arch}}
           path: |-
-            **/*.trx
+            *.trx
 
   pack-msix:
     name: Package MSIXBundle

@@ -69,7 +69,7 @@ jobs:
         -Configuration '$(BuildConfiguration)'
         -LogPath '${{ parameters.testLogPath }}'
         -Root "$(Terminal.BinDir)"
-        -AdditionalTaefArguments '/logger:trx','/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
+        -AdditionalTaefArguments '/select:(@IsPGO=true)','/p:WTTestContent=$(TerminalTestContentPath)'
 
   - task: CopyFiles@2
     displayName: 'Copy PGO outputs to Artifacts'
