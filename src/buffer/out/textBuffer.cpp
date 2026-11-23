@@ -916,6 +916,7 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
         dst.SetScrollbarData(src.GetScrollbarData());
         src.SetScrollbarData(std::nullopt);
         ImageSlice::CopyRow(src, dst);
+        dst.GetMutableGraphics() = std::exchange(src.GetMutableGraphics(), {});
     };
     const auto copyByIndex = [&](const til::CoordType src, const til::CoordType dst) {
         copy(get(src), get(dst));
