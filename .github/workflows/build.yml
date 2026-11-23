@@ -189,7 +189,33 @@ jobs:
             -Root ${env:ARCH_BIN_DIR}
         name: Run Tests
 
-      - uses: dorny/test-reporter@a66eeec6fc8d89b687e16a3fbd7bfa9a4d4d0cfd # (DHOWETT TEST)
+      # TAEF uses "Skipped" instead of "NotExecuted" for skipped tests,
+      # and leaves out a timing field expected by the result reporter.
+      # (The result reporter expects standard `dotnet test` output)
+      - run: |-
+          $ErrorActionPreference = "Stop"
+          $trxFile = (Join-Path $PWD "Te.trx")
+          $trx=[xml](Get-Content $trxFile)
+          $trx.TestRun.Results.UnitTestResult | Where-Object outcome -eq "Skipped" | ForEach-Object {
+            $_.outcome = "NotExecuted"
+          }
+          $earliestStart = ($trx.TestRun.Results.UnitTestResult | Measure -Min { [datetime]$_.startTime }).Minimum
+          $latestEnd = ($trx.TestRun.Results.UnitTestResult | Measure -Max { [datetime]$_.endTime }).Maximum
+
+          $start = $trx.CreateAttribute("start")
+          $start.InnerText = $earliestStart.ToString("o")
+          $finish = $trx.CreateAttribute("finish")
+          $finish.InnerText = $latestEnd.ToString("o")
+
+          $times = $trx.CreateElement("Times")
+          $times.Attributes.Append($start)
+          $times.Attributes.Append($finish)
+          $trx.TestRun.AppendChild($times)
+
+          $trx.Save($trxFile)
+        name: Convert TRX to more common format for test-reporter
+
+      - uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
         if: ${{ always() }}
         with:
           name: ${{matrix.arch}} ${{matrix.pass}} Test Results
