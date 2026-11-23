@@ -140,7 +140,7 @@ try
         data = scaled.data();
     }
 
-    const D2D1_SIZE_U size{ static_cast<UINT32>(scaledWidth), static_cast<UINT32>(scaledHeight) };
+    const D2D1_SIZE_U size{ gsl::narrow_cast<UINT32>(scaledWidth), gsl::narrow_cast<UINT32>(scaledHeight) };
     const D2D1_BITMAP_PROPERTIES properties{
         .pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
         .dpiX = 96,

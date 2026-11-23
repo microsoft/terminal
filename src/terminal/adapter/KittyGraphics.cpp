@@ -71,7 +71,7 @@ namespace
     // opening a network path can leak credentials to the remote host.
     bool isLocalDrivePath(const std::wstring_view path) noexcept
     {
-        if (path.size() < 3 || !iswalpha(path[0]) || path[1] != L':' || (path[2] != L'\\' && path[2] != L'/'))
+        if (path.size() < 3 || !iswalpha(til::at(path, 0)) || til::at(path, 1) != L':' || (til::at(path, 2) != L'\\' && til::at(path, 2) != L'/'))
         {
             return false;
         }
@@ -79,7 +79,7 @@ namespace
         {
             return false;
         }
-        const wchar_t root[]{ path[0], L':', L'\\', L'\0' };
+        const wchar_t root[]{ til::at(path, 0), L':', L'\\', L'\0' };
         switch (GetDriveTypeW(&root[0]))
         {
         case DRIVE_FIXED:
@@ -92,7 +92,7 @@ namespace
         }
     }
 
-    std::wstring lowerCase(std::wstring text)
+    std::wstring lowerCase(std::wstring text) noexcept
     {
         if (!text.empty())
         {
@@ -173,6 +173,7 @@ namespace
         {
             DWORD read = 0;
             const auto chunk = gsl::narrow_cast<DWORD>(std::min<size_t>(out.size() - total, 1 << 30));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
             if (!ReadFile(file.get(), out.data() + total, chunk, &read, nullptr) || read == 0)
             {
                 return false;
@@ -216,6 +217,7 @@ namespace
         {
             return false;
         }
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         out.assign(view.get() + offset, view.get() + offset + toRead);
         return true;
     }
@@ -260,11 +262,13 @@ namespace
         auto cleanup = wil::scope_exit([&]() noexcept { inflateEnd(&stream); });
 
         output.resize(expectedSize ? expectedSize : std::max<size_t>(input.size() * 4, 4096));
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
         stream.next_in = const_cast<Bytef*>(input.data());
         stream.avail_in = gsl::narrow_cast<uInt>(input.size());
         size_t produced = 0;
         for (;;)
         {
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
             stream.next_out = output.data() + produced;
             stream.avail_out = gsl::narrow_cast<uInt>(std::min<size_t>(output.size() - produced, UINT_MAX));
             const auto before = stream.avail_out;
@@ -359,7 +363,7 @@ namespace
             return false;
         }
         const auto readU32 = [&](const size_t offset) {
-            return (uint32_t{ data[offset] } << 24) | (uint32_t{ data[offset + 1] } << 16) | (uint32_t{ data[offset + 2] } << 8) | data[offset + 3];
+            return (uint32_t{ til::at(data, offset) } << 24) | (uint32_t{ til::at(data, offset + 1) } << 16) | (uint32_t{ til::at(data, offset + 2) } << 8) | til::at(data, offset + 3);
         };
         const auto width = readU32(16);
         const auto height = readU32(20);
@@ -387,7 +391,7 @@ namespace
 
 bool KittyGraphics::Control::Has(const char key) const noexcept
 {
-    return present.test(static_cast<size_t>(key));
+    return til::at(present, static_cast<size_t>(key));
 }
 
 int64_t KittyGraphics::Control::Get(const char key, const int64_t defaultValue) const noexcept
@@ -407,7 +411,7 @@ int32_t KittyGraphics::Control::GetSigned(const char key) const noexcept
 
 wchar_t KittyGraphics::Control::GetChar(const char key, const wchar_t defaultValue) const noexcept
 {
-    return Has(key) && isChar.test(static_cast<size_t>(key)) ? gsl::narrow_cast<wchar_t>(Get(key)) : defaultValue;
+    return Has(key) && til::at(isChar, static_cast<size_t>(key)) ? gsl::narrow_cast<wchar_t>(Get(key)) : defaultValue;
 }
 
 KittyGraphics::KittyGraphics(AdaptDispatch& dispatcher) noexcept :
@@ -499,7 +503,7 @@ bool KittyGraphics::_parseControl(const wchar_t ch) noexcept
             {
                 return false;
             }
-            _key = static_cast<char>(ch);
+            _key = gsl::narrow_cast<char>(ch);
             return true;
         }
         if (ch == L'=')
@@ -545,7 +549,7 @@ bool KittyGraphics::_commitValue() noexcept
         const auto negative = first == L'-';
         for (size_t i = negative ? 1 : 0; i < _value.size(); i++)
         {
-            const auto digit = _value[i];
+            const auto digit = til::at(_value, i);
             if (digit < L'0' || digit > L'9')
             {
                 return false;
@@ -553,18 +557,18 @@ bool KittyGraphics::_commitValue() noexcept
             number = std::min<int64_t>(number * 10 + (digit - L'0'), UINT32_MAX);
         }
         til::at(_control.values, index) = negative ? -number : number;
-        _control.isChar.reset(index);
+        til::at(_control.isChar, index) = false;
     }
     else if (_value.size() == 1)
     {
         til::at(_control.values, index) = first;
-        _control.isChar.set(index);
+        til::at(_control.isChar, index) = true;
     }
     else
     {
         return false;
     }
-    _control.present.set(index);
+    til::at(_control.present, index) = true;
     return true;
 }
 
@@ -641,7 +645,7 @@ void KittyGraphics::_execute()
         {
             return;
         }
-        auto loadingControl = std::move(_loadingControl);
+        const auto loadingControl = std::move(_loadingControl);
         auto loadingData = std::move(_loadingData);
         _abortLoading();
         _transmit(loadingControl, std::move(loadingData));
@@ -731,7 +735,7 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     {
         // Re-transmitting an image deletes the existing image and all its placements.
         const auto id = image->id;
-        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; }, false);
+        _erase(buffer, [=](const GraphicsRowRef& ref) noexcept { return ref.placement->image->id == id; }, false);
         if (store.FindVirtualPlacement(id, 0))
         {
             buffer.TriggerRedrawAll();
@@ -743,7 +747,7 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     const auto evicted = store.Add(image);
     if (!evicted.empty())
     {
-        _erase(buffer, [&](const GraphicsRowRef& ref) { return std::ranges::any_of(evicted, [&](const auto& e) { return e == ref.placement->image; }); }, false);
+        _erase(buffer, [&](const GraphicsRowRef& ref) { return std::ranges::any_of(evicted, [&](const auto& e) noexcept { return e == ref.placement->image; }); }, false);
         buffer.TriggerRedrawAll();
     }
 
@@ -751,7 +755,7 @@ void KittyGraphics::_transmit(const Control& control, std::vector<uint8_t> data)
     {
         if (control.GetUnsigned('U') == 1)
         {
-            _placeVirtual(control, image);
+            _placeVirtual(control, *image);
         }
         else if (!_place(control, image, error))
         {
@@ -775,7 +779,7 @@ void KittyGraphics::_put(const Control& control)
     _store().Touch(image.get());
     if (control.GetUnsigned('U') == 1)
     {
-        _placeVirtual(control, image);
+        _placeVirtual(control, *image);
     }
     else
     {
@@ -803,7 +807,7 @@ void KittyGraphics::_delete(const Control& control)
         {
             return;
         }
-        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id && (placementId == 0 || ref.placement->placementId == placementId); }, freeImages);
+        _erase(buffer, [=](const GraphicsRowRef& ref) noexcept { return ref.placement->image->id == id && (placementId == 0 || ref.placement->placementId == placementId); }, freeImages);
         if (store.FindVirtualPlacement(id, placementId))
         {
             store.RemoveVirtualPlacements(id, placementId);
@@ -885,7 +889,7 @@ void KittyGraphics::_delete(const Control& control)
         break;
     case L'z':
     case L'Z':
-        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->z == z; }, freeImages);
+        _erase(buffer, [=](const GraphicsRowRef& ref) noexcept { return ref.placement->z == z; }, freeImages);
         break;
     case L'r':
     case L'R':
@@ -1020,6 +1024,7 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     case L'f':
     case L't':
     {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
         const auto path = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
         std::wstring finalPath;
         if (!readFile(path, control.Get('O'), control.Get('S'), bytes, finalPath))
@@ -1037,6 +1042,7 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     }
     case L's':
     {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
         const auto name = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
         if (!readSharedMemory(name, control.Get('O'), control.Get('S'), bytes))
         {
@@ -1099,12 +1105,12 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
             return image;
         }
         image->pixels.resize(pixelCount);
-        auto src = bytes.data();
+        size_t offset = 0;
         for (auto& pixel : image->pixels)
         {
-            const uint32_t alpha = bytesPerPixel == 4 ? src[3] : 255;
-            pixel = premultiply(src[0], src[1], src[2], alpha);
-            src += bytesPerPixel;
+            const uint32_t alpha = bytesPerPixel == 4 ? til::at(bytes, offset + 3) : 255;
+            pixel = premultiply(til::at(bytes, offset), til::at(bytes, offset + 1), til::at(bytes, offset + 2), alpha);
+            offset += bytesPerPixel;
         }
     }
     else if (format == 100)
@@ -1166,11 +1172,11 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     const auto h = static_cast<double>(srcHeight);
     if (!columns)
     {
-        columns = rows ? ceilDiv((cell.height * rows + geometry.offset.y) * w / h, cell.width) : ceilDiv(w + geometry.offset.x, cell.width);
+        columns = rows ? ceilDiv((static_cast<double>(cell.height) * rows + geometry.offset.y) * w / h, cell.width) : ceilDiv(w + geometry.offset.x, cell.width);
     }
     if (!rows)
     {
-        rows = geometry.columns ? ceilDiv((cell.width * columns + geometry.offset.x) * h / w, cell.height) : ceilDiv(h + geometry.offset.y, cell.height);
+        rows = geometry.columns ? ceilDiv((static_cast<double>(cell.width) * columns + geometry.offset.x) * h / w, cell.height) : ceilDiv(h + geometry.offset.y, cell.height);
     }
     // The cursor moves by the footprint computed the same way as in kitty, but the
     // image is attached to all the rows it's drawn on, which can be more than that.
@@ -1185,7 +1191,7 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     {
         const auto id = image->id;
         const auto placementId = placement->placementId;
-        _erase(buffer, [=](const GraphicsRowRef& ref) { return ref.placement->image->id == id && ref.placement->placementId == placementId; }, false);
+        _erase(buffer, [=](const GraphicsRowRef& ref) noexcept { return ref.placement->image->id == id && ref.placement->placementId == placementId; }, false);
     }
 
     const auto origin = cursor.GetPosition();
@@ -1254,25 +1260,25 @@ bool KittyGraphics::_place(const Control& control, const std::shared_ptr<const G
     return true;
 }
 
-void KittyGraphics::_placeVirtual(const Control& control, const std::shared_ptr<const GraphicsImage>& image)
+void KittyGraphics::_placeVirtual(const Control& control, const GraphicsImage& image)
 {
-    if (!image->id)
+    if (!image.id)
     {
         return;
     }
     const auto cell = _cellSize();
     GraphicsVirtualPlacement placement;
-    placement.imageId = image->id;
+    placement.imageId = image.id;
     placement.placementId = control.GetUnsigned('p');
     placement.columns = gsl::narrow_cast<til::CoordType>(std::clamp<int64_t>(control.Get('c'), 0, MaxCells));
     placement.rows = gsl::narrow_cast<til::CoordType>(std::clamp<int64_t>(control.Get('r'), 0, MaxCells));
     if (!placement.columns)
     {
-        placement.columns = ceilDiv(image->size.width, cell.width);
+        placement.columns = ceilDiv(image.size.width, cell.width);
     }
     if (!placement.rows)
     {
-        placement.rows = ceilDiv(image->size.height, cell.height);
+        placement.rows = ceilDiv(image.size.height, cell.height);
     }
     _store().SetVirtualPlacement(placement);
     _dispatcher._pages.ActivePage().Buffer().TriggerRedrawAll();
@@ -1296,7 +1302,7 @@ bool KittyGraphics::_isImageUnused(const TextBuffer& buffer, const uint32_t id) 
     {
         return false;
     }
-    return !buffer.AnyGraphics([=](const GraphicsRowRef& ref) { return ref.placement->image->id == id; });
+    return !buffer.AnyGraphics([=](const GraphicsRowRef& ref) noexcept { return ref.placement->image->id == id; });
 }
 
 bool KittyGraphics::_erase(TextBuffer& buffer, const std::function<bool(const GraphicsRowRef&)>& predicate, const bool freeImages)
@@ -1335,7 +1341,7 @@ bool KittyGraphics::_erase(TextBuffer& buffer, const std::function<bool(const Gr
 
 std::shared_ptr<const GraphicsImage> KittyGraphics::_findImage(const Control& control) const
 {
-    auto& store = _store();
+    const auto& store = _store();
     if (const auto number = control.GetUnsigned('I'))
     {
         return store.FindByNumber(number);

@@ -42,6 +42,7 @@ static constexpr char32_t s_placeholderDiacritics[]{
 
 int GraphicsPlaceholder::DiacriticValue(const char32_t ch) noexcept
 {
+#pragma warning(suppress : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
     const auto it = std::lower_bound(std::begin(s_placeholderDiacritics), std::end(s_placeholderDiacritics), ch);
     return it != std::end(s_placeholderDiacritics) && *it == ch ? gsl::narrow_cast<int>(it - std::begin(s_placeholderDiacritics)) : -1;
 }
@@ -139,12 +140,10 @@ std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::Add(std::shared
 // Marks an image as recently used, so that it's evicted last.
 void GraphicsStore::Touch(const GraphicsImage* image) noexcept
 {
-    const auto it = std::find_if(_images.begin(), _images.end(), [&](const auto& i) { return i.get() == image; });
-    if (it != _images.end() && std::next(it) != _images.end())
+    const auto it = std::find_if(_images.begin(), _images.end(), [&](const auto& i) noexcept { return i.get() == image; });
+    if (it != _images.end())
     {
-        auto entry = std::move(*it);
-        _images.erase(it);
-        _images.emplace_back(std::move(entry));
+        std::rotate(it, std::next(it), _images.end());
     }
 }
 
@@ -239,7 +238,7 @@ std::vector<std::shared_ptr<const GraphicsImage>> GraphicsStore::_enforceQuota(c
 {
     // Like kitty, images without an id are discarded once they aren't displayed anymore.
     // Images that aren't referenced by the buffer are only held by this store.
-    const auto unreferenced = [&](const auto& image) {
+    const auto unreferenced = [&](const auto& image) noexcept {
         return image.use_count() == 1 && !FindVirtualPlacement(image->id, 0);
     };
     for (auto it = _images.begin(); it != _images.end();)

@@ -994,6 +994,11 @@ const GraphicsStore* TextBuffer::TryGetGraphicsStore() const noexcept
     return _graphicsStore.get();
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'it' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
 // Removes the graphics references matching the predicate from every committed row.
 bool TextBuffer::EraseGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate)
 {
@@ -1023,6 +1028,8 @@ bool TextBuffer::AnyGraphics(const std::function<bool(const GraphicsRowRef&)>& p
     }
     return false;
 }
+
+#pragma warning(pop)
 
 bool TextBuffer::EraseGraphicsInRows(const til::CoordType rowBegin, const til::CoordType rowEnd)
 {
@@ -3025,7 +3032,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
                 {
                     for (const auto& ref : oldRow.GetGraphics())
                     {
-                        if (std::ranges::none_of(graphics, [&](const auto& existing) { return existing.placement == ref.placement; }))
+                        if (std::ranges::none_of(graphics, [&](const auto& existing) noexcept { return existing.placement == ref.placement; }))
                         {
                             graphics.emplace_back(ref);
                         }

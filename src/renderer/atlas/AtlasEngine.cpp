@@ -621,12 +621,13 @@ try
         key ^= key >> 31;
     };
     mix(info.image->revision);
-    mix(static_cast<u32>(info.rowIndex));
+    mix(gsl::narrow_cast<u32>(info.rowIndex));
     mix(std::bit_cast<u32>(sourceRect.left));
     mix(std::bit_cast<u32>(sourceRect.top));
     mix(std::bit_cast<u32>(sourceRect.right));
     mix(std::bit_cast<u32>(sourceRect.bottom));
-    mix((static_cast<u64>(target.right - target.left) << 32) | static_cast<u32>(target.bottom - target.top));
+    const u64 targetWidth = gsl::narrow_cast<u32>(target.right - target.left);
+    mix((targetWidth << 32) | gsl::narrow_cast<u32>(target.bottom - target.top));
     // The high bit keeps the keys apart from the revisions of image slices.
     key |= 1ull << 63;
 
