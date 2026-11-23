@@ -138,7 +138,7 @@
                                 x:Uid="Profile_DeleteProfileButton"
                                 Style="{StaticResource DeleteButtonStyle}">
                             <Button.Flyout>
-                                <Flyout>
+                                <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
                                     <StackPanel>
                                         <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
                                                    Style="{StaticResource CustomFlyoutTextStyle}" />

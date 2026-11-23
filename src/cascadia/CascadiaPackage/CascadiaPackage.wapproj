@@ -171,6 +171,25 @@
     </ItemGroup>
   </Target>
 
+  <PropertyGroup>
+    <WapProjBeforeGenerateAppxManifestDependsOn Condition="'$(OpenConsoleBuildUnsignedPackage)'=='true'">
+      $(WapProjBeforeGenerateAppxManifestDependsOn);
+      _OpenConsoleRedirectWrittenAppxManifest
+    </WapProjBeforeGenerateAppxManifestDependsOn>
+  </PropertyGroup>
+
+  <Target Name="_OpenConsoleRedirectWrittenAppxManifest" DependsOnTargets="_OpenConsoleRewriteAppxManifestPublisher">
+    <ItemGroup>
+      <OcManifestsToRemove Include="@(AppxManifest)" />
+      <AppxManifest Include="$(IntDir)OcGenerated%(AppxManifest.Filename)%(Extension)" />
+      <AppxManifest Remove="@(OcManifestsToRemove)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_OpenConsoleRewriteAppxManifestPublisher">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted -c &quot;$(OpenConsoleDir)\build\scripts\Add-UnpackagedOIDToAppxManifest.ps1&quot; -Path &quot;@(AppxManifest)&quot; -OutputPath &quot;$(IntDir)OcGenerated%(AppxManifest.Filename)%(AppxManifest.Extension)&quot;" />
+  </Target>
+
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 

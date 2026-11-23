@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AttachToNewControl();
 
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
-        til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
+        til::typed_event<IInspectable, IInspectable> PasteFromClipboard;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
         til::typed_event<IInspectable, Control::ContextMenuRequestedEventArgs> ContextMenuRequested;
 
@@ -174,7 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
-        std::wstring _getHyperLinkForPointerPress(const Control::MouseButtonState buttonState, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
+        std::wstring _getHyperlinkForPointerEvent(const bool isLeftButton, const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const til::point terminalPosition) const;
 
         bool _sendMouseEventHelper(const til::point terminalPosition,
                                    const unsigned int pointerUpdateKind,

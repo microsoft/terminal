@@ -15,3 +15,49 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: |-
           ./build/scripts/Invoke-FormattingCheck.ps1
+
+  audit:
+    runs-on: windows-2025-vs2026
+    name: Static Analysis
+    env:
+      BUILD_PLATFORM: x64
+      BUILD_CONFIGURATION: AuditMode
+      WT_BRANDING: Dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - run: |-
+          $vsWhere = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
+          $devShell = & $vsWhere -products * -latest -prerelease -find **\*DevShell.dll
+          $instance = & $vsWhere -path $devShell -property instanceId
+          "VS_INSTANCE=$instance" >> "$env:GITHUB_ENV"
+          "VS_DEVSHELL=$devShell" >> "$env:GITHUB_ENV"
+        name: Discover Visual Studio
+
+      - uses: ./.github/actions/terminal-restore-nuget-vcpkg
+        name: Restore NuGet and vcpkg
+        with:
+          arch: x64
+          config: AuditMode
+          vs-instance: ${{ env.VS_INSTANCE }}
+          vs-devshell: ${{ env.VS_DEVSHELL }}
+
+      - run: |-
+          Import-Module $env:VS_DEVSHELL
+          Enter-VsDevShell $env:VS_INSTANCE -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+          & msbuild OpenConsole.slnx `
+            "/p:Platform=${{ env.BUILD_PLATFORM }}" `
+            /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+            /p:WindowsTerminalOfficialBuild=true `
+            /p:WindowsTerminalBranding=${{ env.WT_BRANDING }} `
+            /p:OpenConsoleCleanPCH=true `
+            /clp:Verbosity=Minimal `
+            /m `
+            /bl:msbuild.binlog
+        name: Build
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: logs-audit-x64
+          path: msbuild.binlog

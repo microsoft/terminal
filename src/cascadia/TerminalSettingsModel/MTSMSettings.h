@@ -66,6 +66,7 @@ Author(s):
     X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
     X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
     X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
+    X(bool, ShowResizeOverlay, "showResizeOverlay", true)                                                                                                                                             \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
     X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
     X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \

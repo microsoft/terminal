@@ -130,6 +130,8 @@ namespace Microsoft::Console::Utils
 
     bool IsValidDirectory(const wchar_t* path) noexcept;
 
+    std::wstring FileUriToPath(std::wstring_view uri);
+
     // Same deal, but in TerminalPage::_evaluatePathForCwd
     std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
 

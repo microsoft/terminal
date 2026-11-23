@@ -32,7 +32,7 @@
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
-#define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
+#define CONSOLE_WINDOW_FLAGS WS_OVERLAPPEDWINDOW
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW | WS_EX_LAYERED)
 
 // Window class name
@@ -332,6 +332,8 @@ void Window::_UpdateSystemMetrics() const
 
                     // Locate window theming modules and try to set the dark mode.
                     LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(_hWnd));
+
+                    g.pRender->SetFrameColorChangedCallback(&Window::RenderFrameColorChangedCallback);
                 }
             }
         }
@@ -363,32 +365,21 @@ void Window::_CloseWindow() const
 [[nodiscard]] NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto status = STATUS_SUCCESS;
     const auto hWnd = GetWindowHandle();
 
-    // Only activate if the wShowWindow we were passed at process create doesn't explicitly tell us to remain inactive/hidden
-    if (wShowWindow != SW_SHOWNOACTIVATE &&
-        wShowWindow != SW_SHOWMINNOACTIVE &&
-        wShowWindow != SW_HIDE)
-    {
-        // Do not check result. On some SKUs, such as WinPE, it's perfectly OK for NULL to be returned.
-        SetActiveWindow(hWnd);
-    }
-    else if (wShowWindow == SW_SHOWMINNOACTIVE)
-    {
-        // If we're minimized and not the active window, set iconic to stop rendering
-        gci.Flags |= CONSOLE_IS_ICONIC;
-    }
+    // Set up the scrollbars before showing the window.
+    // This matches the way CM_UPDATE_SCROLL_BARS works, which we
+    // could SendMessage() here, but... this saves a whopping 2us. Yay~
+    _resizingWindow++;
+    UpdateScrollBars(GetScreenInfo().FetchScrollBarState());
+    _resizingWindow--;
 
-    if (SUCCEEDED_NTSTATUS(status))
-    {
-        ShowWindow(hWnd, wShowWindow);
+    ShowWindow(hWnd, wShowWindow);
 
-        auto& siAttached = GetScreenInfo();
-        siAttached.UpdateScrollBars();
-    }
+    // If we're minimized, set iconic to stop rendering
+    WI_UpdateFlag(gci.Flags, CONSOLE_IS_ICONIC, IsIconic(hWnd) != FALSE);
 
-    return status;
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -792,16 +783,9 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
 
 void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
 {
-    // If this is the main buffer, make sure we enable both of the scroll bars.
-    // The alt buffer likely disabled the scroll bars, this is the only way to re-enable it.
-    if (!state.isAltBuffer)
-    {
-        EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
-    }
-
     SCROLLINFO si{
         .cbSize = sizeof(SCROLLINFO),
-        .fMask = static_cast<UINT>(state.isAltBuffer ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL),
+        .fMask = SIF_ALL,
     };
 
     si.nMax = state.maxSize.width;
@@ -813,6 +797,12 @@ void Window::UpdateScrollBars(const SCREEN_INFORMATION::ScrollBarState& state)
     si.nPage = state.viewport.height();
     si.nPos = state.viewport.top;
     SetScrollInfo(_hWnd, SB_VERT, &si, TRUE);
+
+    if (_scrollBarsDisabled != state.isAltBuffer)
+    {
+        EnableScrollBar(_hWnd, SB_BOTH, state.isAltBuffer ? ESB_DISABLE_BOTH : ESB_ENABLE_BOTH);
+        _scrollBarsDisabled = state.isAltBuffer;
+    }
 }
 
 // Routine Description:
@@ -1350,4 +1340,10 @@ BOOL Window::MapRect(_Inout_ til::rect* lpRect)
 BOOL Window::ConvertScreenToClient(_Inout_ til::point* lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint->as_win32_point());
+}
+
+void Window::RenderFrameColorChangedCallback()
+{
+    // If we get this callback, we are guaranteed to have a Win32::Window.
+    static_cast<Window*>(ServiceLocator::LocateConsoleWindow())->PostUpdateFrameColor();
 }

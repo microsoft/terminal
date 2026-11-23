@@ -24,6 +24,7 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowResizeOverlay);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToZoom);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToChangeOpacity);

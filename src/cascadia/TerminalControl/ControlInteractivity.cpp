@@ -253,22 +253,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Initiate a paste operation.
     void ControlInteractivity::RequestPasteTextFromClipboard()
     {
-        auto args = winrt::make<PasteFromClipboardEventArgs>(
-            [core = _core](const winrt::hstring& wstr) {
-                core->PasteText(wstr);
-            },
-            _core->BracketedPasteEnabled());
-
         // send paste event up to TermApp
-        PasteFromClipboard.raise(*this, std::move(args));
+        PasteFromClipboard.raise(*this, nullptr);
     }
 
-    std::wstring ControlInteractivity::_getHyperLinkForPointerPress(
-        const Control::MouseButtonState buttonState,
+    std::wstring ControlInteractivity::_getHyperlinkForPointerEvent(
+        const bool isLeftButton,
         const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
         const til::point terminalPosition) const
     {
-        if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) && modifiers.IsCtrlPressed())
+        if (isLeftButton && modifiers.IsCtrlPressed())
         {
             return _core->GetHyperlink(terminalPosition.to_core_point());
         }
@@ -293,7 +287,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _pointerPressedInBounds = true;
 
         // GH#9396: we prioritize hyper-link over VT mouse events
-        if (const auto hyperlink = _getHyperLinkForPointerPress(buttonState, modifiers, terminalPosition); !hyperlink.empty())
+        if (const auto hyperlink = _getHyperlinkForPointerEvent(WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown), modifiers, terminalPosition); !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // Handle hyper-link only on the first click to prevent multiple activations
@@ -532,10 +526,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _pointerPressedInBounds = false;
 
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
+        const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
+
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            if (const auto hyperlink = _getHyperLinkForPointerPress(buttonState, modifiers, terminalPosition); !hyperlink.empty())
+            if (const auto hyperlink = _getHyperlinkForPointerEvent(isLeftMouseRelease, modifiers, terminalPosition); !hyperlink.empty())
             {
                 // GH#20630: Avoid emitting hyperlink clicks as VT mouse releases.
                 // We handled the hyperlink click in PointerPressed after all.
@@ -549,8 +545,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Only a left click release when copy on select is active should perform a copy.
         // Right clicks and middle clicks should not need to do anything when released.
-        const auto isLeftMouseRelease = pointerUpdateKind == WM_LBUTTONUP;
-
         if (_core->CopyOnSelect() &&
             isLeftMouseRelease &&
             _selectionNeedsToBeCopied)
@@ -587,8 +581,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
-        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
-
         // Short-circuit isReadOnly check to avoid warning dialog.
         //
         // GH#3321: Alternate scroll mode is a special type of mouse input mode
@@ -603,6 +595,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // here with a PointerPoint. However, as of #979, we don't have a
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
+            const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
             return _sendMouseEventHelper(terminalPosition,
                                          delta.Y != 0 ? WM_MOUSEWHEEL : WM_MOUSEHWHEEL,
                                          modifiers,
@@ -799,7 +792,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell)
     {
         // Get the size of the font, which is in pixels
-        const auto fontSize{ _core->GetFont().GetSize() };
+        const auto fontSize{ _core->GetFont().GetCellSizeInPhysicalPx() };
 
         if (roundToNearestCell)
         {

@@ -160,6 +160,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(PassThroughUnhandledSplitAcrossWrites);
 
     TEST_METHOD(DcsDataStringsReceivedByHandler);
+    TEST_METHOD(DcsParamIgnoresControlCharacters);
 
     TEST_METHOD(VtParameterSubspanTest);
 };
@@ -341,6 +342,20 @@ void StateMachineTest::DcsDataStringsReceivedByHandler()
 
     // Verify the control characters were executed (if expected).
     VERIFY_ARE_EQUAL(expectedExecuted, engine.executed);
+}
+
+void StateMachineTest::DcsParamIgnoresControlCharacters()
+{
+    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+    const auto& engine{ *enginePtr };
+    StateMachine machine{ std::move(enginePtr) };
+
+    // Ignore BEL within a parameter and DEL before the final character.
+    machine.ProcessString(L"\033P1\a2;3\x7f|data string\033\\");
+
+    VERIFY_ARE_EQUAL(VTID("|"), engine.dcsId);
+    VERIFY_ARE_EQUAL(std::vector<size_t>({ 12, 3 }), engine.dcsParams);
+    VERIFY_ARE_EQUAL(L"data string\033", engine.dcsDataString);
 }
 
 void StateMachineTest::VtParameterSubspanTest()

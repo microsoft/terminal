@@ -54,15 +54,15 @@
       </None>
 
       <None Include="$(RepoBinPath)\Win32\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-x86\native\</PackagePath>
       </None>
       <None Include="$(RepoBinPath)\x64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
       </None>
       <None Include="$(RepoBinPath)\ARM64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
-        <Pack>true</Pack>
+        <Pack Condition="'$(IncludeSymbols)'!='false'">true</Pack>
         <PackagePath>runtimes\win-arm64\native\</PackagePath>
       </None>
     </ItemGroup>
