@@ -1868,7 +1868,7 @@
               "type": "integer",
               "minimum": 0,
               "default": 0,
-              "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
+              "description": "When provided with a positive number, \"slide\" the window in from the edge it's docked to (the top of the screen by default) using an animation that lasts dropdownDuration milliseconds. Durations longer than 1000 milliseconds are clamped to 1000, since the animation blocks all Terminal windows while it plays."
             },
             "toggleVisibility": {
               "type": "boolean",

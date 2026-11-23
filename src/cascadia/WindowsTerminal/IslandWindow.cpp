@@ -621,11 +621,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     }
     case WM_MOVE:
     {
-        // Don't dismiss popups etc. for every frame of a slide animation.
-        if (!_slideAnimating)
-        {
-            WindowMoved.raise();
-        }
+        WindowMoved.raise();
         break;
     }
     case WM_CLOSE:
@@ -684,9 +680,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     {
         // GH#10274 - if the docked window gets moved to another monitor via aero
         // snap (win+shift+arrows), then re-adjust the size for the new monitor.
-        // Don't do this while we're sliding the window in or out though,
-        // since that intentionally moves the window past its docked edge.
-        if (_docked() && !_slideAnimating)
+        if (_docked())
         {
             // Retrieve the suggested dimensions and make a rect and size.
             auto lpwpos = (LPWINDOWPOS)lparam;
@@ -1290,6 +1284,16 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - <none>
 void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 {
+    // Summoning restores / minimizes / activates the window (possibly with a
+    // synchronous slide animation), which sends it messages. Ignore any summon
+    // requested while handling those, rather than nesting another one.
+    if (_summoning)
+    {
+        return;
+    }
+    _summoning = true;
+    const auto resetSummoning = wil::scope_exit([this]() noexcept { _summoning = false; });
+
     const auto toggleVisibility = args ? args.ToggleVisibility() : false;
     const auto toMonitor = args ? args.ToMonitor() : winrt::TerminalApp::MonitorBehavior::InPlace;
     auto dropdownDuration = args ? args.DropdownDuration() : 0;
@@ -1304,7 +1308,7 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
             // The OS has animations disabled - we should respect that and
             // disable the animation here.
             //
-            // We're doing this here, rather than in _doSlideAnimation, to
+            // We're doing this here, rather than when animating, to
             // preempt any other specific behavior that
             // _globalActivateWindow/_globalDismissWindow might do if they think
             // there should be an animation (like making the window appear with
@@ -1350,266 +1354,32 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
     }
 }
 
-// Sets the region of the top-level window, which clips _everything_ about the
-// window, including the DWM frame. Pass nullptr to remove the region.
-static void _setWindowRegion(const HWND hwnd, const til::rect* rect) noexcept
+static void _uncloakWindow(const HWND hwnd) noexcept
 {
-    if (!rect)
-    {
-        SetWindowRgn(hwnd, nullptr, TRUE);
-        return;
-    }
-
-    wil::unique_hrgn rgn{ CreateRectRgn(rect->left, rect->top, rect->right, rect->bottom) };
-    // On success, the system owns the region, so we must not delete it.
-    if (rgn && SetWindowRgn(hwnd, rgn.get(), TRUE))
-    {
-        rgn.release();
-    }
-}
-
-// Cloaks or uncloaks the window. DWM doesn't draw cloaked windows at all
-// (including any of its own transitions), but they otherwise behave as if
-// they were visible.
-static void _setCloaked(const HWND hwnd, const bool cloaked) noexcept
-{
-    const BOOL value = cloaked;
+    const BOOL value = FALSE;
     LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &value, sizeof(value)));
 }
 
-// Method Description:
-// - Helper for performing a sliding animation. This slides the _entire_
-//   window (frame and all) in from (or out past) the edge it's docked to.
-// - We can't resize the window during the animation, because that would
-//   resize (and reflow) all the terminal buffers. Instead, we only ever move
-//   the window, and use a region on the top-level window to clip off any part
-//   of it that's past the docked edge.
-// - If there's no monitor on the other side of the docked edge, we don't need
-//   a region at all - the part of the window past the edge is just off-screen.
-//   That's the best case, because a region on a top-level window disables the
-//   DWM shadow and rounded corners.
-// - If there's a monitor on the other side of the edge with a different DPI,
-//   then moving the window onto it would trigger a DPI change (and a resize),
-//   so in that case we leave the window where it is and just "wipe" it in with
-//   a region instead.
-// - This function does the entire animation on the main thread (the UI thread),
-//   and **DOES NOT YIELD IT**. The window will be animating for the entire
-//   duration of dropdownDuration.
-// - When appearing, the window must already be at its final position, and
-//   cloaked. When this returns, the window will be in its final position,
-//   uncloaked, with no region.
-// - When disappearing, the window must be visible. When this returns, the
-//   window will be back in its original position, but cloaked. The caller is
-//   responsible for uncloaking it once the window has been minimized.
-// Arguments:
-// - dropdownDuration: The duration to play the animation, in milliseconds.
-// - appearing: if true, slide the window in. Otherwise, slide it out.
-// Return Value:
-// - <none>
-void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool appearing)
+using unique_cloak = wil::unique_any<HWND, decltype(&_uncloakWindow), _uncloakWindow>;
+
+// Cloaks the window until the returned object is reset or destroyed. DWM
+// doesn't draw cloaked windows at all (including any of its own transitions),
+// but they otherwise behave as if they were visible. Returns an empty object
+// if the window couldn't be cloaked.
+[[nodiscard]] static unique_cloak _cloakWindow(const HWND hwnd) noexcept
 {
-    using winrt::Microsoft::Terminal::Settings::Model::DockPosition;
-
-    const auto hwnd = _window.get();
-    const til::rect finalRect{ GetWindowRect() };
-    const auto width = finalRect.width();
-    const auto height = finalRect.height();
-
-    auto side = _dockingSettings ? _dockingSettings.Side() : DockPosition::Top;
-    if (side == DockPosition::None)
+    const BOOL value = TRUE;
+    if (FAILED_LOG(DwmSetWindowAttribute(hwnd, DWMWA_CLOAK, &value, sizeof(value))))
     {
-        side = DockPosition::Top;
+        return {};
     }
-    const auto horizontal = side == DockPosition::Left || side == DockPosition::Right;
-    const auto extent = horizontal ? width : height;
+    return unique_cloak{ hwnd };
+}
 
-    // The area the window will occupy past its docked edge, once it's slid out
-    // entirely.
-    RECT beyondEdge{ finalRect.left, finalRect.top, finalRect.right, finalRect.bottom };
-    switch (side)
-    {
-    case DockPosition::Top:
-        beyondEdge.top -= height;
-        beyondEdge.bottom = finalRect.top;
-        break;
-    case DockPosition::Bottom:
-        beyondEdge.top = finalRect.bottom;
-        beyondEdge.bottom += height;
-        break;
-    case DockPosition::Left:
-        beyondEdge.left -= width;
-        beyondEdge.right = finalRect.left;
-        break;
-    case DockPosition::Right:
-        beyondEdge.left = finalRect.right;
-        beyondEdge.right += width;
-        break;
-    }
-
-    struct MonitorCheck
-    {
-        RECT area;
-        UINT dpi;
-        bool anyMonitor;
-        bool dpiMismatch;
-    } check{ beyondEdge, GetDpiForWindow(hwnd), false, false };
-
-    EnumDisplayMonitors(
-        nullptr, &beyondEdge, [](HMONITOR hmon, HDC, LPRECT, LPARAM lParam) -> BOOL {
-            auto& check = *reinterpret_cast<MonitorCheck*>(lParam);
-            MONITORINFO mi{};
-            mi.cbSize = sizeof(mi);
-            RECT overlap{};
-            if (GetMonitorInfoW(hmon, &mi) && IntersectRect(&overlap, &check.area, &mi.rcMonitor))
-            {
-                check.anyMonitor = true;
-                UINT dpiX = USER_DEFAULT_SCREEN_DPI;
-                UINT dpiY = USER_DEFAULT_SCREEN_DPI;
-                if (FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY)) || dpiX != check.dpi)
-                {
-                    check.dpiMismatch = true;
-                }
-            }
-            return TRUE;
-        },
-        reinterpret_cast<LPARAM>(&check));
-
-    const auto slide = !check.dpiMismatch;
-    const auto needsRegion = check.anyMonitor;
-
-    // Moves the window / sets the region such that `hidden` pixels of the
-    // window are hidden past the docked edge.
-    const auto applyFrame = [&](const til::CoordType hidden, const bool growing) {
-        // When sliding, clip off the part of the window that's past the edge.
-        // When wiping, clip off the far side of the window instead.
-        til::point offset{};
-        til::rect visible{ 0, 0, width, height };
-        switch (side)
-        {
-        case DockPosition::Top:
-            offset.y = -hidden;
-            if (slide)
-            {
-                visible.top = hidden;
-            }
-            else
-            {
-                visible.bottom = height - hidden;
-            }
-            break;
-        case DockPosition::Bottom:
-            offset.y = hidden;
-            if (slide)
-            {
-                visible.bottom = height - hidden;
-            }
-            else
-            {
-                visible.top = hidden;
-            }
-            break;
-        case DockPosition::Left:
-            offset.x = -hidden;
-            if (slide)
-            {
-                visible.left = hidden;
-            }
-            else
-            {
-                visible.right = width - hidden;
-            }
-            break;
-        case DockPosition::Right:
-            offset.x = hidden;
-            if (slide)
-            {
-                visible.right = width - hidden;
-            }
-            else
-            {
-                visible.left = hidden;
-            }
-            break;
-        }
-
-        const auto move = [&]() {
-            const auto origin = finalRect.origin() + offset;
-            SetWindowPos(hwnd, nullptr, origin.x, origin.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-        };
-
-        if (!slide)
-        {
-            _setWindowRegion(hwnd, &visible);
-        }
-        else if (!needsRegion)
-        {
-            move();
-        }
-        else if (growing)
-        {
-            // Move first, then grow the region: the old (smaller) region at
-            // the new position never shows anything past the edge.
-            move();
-            _setWindowRegion(hwnd, &visible);
-        }
-        else
-        {
-            // Shrink the region first, then move, for the same reason.
-            _setWindowRegion(hwnd, &visible);
-            move();
-        }
-    };
-
-    // While we're animating, we're intentionally moving the window off of its
-    // docked position (possibly onto another monitor). Don't let our
-    // WM_WINDOWPOSCHANGING / WM_MOVE handling interfere with that.
-    _slideAnimating = true;
-    auto resetAnimating = wil::scope_exit([this]() { _slideAnimating = false; });
-
-    if (appearing)
-    {
-        // Put the window entirely past the edge while it's still cloaked,
-        // then uncloak it. Nothing of it is visible yet.
-        applyFrame(extent, true);
-        _setCloaked(hwnd, false);
-    }
-
-    const auto duration = std::chrono::milliseconds{ dropdownDuration };
-    const auto start = std::chrono::steady_clock::now();
-    // Bound the number of frames, just in case DwmFlush returns immediately.
-    for (uint32_t i = 0; i < dropdownDuration; i++)
-    {
-        const auto elapsed = std::chrono::steady_clock::now() - start;
-        if (elapsed >= duration)
-        {
-            break;
-        }
-
-        const auto progress = std::chrono::duration<double>(elapsed) / duration;
-        // Ease out when appearing (decelerate into place), and ease in when
-        // disappearing (accelerate away).
-        const auto hiddenFraction = appearing ? std::pow(1.0 - progress, 3.0) : std::pow(progress, 3.0);
-        applyFrame(::base::saturated_cast<til::CoordType>(std::lround(hiddenFraction * extent)), appearing);
-
-        // Wait for DWM to present this frame before we do the next one. This
-        // keeps us in step with the compositor.
-        DwmFlush();
-    }
-
-    if (appearing)
-    {
-        applyFrame(0, true);
-        _setWindowRegion(hwnd, nullptr);
-    }
-    else
-    {
-        applyFrame(extent, false);
-        // Cloak the window, then put it back where it belongs (without a
-        // region), so that it's restored to the right place next time.
-        _setCloaked(hwnd, true);
-        _setWindowRegion(hwnd, nullptr);
-        SetWindowPos(hwnd, nullptr, finalRect.left, finalRect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
-    }
+static void _setTransitionsDisabled(const HWND hwnd, const bool disabled) noexcept
+{
+    const BOOL value = disabled;
+    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &value, sizeof(value)));
 }
 
 // Disables the DWM minimize/restore transitions for the window until the
@@ -1617,73 +1387,262 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
 // transition on top of our slide animation.
 [[nodiscard]] static auto _suppressDwmTransitions(const HWND hwnd) noexcept
 {
-    BOOL disable = TRUE;
-    LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &disable, sizeof(disable)));
-    return wil::scope_exit([hwnd]() noexcept {
-        BOOL disable = FALSE;
-        LOG_IF_FAILED(DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &disable, sizeof(disable)));
-    });
+    _setTransitionsDisabled(hwnd, true);
+    return wil::scope_exit([hwnd]() noexcept { _setTransitionsDisabled(hwnd, false); });
 }
+
+// Applies showCmd (show, restore or minimize) to the window's current placement.
+static void _setShowCmd(const HWND hwnd, const UINT showCmd) noexcept
+{
+    WINDOWPLACEMENT wpc{};
+    wpc.length = sizeof(wpc);
+    if (LOG_IF_WIN32_BOOL_FALSE(GetWindowPlacement(hwnd, &wpc)))
+    {
+        wpc.showCmd = showCmd;
+        if (LOG_IF_WIN32_BOOL_FALSE(SetWindowPlacement(hwnd, &wpc)))
+        {
+            return;
+        }
+    }
+    // The animation is optional; the requested visibility change isn't.
+    ShowWindow(hwnd, showCmd);
+}
+
+// Whether the window is actually on screen (save for our own cloak), and can
+// thus be slid in or out. Notably, the shell cloaks windows on other virtual
+// desktops, and the proxy would show those on the current one.
+static bool _canSlide(const HWND hwnd) noexcept
+{
+    DWORD cloaked = 0;
+    return IsWindowVisible(hwnd) && !IsIconic(hwnd) &&
+           SUCCEEDED_LOG(DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &cloaked, sizeof(cloaked))) &&
+           (cloaked & ~DWM_CLOAKED_APP) == 0;
+}
+
+using unique_hthumbnail = wil::unique_any<HTHUMBNAIL, decltype(&DwmUnregisterThumbnail), DwmUnregisterThumbnail>;
+
+// The slide animation blocks the UI thread, which is shared by all windows.
+// Longer durations are clamped to this, so it can't stall them for too long.
+static constexpr uint32_t maxSlideDurationMs{ 1000 };
+
+// A short-lived window that slides a DWM thumbnail of a docked window in from
+// (or out towards) its docked edge, while the real window stays in place,
+// cloaked. Moving the real window instead would resize the terminal, could
+// change its DPI when crossing monitors, and could leave it misplaced if
+// interrupted.
+// - It covers exactly the window's visible bounds, which clip the thumbnail.
+// - It has no content of its own, can't be activated, and takes no input.
+// - The animation runs synchronously on the UI thread (shared by all windows),
+//   for at most maxSlideDurationMs.
+class SlideProxy
+{
+public:
+    // Creates and shows the proxy directly behind `source`, showing either all
+    // of it, or (if `hidden`) none of it. On failure, the proxy is empty.
+    SlideProxy(const HWND source, const Docking& docking, const bool hidden) noexcept
+    {
+        using winrt::Microsoft::Terminal::Settings::Model::DockPosition;
+        switch (docking ? docking.Side() : DockPosition::Top)
+        {
+        case DockPosition::Bottom:
+            _direction = { 0, 1 };
+            break;
+        case DockPosition::Left:
+            _direction = { -1, 0 };
+            break;
+        case DockPosition::Right:
+            _direction = { 1, 0 };
+            break;
+        default:
+            break;
+        }
+
+        static const auto windowClass = []() noexcept {
+            WNDCLASSEXW wc{};
+            wc.cbSize = sizeof(wc);
+            wc.lpfnWndProc = DefWindowProcW;
+            wc.hInstance = wil::GetModuleInstanceHandle();
+            wc.lpszClassName = L"TerminalSlideAnimationProxy";
+            const auto atom = RegisterClassExW(&wc);
+            LOG_LAST_ERROR_IF(!atom);
+            return atom;
+        }();
+
+        // DWM thumbnails only contain the visible part of the window, without
+        // the invisible resize borders, so that's the area the proxy covers.
+        RECT bounds{};
+        if (!windowClass || FAILED_LOG(DwmGetWindowAttribute(source, DWMWA_EXTENDED_FRAME_BOUNDS, &bounds, sizeof(bounds))))
+        {
+            return;
+        }
+        _size = { bounds.right - bounds.left, bounds.bottom - bounds.top };
+
+        // Not owned by the source, since owned windows inherit their owner's
+        // cloak. Directly behind the source (in the same topmost group), so
+        // whichever of the two is uncloaked is visible, and they show the
+        // same content when swapped.
+        const auto topmost = WI_IsFlagSet(GetWindowLongPtrW(source, GWL_EXSTYLE), WS_EX_TOPMOST);
+        _window.reset(CreateWindowExW(WS_EX_NOREDIRECTIONBITMAP | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | (topmost ? WS_EX_TOPMOST : 0),
+                                      MAKEINTATOM(windowClass),
+                                      nullptr,
+                                      WS_POPUP | WS_DISABLED,
+                                      bounds.left,
+                                      bounds.top,
+                                      _size.width,
+                                      _size.height,
+                                      nullptr,
+                                      nullptr,
+                                      wil::GetModuleInstanceHandle(),
+                                      nullptr));
+        if (!_window)
+        {
+            LOG_LAST_ERROR();
+            return;
+        }
+        _setTransitionsDisabled(_window.get(), true);
+
+        if (FAILED_LOG(DwmRegisterThumbnail(_window.get(), source, _thumbnail.put())) ||
+            !_showFrame(hidden ? _extent() : 0) ||
+            !LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(_window.get(), source, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW)) ||
+            FAILED_LOG(DwmFlush()))
+        {
+            _thumbnail.reset();
+        }
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return static_cast<bool>(_thumbnail);
+    }
+
+    // Slides the window in (if `appearing`) or out. Stops early on failure.
+    void Slide(const HWND source, const uint32_t durationMs, const bool appearing) noexcept
+    {
+        const auto extent = _extent();
+        const std::chrono::duration<double, std::milli> duration{ std::min(durationMs, maxSlideDurationMs) };
+        const auto start = std::chrono::steady_clock::now();
+        for (auto progress = 0.0; progress < 1.0;)
+        {
+            progress = std::min(1.0, (std::chrono::steady_clock::now() - start) / duration);
+            // Ease out when appearing (decelerate into place), and ease in
+            // when disappearing (accelerate away).
+            const auto hiddenFraction = appearing ? std::pow(1.0 - progress, 3.0) : std::pow(progress, 3.0);
+            // Wait for DWM to present each frame before we do the next one.
+            // This keeps us in step with the compositor.
+            // A proxy is independent of its source. Don't keep displaying it
+            // after auto-hide, a minimize, or a virtual-desktop switch.
+            if (!_canSlide(source) ||
+                !_showFrame(::base::saturated_cast<til::CoordType>(std::lround(hiddenFraction * extent))) ||
+                FAILED_LOG(DwmFlush()))
+            {
+                return;
+            }
+        }
+    }
+
+private:
+    til::CoordType _extent() const noexcept
+    {
+        return _direction.x ? _size.width : _size.height;
+    }
+
+    // Shows the window with `hidden` pixels of it past the docked edge.
+    bool _showFrame(const til::CoordType hidden) noexcept
+    {
+        const auto dx = _direction.x * hidden;
+        const auto dy = _direction.y * hidden;
+        DWM_THUMBNAIL_PROPERTIES props{};
+        props.dwFlags = DWM_TNP_RECTDESTINATION | DWM_TNP_OPACITY | DWM_TNP_VISIBLE;
+        props.rcDestination = { dx, dy, _size.width + dx, _size.height + dy };
+        props.opacity = 255;
+        props.fVisible = TRUE;
+        return SUCCEEDED_LOG(DwmUpdateThumbnailProperties(_thumbnail.get(), &props));
+    }
+
+    // The direction the window slides out towards.
+    til::point _direction{ 0, -1 };
+    til::size _size;
+    wil::unique_hwnd _window;
+    // Declared after the window, so that it's unregistered first.
+    unique_hthumbnail _thumbnail;
+};
 
 void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
                                    const winrt::TerminalApp::MonitorBehavior toMonitor)
 {
+    const auto hwnd = _window.get();
+
     // First, get the window that's currently in the foreground. We'll need
     // _this_ window to be able to appear on top of. If we just use
-    // GetForegroundWindow after the SetWindowPlacement call, _we_ will be the
-    // foreground window.
+    // GetForegroundWindow after restoring, _we_ will be the foreground window.
     const auto oldForegroundWindow = GetForegroundWindow();
 
-    const auto restoreTransitions = _suppressDwmTransitions(_window.get());
+    const auto restoreTransitions = _suppressDwmTransitions(hwnd);
 
-    // Cloak the entire window (including its frame) before we restore it.
-    // DWM doesn't draw cloaked windows at all, so this hides both the
-    // standard restore animation and the window at its full size, until
-    // _doSlideAnimation has moved it past the docked edge.
-    _setCloaked(_window.get(), true);
-    // Make sure we never leave the window cloaked, even if something throws.
-    auto uncloak = wil::scope_exit([this]() { _setCloaked(_window.get(), false); });
-
-    // First, restore the window. Use SetWindowPlacement rather than
-    // ShowWindow(SW_RESTORE), to restore it to its docked position.
-    WINDOWPLACEMENT wpc{};
-    wpc.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(_window.get(), &wpc);
+    // Cloak the window (frame and all) while we restore it, until the proxy
+    // has slid it in. If we can't, we just restore it without an animation.
+    auto cloak = _cloakWindow(hwnd);
 
     // If the window is hidden, SW_SHOW it first.
-    if (!IsWindowVisible(GetHandle()))
+    if (!IsWindowVisible(hwnd))
     {
-        wpc.showCmd = SW_SHOW;
-        SetWindowPlacement(_window.get(), &wpc);
+        _setShowCmd(hwnd, SW_SHOW);
     }
-    wpc.showCmd = SW_RESTORE;
-    SetWindowPlacement(_window.get(), &wpc);
+    _setShowCmd(hwnd, SW_RESTORE);
+
+    if (!IsWindowVisible(hwnd) || IsIconic(hwnd))
+    {
+        return;
+    }
 
     // Possibly go to the monitor of the mouse / old foreground window.
     _moveToMonitor(oldForegroundWindow, toMonitor);
 
-    // Now that we're visible, animate the dropdown.
-    _doSlideAnimation(dropdownDuration, true);
+    // The restore may have failed, or been undone (e.g. by auto-hide), or the
+    // window may be on another virtual desktop.
+    if (cloak && _canSlide(hwnd))
+    {
+        // Popups (like menus) are separate windows that aren't part of the
+        // thumbnail, so they'd hang in place while the window slides. Dismiss
+        // them, like we do when the window moves.
+        WindowMoved.raise();
+
+        SlideProxy proxy{ hwnd, _dockingSettings, true };
+        if (proxy)
+        {
+            proxy.Slide(hwnd, dropdownDuration, true);
+        }
+
+        // Swap in the real window, and let DWM present it before the proxy
+        // (showing the same thing, if anything) goes away.
+        cloak.reset();
+        LOG_IF_FAILED(DwmFlush());
+    }
 }
 
 void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 {
-    const auto restoreTransitions = _suppressDwmTransitions(_window.get());
-    // Uncloak once we're minimized, so the window is visible the next time
-    // it's restored (with or without an animation).
-    auto uncloak = wil::scope_exit([this]() { _setCloaked(_window.get(), false); });
+    const auto hwnd = _window.get();
+    const auto restoreTransitions = _suppressDwmTransitions(hwnd);
 
-    // First, animate the window sliding up. This leaves the window cloaked,
-    // in its original position.
-    _doSlideAnimation(dropdownDuration, false);
+    // Lifted once we're minimized, so the window is visible when restored.
+    unique_cloak cloak;
+    if (_canSlide(hwnd))
+    {
+        // See _dropdownWindow.
+        WindowMoved.raise();
 
-    // Then minimize it. It's cloaked, so the standard minimize animation
-    // won't be visible.
-    WINDOWPLACEMENT wpc{};
-    wpc.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(_window.get(), &wpc);
-    wpc.showCmd = SW_MINIMIZE;
-    SetWindowPlacement(_window.get(), &wpc);
+        // Show the proxy (behind the window) before cloaking the window, so
+        // that the swap isn't visible.
+        SlideProxy proxy{ hwnd, _dockingSettings, false };
+        cloak = _cloakWindow(hwnd);
+        if (proxy && cloak)
+        {
+            proxy.Slide(hwnd, dropdownDuration, false);
+        }
+    }
+
+    _setShowCmd(hwnd, SW_MINIMIZE);
 }
 
 // Method Description:

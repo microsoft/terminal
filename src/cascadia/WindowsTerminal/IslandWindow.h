@@ -131,7 +131,6 @@ protected:
     void _dropdownWindow(const uint32_t dropdownDuration,
                          const winrt::TerminalApp::MonitorBehavior toMonitor);
     void _slideUpWindow(const uint32_t dropdownDuration);
-    void _doSlideAnimation(const uint32_t dropdownDuration, const bool appearing);
     void _globalDismissWindow(const uint32_t dropdownDuration);
 
     static MONITORINFO _getMonitorForCursor();
@@ -144,7 +143,7 @@ protected:
     winrt::Microsoft::Terminal::Settings::Model::Docking _dockingSettings{ nullptr };
     bool _centered{ false };
     bool _autoHideWindow{ false };
-    bool _slideAnimating{ false };
+    bool _summoning{ false };
 
     void _applyDocking();
     til::rect _getDockedSize(HMONITOR hmon);
