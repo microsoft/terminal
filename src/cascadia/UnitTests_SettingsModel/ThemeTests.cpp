@@ -23,6 +23,7 @@ namespace SettingsModelUnitTests
         TEST_CLASS(ThemeTests);
 
         TEST_METHOD(ParseSimpleTheme);
+        TEST_METHOD(ParseMicaStyle);
         TEST_METHOD(ParseEmptyTheme);
         TEST_METHOD(ParseNoWindowTheme);
         TEST_METHOD(ParseNullWindowTheme);
@@ -68,7 +69,76 @@ namespace SettingsModelUnitTests
 
         VERIFY_IS_NOT_NULL(theme->Window());
         VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
-        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
+        VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::Mica, theme->Window().UseMica());
+    }
+
+    void ThemeTests::ParseMicaStyle()
+    {
+        Log::Comment(L"Verify useMica parses the MicaStyle enum, plus booleans for back-compat.");
+
+        {
+            static constexpr std::string_view noneTheme{ R"({
+                "name": "none",
+                "window":
+                {
+                    "useMica": "none"
+                }
+            })" };
+            const auto schemeObject = VerifyParseSucceeded(noneTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::None, theme->Window().UseMica());
+        }
+        {
+            static constexpr std::string_view micaTheme{ R"({
+                "name": "mica",
+                "window":
+                {
+                    "useMica": "mica"
+                }
+            })" };
+            const auto schemeObject = VerifyParseSucceeded(micaTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::Mica, theme->Window().UseMica());
+        }
+        {
+            static constexpr std::string_view micaAltTheme{ R"({
+                "name": "micaAlt",
+                "window":
+                {
+                    "useMica": "micaAlt"
+                }
+            })" };
+            const auto schemeObject = VerifyParseSucceeded(micaAltTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::MicaAlt, theme->Window().UseMica());
+        }
+
+        Log::Comment(L"Back-compat: booleans map to Mica / None.");
+        {
+            static constexpr std::string_view trueTheme{ R"({
+                "name": "true",
+                "window":
+                {
+                    "useMica": true
+                }
+            })" };
+            const auto schemeObject = VerifyParseSucceeded(trueTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::Mica, theme->Window().UseMica());
+        }
+        {
+            static constexpr std::string_view falseTheme{ R"({
+                "name": "false",
+                "window":
+                {
+                    "useMica": false
+                }
+            })" };
+            const auto schemeObject = VerifyParseSucceeded(falseTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::MicaStyle::None, theme->Window().UseMica());
+        }
     }
 
     void ThemeTests::ParseEmptyTheme()
