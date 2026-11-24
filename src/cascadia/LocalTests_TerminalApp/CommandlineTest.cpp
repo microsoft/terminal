@@ -1674,6 +1674,7 @@ namespace TerminalAppLocalTests
             LR"("C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo)",
             LR"(pwsh.exe -NoExit -Command "Write-Host hi")",
             LR"(cmd.exe /k "echo a; echo b")",
+            LR"(pwsh.exe -NoExit -Command "echo 'hi; my name is adam'")",
         };
 
         for (const auto& commandline : commandlines)

@@ -23,6 +23,7 @@ class ReplaceTests
     TEST_METHOD(ReplaceWstringAndViews);
     TEST_METHOD(ReplaceWstringsInplace);
     TEST_METHOD(ReplaceWstringAndViewsInplace);
+    TEST_METHOD(ReplaceInWstringView);
 
     // There are explicitly no winrt::hstring tests here, because it's capital-H
     // hard to get the winrt hstring header included in this project without
@@ -131,4 +132,14 @@ void ReplaceTests::ReplaceWstringAndViewsInplace()
 
     til::replace_needle_in_haystack_inplace(foo, o, zeroZero);
     VERIFY_ARE_EQUAL(L"b0000", foo);
+}
+
+void ReplaceTests::ReplaceInWstringView()
+{
+    std::wstring_view foo{ L"foo" };
+
+    auto temp1 = til::replace_needle_in_haystack(foo, L"o", L"00");
+    static_assert(std::is_same_v<decltype(temp1), std::wstring>);
+    VERIFY_ARE_EQUAL(L"f0000", temp1);
+    VERIFY_ARE_EQUAL(L"foo", foo);
 }
