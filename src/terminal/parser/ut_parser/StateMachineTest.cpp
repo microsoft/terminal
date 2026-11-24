@@ -162,10 +162,7 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(DcsDataStringsReceivedByHandler);
     TEST_METHOD(DcsParamIgnoresControlCharacters);
 
-    TEST_METHOD(InputApcStringFlushedVerbatim);
-    TEST_METHOD(InputSosStringFlushedVerbatim);
-    TEST_METHOD(InputApcStringAbortedByCsiStaysDropped);
-    TEST_METHOD(OutputApcStringNotPassedThrough);
+    TEST_METHOD(InputStringPassthrough);
 
     TEST_METHOD(VtParameterSubspanTest);
 };
@@ -208,56 +205,40 @@ void StateMachineTest::PassThroughUnhandled()
     VERIFY_ARE_EQUAL(String(L" 12345 Hello World"), String(engine.printed.c_str()));
 }
 
-// GH#1173: On the input path an APC string (as used by the kitty graphics
-// protocol) must be flushed verbatim through ActionPassThroughString, exactly
-// like a DCS string already is, instead of being dropped.
-void StateMachineTest::InputApcStringFlushedVerbatim()
+// On input, DCS and SOS/PM/APC strings are passed through verbatim once terminated by ST,
+// even when split across reads, and dropped when cancelled.
+void StateMachineTest::InputStringPassthrough()
 {
-    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
-    auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
+    struct Case
+    {
+        std::wstring_view chunks[5];
+        std::wstring_view expected;
+    };
+    static constexpr Case cases[]{
+        // The ST's ESC arriving on its own must not be mistaken for an Esc keypress.
+        { { L"\x1b_Ga", L"b", L"\x1b", L"\\" }, L"\x1b_Gab\x1b\\" },
+        // The input engine ignores all DCS strings. Here, an invalid header does the same.
+        { { L"\x1bP1", L":q\x1b\\" }, L"\x1bP1:q\x1b\\" },
+        { { L"\x9f" L"a\x9c" }, L"\x9f" L"a\x9c" },
+        // A later ESC \ is an Alt+\ keypress, not the ST of the cancelled string.
+        { { L"\x1b_a\x18", L"\x1b\\" }, L"" },
+        { { L"\x1b_a\x1b[A" }, L"" },
+    };
 
-    machine.ProcessString(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\");
-
-    VERIFY_ARE_EQUAL(String(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\"), String(engine.passedThrough.c_str()));
-}
-
-// SOS and PM share the string state with APC; they get the same treatment.
-void StateMachineTest::InputSosStringFlushedVerbatim()
-{
-    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
-    auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
-
-    machine.ProcessString(L"\x1bX some sos string\x1b\\");
-
-    VERIFY_ARE_EQUAL(String(L"\x1bX some sos string\x1b\\"), String(engine.passedThrough.c_str()));
-}
-
-// An APC string aborted by something other than its ST stays dropped, and the
-// following sequence must not leak the pending flush.
-void StateMachineTest::InputApcStringAbortedByCsiStaysDropped()
-{
-    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
-    auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/true };
-
-    machine.ProcessString(L"\x1b_Ga=q;AAAA\x1b[31m");
-
-    VERIFY_ARE_EQUAL(String(L""), String(engine.passedThrough.c_str()));
-}
-
-// The output path is unaffected: APC strings are still not relayed through the
-// engine there (the caller relays the raw string itself in ConPTY mode).
-void StateMachineTest::OutputApcStringNotPassedThrough()
-{
-    auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
-    auto& engine{ *enginePtr.get() };
-    StateMachine machine{ std::move(enginePtr), /*isEngineForInput=*/false };
-
-    machine.ProcessString(L"\x1b_Ga=q,s=1,v=1,f=6,q=1;AAAA\x1b\\");
-
-    VERIFY_ARE_EQUAL(String(L""), String(engine.passedThrough.c_str()));
+    for (const auto& c : cases)
+    {
+        auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+        const auto& engine{ *enginePtr };
+        StateMachine machine{ std::move(enginePtr), true };
+        for (const auto chunk : c.chunks)
+        {
+            if (!chunk.empty())
+            {
+                machine.ProcessString(chunk);
+            }
+        }
+        VERIFY_ARE_EQUAL(std::wstring{ c.expected }, engine.passedThrough);
+    }
 }
 
 void StateMachineTest::RunStorageBeforeEscape()
