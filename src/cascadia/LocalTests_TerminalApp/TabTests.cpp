@@ -97,6 +97,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestClampSwitchToTab);
 
+        TEST_METHOD(TestNewTabArgsOverrideProfileSettings);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1518,4 +1520,30 @@ namespace TerminalAppLocalTests
         });
     }
 
+    void TabTests::TestNewTabArgsOverrideProfileSettings()
+    {
+        Log::Comment(L"GH#20749: Settings from NewTerminalArgs should not be "
+                     L"replaced with the profile's settings when the tab is initialized.");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 0 };
+            newTerminalArgs.ColorScheme(L"Vintage");
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+
+        TestOnUIThread([&page]() {
+            const auto& activeControl{ page->_GetActiveControl() };
+            VERIFY_IS_NOT_NULL(activeControl);
+
+            Log::Comment(L"The new tab should use the scheme from the args, not the profile");
+            const til::color backgroundColor{ activeControl.BackgroundColor() };
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
+        });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+    }
 }
