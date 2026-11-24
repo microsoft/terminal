@@ -67,6 +67,18 @@
                 </StackPanel>
             </local:SettingsCard>
 
+            <!--  Allow Cursor Blinking  -->
+            <local:SettingsCard x:Name="AllowVtCursorBlinking"
+                                x:Uid="Profile_AllowVtCursorBlinking">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AllowVtCursorBlinking, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AllowVtCursorBlinking"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
+
             <!--  Allow VT Checksum Report  -->
             <local:SettingsCard x:Name="AllowVtChecksumReport"
                                 x:Uid="Profile_AllowVtChecksumReport">
