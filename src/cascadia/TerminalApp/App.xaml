@@ -244,6 +244,7 @@
                 </ResourceDictionary>
 
                 <ResourceDictionary Source="ms-resource:///Files/TerminalApp/HighlightedTextControlStyle.xaml" />
+                <ResourceDictionary Source="ms-resource:///Files/TerminalApp/WindowContextMenuItemStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
 
