@@ -365,9 +365,8 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // and a fake LeftCtrl key press. In order to support key combinations where
     // the Ctrl key is manually pressed in addition to the AltGr key, we have to
     // be able to detect when the Ctrl key isn't genuine. We do so by tracking
-    // the time between the Alt and Ctrl key presses (populated in
-    // _trackControlKeyState), and only consider the Ctrl key to really be
-    // pressed if the gap is more than 50ms.
+    // the time between the Alt and Ctrl key presses, and only consider the Ctrl
+    // key to really be pressed if the difference is more than 50ms.
     auto leftCtrlIsReallyPressed = false;
     if (WI_AreAllFlagsSet(key.controlKeyState, LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED))
     {
@@ -464,19 +463,20 @@ DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept
     // can be misinterpreted as an Alt+AltGr key combination.
     const auto rightAltDown = key.bKeyDown && key.wVirtualKeyCode == VK_MENU && WI_IsFlagSet(key.dwControlKeyState, ENHANCED_KEY);
     WI_ClearFlagIf(_lastControlKeyState, RIGHT_ALT_PRESSED, WI_IsFlagSet(pressedKeyState, RIGHT_ALT_PRESSED) && !rightAltDown);
-
-    // Track timestamps for Left-Ctrl and Right-Alt (AltGr) key presses so that
-    // HandleKey can distinguish a genuine human Left-Ctrl from the synthetic one
-    // that AltGr generates.
-    if (WI_IsFlagSet(pressedKeyState, LEFT_CTRL_PRESSED))
+    // We also take this opportunity to record the time at which the LeftCtrl
+    // and RightAlt keys are pressed. This is needed to determine whether the
+    // Ctrl key was pressed by the user, or fabricated by an AltGr key press.
+    if (key.bKeyDown)
     {
-        _lastLeftCtrlTime = GetTickCount64();
+        if (WI_IsFlagSet(pressedKeyState, LEFT_CTRL_PRESSED))
+        {
+            _lastLeftCtrlTime = GetTickCount64();
+        }
+        if (WI_IsFlagSet(pressedKeyState, RIGHT_ALT_PRESSED))
+        {
+            _lastRightAltTime = GetTickCount64();
+        }
     }
-    if (WI_IsFlagSet(pressedKeyState, RIGHT_ALT_PRESSED))
-    {
-        _lastRightAltTime = GetTickCount64();
-    }
-
     return _lastControlKeyState;
 }
 
