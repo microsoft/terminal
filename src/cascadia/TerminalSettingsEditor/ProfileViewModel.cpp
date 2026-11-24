@@ -7,6 +7,7 @@
 #include "Appearances.h"
 #include "EnumEntry.h"
 #include "IconPicker.h"
+#include "CodePageUtils.h"
 
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
@@ -27,6 +28,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> ProfileViewModel::_CodePageList{ nullptr };
+
+    static thread_local std::vector<Editor::EnumEntry>* codePageCollector{ nullptr };
+
+    static BOOL CALLBACK _CollectCodePage(wchar_t* value)
+    {
+        if (!codePageCollector)
+        {
+            return FALSE;
+        }
+
+        wchar_t* end = nullptr;
+        const auto parsed = wcstoul(value, &end, 10);
+        if (!end || *end != L'\0' || parsed > UINT_MAX)
+        {
+            return TRUE;
+        }
+
+        const auto codePage = static_cast<uint32_t>(parsed);
+        CPINFOEXW info{};
+        if (!GetCPInfoExW(codePage, 0, &info))
+        {
+            return TRUE;
+        }
+
+        auto displayName = hstring{ info.CodePageName };
+        const auto codePageText = winrt::to_hstring(codePage);
+        if (std::wstring_view{ displayName }.find(std::wstring_view{ codePageText }) == std::wstring_view::npos)
+        {
+            displayName = til::hstring_format(FMT_COMPILE(L"{} - {}"), codePage, displayName);
+        }
+
+        codePageCollector->emplace_back(winrt::make<EnumEntry>(displayName, winrt::box_value(codePage), gsl::narrow_cast<int32_t>(codePage)));
+        return TRUE;
+    }
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
@@ -42,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
 
+        _InitializeCodePageList();
         _InitializeCurrentBellSounds();
 
         // Add a property changed handler to our own property changed event.
@@ -157,6 +194,115 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
         _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    void ProfileViewModel::_InitializeCodePageList()
+    {
+        if (_CodePageList)
+        {
+            return;
+        }
+
+        std::vector<Editor::EnumEntry> entries;
+
+        codePageCollector = &entries;
+        const auto resetCollector = wil::scope_exit([]() noexcept {
+            codePageCollector = nullptr;
+        });
+        LOG_IF_WIN32_BOOL_FALSE(EnumSystemCodePagesW(_CollectCodePage, CP_INSTALLED));
+
+        std::sort(entries.begin(), entries.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.IntValue() < rhs.IntValue();
+        });
+        _CodePageList = winrt::single_threaded_observable_vector<Editor::EnumEntry>(std::move(entries));
+    }
+
+    hstring ProfileViewModel::CodePageUnsetText() const
+    {
+        const auto defaultText = RS_(L"Profile_CodePageDefault/Content");
+        const auto inheritedText = RS_(L"Profile_CodePageInherited/Content");
+        return hstring{ CodePageUtils::UnsetTextForProfile(IsBaseLayer(), defaultText, inheritedText) };
+    }
+
+    hstring ProfileViewModel::CodePageDisplayText() const
+    {
+        if (!_profile.HasCodePage())
+        {
+            return CodePageUnsetText();
+        }
+
+        const auto codePage = _profile.CodePage();
+        for (const auto& entry : _CodePageList)
+        {
+            if (winrt::unbox_value<uint32_t>(entry.EnumValue()) == codePage)
+            {
+                return entry.EnumName();
+            }
+        }
+        return winrt::to_hstring(codePage);
+    }
+
+    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> ProfileViewModel::FilteredCodePageList()
+    {
+        if (!_filteredCodePageList)
+        {
+            _UpdateFilteredCodePageList();
+        }
+        return _filteredCodePageList;
+    }
+
+    void ProfileViewModel::UpdateCodePageFilter(const hstring& filter)
+    {
+        const auto trimmed = til::trim(std::wstring_view{ filter }, L' ');
+        if (std::wstring_view{ _codePageFilter } != trimmed)
+        {
+            _codePageFilter = hstring{ trimmed };
+            _UpdateFilteredCodePageList();
+            _NotifyChanges(L"FilteredCodePageList");
+        }
+    }
+
+    void ProfileViewModel::_UpdateFilteredCodePageList()
+    {
+        std::vector<Editor::EnumEntry> filtered;
+        const auto inheritedName = CodePageUnsetText();
+        if (CodePageUtils::MatchesFilter(inheritedName, _codePageFilter))
+        {
+            filtered.emplace_back(winrt::make<EnumEntry>(inheritedName, winrt::box_value<uint32_t>(0), 0));
+        }
+
+        for (const auto& entry : _CodePageList)
+        {
+            if (CodePageUtils::MatchesFilter(entry.EnumName(), _codePageFilter))
+            {
+                filtered.emplace_back(entry);
+            }
+        }
+        _filteredCodePageList = winrt::single_threaded_observable_vector<Editor::EnumEntry>(std::move(filtered));
+    }
+
+    void ProfileViewModel::SelectCodePage(const Editor::EnumEntry& entry)
+    {
+        if (!entry)
+        {
+            return;
+        }
+
+        const auto codePage = winrt::unbox_value<uint32_t>(entry.EnumValue());
+        if (codePage == 0)
+        {
+            _profile.ClearCodePage();
+        }
+        else if (IsValidCodePage(codePage))
+        {
+            _profile.CodePage(codePage);
+        }
+        else
+        {
+            return;
+        }
+
+        _NotifyChanges(L"HasCodePage", L"CodePage", L"CodePageDisplayText");
     }
 
     void ProfileViewModel::LeftPadding(double value) noexcept
@@ -396,6 +542,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::HasSetting(const hstring& name)
     {
         const std::wstring_view n{ name };
+        if (n == L"CodePage")
+        {
+            return _profile.HasCodePage();
+        }
 #define HANDLE(Setting)        \
     if (n == L## #Setting)     \
     {                          \
@@ -411,6 +561,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ProfileViewModel::ClearSetting(const hstring& name)
     {
         const std::wstring_view n{ name };
+        if (n == L"CodePage")
+        {
+            if (_profile.HasCodePage())
+            {
+                _profile.ClearCodePage();
+                _NotifyChanges(L"HasCodePage", L"CodePage", L"CodePageDisplayText");
+            }
+            return;
+        }
 #define HANDLE(Setting)    \
     if (n == L## #Setting) \
     {                      \
@@ -426,6 +585,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::IInspectable ProfileViewModel::SettingOverrideSource(const hstring& name)
     {
         const std::wstring_view n{ name };
+        if (n == L"CodePage")
+        {
+            return _profile.CodePageOverrideSource();
+        }
 #define HANDLE(Setting)                   \
     if (n == L## #Setting)                \
     {                                     \

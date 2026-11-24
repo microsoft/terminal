@@ -24,6 +24,8 @@ Revision History:
 
 void ScreenBufferSizeChange(const til::size coordNewSize);
 
+void InitializeConsoleCodePage();
+
 [[nodiscard]] NTSTATUS DoCreateScreenBuffer();
 
 std::vector<WORD> ReadOutputAttributes(const SCREEN_INFORMATION& screenInfo,

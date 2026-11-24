@@ -2919,4 +2919,23 @@ This action is applied immediately and cannot be undone.</value>
     <value>System integration and notifications</value>
     <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
+  <data name="Profile_CodePage.Header" xml:space="preserve">
+    <value>Code page</value>
+    <comment>Header for the code page override used by this profile.</comment>
+  </data>
+  <data name="Profile_CodePage.Description" xml:space="preserve">
+    <value>Sets the Windows code page for this profile. Choose the first option to clear this value and use the inherited or operating system default.</value>
+    <comment>Description for the profile code page setting.</comment>
+  </data>
+  <data name="Profile_CodePageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Code page</value>
+  </data>
+  <data name="Profile_CodePageDefault.Content" xml:space="preserve">
+    <value>(Default)</value>
+    <comment>The first code page option for profile defaults. It clears the override and uses the operating system default.</comment>
+  </data>
+  <data name="Profile_CodePageInherited.Content" xml:space="preserve">
+    <value>(Inherited)</value>
+    <comment>The first code page option for an individual profile. It clears the override and inherits from profile defaults.</comment>
+  </data>
 </root>

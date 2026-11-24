@@ -255,6 +255,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _startingTitle = unbox_prop_or<winrt::hstring>(settings, L"startingTitle", _startingTitle);
             _rows = unbox_prop_or<uint32_t>(settings, L"initialRows", _rows);
             _cols = unbox_prop_or<uint32_t>(settings, L"initialCols", _cols);
+            _codePage = unbox_prop_or<uint32_t>(settings, L"codePage", _codePage);
             _sessionId = unbox_prop_or<winrt::guid>(settings, L"sessionId", _sessionId);
             _environment = settings.TryLookup(L"environment").try_as<Windows::Foundation::Collections::ValueSet>();
             _profileGuid = unbox_prop_or<winrt::guid>(settings, L"profileGuid", _profileGuid);
@@ -409,8 +410,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (!_pipe)
         {
             auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
-            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), pipe.client.get(), pipe.client.get(), _flags, &_hPC));
+            BOOL codePageApplied = FALSE;
+            THROW_IF_FAILED(ConptyCreatePseudoConsoleWithCodePage(til::unwrap_coord_size(dimensions),
+                                                                  pipe.client.get(),
+                                                                  pipe.client.get(),
+                                                                  _flags,
+                                                                  _codePage,
+                                                                  &codePageApplied,
+                                                                  &_hPC));
             _pipe = std::move(pipe.server);
+
+            _codePageFallbackWarningPending = _codePage != 0 && !codePageApplied;
 
             if (_initialParentHwnd != 0)
             {
@@ -795,6 +805,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 try
                 {
                     TerminalOutput.raise(winrt_wstring_to_array_view(wstr));
+                    if (std::exchange(_codePageFallbackWarningPending, false))
+                    {
+                        auto warning = RS_fmt(L"CodePageFallbackWarning", _codePage);
+                        warning.append(L"\r\n");
+                        TerminalOutput.raise(winrt_wstring_to_array_view(warning));
+                    }
                 }
                 CATCH_LOG();
             }

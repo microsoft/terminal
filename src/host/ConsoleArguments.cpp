@@ -17,6 +17,7 @@ const std::wstring_view ConsoleArguments::FORCE_NO_HANDOFF_ARG = L"-ForceNoHando
 const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
 const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
+const std::wstring_view ConsoleArguments::CODEPAGE_ARG = L"--codepage";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
@@ -250,6 +251,48 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 }
 
 // Routine Description:
+// - Parses a Windows code page identifier from the next argument.
+// Arguments:
+// - args: A collection of command-line arguments.
+// - index: The index of the argument whose value follows it.
+// - pSetting: Receives a valid Windows code page identifier.
+// Return Value:
+// - S_OK if the value is a complete, valid code page identifier; otherwise E_INVALIDARG.
+[[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                                           _Inout_ size_t& index,
+                                                           _Out_opt_ UINT* const pSetting)
+{
+    auto succeeded = (index + 1) < args.size();
+    if (succeeded)
+    {
+        s_ConsumeArg(args, index);
+        if (pSetting != nullptr)
+        {
+            try
+            {
+                size_t pos = 0;
+                const auto& text = args[index];
+                const auto value = std::stoull(text, &pos);
+                succeeded = !text.starts_with(L'-') &&
+                            pos == text.length() &&
+                            value <= UINT_MAX &&
+                            IsValidCodePage(static_cast<UINT>(value));
+                if (succeeded)
+                {
+                    *pSetting = static_cast<UINT>(value);
+                }
+            }
+            catch (...)
+            {
+                succeeded = false;
+            }
+        }
+        s_ConsumeArg(args, index);
+    }
+    return succeeded ? S_OK : E_INVALIDARG;
+}
+
+// Routine Description:
 // - Parsing helper that will turn a string into a handle value if possible.
 // Arguments:
 // - handleAsText - The string representation of the handle that was passed in on the command line
@@ -445,6 +488,10 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             hr = s_GetArgumentValue(args, i, &_height);
         }
+        else if (arg == CODEPAGE_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_codePage);
+        }
         else if (arg == FEATURE_ARG)
         {
             hr = s_HandleFeatureValue(args, i);
@@ -617,6 +664,11 @@ short ConsoleArguments::GetWidth() const
 short ConsoleArguments::GetHeight() const
 {
     return _height;
+}
+
+UINT ConsoleArguments::GetCodePage() const noexcept
+{
+    return _codePage;
 }
 
 bool ConsoleArguments::GetInheritCursor() const

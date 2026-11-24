@@ -3017,6 +3017,12 @@
           "description": "Executable used in the profile.",
           "type": "string"
         },
+        "codePage": {
+          "description": "Overrides the default Windows code page for this profile. When omitted, the profile defaults or operating system default are used.",
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
         "connectionType": {
           "$ref": "#/$defs/ProfileGuid",
           "description": "Identifies a special type of connection for this profile, such as Azure Cloud Shell. This is set automatically and shouldn't be changed."

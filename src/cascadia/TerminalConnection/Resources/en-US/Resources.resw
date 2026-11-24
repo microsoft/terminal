@@ -226,4 +226,8 @@
   <data name="FileNotFound" xml:space="preserve">
     <value>The system cannot find the file specified.</value>
   </data>
+  <data name="CodePageFallbackWarning" xml:space="preserve">
+    <value>[warning: code page {0} was not applied because Windows Terminal fell back to the operating system console host]</value>
+    <comment>{0} is the requested Windows code page number.</comment>
+  </data>
 </root>
