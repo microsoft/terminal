@@ -2,7 +2,7 @@ parameters:
   buildConfiguration: 'Release'
   buildPlatform: ''
   artifactStem: ''
-  testLogPath: '$(Build.BinariesDirectory)\$(BuildPlatform)\$(BuildConfiguration)\testsOnBuildMachine.wtl'
+  testLogPath: 'pgo.trx'
 
 jobs:
 - job: PGO${{ parameters.buildPlatform }}${{ parameters.buildConfiguration }}

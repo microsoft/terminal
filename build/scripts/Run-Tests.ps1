@@ -20,10 +20,15 @@ $teArgs = @()
 
 # Check if the LogPath parameter is provided and enable WTT logging
 if ($LogPath) {
-    $teArgs += '/enablewttlogging'
-    $teArgs += '/appendwttlogging'
     $teArgs += "/logFile:$LogPath"
-    Write-Host "WTT Logging Enabled"
+    if ($LogPath.EndsWith('.trx')) {
+        $teArgs += '/logger:trx'
+        Write-Host "TRX Logging Enabled"
+    } elseif ($LogPath.EndsWith('.wtl')) {
+        $teArgs += '/enablewttlogging'
+        $teArgs += '/appendwttlogging'
+        Write-Host "WTT Logging Enabled"
+    }
 }
 
 & "$Root\te.exe" $teArgs $testDlls.FullName $AdditionalTaefArguments
