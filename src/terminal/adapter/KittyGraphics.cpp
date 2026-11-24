@@ -169,14 +169,13 @@ namespace
             return false;
         }
         out.resize(gsl::narrow_cast<size_t>(toRead));
-        const std::span buffer{ out };
         size_t total = 0;
-        while (total < buffer.size())
+        while (total < out.size())
         {
             DWORD read = 0;
-            const auto remaining = buffer.subspan(total);
-            const auto chunk = gsl::narrow_cast<DWORD>(std::min<size_t>(remaining.size(), 1 << 30));
-            if (!ReadFile(file.get(), remaining.data(), chunk, &read, nullptr) || read == 0)
+            const auto chunk = gsl::narrow_cast<DWORD>(std::min<size_t>(out.size() - total, 1 << 30));
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+            if (!ReadFile(file.get(), out.data() + total, chunk, &read, nullptr) || read == 0)
             {
                 return false;
             }
@@ -219,8 +218,8 @@ namespace
         {
             return false;
         }
-        const auto mapped = std::span{ view.get(), gsl::narrow_cast<size_t>(mappedSize) }.subspan(gsl::narrow_cast<size_t>(offset), gsl::narrow_cast<size_t>(toRead));
-        out.assign(mapped.begin(), mapped.end());
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+        out.assign(view.get() + offset, view.get() + offset + toRead);
         return true;
     }
 
@@ -269,7 +268,8 @@ namespace
         size_t produced = 0;
         for (;;)
         {
-            stream.next_out = std::span{ output }.subspan(produced).data();
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+            stream.next_out = output.data() + produced;
             stream.avail_out = gsl::narrow_cast<uInt>(std::min<size_t>(output.size() - produced, UINT_MAX));
             const auto before = stream.avail_out;
             const auto result = inflate(&stream, Z_NO_FLUSH);
@@ -1024,7 +1024,8 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     case L'f':
     case L't':
     {
-        const auto path = til::u8u16(std::string{ data.begin(), data.end() });
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+        const auto path = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
         std::wstring finalPath;
         if (!readFile(path, control.Get('O'), control.Get('S'), bytes, finalPath))
         {
@@ -1041,7 +1042,8 @@ std::shared_ptr<GraphicsImage> KittyGraphics::_load(const Control& control, std:
     }
     case L's':
     {
-        const auto name = til::u8u16(std::string{ data.begin(), data.end() });
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+        const auto name = til::u8u16({ reinterpret_cast<const char*>(data.data()), data.size() });
         if (!readSharedMemory(name, control.Get('O'), control.Get('S'), bytes))
         {
             error = { L"EBADF", L"Failed to read shared memory" };
