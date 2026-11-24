@@ -27,6 +27,9 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SetColorTableEntry);
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
+        TEST_METHOD(CursorBlinkingDefault);
+        TEST_METHOD(CursorBlinkingInitialization);
+        TEST_METHOD(CursorBlinkingSettingsReload);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
         // This test ensures that Terminal::_WriteBuffer doesn't get stuck when
@@ -172,6 +175,122 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     stateMachine.ProcessString(L"\x1b[?12;25l");
     VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
+}
+
+void TerminalApiTest::CursorBlinkingDefault()
+{
+    for (const auto blinking : { false, true })
+    {
+        Terminal term{ Terminal::TestDummyMarker{} };
+        DummyRenderer renderer{ &term };
+        auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
+        settings->CursorBlinking(blinking);
+        settings->CursorShape(CursorStyle::Underscore);
+        term.CreateFromSettings(*settings, renderer);
+        auto& cursor = term.GetTextBuffer().GetCursor();
+        auto& stateMachine = *term._stateMachine;
+        std::wstring response;
+        term._pfnWriteInput = [&](const std::wstring_view value) { response = value; };
+        VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
+
+        for (auto style = 1; style <= 6; ++style)
+        {
+            stateMachine.ProcessString(fmt::format(L"\x1b[{} q", style));
+            VERIFY_ARE_EQUAL(style % 2 == 1, cursor.IsBlinking());
+            stateMachine.ProcessString(L"\x1bP$q q\x1b\\");
+            VERIFY_ARE_EQUAL(fmt::format(L"\x1bP1$r{} q\x1b\\", style), response);
+            stateMachine.ProcessString(L"\x1b[0 q");
+            VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
+            VERIFY_ARE_EQUAL(CursorType::Underscore, cursor.GetType());
+        }
+
+        stateMachine.ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
+        VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
+        term.UpdateAppearance(*settings);
+        term.UpdateSettings(*settings);
+        auto unfocusedSettings = winrt::make_self<MockTermSettings>(0, 100, 100);
+        unfocusedSettings->CursorBlinking(!blinking);
+        term.UpdateAppearance(*unfocusedSettings);
+        VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
+        stateMachine.ProcessString(L"\x1b[?12$p");
+        VERIFY_ARE_EQUAL(blinking ? L"\x1b[?12;2$y" : L"\x1b[?12;1$y", response);
+        stateMachine.ProcessString(L"\x1b[!p");
+        VERIFY_ARE_EQUAL(!blinking, cursor.IsBlinking());
+        stateMachine.ProcessString(L"\x1b"
+                                   L"c");
+        VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
+        term.UpdateAppearance(*unfocusedSettings);
+        stateMachine.ProcessString(L"\x1b[0 q");
+        VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
+    }
+}
+
+void TerminalApiTest::CursorBlinkingInitialization()
+{
+    for (const auto blinking : { false, true })
+    {
+        for (const auto applySettingsFirst : { false, true })
+        {
+            Terminal term{ Terminal::TestDummyMarker{} };
+            DummyRenderer renderer{ &term };
+            auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
+            settings->CursorBlinking(blinking);
+            if (applySettingsFirst)
+            {
+                term.UpdateSettings(*settings);
+            }
+            term.Create({ 100, 100 }, 0, renderer, settings->CursorBlinking());
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
+            term._stateMachine->ProcessString(L"\x1b[0 q");
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term.UpdateSettings(*settings);
+            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
+            VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        }
+    }
+}
+
+void TerminalApiTest::CursorBlinkingSettingsReload()
+{
+    Terminal term{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &term };
+    auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
+    settings->CursorBlinking(false);
+    term.CreateFromSettings(*settings, renderer);
+    auto& stateMachine = *term._stateMachine;
+    stateMachine.ProcessString(L"\x1b[?1049h");
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+    settings->CursorBlinking(true);
+    term.UpdateSettings(*settings);
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+    stateMachine.ProcessString(L"\x1b[?1049l");
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+    stateMachine.ProcessString(L"\x1b[0 q");
+    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
+
+    stateMachine.ProcessString(L"\x1b[?1049h");
+    settings->CursorBlinking(false);
+    term.UpdateSettings(*settings);
+    VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
+    stateMachine.ProcessString(L"\x1b"
+                               L"c");
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+    stateMachine.ProcessString(L"\x1b[?12h");
+    term.HardResetWithoutErase();
+    VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
+
+    for (auto style = 1; style <= 6; ++style)
+    {
+        stateMachine.ProcessString(fmt::format(L"\x1b[{} q", style));
+        const auto blinking = style % 2 == 1;
+        settings->CursorBlinking(!blinking);
+        term.UpdateSettings(*settings);
+        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        stateMachine.ProcessString(L"\x1b[0 q");
+        VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+    }
 }
 
 void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
