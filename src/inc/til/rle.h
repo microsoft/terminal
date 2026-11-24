@@ -378,7 +378,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         void swap(basic_rle& other) noexcept
         {
-            std::swap(_runs, other._runs);
+            _runs.swap(other._runs);
             std::swap(_total_length, other._total_length);
         }
 
