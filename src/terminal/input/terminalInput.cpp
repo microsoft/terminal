@@ -463,6 +463,20 @@ DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept
     // can be misinterpreted as an Alt+AltGr key combination.
     const auto rightAltDown = key.bKeyDown && key.wVirtualKeyCode == VK_MENU && WI_IsFlagSet(key.dwControlKeyState, ENHANCED_KEY);
     WI_ClearFlagIf(_lastControlKeyState, RIGHT_ALT_PRESSED, WI_IsFlagSet(pressedKeyState, RIGHT_ALT_PRESSED) && !rightAltDown);
+    // We also take this opportunity to record the time at which the LeftCtrl
+    // and RightAlt keys are pressed. This is needed to determine whether the
+    // Ctrl key was pressed by the user, or fabricated by an AltGr key press.
+    if (key.bKeyDown)
+    {
+        if (WI_IsFlagSet(pressedKeyState, LEFT_CTRL_PRESSED))
+        {
+            _lastLeftCtrlTime = GetTickCount64();
+        }
+        if (WI_IsFlagSet(pressedKeyState, RIGHT_ALT_PRESSED))
+        {
+            _lastRightAltTime = GetTickCount64();
+        }
+    }
     return _lastControlKeyState;
 }
 
