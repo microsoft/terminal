@@ -21,11 +21,12 @@ using namespace Microsoft::Console::Interactivity;
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-    FontInfo fiFont(gci.GetFaceName(),
-                    gsl::narrow_cast<unsigned char>(gci.GetFontFamily()),
-                    gci.GetFontWeight(),
-                    gci.GetFontSize(),
-                    gci.GetCodePage());
+    FontInfoDesired fiFont;
+    fiFont.SetFaceName(gci.GetFaceName());
+    fiFont.SetFamily(gsl::narrow_cast<unsigned char>(gci.GetFontFamily()));
+    fiFont.SetWeight(gci.GetFontWeight());
+    fiFont.SetCodePage(gci.GetCodePage());
+    fiFont.SetPixelCellSize(gci.GetFontSize());
 
     // For East Asian version, we want to get the code page from the registry or shell32, so we can specify console
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
@@ -38,6 +39,7 @@ using namespace Microsoft::Console::Interactivity;
 
     auto Status = SCREEN_INFORMATION::CreateInstance(gci.GetWindowSize(),
                                                      fiFont,
+                                                     FontInfo{},
                                                      gci.GetScreenBufferSize(),
                                                      TextAttribute{},
                                                      TextAttribute{ gci.GetPopupFillAttribute() },
@@ -260,6 +262,11 @@ std::string ReadOutputStringA(const SCREEN_INFORMATION& screenInfo,
 void ScreenBufferSizeChange(const til::size coordNewSize)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    if (WI_IsFlagClear(gci.pInputBuffer->InputMode, ENABLE_WINDOW_INPUT))
+    {
+        return;
+    }
 
     try
     {

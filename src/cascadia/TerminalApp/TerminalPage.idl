@@ -7,11 +7,11 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass ContentManager
     {
-        Microsoft.Terminal.Control.ControlInteractivity CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
-                                                                   Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
-                                                                   Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        Microsoft.Terminal.Control.IContentHandle CreateCore(Microsoft.Terminal.Control.IControlSettings settings,
+                                                             Microsoft.Terminal.Control.IControlAppearance unfocusedAppearance,
+                                                             Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        Microsoft.Terminal.Control.ControlInteractivity TryLookupCore(UInt64 id);
+        Microsoft.Terminal.Control.IContentHandle TryLookupCore(UInt64 id);
         void Detach(Microsoft.Terminal.Control.TermControl control);
     }
 
@@ -95,8 +95,6 @@ namespace TerminalApp
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
         IDialogPresenter DialogPresenter;
-        void ShowKeyboardServiceWarning();
-        String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
 

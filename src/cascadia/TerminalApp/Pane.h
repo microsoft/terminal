@@ -108,7 +108,8 @@ public:
     BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId, winrt::TerminalApp::BuildStartupKind kind);
     winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
 
-    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings,
+                        const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
@@ -152,7 +153,7 @@ public:
     void EnableBroadcast(bool enabled);
     void BroadcastKey(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
     void BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const wchar_t vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-    void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text);
+    void BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl, const winrt::hstring& text, const winrt::Microsoft::Terminal::Control::WriteInputStringType type);
 
     void UpdateResources(const PaneResources& resources);
 

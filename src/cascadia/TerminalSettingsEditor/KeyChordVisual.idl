@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass KeyChordVisual : Windows.UI.Xaml.Controls.UserControl
+    {
+        KeyChordVisual();
+
+        Microsoft.Terminal.Control.KeyChord KeyChord;
+        static Windows.UI.Xaml.DependencyProperty KeyChordProperty { get; };
+    }
+}

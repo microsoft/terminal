@@ -1,0 +1,45 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    enum SettingsCardContentAlignment
+    {
+        Right,
+        Left,
+        Vertical
+    };
+
+    // Unlike the toolkit, we need to derive from Button for proper UIA behavior.
+    [default_interface] runtimeclass SettingsCard : Windows.UI.Xaml.Controls.Button
+    {
+        SettingsCard();
+
+        Object Header;
+        static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
+
+        Object Description;
+        static Windows.UI.Xaml.DependencyProperty DescriptionProperty { get; };
+
+        Windows.UI.Xaml.Controls.IconElement HeaderIcon;
+        static Windows.UI.Xaml.DependencyProperty HeaderIconProperty { get; };
+
+        Object ActionIcon;
+        static Windows.UI.Xaml.DependencyProperty ActionIconProperty { get; };
+
+        String ActionIconToolTip;
+        static Windows.UI.Xaml.DependencyProperty ActionIconToolTipProperty { get; };
+
+        Boolean IsClickEnabled;
+        static Windows.UI.Xaml.DependencyProperty IsClickEnabledProperty { get; };
+
+        Boolean IsActionIconVisible;
+        static Windows.UI.Xaml.DependencyProperty IsActionIconVisibleProperty { get; };
+
+        Boolean IsExperimental;
+        static Windows.UI.Xaml.DependencyProperty IsExperimentalProperty { get; };
+
+        SettingsCardContentAlignment ContentAlignment;
+        static Windows.UI.Xaml.DependencyProperty ContentAlignmentProperty { get; };
+    };
+}

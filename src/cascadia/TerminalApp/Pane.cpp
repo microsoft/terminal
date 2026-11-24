@@ -1295,11 +1295,12 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings)
+void Pane::UpdateSettings(const CascadiaSettings& settings,
+                          const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
 {
     if (_content)
     {
-        _content.UpdateSettings(settings);
+        _content.UpdateSettings(settings, windowSettings);
     }
 }
 
@@ -2848,13 +2849,12 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
 
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
-//   have 1x1 character visible, in each of its children. If we're a leaf, we'll
-//   include the space needed for borders _within_ us.
+//   satisfy each child's MinimumSize. If we're a leaf, we'll include the
+//   space needed for borders _within_ us.
 // Arguments:
 // - <none>
 // Return Value:
-// - The minimum size that this pane can be resized to and still have a visible
-//   character.
+// - The minimum size that this pane can be resized to and still fit its content.
 Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
@@ -3048,14 +3048,15 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl&
 }
 
 void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
-                           const winrt::hstring& text)
+                           const winrt::hstring& text,
+                           const winrt::Microsoft::Terminal::Control::WriteInputStringType type)
 {
     WalkTree([&](const auto& pane) {
         if (const auto& termControl{ pane->GetTerminalControl() })
         {
             if (termControl != sourceControl && !termControl.ReadOnly())
             {
-                termControl.RawWriteString(text);
+                termControl.WriteInputStringWithoutBroadcast(text, type);
             }
         }
     });

@@ -23,6 +23,7 @@ Revision History:
 #include "../buffer/out/OutputCellRect.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
+#include "../renderer/inc/FontInfo.hpp"
 #include "../renderer/inc/FontInfoDesired.hpp"
 #include "../server/ObjectHeader.h"
 
@@ -71,7 +72,7 @@ public:
     // GetScreenBufferInformation could return a struct. And so on.
 
     // Creation
-    [[nodiscard]] static NTSTATUS CreateInstance(til::size windowSize, FontInfo fontInfo, til::size screenBufferSize, TextAttribute defaultAttributes, TextAttribute popupAttributes, UINT cursorSize, SCREEN_INFORMATION** screen);
+    [[nodiscard]] static NTSTATUS CreateInstance(til::size windowSize, FontInfoDesired fontInfoDesired, FontInfo fontInfo, til::size screenBufferSize, TextAttribute defaultAttributes, TextAttribute popupAttributes, UINT cursorSize, SCREEN_INFORMATION** screen);
     static void s_InsertScreenBuffer(SCREEN_INFORMATION* screenInfo);
     static void s_RemoveScreenBuffer(SCREEN_INFORMATION* screenInfo);
 
@@ -126,8 +127,9 @@ public:
     const FontInfo& GetCurrentFont() const noexcept;
     FontInfoDesired& GetDesiredFont() noexcept;
     const FontInfoDesired& GetDesiredFont() const noexcept;
+    til::size GetLegacyConhostFontCellSize() const noexcept;
     til::size GetScreenFontSize() const;
-    void UpdateFont(const FontInfo* newFont);
+    void UpdateFont(FontInfoDesired newFont);
     void RefreshFontWithRenderer();
     [[nodiscard]] NTSTATUS SetViewportOrigin(bool absolute, til::point coordWindowOrigin, bool updateBottom);
     const Microsoft::Console::Types::Viewport& GetViewport() const noexcept;
@@ -173,7 +175,7 @@ public:
     UINT ScrollScale = 1;
 
 private:
-    SCREEN_INFORMATION(Microsoft::Console::Interactivity::IWindowMetrics* metrics, TextAttribute popupAttributes, FontInfo fontInfo);
+    SCREEN_INFORMATION(Microsoft::Console::Interactivity::IWindowMetrics* metrics, TextAttribute popupAttributes, FontInfoDesired fontInfoDesired, FontInfo fontInfo);
 
     // Construction
     [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
@@ -191,8 +193,10 @@ private:
     void _makeCursorVisible();
 
     // Rendering / Viewport
+    void _setDesiredFont(FontInfoDesired newFont);
     void _CalculateViewportSize(const til::rect* clientArea, til::size* size);
     void _AdjustViewportSize(const til::rect* clientNew, const til::rect* clientOld, const til::size* size);
+    void _CommitViewport(const Microsoft::Console::Types::Viewport& viewport);
     void _InternalSetViewportSize(const til::size* size, bool resizeFromTop, bool resizeFromLeft);
 
     // Windowing
@@ -219,7 +223,9 @@ private:
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
     til::CoordType _virtualBottom = 0;
     std::optional<til::size> _deferredPtyResize;
-    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
+    // The LSB indicates whether the cursor position may be wrong. 0 = correct, 1 = may be wrong.
+    // The other 31 bit are a generation count to avoid TOCTOU issues in WaitForConptyCursorPositionToBeSynchronized.
+    std::atomic<uint32_t> _conptyCursorPositionGeneration{ 0 };
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

@@ -33,6 +33,9 @@ parameters:
   - name: outerTemplateContext
     type: object
     default: {}
+  - name: beforeBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -61,7 +64,7 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - template: steps-setup-versioning.yml
+  - ${{ parameters.beforeBuildSteps }}
 
   - template: steps-download-bin-dir-artifact.yml
     parameters:

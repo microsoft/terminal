@@ -129,6 +129,11 @@ class StringTests
 
     TEST_METHOD(parse_unsigned)
     {
+        for (const auto text : { "+", "++1", "+-1", "-+1", "-0", "+ 1", " +1", "+1 ", "+0x", "+0b", "+08", "+4294967296" })
+        {
+            VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint32_t>(text));
+        }
+        VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint64_t>(L"++1"));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint32_t>(""));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint32_t>("0x"));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint32_t>("Z"));
@@ -139,17 +144,30 @@ class StringTests
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint32_t>("0x100000000"));
         VERIFY_ARE_EQUAL(0u, til::parse_unsigned<uint32_t>("0"));
         VERIFY_ARE_EQUAL(0u, til::parse_unsigned<uint32_t>("0x0"));
+        VERIFY_ARE_EQUAL(0u, til::parse_unsigned<uint32_t>("+0"));
+        VERIFY_ARE_EQUAL(123u, til::parse_unsigned<uint32_t>("0b1111011"));
         VERIFY_ARE_EQUAL(0123u, til::parse_unsigned<uint32_t>("0123"));
         VERIFY_ARE_EQUAL(123u, til::parse_unsigned<uint32_t>("123"));
         VERIFY_ARE_EQUAL(0x123u, til::parse_unsigned<uint32_t>("0x123"));
+        VERIFY_ARE_EQUAL(123u, til::parse_unsigned<uint32_t>("+0B1111011"));
+        VERIFY_ARE_EQUAL(0123u, til::parse_unsigned<uint32_t>("+0123"));
+        VERIFY_ARE_EQUAL(123u, til::parse_unsigned<uint32_t>("+123"));
+        VERIFY_ARE_EQUAL(0x123u, til::parse_unsigned<uint32_t>("+0X123"));
         VERIFY_ARE_EQUAL(0x123abcu, til::parse_unsigned<uint32_t>("0x123abc"));
         VERIFY_ARE_EQUAL(0X123ABCu, til::parse_unsigned<uint32_t>("0X123ABC"));
         VERIFY_ARE_EQUAL(UINT32_MAX, til::parse_unsigned<uint32_t>("0xffffffff"));
         VERIFY_ARE_EQUAL(UINT32_MAX, til::parse_unsigned<uint32_t>("4294967295"));
+        VERIFY_ARE_EQUAL(UINT32_MAX, til::parse_unsigned<uint32_t>("+4294967295"));
+        VERIFY_ARE_EQUAL(UINT64_MAX, til::parse_unsigned<uint64_t>(L"+18446744073709551615"));
+        VERIFY_ARE_EQUAL(std::nullopt, til::parse_unsigned<uint64_t>(L"+18446744073709551616"));
     }
 
     TEST_METHOD(parse_signed)
     {
+        for (const auto text : { "+", "++1", "+-1", "-+1", "--1", "+ 1", " +1", "+1 ", "+0x", "+0b", "+08", "+2147483648" })
+        {
+            VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>(text));
+        }
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>(""));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>("-"));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>("--"));
@@ -160,13 +178,20 @@ class StringTests
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>("0x80000000"));
         VERIFY_ARE_EQUAL(std::nullopt, til::parse_signed<int32_t>("-0x80000001"));
         VERIFY_ARE_EQUAL(0, til::parse_signed<int32_t>("0"));
+        VERIFY_ARE_EQUAL(0, til::parse_signed<int32_t>("+0"));
         VERIFY_ARE_EQUAL(0, til::parse_signed<int32_t>("-0"));
         VERIFY_ARE_EQUAL(0, til::parse_signed<int32_t>("-0x0"));
+        VERIFY_ARE_EQUAL(123, til::parse_signed<int32_t>("0b1111011"));
         VERIFY_ARE_EQUAL(0123, til::parse_signed<int32_t>("0123"));
         VERIFY_ARE_EQUAL(123, til::parse_signed<int32_t>("123"));
         VERIFY_ARE_EQUAL(0x123, til::parse_signed<int32_t>("0x123"));
+        VERIFY_ARE_EQUAL(123, til::parse_signed<int32_t>("+0b1111011"));
+        VERIFY_ARE_EQUAL(-123, til::parse_signed<int32_t>("-0b1111011"));
+        VERIFY_ARE_EQUAL(0123, til::parse_signed<int32_t>("+0123"));
         VERIFY_ARE_EQUAL(-0123, til::parse_signed<int32_t>("-0123"));
+        VERIFY_ARE_EQUAL(123, til::parse_signed<int32_t>("+123"));
         VERIFY_ARE_EQUAL(-123, til::parse_signed<int32_t>("-123"));
+        VERIFY_ARE_EQUAL(0x123, til::parse_signed<int32_t>("+0X123"));
         VERIFY_ARE_EQUAL(-0x123, til::parse_signed<int32_t>("-0x123"));
         VERIFY_ARE_EQUAL(-0x123abc, til::parse_signed<int32_t>("-0x123abc"));
         VERIFY_ARE_EQUAL(-0X123ABC, til::parse_signed<int32_t>("-0X123ABC"));
@@ -174,6 +199,8 @@ class StringTests
         VERIFY_ARE_EQUAL(INT32_MIN, til::parse_signed<int32_t>("-2147483648"));
         VERIFY_ARE_EQUAL(INT32_MAX, til::parse_signed<int32_t>("0x7fffffff"));
         VERIFY_ARE_EQUAL(INT32_MAX, til::parse_signed<int32_t>("2147483647"));
+        VERIFY_ARE_EQUAL(INT32_MAX, til::parse_signed<int32_t>("+2147483647"));
+        VERIFY_ARE_EQUAL(INT64_MAX, til::parse_signed<int64_t>(L"+9223372036854775807"));
     }
 
     TEST_METHOD(tolower_ascii)

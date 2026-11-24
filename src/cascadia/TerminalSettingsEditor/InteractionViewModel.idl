@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass InteractionViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings);
+        InteractionViewModel(Microsoft.Terminal.Settings.Model.GlobalAppSettings globalSettings, Microsoft.Terminal.Settings.Model.WindowSettings windowSettings);
 
         IInspectable CurrentTabSwitcherMode;
         Windows.Foundation.Collections.IObservableVector<EnumEntry> TabSwitcherModeList { get; };
@@ -24,15 +24,19 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowResizeOverlay);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToZoom);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToChangeOpacity);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableColorSelection);
+
+        Boolean EnableTabDragDrop;
+        Boolean CanEnableTabDragDrop { get; };
+        String TabDragDropDescription { get; };
     }
 }

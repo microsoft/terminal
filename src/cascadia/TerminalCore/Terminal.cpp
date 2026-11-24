@@ -24,6 +24,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
+constexpr til::CoordType MaxScrollback = til::CoordTypeMax / 2;
+
 #pragma warning(suppress : 26455) // default constructor is throwing, too much effort to rearrange at this time.
 Terminal::Terminal()
 {
@@ -42,10 +44,12 @@ Terminal::Terminal(TestDummyMarker) :
 
 void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
+    viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
+    viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
+    scrollbackLines = std::clamp(scrollbackLines, 0, MaxScrollback);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.width,
-                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
@@ -75,11 +79,10 @@ void Terminal::HardResetWithoutErase()
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Renderer& renderer)
 {
-    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
-                                  Utils::ClampToShortMax(settings.InitialRows(), 1) };
+    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
+                                  Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
+    Create(viewportSize, settings.HistorySize(), renderer);
 
     UpdateSettings(settings);
 }
@@ -289,9 +292,14 @@ std::wstring_view Terminal::GetWorkingDirectory() noexcept
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]] HRESULT Terminal::UserResize(const til::size viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const til::size requestedSize) noexcept
 try
 {
+    const til::size viewportSize{
+        std::max(requestedSize.width, MINIMUM_VISIBLE_CELLS),
+        std::max(requestedSize.height, MINIMUM_VISIBLE_CELLS)
+    };
+
     const auto oldDimensions = _GetMutableViewport().Dimensions();
     if (viewportSize == oldDimensions)
     {
@@ -315,7 +323,7 @@ try
         return S_OK;
     }
 
-    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, SHRT_MAX);
+    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, MaxScrollback);
     const til::size bufferSize{ viewportSize.width, newBufferHeight };
 
     // If the original buffer had _no_ scroll offset, then we should be at the
@@ -874,13 +882,13 @@ WORD Terminal::_VirtualKeyFromScanCode(const WORD scanCode) noexcept
 // Method Description:
 // - Returns any virtual key code that produces the given character.
 // Arguments:
-// - scanCode: The keyboard's scan code.
+// - ch: The character to find a virtual key code for.
 // Return Value:
 // - The virtual key code. 0 if no mapping can be found.
 WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
 {
-    const auto vkey = LOWORD(VkKeyScanW(ch));
-    return vkey == -1 ? 0 : vkey;
+    const auto vkey = VkKeyScanW(ch);
+    return vkey == -1 ? 0 : LOBYTE(vkey);
 }
 
 // Method Description:

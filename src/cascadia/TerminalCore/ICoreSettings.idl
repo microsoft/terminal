@@ -57,6 +57,12 @@ namespace Microsoft.Terminal.Core
         Int32 Y;
     };
 
+    struct Size
+    {
+        Int32 Width;
+        Int32 Height;
+    };
+
     // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
     // we'll declare our own.
     struct Padding {
@@ -107,7 +113,6 @@ namespace Microsoft.Terminal.Core
 
     interface ICoreSettings requires ICoreAppearance
     {
-        // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize { get; };
         Int32 InitialRows { get; };
         Int32 InitialCols { get; };

@@ -100,8 +100,8 @@ namespace Microsoft::Console::VirtualTerminal
         void SetAnsiMode(const bool ansiMode) override; // DECANM
         void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept override; // KKP
         void QueryKittyKeyboardProtocol() override; // KKP
-        void PushKittyKeyboardProtocol(const VTParameter flags) override; // KKP
-        void PopKittyKeyboardProtocol(const VTParameter count) override; // KKP
+        void PushKittyKeyboardProtocol(const VTParameter flags) noexcept override; // KKP
+        void PopKittyKeyboardProtocol(const VTParameter count) noexcept override; // KKP
         void SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         void SetLeftRightScrollingMargins(const VTInt leftMargin,

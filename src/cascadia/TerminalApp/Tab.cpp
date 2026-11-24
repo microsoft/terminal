@@ -7,8 +7,9 @@
 #include "SettingsPaneContent.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/ColorFix.hpp"
+
+#include <ThrottledFunc.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -105,8 +106,6 @@ namespace winrt::TerminalApp::implementation
                 tab->RequestFocusActiveControl.raise();
             }
         });
-
-        _UpdateHeaderControlMaxWidth();
 
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
@@ -206,14 +205,13 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    void Tab::_UpdateHeaderControlMaxWidth()
+    void Tab::_UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
     {
         try
         {
             // Make sure to try/catch this, because the LocalTests won't be
             // able to use this helper.
-            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            if (windowSettings.TabWidthMode() == MUX::Controls::TabViewWidthMode::SizeToContent)
             {
                 _headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }
@@ -323,12 +321,18 @@ namespace winrt::TerminalApp::implementation
     // - Called after construction of a Tab object to bind event handlers to its
     //   associated Pane and TermControl objects
     // Arguments:
-    // - <none>
+    // - windowSettings: the settings for the window this tab is being added to
     // Return Value:
     // - <none>
-    void Tab::Initialize()
+    void Tab::Initialize(const WindowSettings& windowSettings)
     {
         ASSERT_UI_THREAD();
+
+        // GH#20749: Only apply the tab-level window settings here. Don't call
+        // UpdateSettings, because that would also push profile-only settings
+        // into each pane, clobbering any overrides from NewTerminalArgs (like
+        // --suppressApplicationTitle) that the panes were created with.
+        _UpdateHeaderControlMaxWidth(windowSettings);
 
         _rootPane->WalkTree([&](const auto& pane) {
             // Attach event handlers to each new pane
@@ -355,8 +359,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_focused())
         {
-            auto lastFocusedControl = GetActiveTerminalControl();
-            if (lastFocusedControl)
+            if (auto lastFocusedControl{ GetActiveTerminalControl() })
             {
                 lastFocusedControl.Focus(_focusState);
 
@@ -398,16 +401,17 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void Tab::UpdateSettings(const CascadiaSettings& settings)
+    void Tab::UpdateSettings(const CascadiaSettings& settings,
+                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
-        _UpdateHeaderControlMaxWidth();
+        _UpdateHeaderControlMaxWidth(windowSettings);
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](const auto& pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, windowSettings);
             return false;
         });
     }
@@ -578,9 +582,11 @@ namespace winrt::TerminalApp::implementation
     {
         ASSERT_UI_THREAD();
 
-        auto control = GetActiveTerminalControl();
-        const auto currentOffset = control.ScrollOffset();
-        control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
+        if (auto control{ GetActiveTerminalControl() })
+        {
+            const auto currentOffset = control.ScrollOffset();
+            control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
+        }
     }
 
     // Method Description:
@@ -1248,8 +1254,9 @@ namespace winrt::TerminalApp::implementation
                     const auto activeContent = tab->GetActiveContent();
                     const auto isActivePaneContent = activeContent && activeContent == sender;
 
-                    if (!notifArgs.AlwaysNotify() && isActivePaneContent &&
-                        tab->_focusState != WUX::FocusState::Unfocused)
+                    if (!notifArgs.AlwaysNotify() &&
+                        (!Feature_NotifyOnActivity::IsEnabled() ||
+                         (isActivePaneContent && tab->_focusState != WUX::FocusState::Unfocused)))
                     {
                         co_return;
                     }
@@ -2228,8 +2235,7 @@ namespace winrt::TerminalApp::implementation
     // If, after the calculation, the tab is read-only we hide the close button on the tab view item
     void Tab::_RecalculateAndApplyReadOnly()
     {
-        const auto control = GetActiveTerminalControl();
-        if (control)
+        if (const auto control{ GetActiveTerminalControl() })
         {
             const auto isReadOnlyActive = control.ReadOnly();
             _tabStatus.IsReadOnlyActive(isReadOnlyActive);
@@ -2349,7 +2355,8 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_tabStatus.IsInputBroadcastActive())
                 {
                     tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
-                                                    e.Text());
+                                                    e.Text(),
+                                                    static_cast<winrt::Microsoft::Terminal::Control::WriteInputStringType>(e.Type()));
                 }
             }
         });

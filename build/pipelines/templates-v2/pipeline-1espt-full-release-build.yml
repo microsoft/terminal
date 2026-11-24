@@ -180,6 +180,8 @@ extends:
                 generateSbom: false # Handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
           - ${{ if eq(parameters.buildConPTY, true) }}:
             - template: ./build/pipelines/templates-v2/job-package-conpty.yml@self
@@ -199,6 +201,8 @@ extends:
                 generateSbom: false # this is handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
           - ${{ if eq(parameters.buildWPF, true) }}:
             - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
@@ -218,6 +222,8 @@ extends:
                 generateSbom: false # this is handled by 1ESPT
                 codeSign: ${{ parameters.codeSign }}
                 signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
       - stage: Publish
         displayName: Publish
