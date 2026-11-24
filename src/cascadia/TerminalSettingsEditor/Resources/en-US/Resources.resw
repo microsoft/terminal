@@ -546,6 +546,10 @@
     <value>Allow applications to change cursor blinking</value>
     <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
   </data>
+  <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
+    <value>When enabled, applications can use DECSET 12 or DECSCUSR to control whether the cursor blinks.</value>
+    <comment>{Locked="DECSET 12"}{Locked="DECSCUSR"}Description for the cursor blinking compatibility toggle.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Allow DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
