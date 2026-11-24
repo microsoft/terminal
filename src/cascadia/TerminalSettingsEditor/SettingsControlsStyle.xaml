@@ -51,6 +51,13 @@
                             ResourceKey="ControlStrokeColorDefaultBrush" />
             <StaticResource x:Key="SettingsCardBorderBrushDisabled"
                             ResourceKey="ControlStrokeColorDefaultBrush" />
+
+            <StaticResource x:Key="ExperimentalInfoBadgeBackground"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeForeground"
+                            ResourceKey="SystemFillColorCautionBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeBorderBrush"
+                            ResourceKey="SystemFillColorCautionBrush" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
@@ -80,6 +87,13 @@
                             ResourceKey="ControlStrokeColorDefaultBrush" />
             <StaticResource x:Key="SettingsCardBorderBrushDisabled"
                             ResourceKey="ControlStrokeColorDefaultBrush" />
+
+            <StaticResource x:Key="ExperimentalInfoBadgeBackground"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeForeground"
+                            ResourceKey="SystemFillColorCautionBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeBorderBrush"
+                            ResourceKey="SystemFillColorCautionBrush" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="HighContrast">
@@ -109,6 +123,13 @@
                             ResourceKey="SystemColorHighlightTextColorBrush" />
             <StaticResource x:Key="SettingsCardBorderBrushDisabled"
                             ResourceKey="SystemControlDisabledTransparentBrush" />
+
+            <StaticResource x:Key="ExperimentalInfoBadgeBackground"
+                            ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeForeground"
+                            ResourceKey="SystemColorWindowTextColorBrush" />
+            <StaticResource x:Key="ExperimentalInfoBadgeBorderBrush"
+                            ResourceKey="SystemColorWindowTextColorBrush" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -149,6 +170,34 @@
 
     <local:TopCornerRadiusFilterConverter x:Key="TopCornerRadiusFilterConverter" />
     <local:BottomCornerRadiusFilterConverter x:Key="BottomCornerRadiusFilterConverter" />
+
+    <Style x:Key="ExperimentalInfoBadge"
+           TargetType="muxc:InfoBadge">
+        <Setter Property="Padding" Value="6,1,6,2" />
+        <Setter Property="Background" Value="{ThemeResource ExperimentalInfoBadgeBackground}" />
+        <Setter Property="Foreground" Value="{ThemeResource ExperimentalInfoBadgeForeground}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ExperimentalInfoBadgeBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="muxc:InfoBadge">
+                    <Border x:Name="RootGrid"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TemplateSettings.InfoBadgeCornerRadius}">
+                        <TextBlock x:Uid="SettingsCard_ExperimentalBadgeTextBlock"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <!--  ============ SettingsCard ============  -->
 
@@ -248,11 +297,25 @@
                                     Margin="0,0,24,0"
                                     VerticalAlignment="Center"
                                     Orientation="Vertical">
-                            <ContentPresenter x:Name="PART_HeaderPresenter"
-                                              HorizontalAlignment="Left"
-                                              Content="{TemplateBinding Header}"
-                                              HighContrastAdjustment="None"
-                                              TextWrapping="Wrap" />
+                            <Grid HorizontalAlignment="Left">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="PART_HeaderPresenter"
+                                                  HorizontalAlignment="Left"
+                                                  Content="{TemplateBinding Header}"
+                                                  HighContrastAdjustment="None"
+                                                  TextWrapping="Wrap" />
+
+                                <muxc:InfoBadge x:Name="PART_ExperimentalBadge"
+                                                Grid.Column="1"
+                                                Margin="8,0,0,0"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.AccessibilityView="Raw"
+                                                Style="{StaticResource ExperimentalInfoBadge}"
+                                                Visibility="Collapsed" />
+                            </Grid>
 
                             <ContentPresenter x:Name="PART_DescriptionPresenter"
                                               Content="{TemplateBinding Description}"
@@ -469,6 +532,13 @@
         </Setter>
     </Style>
 
+    <!--  Used to align SettingsResetButtons when a page has a mix of SettingsCards and SettingsExpanders  -->
+    <Style x:Key="ExpanderAlignedSettingsCardStyle"
+           BasedOn="{StaticResource DefaultSettingsCardStyle}"
+           TargetType="local:SettingsCard">
+        <Setter Property="Padding" Value="16,16,44,16" />
+    </Style>
+
     <!--  ============ SettingsExpander ============  -->
 
     <Style BasedOn="{StaticResource DefaultSettingsExpanderStyle}"
@@ -492,7 +562,7 @@
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
         <Setter Property="ItemContainerStyleSelector" Value="{StaticResource SettingsExpanderItemStyleSelector}" />
-        <!--  Same C++-side implicit-styles injection as SettingsCard — see comment on that style.  -->
+        <!--  Same C++-side implicit-styles injection as SettingsCard. See comment on that style.  -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingsExpander">
@@ -515,7 +585,8 @@
                                                 FontFamily="{TemplateBinding FontFamily}"
                                                 Header="{TemplateBinding Header}"
                                                 HeaderIcon="{TemplateBinding HeaderIcon}"
-                                                IsClickEnabled="False" />
+                                                IsClickEnabled="False"
+                                                IsExperimental="{TemplateBinding IsExperimental}" />
                         </muxc:Expander.Header>
                         <muxc:Expander.Content>
                             <!--  CornerRadius is filtered to bottom-only so the items panel visually stitches to the rounded bottom of the expander (matches WCT).  -->
@@ -530,7 +601,7 @@
                                     Use ItemsControl + StackPanel rather than ItemsRepeater so every
                                     Items entry is realized eagerly. ItemsRepeater inside an Expander
                                     inside the Settings page's outer ScrollViewer only realized
-                                    index 0 — the EffectiveViewport propagated through the ScrollViewer
+                                    index 0. The EffectiveViewport propagated through the ScrollViewer
                                     was 0 px at the moment the expand storyboard ran, and StackLayout's
                                     cache length is relative to viewport so 0 * anything is still 0.
                                     Settings expanders rarely hold more than a handful of cards so

@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String AutomationName { get; };
     }
 
-    runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, IInheritableViewModel
     {
         Boolean IsDefault;
 
@@ -52,6 +52,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Color BackgroundPreview { get; };
         Windows.UI.Color SelectionBackgroundPreview { get; };
         Windows.UI.Color CursorColorPreview { get; };
+
+        String ForegroundAccessibleName { get; };
+        String BackgroundAccessibleName { get; };
+        String SelectionBackgroundAccessibleName { get; };
+        String CursorColorAccessibleName { get; };
 
         String MissingFontFaces { get; };
         String ProportionalFontFaces { get; };

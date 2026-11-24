@@ -118,7 +118,14 @@ LayoutGuard TestHook::SetTerminalInputKeyboardLayout(const wchar_t* klid)
     }
 
     const auto layout = LoadKeyboardLayoutW(klid, KLF_NOTELLSHELL);
-    THROW_LAST_ERROR_IF_NULL(layout);
+    if (!layout)
+    {
+        // Keyboard layouts can fail to load without producing an error, such as
+        // when we're running on a window station which is marked as "does no I/O".
+        // Bailing out here lets us mark the tests as skipped.
+        LOG_LAST_ERROR();
+        return { nullptr, false };
+    }
 
     g_keyboardLayout = layout;
 

@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsCard::_ActionIconToolTipProperty{ nullptr };
     DependencyProperty SettingsCard::_IsClickEnabledProperty{ nullptr };
     DependencyProperty SettingsCard::_IsActionIconVisibleProperty{ nullptr };
+    DependencyProperty SettingsCard::_IsExperimentalProperty{ nullptr };
     DependencyProperty SettingsCard::_ContentAlignmentProperty{ nullptr };
 
     static constexpr std::wstring_view NormalState{ L"Normal" };
@@ -48,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view HeaderPresenter{ L"PART_HeaderPresenter" };
     static constexpr std::wstring_view DescriptionPresenter{ L"PART_DescriptionPresenter" };
     static constexpr std::wstring_view HeaderIconPresenterHolder{ L"PART_HeaderIconPresenterHolder" };
+    static constexpr std::wstring_view ExperimentalBadgePart{ L"PART_ExperimentalBadge" };
     static constexpr std::wstring_view ContentPresenterPart{ L"PART_ContentPresenter" };
     static constexpr std::wstring_view RootGridPart{ L"PART_RootGrid" };
 
@@ -134,6 +136,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 xaml_typename<Editor::SettingsCard>(),
                 PropertyMetadata{ box_value(true), PropertyChangedCallback{ &SettingsCard::_OnIsActionIconVisibleChanged } });
         }
+        if (!_IsExperimentalProperty)
+        {
+            _IsExperimentalProperty = DependencyProperty::Register(
+                L"IsExperimental",
+                xaml_typename<bool>(),
+                xaml_typename<Editor::SettingsCard>(),
+                PropertyMetadata{ box_value(false) });
+        }
         if (!_ContentAlignmentProperty)
         {
             _ContentAlignmentProperty = DependencyProperty::Register(
@@ -147,6 +157,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     AutomationPeer SettingsCard::OnCreateAutomationPeer()
     {
         return winrt::make<implementation::SettingsCardAutomationPeer>(*this);
+    }
+
+    // Prevent Button from displaying a hover state when the pointer moves over us.
+    void SettingsCard::OnPointerEntered(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerEntered(e);
+        }
+    }
+
+    void SettingsCard::OnPointerExited(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerExited(e);
+        }
     }
 
     // Pointer overrides: gate the ButtonBase click pipeline on IsClickEnabled.
@@ -202,6 +229,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateHeaderVisibility();
         _UpdateDescriptionVisibility();
         _UpdateHeaderIconVisibility();
+        _UpdateExperimentalBadgeVisibility();
         _UpdateContentVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
@@ -333,7 +361,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Don't override ButtonBase content (would clobber its own name) or plain text blocks.
                 if (!element.try_as<ButtonBase>() && !element.try_as<TextBlock>())
                 {
-                    Automation::AutomationProperties::SetName(element, headerString);
+                    Automation::AutomationProperties::SetName(element, BuildAccessibleName(headerString, IsExperimental()));
                 }
             }
         }
@@ -498,6 +526,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void SettingsCard::_UpdateExperimentalBadgeVisibility()
+    {
+        if (const auto child{ GetTemplateChild(hstring{ ExperimentalBadgePart }) })
+        {
+            if (const auto frameworkChild{ child.try_as<FrameworkElement>() })
+            {
+                frameworkChild.Visibility(IsExperimental() ? Visibility::Visible : Visibility::Collapsed);
+            }
+        }
+    }
+
     void SettingsCard::_UpdateHeaderIconVisibility()
     {
         if (const auto child{ GetTemplateChild(hstring{ HeaderIconPresenterHolder }) })
@@ -612,7 +651,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto obj{ d.try_as<Editor::SettingsCard>() };
         const auto self = get_self<SettingsCard>(obj);
         self->_UpdateHeaderIconVisibility();
-        // HeaderIcon type may have flipped between BitmapIcon and other icon types — re-evaluate
+        // HeaderIcon type may have flipped between BitmapIcon and other icon types. Re-evaluate
         // the BitmapHeaderIcon visual state so the disabled-opacity setter is applied (or cleared).
         self->_CheckHeaderIconState();
     }
@@ -645,7 +684,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     SettingsCardAutomationPeer::SettingsCardAutomationPeer(const Editor::SettingsCard& owner) :
-        ButtonBaseAutomationPeerT<SettingsCardAutomationPeer>(owner)
+        ButtonAutomationPeerT<SettingsCardAutomationPeer>(owner)
     {
     }
 
@@ -674,11 +713,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto manualName{ AutomationProperties::GetName(card) }; !manualName.empty())
                 {
-                    return manualName;
+                    return BuildAccessibleName(manualName, card.IsExperimental());
                 }
                 if (const auto headerString{ unbox_value_or<hstring>(card.Header(), hstring{}) }; !headerString.empty())
                 {
-                    return headerString;
+                    return BuildAccessibleName(headerString, card.IsExperimental());
                 }
             }
             // Not clickable, or no header text: fall back to AutomationProperties.Name (matching
@@ -697,12 +736,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (card.IsClickEnabled())
                 {
                     // Only provide Invoke pattern if the card is clickable.
-                    return *this;
+                    return ButtonAutomationPeerT<SettingsCardAutomationPeer>::GetPatternCore(patternInterface);
                 }
             }
             return nullptr;
         }
-        // ButtonBaseAutomationPeer only provides Invoke; everything else returns null.
+        // ButtonAutomationPeer only provides Invoke; everything else returns null.
         return nullptr;
     }
 }

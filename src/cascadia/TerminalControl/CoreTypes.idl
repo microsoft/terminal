@@ -1,0 +1,86 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ICoreState.idl";
+import "IControlSettings.idl";
+import "EventArgs.idl";
+
+namespace Microsoft.Terminal.Control
+{
+
+    // This is a mirror of
+    // ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState,
+    // but projectable.
+    // !! LOAD BEARING !! If you make this a struct with Booleans (like they
+    // make the most sense as), then the app will crash trying to toss one of
+    // these across the process boundary. I haven't the damndest idea why.
+    [flags] enum MouseButtonState {
+        IsLeftButtonDown = 0x1,
+        IsMiddleButtonDown = 0x2,
+        IsRightButtonDown = 0x4
+    };
+
+    enum ClearBufferType
+    {
+        Screen,
+        Scrollback,
+        All
+    };
+
+    enum SelectionInteractionMode
+    {
+        None,
+        Mouse,
+        Keyboard,
+        Mark
+    };
+
+    [flags] enum SelectionEndpointTarget {
+        Start = 0x1,
+        End = 0x2
+    };
+
+    struct SelectionData
+    {
+        Microsoft.Terminal.Core.Point StartPos;
+        Microsoft.Terminal.Core.Point EndPos;
+        SelectionEndpointTarget Endpoint;
+        Boolean StartAtLeftBoundary;
+        Boolean EndAtRightBoundary;
+    };
+
+    struct SearchRequest
+    {
+        String Text;
+        Boolean GoForward;
+        Boolean CaseSensitive;
+        Boolean RegularExpression;
+        Boolean ExecuteSearch;
+        Boolean ScrollIntoView;
+        Int32 ScrollOffset;
+    };
+
+    struct SearchResults
+    {
+        Int32 TotalMatches;
+        Int32 CurrentMatch;
+        Boolean SearchInvalidated;
+        Boolean SearchRegexInvalid;
+    };
+
+    [default_interface] runtimeclass SelectionColor
+    {
+        SelectionColor();
+        Microsoft.Terminal.Core.Color Color;
+        // If true, color.R is a value between 0 and 15, indicating an indexed color.
+        // This mirrors how TextColor works internally, which is the primary target of this interface.
+        Boolean IsIndex16;
+    };
+
+    [default_interface] runtimeclass CommandHistoryContext
+    {
+        IVector<String> History { get; };
+        String CurrentCommandline { get; };
+        IVector<String> QuickFixes { get; };
+    };
+}

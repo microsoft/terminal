@@ -215,7 +215,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_FALSE since we do nothing.
 
-[[nodiscard]] HRESULT WddmConEngine::Present() noexcept
+[[nodiscard]] HRESULT WddmConEngine::Present(HANDLE /*shutdownEvent*/) noexcept
 {
     return S_FALSE;
 }
@@ -324,7 +324,7 @@ CATCH_RETURN()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
+[[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& fiFontInfoDesired,
                                                      FontInfo& fiFontInfo,
                                                      const int /*iDpi*/) noexcept
 {
@@ -332,11 +332,12 @@ CATCH_RETURN()
 #pragma warning(suppress : 26447)
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
-    fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
-                             fiFontInfo.GetFamily(),
-                             fiFontInfo.GetWeight(),
-                             fiFontInfo.IsTrueTypeFont(),
-                             coordSize,
+    fiFontInfo.SetFromEngine(fiFontInfoDesired.GetFaceName(),
+                             fiFontInfoDesired.GetFamily(),
+                             fiFontInfoDesired.GetWeight(),
+                             fiFontInfoDesired.GetCodePage(),
+                             coordSize.height * 72.0f / USER_DEFAULT_SCREEN_DPI,
+                             { static_cast<float>(coordSize.width), static_cast<float>(coordSize.height) },
                              coordSize);
 
     return S_OK;

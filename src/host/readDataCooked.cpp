@@ -1439,6 +1439,7 @@ void COOKED_READ_DATA::_popupsDone()
 }
 
 void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modifiers)
+try
 {
     if (_popups.empty())
     {
@@ -1464,6 +1465,11 @@ void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modif
     default:
         break;
     }
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    _popupsDone();
 }
 
 void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
@@ -1528,8 +1534,10 @@ void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_
     {
         if (wch == UNICODE_CARRIAGERETURN)
         {
-            popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = L'\0';
-            _replace(_history->RetrieveNth(std::stoi(popup.commandNumber.buffer.data())));
+            if (const auto commandNumber{ til::parse_signed<CommandHistory::Index>(std::wstring_view{ popup.commandNumber.buffer.data(), popup.commandNumber.bufferSize }, 10) })
+            {
+                _replace(_history->RetrieveNth(*commandNumber));
+            }
             _popupsDone();
         }
         else if (wch >= L'0' && wch <= L'9')

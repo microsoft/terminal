@@ -498,6 +498,18 @@
     <value>Usa il titolo del terminale attivo come titolo dell'applicazione</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>Riordina o estrai le schede trascinandole</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
+    <value>Se disabilitato, le schede possono comunque essere spostate con le azioni "Sposta scheda".</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>Il trascinamento delle schede non è disponibile perché Terminale è in esecuzione come amministratore. Usa invece le azioni "sposta scheda".</value>
+    <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Ancora ridimensionamento della finestra alla griglia caratteri</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -509,10 +521,6 @@
   <data name="Globals_StartOnUserLogin_Checkbox.Content" xml:space="preserve">
     <value>Avvia all'accesso</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
-  </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>Avvia automaticamente il terminale quando accedi a Windows.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centrato</value>
@@ -546,7 +554,7 @@
     <value>Consenti a OSC 777 (Desktop Notification) di mostrare gli avvisi popup</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>Se questa opzione è abilitata, le applicazioni possono inviare la sequenza di escape OSC 777 per attivare una notifica desktop con un titolo e un corpo personalizzati.</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -734,6 +742,10 @@
     <value>Aspetto</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>Nessuno</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Percorso dell'immagine di sfondo</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -798,7 +810,7 @@
     <value>In alto a destra</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -907,7 +919,7 @@
     <value>Eseguibile utilizzato nel profilo.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1078,25 +1090,17 @@
     <value>Il tipo di carattere selezionato non ha caratteristiche per i tipi di carattere.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Nascondi profilo da elenco a discesa</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
-  </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>Se abilitato, il profilo non verrà visualizzato nell'elenco dei profili. Può essere usato per nascondere i profili predefiniti e i profili generati dinamicamente, lasciandoli nel file delle impostazioni.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
   <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Nascosto dal menu a discesa</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
-    <value>Esegui questo profilo come amministratore</value>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>Esegui come amministratore (usa la finestra corrente se è già elevata)</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>Se questa opzione è abilitata, il profilo verrà aperto automaticamente in una finestra del terminale di amministrazione. Se la finestra corrente è già in esecuzione come amministratore, verrà aperta in questa finestra.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Dimensioni cronologia</value>
@@ -1130,7 +1134,7 @@
     <value>Posizione del file dell'emoji o dell'immagine usato per l'immagine del profilo.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1187,18 +1191,14 @@
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
-    <value>Directory iniziale</value>
+    <value>Directory iniziale predefinita</value>
     <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Directory iniziale</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>Directory in cui inizia il profilo quando viene caricato.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1233,10 +1233,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>Aspetto con stato non attivo</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Crea aspetto</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Elimina</value>
@@ -1379,7 +1375,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>Sperimentale: riposizionare il cursore con i clic del mouse</value>
+    <value>Riposiziona il cursore con i clic del mouse</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -1603,8 +1599,32 @@
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Profilo</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>Predefiniti del profilo</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Nome</value>
-    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>Aspetto della scheda</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
+  <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
+    <value>Personalizza l'aspetto visivo del profilo, inclusi colori, tipi di carattere e stile del testo.</value>
+    <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>Personalizza l'aspetto del profilo quando è inattivo (non attivo).</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
+    <value>Configurare il modo in cui il terminale gestisce l'input da tastiera e le sequenze di controllo</value>
+    <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Trasparenza</value>
@@ -1774,14 +1794,6 @@
     <value>Se abilitata, mostra tutti i tipi di carattere installati nell'elenco precedente. In caso contrario, visualizza solo l'elenco dei tipi di carattere a spaziatura fissa.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Crea aspetto</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Crea un aspetto non attivo per questo profilo. Questo sarà l'aspetto del profilo quando è inattivo.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
-  </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Elimina aspetto</value>
     <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
@@ -1789,6 +1801,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Elimina l'aspetto con stato non attivo per questo profilo.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>Elimina questo aspetto non attivo</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>Rimuove l'aspetto non attivo, così il profilo usa l'aspetto predefinito quando non è attivo</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>Altre informazioni sui collegamenti</value>
@@ -2186,7 +2206,7 @@
     <value>Nessun colore</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
-  <data name="Actions_Browse.Content" xml:space="preserve">
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2237,6 +2257,10 @@
   <data name="Globals_AutoHideWindow.Description" xml:space="preserve">
     <value>Se abilitata, il terminale viene nascosto non appena si passa a un'altra finestra.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
+  </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>Visualizza le dimensioni del terminale durante il ridimensionamento</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
   </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>predefinito</value>
@@ -2632,7 +2656,7 @@
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
-    <value>Sperimentale: visualizza l'input suggerito nei colori arcobaleno</value>
+    <value>Visualizza l'input suggerito nei colori arcobaleno</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
@@ -2640,7 +2664,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>Sperimentale. Evidenzia il testo selezionato o il testo corrispondente con colori personalizzati usando i tasti di scelta rapida</value>
+    <value>Evidenzia il testo selezionato o il testo corrispondente con colori personalizzati usando i tasti di scelta rapida</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2703,17 +2727,13 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>Indica il software che ha creato il profilo in origine.</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>Nessuno</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>L'avvio automatico è stato disabilitato nella sezione App di avvio delle impostazioni Windows.</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>Questa opzione è gestita da criteri aziendali e non può essere modificata qui.</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>Estensioni attive</value>
@@ -2758,16 +2778,20 @@
     <value>NUOVO</value>
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
   </data>
+  <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
+    <value>SPERIMENTALE</value>
+    <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">
+    <value>Impostazione sperimentale</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
+  </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>Scopri di più sulle espressioni regolari</value>
   </data>
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>Nessuno</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>Nessuno</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>Ripristina le impostazioni predefinite</value>
@@ -2826,6 +2850,10 @@ Questa azione viene applicata immediatamente e non può essere annullata.</value
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>Nessuno</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>Aspetto con stato non attivo</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>Comportamento all'avvio</value>

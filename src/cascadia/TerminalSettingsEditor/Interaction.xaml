@@ -115,7 +115,8 @@
 
         <!--  Enable Color Selection  -->
         <local:SettingsCard x:Name="EnableColorSelection"
-                            x:Uid="Globals_EnableColorSelection">
+                            x:Uid="Globals_EnableColorSelection"
+                            IsExperimental="True">
             <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xF683;" />
             </local:SettingsCard.HeaderIcon>
@@ -138,6 +139,16 @@
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingsCard>
 
+        <!--  Show resize overlay  -->
+        <local:SettingsCard x:Name="ShowResizeOverlay"
+                            x:Uid="Globals_ShowResizeOverlay">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE740;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.ShowResizeOverlay, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
+
         <!--  Tab Switcher Mode  -->
         <local:SettingsCard x:Name="TabSwitcherMode"
                             x:Uid="Globals_TabSwitcherMode">
@@ -149,6 +160,18 @@
                       ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
                       SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
+
+        <!--  Enable Tab Drag and Drop  -->
+        <local:SettingsCard x:Name="EnableTabDragDrop"
+                            x:Uid="Globals_EnableTabDragDrop"
+                            Description="{x:Bind ViewModel.TabDragDropDescription, Mode=OneWay}">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE7C2;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsEnabled="{x:Bind ViewModel.CanEnableTabDragDrop}"
+                          IsOn="{x:Bind ViewModel.EnableTabDragDrop, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingsCard>
 
         <!--  Section: Mouse & scrolling  -->

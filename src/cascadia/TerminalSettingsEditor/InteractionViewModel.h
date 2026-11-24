@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, ShowResizeOverlay);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, FocusFollowMouse);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, ScrollToZoom);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, ScrollToChangeOpacity);
@@ -34,6 +35,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, EnableColorSelection);
+
+        bool EnableTabDragDrop() const;
+        void EnableTabDragDrop(bool value);
+        bool CanEnableTabDragDrop() const noexcept;
+        winrt::hstring TabDragDropDescription() const;
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

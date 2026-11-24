@@ -36,7 +36,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
-        [[nodiscard]] HRESULT Present() noexcept override;
+        [[nodiscard]] HRESULT Present(HANDLE shutdownEvent) noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
@@ -188,9 +188,6 @@ namespace Microsoft::Console::Render
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
-
-        static int s_ScaleByDpi(const int iPx, const int iDpi);
-        static int s_ShrinkByDpi(const int iPx, const int iDpi);
 
         til::point _GetInvalidRectPoint() const;
         til::size _GetInvalidRectSize() const;

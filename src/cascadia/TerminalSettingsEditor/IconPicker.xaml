@@ -79,13 +79,17 @@
                  Style="{StaticResource TextBoxSettingStyle}"
                  Text="{x:Bind CurrentIconPath, Mode=TwoWay}"
                  Visibility="{x:Bind UsingImageIcon, Mode=OneWay}" />
-        <Button x:Uid="IconPicker_IconBrowse"
+        <Button x:Name="IconBrowseButton"
+                x:Uid="IconPicker_IconBrowse"
                 Grid.Column="2"
                 Margin="0"
                 VerticalAlignment="Top"
                 Click="Icon_Click"
                 Style="{StaticResource BrowseButtonStyle}"
-                Visibility="{x:Bind UsingImageIcon, Mode=OneWay}" />
+                Visibility="{x:Bind UsingImageIcon, Mode=OneWay}">
+            <FontIcon FontSize="{StaticResource StandardIconSize}"
+                      Glyph="&#xE838;" />
+        </Button>
 
         <!--  Emoji Icon  -->
         <TextBox x:Uid="IconPicker_EmojiBox"

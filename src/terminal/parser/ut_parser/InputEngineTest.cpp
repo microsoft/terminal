@@ -315,6 +315,9 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public I
 public:
     TestInteractDispatch(_In_ std::function<void(const std::span<const INPUT_RECORD>&)> pfn,
                          _In_ TestState* testState);
+
+    void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t>) override {}
+
     virtual void WriteInput(_In_ const std::span<const INPUT_RECORD>& inputEvents) override;
 
     virtual void WriteCtrlKey(const INPUT_RECORD& event) override;

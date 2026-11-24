@@ -11,7 +11,8 @@
       xmlns:model="using:Microsoft.Terminal.Settings.Model"
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+      xmlns:search="urn:microsoft:terminal:settings-index"
+      mc:Ignorable="d search">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -202,6 +203,7 @@
 
         <local:SettingsCard x:Name="InboxSchemeDuplicate"
                             x:Uid="ColorScheme_InboxSchemeDuplicate"
+                            search:Ignore="True"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
@@ -211,6 +213,7 @@
 
         <local:SettingsExpander x:Name="ColorsHeader"
                                 x:Uid="ColorScheme_ColorsHeader"
+                                search:Ignore="True"
                                 IsExpanded="True"
                                 Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <local:SettingsExpander.ItemsHeader>
@@ -441,6 +444,7 @@
 
         <local:SettingsExpander x:Name="RenameContainer"
                                 x:Uid="ColorScheme_Rename"
+                                search:Ignore="True"
                                 Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <local:SettingsExpander.ItemsHeader>
                 <ContentPresenter Padding="16,12,16,16">

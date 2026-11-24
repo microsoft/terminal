@@ -47,6 +47,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetName(KeyBindingsContainer(), RS_(L"EditAction_KeyBindings/Text"));
         Automation::AutomationProperties::SetName(AdditionalCustomizationsContainer(), RS_(L"EditAction_AdditionalCustomizations/Text"));
         Automation::AutomationProperties::SetName(NewKeyBinding(), RS_(L"EditAction_NewKeyBinding/Header"));
+        Automation::AutomationProperties::SetName(DeleteCommand(), RS_(L"Actions_DeleteButton2/Text"));
+    }
+
+    // The browse buttons live inside data templates, so we can't reference them by name.
+    // They only display an icon, so pull their accessible name from the tooltip resource as they're loaded.
+    void EditAction::BrowseButton_Loaded(const IInspectable& sender, const RoutedEventArgs&)
+    {
+        if (const auto& element{ sender.try_as<DependencyObject>() })
+        {
+            Automation::AutomationProperties::SetName(element, RS_(L"Actions_Browse/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        }
     }
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)

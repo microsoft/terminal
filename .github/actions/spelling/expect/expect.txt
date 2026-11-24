@@ -12,7 +12,6 @@ acp
 actctx
 ACTCTXW
 ADDALIAS
-ADDREF
 ADDSTRING
 ADDTOOL
 adml
@@ -169,17 +168,15 @@ chshdng
 CHT
 CInput
 CLASSSTRING
-CLAUDE
 cleartype
 CLICKACTIVE
 clickdown
 CLIENTID
 clipbrd
-CLIPCHILDREN
-CLIPSIBLINGS
 closetest
 cloudconsole
 cloudvault
+clp
 CLSCTX
 clsids
 cmatrix
@@ -338,7 +335,6 @@ dblclk
 Dcd
 DCOMMON
 DComposition
-DDESHARE
 DDevice
 DEADCHAR
 debugtype
@@ -385,6 +381,8 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+decommitted
+decommitting
 DECPCCM
 DECPCTERM
 DECPS
@@ -444,7 +442,9 @@ DELAYLOAD
 DELETEONRELEASE
 depersist
 deprioritized
+DESTROYCLIPBOARD
 devicecode
+devshell
 Dext
 DFF
 dialogbox
@@ -604,6 +604,7 @@ fte
 Ftm
 Fullscreens
 FUNCTIONCALL
+Furia
 fuzzmain
 fuzzmap
 fuzzwrapper
@@ -819,6 +820,7 @@ Ith
 IUI
 IWIC
 IXP
+izz
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1152,10 +1154,12 @@ nvidia
 NVT
 OACR
 ocolor
+OCPCH
 oemcp
 OEMFONT
 OEMFORMAT
 OEMs
+OIDTo
 OLEAUT
 OLECHAR
 onebranch
@@ -1181,6 +1185,7 @@ osc
 OSDEPENDSROOT
 OSG
 OSGENG
+otm
 OUTOFCONTEXT
 Outptr
 outstr
@@ -1225,7 +1230,6 @@ pcshell
 PCSHORT
 PCSR
 PCSTR
-PCWCH
 PCWCHAR
 PCWSTR
 pdbs
@@ -1343,7 +1347,6 @@ PSobject
 psp
 PSPCB
 psr
-PSTR
 psz
 ptch
 ptsz
@@ -1353,7 +1356,7 @@ pvar
 pwch
 PWDDMCONSOLECONTEXT
 pws
-pwstr
+PWSTR
 pwsz
 pythonw
 QUERYOPEN
@@ -1796,6 +1799,7 @@ uwa
 uwp
 uwu
 uxtheme
+VADs
 Vanara
 vararg
 vclib
@@ -1989,7 +1993,6 @@ yact
 YCast
 YCENTER
 YCount
-yizz
 YLimit
 YPan
 YSubstantial

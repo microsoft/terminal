@@ -16,27 +16,50 @@ param(
     [Parameter(Mandatory=$false)][string]$OutputDir = "$PSScriptRoot\..\src\cascadia\TerminalSettingsEditor\Generated Files\"
 )
 
-# Prohibited UIDs (exact match, case-insensitive by default)
-$ProhibitedUids = @(
-    "ColorScheme_ColorsHeader",
-    "ColorScheme_InboxSchemeDuplicate",
-    "ColorScheme_Rename",
-    "Extensions_ComplexPackageNavigator",
-    "Extensions_ComplexPackageNavigatorFontIcon",
-    "Extensions_DefaultPackageNavigator",
-    "Extensions_FragmentColorSchemeNavigator",
-    "Extensions_FragmentProfileNavigator",
-    "Extensions_Scope",
-    "Profile_AdvancedNavigator",
-    "Profile_AppearanceNavigator",
-    "Profile_DeleteProfile",
-    "Profile_MissingFontFaces",
-    "Profile_ProportionalFontFaces",
-    "Profile_ResetProfile",
-    "Profile_TerminalNavigator",
-    "Profiles_ColorSchemesNavigator",
-    "Profiles_DefaultsNavigator"
-)
+# XML namespace for build-time indexer attributes that tell this
+# script how an element participates in the search index.
+$IndexerNamespace = "urn:microsoft:terminal:settings-index"
+
+# Recognized search:* attributes and their permitted values.
+# Validate both the name and the value.
+$KnownIndexerDirectives = @{
+    "Ignore" = @("True")
+    "Label"  = @("True")
+    "Scope"  = @("Profile")
+}
+
+# Reads a search:* directive off an element, or $null when absent.
+function GetIndexerDirective($node, $name)
+{
+    if (-not $node.HasAttribute($name, $IndexerNamespace))
+    {
+        return $null
+    }
+    return $node.GetAttribute($name, $IndexerNamespace)
+}
+
+# Warns about any search:* attribute this script doesn't understand, across a set of elements.
+function WarnOnUnknownIndexerDirectives($nodes, $filename)
+{
+    foreach ($node in $nodes)
+    {
+        foreach ($attr in $node.Attributes)
+        {
+            if ($attr.NamespaceURI -ne $IndexerNamespace)
+            {
+                continue
+            }
+            if (-not $KnownIndexerDirectives.ContainsKey($attr.LocalName))
+            {
+                Write-Warning "Unknown indexer directive 'search:$($attr.LocalName)' on <$($node.LocalName)> in file $filename. Recognized directives: $(($KnownIndexerDirectives.Keys | Sort-Object) -join ', ')."
+            }
+            elseif ($KnownIndexerDirectives[$attr.LocalName] -cnotcontains $attr.Value)
+            {
+                Write-Warning "Unexpected value 'search:$($attr.LocalName)=`"$($attr.Value)`"' on <$($node.LocalName)> in file $filename. Permitted values: $($KnownIndexerDirectives[$attr.LocalName] -join ', ')."
+            }
+        }
+    }
+}
 
 # Prohibited XAML files (already limited to Page root elements)
 $ProhibitedXamlFiles = @(
@@ -100,6 +123,11 @@ $ClassMap = @{
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::Profile_Appearance"
     }
+    "Microsoft::Terminal::Settings::Editor::Profiles_UnfocusedAppearance" = @{
+        ResourceName    = "Nav_ProfileDefaults/Content"
+        NavigationParam = "GlobalProfile_Nav"
+        SubPage         = "BreadcrumbSubPage::Profile_UnfocusedAppearance"
+    }
     "Microsoft::Terminal::Settings::Editor::Profiles_Terminal" = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
         NavigationParam = "GlobalProfile_Nav"
@@ -120,6 +148,7 @@ $ClassMap = @{
 function IsProfileSubPage($pageClass)
 {
     return $pageClass -match "Editor::Profiles_Appearance" -or
+           $pageClass -match "Editor::Profiles_UnfocusedAppearance" -or
            $pageClass -match "Editor::Profiles_Terminal" -or
            $pageClass -match "Editor::Profiles_Advanced"
 }
@@ -142,6 +171,9 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     $xm = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
     $xm.AddNamespace("local", "using:Microsoft.Terminal.Settings.Editor")
     $xm.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
+
+    # Validate every search:* directive in the file
+    WarnOnUnknownIndexerDirectives $xml.DocumentElement.SelectNodes("//*") $filename
 
     if ($xml.DocumentElement.LocalName -ne "Page" -and $filename -ne "Appearances.xaml")
     {
@@ -190,10 +222,61 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
+    elseif ($filename -eq "AddProfile.xaml")
+    {
+        # "add new" button
+        $entries += [pscustomobject]@{
+            ResourceName    = "AddProfile_AddNewTextBlock/Text"
+            ParentPage      = $pageClass
+            NavigationParam = $ClassMap[$pageClass].NavigationParam
+            SubPage         = $ClassMap[$pageClass].SubPage
+            ElementName     = "AddNewButton"
+            File            = $filename
+        }
+    }
+    elseif ($filename -eq "Profiles_Base.xaml")
+    {
+        # The navigator cards below are special:
+        # - no UID because we want to reuse existing resources to reduce localization burden
+        # - when selected, we want to navigate to the subpage (not focus the navigator)
+        $navigators = @(
+            @{ Resource = "Profile_Appearance/Header";          SubPage = "BreadcrumbSubPage::Profile_Appearance" }
+            @{ Resource = "Profile_UnfocusedAppearanceTextBlock/Text"; SubPage = "BreadcrumbSubPage::Profile_UnfocusedAppearance" }
+            @{ Resource = "Profile_Terminal/Header";            SubPage = "BreadcrumbSubPage::Profile_Terminal" }
+            @{ Resource = "Profile_Advanced/Header";            SubPage = "BreadcrumbSubPage::Profile_Advanced" }
+        )
+        foreach ($nav in $navigators)
+        {
+            # Build-time entry: searchable from the profile defaults context
+            $entries += [pscustomobject]@{
+                ResourceName         = $nav.Resource
+                ParentPage           = $pageClass
+                NavigationParam      = $ClassMap[$pageClass].NavigationParam
+                SubPage              = $nav.SubPage
+                ElementName          = ""
+                SecondaryLabel       = "Nav_ProfileDefaults/Content"
+                File                 = $filename
+            }
+            # Partial entry: instantiated per profile at runtime (the navigation arg is the profile VM).
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $null
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                File            = $filename
+            }
+        }
+    }
 
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
+        if ((GetIndexerDirective $settingContainer "Ignore") -eq "True")
+        {
+            continue
+        }
+
         # Determine what to index for this container. A SettingContainer is indexable
         # either via its own x:Uid (its label comes from the Header, resource suffix
         # "/Header") OR, when it has none, via a content-labeled child control
@@ -206,10 +289,23 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         if ([string]::IsNullOrEmpty($uid))
         {
-            # No x:Uid on the container itself, look for a child control.
+            # No x:Uid on the container itself, look for a labeled control inside it.
             $child = $settingContainer.SelectNodes("*") |
                 Where-Object { @("CheckBox", "ToggleSwitch", "RadioButton", "ToggleButton") -contains $_.LocalName -and -not [string]::IsNullOrEmpty($_.GetAttribute("x:Uid")) } |
                 Select-Object -First 1
+            if ($null -eq $child)
+            {
+                # The control isn't a direct child, which happens when it's wrapped in a panel.
+                # Those cases mark the control with search:Label="True" so it's clear which descendant provides the label.
+                $child = $settingContainer.SelectNodes(".//*") |
+                    Where-Object { (GetIndexerDirective $_ "Label") -eq "True" } |
+                    Select-Object -First 1
+                if ($null -ne $child -and [string]::IsNullOrEmpty($child.GetAttribute("x:Uid")))
+                {
+                    Write-Warning "search:Label=`"True`" on <$($child.LocalName)> in file $filename, but it has no x:Uid to take a label from. Skipping entry."
+                    continue
+                }
+            }
             if ($null -ne $child)
             {
                 $suffix = "Content"
@@ -223,12 +319,12 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             }
             else
             {
-                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. Skipping entry."
+                Write-Warning "No x:Uid found for a SettingsCard/SettingsExpander or x:Name for its child controls in file $filename. If the labeled control is nested inside a panel, mark it with search:Label=`"True`". Skipping entry."
                 continue
             }
         }
 
-        if ([string]::IsNullOrEmpty($uid) -or ($ProhibitedUids -contains $uid))
+        if ([string]::IsNullOrEmpty($uid))
         {
             continue
         }
@@ -267,7 +363,8 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         }
         elseif ($pageClass -match "Editor::Profiles_Base" -or (IsProfileSubPage $pageClass))
         {
-            $includeInBuildIndex = !($name -eq "Name" -or $name -eq "Commandline")
+            # search:Scope="Profile" is for settings that only exist on real profiles (i.e. not on profile defaults)
+            $includeInBuildIndex = (GetIndexerDirective $settingContainer "Scope") -ne "Profile"
             $includeInPartialIndex = $true
         }
         elseif ($pageClass -match "Editor::EditColorScheme")

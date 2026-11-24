@@ -338,7 +338,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>选择将文本分组到单元格中的方式。“Grapheme 群集”提供最新的 Unicode 行为。重启终端以应用更改。仅影响从终端启动的应用程序。</value>
+    <value>选择将文本分组到单元格中的方式。“Grapheme 群集”提供最新的 Unicode 行为。重启终端即可应用更改。仅影响从终端启动的应用程序。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme 群集</value>
@@ -498,6 +498,18 @@
     <value>使用活动的终端标题作为应用程序标题</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
+  <data name="Globals_EnableTabDragDrop.Header" xml:space="preserve">
+    <value>通过拖动重新排序或分离标签页</value>
+    <comment>Header for a control to toggle whether tabs can be dragged to reorder them or tear them out into a new window.</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Description" xml:space="preserve">
+    <value>禁用后，仍可使用“移动选项卡”操作移动选项卡。</value>
+    <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
+  </data>
+  <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
+    <value>由于终端以管理员身份运行，无法拖动标签页。请改用“移动标签页”操作。</value>
+    <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
+  </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>将窗口大小调整为字符网格对齐</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
@@ -509,10 +521,6 @@
   <data name="Globals_StartOnUserLogin_Checkbox.Content" xml:space="preserve">
     <value>登录时启动</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
-  </data>
-  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
-    <value>登录 Windows 时自动启动终端。</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>居中</value>
@@ -546,7 +554,7 @@
     <value>允许 OSC 777 (Desktop Notification)显示 toast 通知</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>启用后，应用程序可以发送 OSC 777 转义序列以触发具有自定义标题和正文的桌面通知。</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -734,6 +742,10 @@
     <value>外观</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>无</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>背景图像路径</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -798,8 +810,8 @@
     <value>右上角</value>
     <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
-    <value>浏览……</value>
+  <data name="Profile_BackgroundImageBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>浏览...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -907,7 +919,7 @@
     <value>在配置文件中所使用的可执行文件。</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1078,25 +1090,17 @@
     <value>所选字体没有字体功能。</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
-    <value>从下拉菜单中隐藏</value>
+  <data name="Profile_Hidden.Content" xml:space="preserve">
+    <value>从下拉菜单中隐藏个人资料</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
-  </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>如果启用，配置文件将不会显示在配置文件列表中。这可用于隐藏默认配置文件和动态生成的配置文件，同时将它们保留在设置文件中。</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
   <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>已在下拉菜单中隐藏</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
-    <value>以管理员身份运行此配置文件</value>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>以管理员身份运行(如果已提升，则使用当前窗口)</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>如果启用，配置文件将自动在管理员终端窗口中打开。如果当前窗口已以管理员身份运行，它将在此窗口中打开。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>历史记录大小</value>
@@ -1130,7 +1134,7 @@
     <value>配置文件中所使用图标的表情符号或图像文件位置。</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1187,18 +1191,14 @@
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
-    <value>启动目录</value>
+    <value>默认启动目录</value>
     <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>正在启动目录</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>加载配置文件时启动的目录。</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1233,10 +1233,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>无焦点外观</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>创建外观</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>删除</value>
@@ -1379,7 +1375,7 @@
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
-    <value>实验性: 通过鼠标单击重新定位光标</value>
+    <value>通过鼠标单击重新定位光标</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
   <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
@@ -1603,8 +1599,32 @@
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
+    <value>配置文件</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBaseLayer.Header" xml:space="preserve">
+    <value>配置文件默认设置</value>
+    <comment>Header for the profile section of the profile settings page, shown when editing the "defaults" that all profiles inherit from. See "Nav_ProfileDefaults.Content" for a description of what the defaults layer does in the app. Unlike "Profile_Name.Header", there is no profile name to edit here.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>名称</value>
-    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
+  </data>
+  <data name="Profile_Section_TabAppearance.Text" xml:space="preserve">
+    <value>选项卡外观</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
+  <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
+    <value>自定义配置文件的视觉外观，包括颜色、字体和文本样式。</value>
+    <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>自定义配置文件在非活动（未聚焦）时的外观。</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
+    <value>配置终端如何处理键盘输入和控制序列</value>
+    <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>透明度</value>
@@ -1774,14 +1794,6 @@
     <value>如果启用，则在上面的列表中显示所有已安装的字体。否则，仅显示等宽字体列表。</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>创建外观</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>创建此配置文件的无焦点外观。这将是配置文件处于非活动状态时的外观。</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
-  </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>删除外观</value>
     <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
@@ -1789,6 +1801,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>删除此配置文件的无焦点外观。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>删除此无焦点外观</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>删除无焦点外观，以便配置文件在处于非活动状态时使用其默认外观</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>详细了解快捷方式</value>
@@ -2186,7 +2206,7 @@
     <value>无颜色</value>
     <comment>Label for a button directing the user to opt out of choosing a color.</comment>
   </data>
-  <data name="Actions_Browse.Content" xml:space="preserve">
+  <data name="Actions_Browse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2237,6 +2257,10 @@
   <data name="Globals_AutoHideWindow.Description" xml:space="preserve">
     <value>如果启用，则在切换到另一个窗口时，终端将立即隐藏。</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
+  </data>
+  <data name="Globals_ShowResizeOverlay.Header" xml:space="preserve">
+    <value>调整大小时显示终端大小</value>
+    <comment>Header for a control to toggle whether the terminal shows its size (columns × rows) while it is being resized.</comment>
   </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>默认</value>
@@ -2632,7 +2656,7 @@
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
   <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
-    <value>实验性: 以彩虹色显示建议的输入</value>
+    <value>以彩虹色显示建议的输入</value>
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
@@ -2640,7 +2664,7 @@
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>实验性。使用键绑定以自定义颜色突出显示所选文本或匹配文本</value>
+    <value>使用键绑定以自定义颜色突出显示所选文本或匹配文本</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
@@ -2703,17 +2727,13 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>指示最初创建此配置文件的软件。</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>无</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>已在 Windows 设置的“启动应用”部分禁用自动启动。</value>
-    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+    <comment>{Locked="Windows"}Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the OS setting.</comment>
   </data>
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>此选项由企业策略管理，无法在此处更改。</value>
-    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+    <comment>Shown beneath the "Globals_StartOnUserLogin_Checkbox" checkbox when it is disabled by the enterprise administrator.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
     <value>活动扩展</value>
@@ -2758,16 +2778,20 @@
     <value>新建</value>
     <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
   </data>
+  <data name="SettingsCard_ExperimentalBadgeTextBlock.Text" xml:space="preserve">
+    <value>实验性</value>
+    <comment>Text is used on an info badge displayed next an experimental setting. Must be all caps.</comment>
+  </data>
+  <data name="SettingsCard_ExperimentalNameSuffix" xml:space="preserve">
+    <value>实验性设置</value>
+    <comment>Announced by screen readers for experimental settings.</comment>
+  </data>
   <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
     <value>了解有关正则表达式的更多信息</value>
   </data>
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>无</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>无</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>重置为默认设置</value>
@@ -2826,6 +2850,10 @@
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>无</value>
     <comment>Default placeholder text shown in text box settings when no value has been set.</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Header" xml:space="preserve">
+    <value>无焦点外观</value>
+    <comment>Title for the "Unfocused appearance" navigator card on the profile page. Navigates to a page to customize the appearance of the terminal when it is not focused.</comment>
   </data>
   <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
     <value>启动行为</value>

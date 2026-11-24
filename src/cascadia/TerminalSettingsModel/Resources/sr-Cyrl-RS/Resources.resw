@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Ресетуј име прозора</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Отвори радни прозор „{0}”</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Отвори радни простор</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Промена имена прозора...</value>
   </data>
@@ -702,7 +709,7 @@
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
-    <value>Поново покрени везу</value>
+    <value>Поново покрени сесију</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
     <value>Отвори простор за скицирање</value>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Отвори текући радни директоријум</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Радни простори...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Затвори картицу</value>
@@ -857,13 +867,13 @@
     <value>Циљ</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>је Фокус режим</value>
+    <value>Је фокус режим</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>је Увећано</value>
+    <value>Је увећано</value>
   </data>
   <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>је Пун екран</value>
+    <value>Је пун екран</value>
   </data>
   <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
     <value>Име шеме</value>
@@ -887,7 +897,7 @@
     <value>Боја</value>
   </data>
   <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Режим покретања</value>
+    <value>Режим при покретању</value>
   </data>
   <data name="NameActionArgumentLocalized" xml:space="preserve">
     <value>Име</value>
@@ -899,7 +909,7 @@
     <value>Извор</value>
   </data>
   <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Користи Командну линију</value>
+    <value>Користи командну линију</value>
   </data>
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
     <value>Режим пребацивача</value>
@@ -914,7 +924,7 @@
     <value>Монитор</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Укљ./Искљ. видљивост</value>
+    <value>Укљ./искљ. видљивост</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
     <value>Трајање падајуће листе</value>

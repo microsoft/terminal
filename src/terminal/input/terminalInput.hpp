@@ -3,6 +3,8 @@
 
 #pragma once
 
+class KittyKeyboardProtocolTests;
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class TerminalInput final
@@ -78,8 +80,8 @@ namespace Microsoft::Console::VirtualTerminal
         // Kitty keyboard protocol methods
         void SetKittyKeyboardProtocol(uint8_t flags, KittyKeyboardProtocolMode mode) noexcept;
         uint8_t GetKittyFlags() const noexcept;
-        void PushKittyFlags(uint8_t flags);
-        void PopKittyFlags(size_t count);
+        void PushKittyFlags(uint8_t flags) noexcept;
+        void PopKittyFlags(size_t count) noexcept;
         void ResetKittyKeyboardProtocols() noexcept;
 
 #pragma region MouseInput
@@ -125,10 +127,10 @@ namespace Microsoft::Console::VirtualTerminal
             uint32_t getUnmodifiedKeyboardKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt
             uint32_t getKittyBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift
             uint32_t getKittyShiftedKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt, with Shift
-            uint32_t getKittyUSBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift in US layout
+            static uint32_t getKittyUSBaseKey(const SanitizedKeyEvent& key) noexcept; // Without Ctrl/Alt/Shift in US layout
 
         private:
-            uint32_t getKeyboardKey(UINT vkey, DWORD controlKeyState, HKL hkl) noexcept;
+            uint32_t getKeyboardKey(UINT vkey, DWORD controlKeyState) noexcept;
             uint32_t getKeyboardKeyHelper(const SanitizedKeyEvent& key, DWORD removeFlags, DWORD addFlags) noexcept;
             void init() noexcept;
             void initSlow() noexcept;
@@ -183,16 +185,22 @@ namespace Microsoft::Console::VirtualTerminal
 
         // Kitty keyboard protocol state
         static constexpr size_t KittyStackMaxSize = 8;
+        struct KittyStack
+        {
+            std::array<uint8_t, KittyStackMaxSize> flags{};
+            size_t len = 0; // NOTE: PushKittyFlags() depends on this layout
+        };
+        KittyStack _kittyMainStack;
+        KittyStack _kittyAltStack;
         bool _forceDisableKittyKeyboardProtocol = false;
-        uint8_t _kittyFlags = 0;
-        std::vector<uint8_t> _kittyMainStack;
-        std::vector<uint8_t> _kittyAltStack;
 
         std::wstring_view _csi;
         std::wstring_view _ss3;
         std::wstring_view _focusInSequence;
         std::wstring_view _focusOutSequence;
 
+        KittyStack& _activeKittyStack() noexcept;
+        const KittyStack& _activeKittyStack() const noexcept;
         void _initKeyboardMap() noexcept;
         DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept;
         [[nodiscard]] static DWORD _controlKeyStateFromVirtualKey(uint16_t vk, uint32_t controlKeyState) noexcept;
