@@ -938,7 +938,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // callbacks can read it without synchronizing with _settings. If the effective
         // taskbar state changes (because a command is currently active and the setting
         // toggled), notify listeners.
-        const auto nowEnabled = _settings.AutoDetectRunningCommand();
+        const auto nowEnabled = Feature_NotifyOnActivity::IsEnabled() && _settings.AutoDetectRunningCommand();
         const auto wasEnabled = _autoDetectCommandActivity.exchange(nowEnabled, std::memory_order_relaxed);
         if (wasEnabled != nowEnabled && _commandActive.load(std::memory_order_relaxed))
         {

@@ -1248,8 +1248,9 @@ namespace winrt::TerminalApp::implementation
                     const auto activeContent = tab->GetActiveContent();
                     const auto isActivePaneContent = activeContent && activeContent == sender;
 
-                    if (!notifArgs.AlwaysNotify() && isActivePaneContent &&
-                        tab->_focusState != WUX::FocusState::Unfocused)
+                    if (!notifArgs.AlwaysNotify() &&
+                        (!Feature_NotifyOnActivity::IsEnabled() ||
+                         (isActivePaneContent && tab->_focusState != WUX::FocusState::Unfocused)))
                     {
                         co_return;
                     }
