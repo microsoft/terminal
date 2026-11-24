@@ -100,10 +100,10 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     }
 }
 
-CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
+std::pair<CursorType, bool> Terminal::GetUserDefaultCursorStyle() const noexcept
 {
     _assertLocked();
-    return _defaultCursorShape;
+    return { _defaultCursorShape, _defaultCursorBlinking };
 }
 
 bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height)

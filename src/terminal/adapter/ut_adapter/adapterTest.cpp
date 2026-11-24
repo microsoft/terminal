@@ -150,9 +150,9 @@ public:
         Log::Comment(L"UseMainScreenBuffer MOCK called...");
     }
 
-    CursorType GetUserDefaultCursorStyle() const override
+    std::pair<CursorType, bool> GetUserDefaultCursorStyle() const override
     {
-        return CursorType::Legacy;
+        return { CursorType::Legacy, true };
     }
 
     void ShowWindow(bool showOrHide) override

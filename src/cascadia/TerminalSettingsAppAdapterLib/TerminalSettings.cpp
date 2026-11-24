@@ -335,6 +335,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         _ScrollState = profile.ScrollState();
 
+        _CursorBlinking = profile.CursorBlinking();
         _AntialiasingMode = profile.AntialiasingMode();
 
         if (profile.TabColor())

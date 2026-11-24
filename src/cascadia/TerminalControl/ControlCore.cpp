@@ -435,7 +435,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            _terminal->Create(viewportSize, _settings.HistorySize(), *_renderer);
+            _terminal->Create(viewportSize, _settings.HistorySize(), *_renderer, _settings.CursorBlinking());
             _terminal->UpdateSettings(_settings);
 
             if (SwapChainChanged)

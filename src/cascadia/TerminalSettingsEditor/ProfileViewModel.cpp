@@ -455,7 +455,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
 #define PROFILE_COUNT(target, name) +1
-    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 39,
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 40,
                   "The set of inheritable profile settings changed. Update this count, then make "
                   "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
                   "XAML reset buttons.");

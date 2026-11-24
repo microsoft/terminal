@@ -33,6 +33,7 @@
 // --------------------------- Core Settings ---------------------------
 //  All of these settings are defined in ICoreSettings.
 #define CORE_SETTINGS(X)                                                                                          \
+    X(bool, CursorBlinking, true)                                                                                 \
     X(int32_t, HistorySize, DEFAULT_HISTORY_SIZE)                                                                 \
     X(int32_t, InitialRows, 30)                                                                                   \
     X(int32_t, InitialCols, 80)                                                                                   \

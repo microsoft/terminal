@@ -38,6 +38,7 @@ public:
     TEST_METHOD(BackarrowKeyModeTest);
     TEST_METHOD(AutoRepeatModeTest);
     TEST_METHOD(SendC1ControlTest);
+    TEST_METHOD(AltGrCtrlTimingTest);
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
@@ -863,4 +864,41 @@ void InputTest::SendC1ControlTest()
 
     TestKey(TerminalInput::MakeOutput(L"\x1b[H"), input, 0, VK_HOME);
     TestKey(TerminalInput::MakeOutput(L"\x1bOP"), input, 0, VK_F1);
+}
+
+void InputTest::AltGrCtrlTimingTest()
+{
+    const auto key = [](WORD vk, wchar_t ch, DWORD state) {
+        INPUT_RECORD ir{};
+        ir.EventType = KEY_EVENT;
+        ir.Event.KeyEvent.bKeyDown = TRUE;
+        ir.Event.KeyEvent.wRepeatCount = 1;
+        ir.Event.KeyEvent.wVirtualKeyCode = vk;
+        ir.Event.KeyEvent.uChar.UnicodeChar = ch;
+        ir.Event.KeyEvent.dwControlKeyState = state;
+        return ir;
+    };
+    // AltGr generates a fake LeftCtrl key press, immediately followed by a RightAlt key press.
+    const auto fakeLeftCtrl = key(VK_CONTROL, 0, LEFT_CTRL_PRESSED);
+    const auto rightAlt = key(VK_MENU, 0, LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED | ENHANCED_KEY);
+    const auto nine = key('9', L']', LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED);
+
+    {
+        Log::Comment(L"AltGr+9 must produce ']'");
+        TerminalInput input;
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(fakeLeftCtrl));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(rightAlt));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"]"), input.HandleKey(nine));
+    }
+
+    {
+        Log::Comment(L"LeftCtrl+AltGr+9 must produce ^] (0x1D)");
+        TerminalInput input;
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(key(VK_CONTROL, 0, LEFT_CTRL_PRESSED)));
+        // The heuristic requires a >50ms gap. GetTickCount64() has a granularity of ~16ms, so we need some extra headroom.
+        Sleep(100);
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(fakeLeftCtrl));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), input.HandleKey(rightAlt));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1d"), input.HandleKey(nine));
+    }
 }
