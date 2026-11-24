@@ -1616,3 +1616,13 @@ namespace SettingsModelUnitTests
         }
     }
 }
+
+BEGIN_MODULE()
+    // This test module requires that the root directory contain a resources.pri,
+    // which we cannot generally guarantee without some contortions. Running as a
+    // "packaged win32 app," however, fixes the issue in a tidy manner without
+    // further skulduggery.
+    MODULE_PROPERTY(L"RunAs", L"UAP")
+    MODULE_PROPERTY(L"UAP:RuntimeBehavior", L"win32App")
+    MODULE_PROPERTY(L"UAP:TrustLevel", L"mediumIL")
+END_MODULE()
