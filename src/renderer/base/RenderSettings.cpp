@@ -293,3 +293,18 @@ void RenderSettings::ToggleBlinkRendition() noexcept
 {
     _blinkShouldBeFaint = !_blinkShouldBeFaint;
 }
+
+void RenderSettings::SetCursorBlinkingOverride(std::optional<bool> blinking) noexcept
+{
+    _cursorBlinkingOverride = blinking;
+}
+
+std::optional<bool> RenderSettings::GetCursorBlinkingOverride() const noexcept
+{
+    return _cursorBlinkingOverride;
+}
+
+bool RenderSettings::IsCursorBlinking(bool clientBlinking) const noexcept
+{
+    return _cursorBlinkingOverride.value_or(clientBlinking);
+}

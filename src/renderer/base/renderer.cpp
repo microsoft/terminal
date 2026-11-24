@@ -1576,9 +1576,10 @@ void Renderer::_updateCursorInfo()
     const auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
     const auto useColor = cursorColor != INVALID_COLOR;
 
-    // Update inhibitors based on whatever the VT parser (= client app) wants.
+    // Update inhibitors based on whatever the VT parser (= client app) wants,
+    // unless the user locked the blinking state.
     AllowCursorVisibility(InhibitionSource::Client, cursor.IsVisible());
-    AllowCursorBlinking(InhibitionSource::Client, cursor.IsBlinking());
+    AllowCursorBlinking(InhibitionSource::Client, _renderSettings.IsCursorBlinking(cursor.IsBlinking()));
 
     // If the buffer or cursor changed, turn the cursor on for the next cycle. This makes it
     // so that rapidly typing/printing keeps the cursor on continuously, which looks nicer.

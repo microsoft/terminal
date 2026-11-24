@@ -1753,12 +1753,6 @@ void AdaptDispatch::_SetAlternateScreenBufferMode(const bool enable)
         _usingAltBuffer = false;
         CursorRestoreState();
     }
-
-    // Re-entering the alternate buffer can copy an older state from the main buffer.
-    if (!_optionalFeatures.test(OptionalFeature::CursorBlinking))
-    {
-        _pages.ActivePage().Cursor().SetIsBlinking(_api.GetUserDefaultCursorStyle().second);
-    }
 }
 
 // Routine Description:
@@ -1814,10 +1808,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        if (_optionalFeatures.test(OptionalFeature::CursorBlinking))
-        {
-            _pages.ActivePage().Cursor().SetIsBlinking(enable);
-        }
+        _pages.ActivePage().Cursor().SetIsBlinking(enable);
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
@@ -1982,9 +1973,14 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = _optionalFeatures.test(OptionalFeature::CursorBlinking) ?
-                    mapTemp(_pages.ActivePage().Cursor().IsBlinking()) :
-                    mapPerm(_pages.ActivePage().Cursor().IsBlinking());
+        if (const auto locked = _renderSettings.GetCursorBlinkingOverride())
+        {
+            state = mapPerm(*locked);
+        }
+        else
+        {
+            state = mapTemp(_pages.ActivePage().Cursor().IsBlinking());
+        }
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
@@ -3299,10 +3295,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
-    if (_optionalFeatures.test(OptionalFeature::CursorBlinking))
-    {
-        cursor.SetIsBlinking(fEnableBlinking);
-    }
+    cursor.SetIsBlinking(fEnableBlinking);
 }
 
 // Routine Description:
@@ -4432,7 +4425,7 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 void AdaptDispatch::_ReportDECSCUSRSetting() const
 {
     const auto& cursor = _pages.ActivePage().Cursor();
-    const auto blinking = cursor.IsBlinking();
+    const auto blinking = _renderSettings.IsCursorBlinking(cursor.IsBlinking());
     // A valid response always starts with 1 $ r. This is followed by a
     // number from 1 to 6 representing the cursor style. The ' q' indicates
     // this is a DECSCUSR response.
@@ -4910,13 +4903,7 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
     });
 }
 
-void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features)
+void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept
 {
     _optionalFeatures = features;
-    if (!_optionalFeatures.test(OptionalFeature::CursorBlinking))
-    {
-        const auto blinking = _api.GetUserDefaultCursorStyle().second;
-        _pages.ActivePage().Cursor().SetIsBlinking(blinking);
-        _pages.VisiblePage().Cursor().SetIsBlinking(blinking);
-    }
 }
