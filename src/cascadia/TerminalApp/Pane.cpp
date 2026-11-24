@@ -1456,6 +1456,14 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
+        // Leaves can't be resized, so drop our splitter (and any drag in progress).
+        if (_splitterDragOrigin)
+        {
+            _splitterDragOrigin.reset();
+            _resetPointerCursor();
+        }
+        _splitter = nullptr;
+
         // Reattach the TermControl to our grid.
         _root.Children().Append(_borderFirst);
         const auto& control{ _content.GetRoot() };
