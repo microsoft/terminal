@@ -41,9 +41,9 @@ namespace til
     // Return Value:
     // - a copy of `haystack` with all instances of `needle` replaced with `replacement`.`
     template<typename T>
-    T replace_needle_in_haystack(const T& haystack,
-                                 const as_view_t<T>& needle,
-                                 const as_view_t<T>& replacement)
+    std::basic_string<typename T::value_type> replace_needle_in_haystack(const T& haystack,
+                                                                         const as_view_t<T>& needle,
+                                                                         const as_view_t<T>& replacement)
     {
         std::basic_string<typename T::value_type> result{ haystack };
         replace_needle_in_haystack_inplace(result, needle, replacement);

@@ -54,6 +54,7 @@
 
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
+#include <til/replace.h>
 
 namespace winrt
 {
@@ -210,7 +211,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!Commandline().empty())
         {
-            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"-- \"{}\" "), Commandline());
+            // Escape ';' so wt's commandline parser doesn't split this into separate subcommands.
+            const auto commandline = til::replace_needle_in_haystack(std::wstring_view{ Commandline() }, L";", L"\\;");
+            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L"-- {} "), commandline);
         }
 
         if (str.empty())

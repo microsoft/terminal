@@ -68,6 +68,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestSimpleExecuteCommandlineAction);
         TEST_METHOD(TestMultipleCommandExecuteCommandlineAction);
         TEST_METHOD(TestInvalidExecuteCommandlineAction);
+        TEST_METHOD(TestElevatedCommandlineRoundTrip);
         TEST_METHOD(TestLaunchMode);
         TEST_METHOD(TestLaunchModeWithNoCommand);
 
@@ -1662,6 +1663,38 @@ namespace TerminalAppLocalTests
         ExecuteCommandlineArgs args{ L"split-pane -H -V" };
         auto actions = winrt::TerminalApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(0u, actions.size());
+    }
+
+    void CommandlineTest::TestElevatedCommandlineRoundTrip()
+    {
+        // Elevating re-parses ToCommandline() in a new instance; the commandline must round-trip intact.
+        static constexpr std::wstring_view commandlines[]{
+            L"cmd.exe",
+            L"pwsh.exe -NoLogo -NoProfile",
+            LR"("C:\Program Files\PowerShell\7\pwsh.exe" -NoLogo)",
+            LR"(pwsh.exe -NoExit -Command "Write-Host hi")",
+            LR"(cmd.exe /k "echo a; echo b")",
+            LR"(pwsh.exe -NoExit -Command "echo 'hi; my name is adam'")",
+        };
+
+        for (const auto& commandline : commandlines)
+        {
+            NewTerminalArgs original{};
+            original.Profile(L"{00000000-0000-0000-0000-000000000001}");
+            original.Commandline(winrt::hstring{ commandline });
+
+            const ExecuteCommandlineArgs args{ L"new-tab " + original.ToCommandline() };
+            Log::Comment(NoThrowString().Format(L"%s", args.Commandline().c_str()));
+
+            const auto actions = winrt::TerminalApp::implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+            VERIFY_ARE_EQUAL(1u, actions.size());
+            const auto myArgs = actions.at(0).Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            const auto terminalArgs = myArgs.ContentArgs().try_as<NewTerminalArgs>();
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            VERIFY_ARE_EQUAL(original.Profile(), terminalArgs.Profile());
+            VERIFY_ARE_EQUAL(original.Commandline(), terminalArgs.Commandline());
+        }
     }
 
     void CommandlineTest::TestLaunchMode()
