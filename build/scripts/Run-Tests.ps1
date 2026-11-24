@@ -26,38 +26,5 @@ if ($LogPath) {
     Write-Host "WTT Logging Enabled"
 }
 
-$rootTe = "$Root\te.exe"
-
-# Some of our test fixtures depend on resources.pri in the same folder as the .exe hosting them.
-# Unfortunately, that means that we need to run the te.exe *next to* each test DLL we discover.
-# This code establishes a mapping from te.exe to test DLL (or DLLs)
-$testDllTaefGroups = $testDlls | % {
-	$localTe = Get-Item (Join-Path (Split-Path $_ -Parent) "te.exe") -EA:Ignore
-	If ($null -eq $localTe) {
-		$finalTePath = $rootTe
-	} Else {
-		$finalTePath = $localTe.FullName
-	}
-	[PSCustomObject]@{
-		TePath = $finalTePath;
-		TestDll = $_;
-	}
-}
-
-# Invoke the te.exe executables with arguments and test DLLs
-$anyFailed = $false
-$testDllTaefGroups | Group-Object TePath | % {
-	$te = $_.Group[0].TePath
-	$dlls = $_.Group.TestDll
-	Write-Verbose "Running $te (for $($dlls.Name))"
-	& $te $teArgs $dlls.FullName $AdditionalTaefArguments
-	if ($LASTEXITCODE -ne 0) {
-		$anyFailed = $true
-	}
-}
-
-if ($anyFailed) {
-    Exit 1
-}
-
-Exit 0
+& "$Root\te.exe" $teArgs $testDlls.FullName $AdditionalTaefArguments
+Exit $LASTEXITCODE

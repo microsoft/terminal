@@ -176,6 +176,7 @@ clipbrd
 closetest
 cloudconsole
 cloudvault
+clp
 CLSCTX
 clsids
 cmatrix
@@ -443,6 +444,7 @@ depersist
 deprioritized
 DESTROYCLIPBOARD
 devicecode
+devshell
 Dext
 DFF
 dialogbox
@@ -1152,10 +1154,12 @@ nvidia
 NVT
 OACR
 ocolor
+OCPCH
 oemcp
 OEMFONT
 OEMFORMAT
 OEMs
+OIDTo
 OLEAUT
 OLECHAR
 onebranch
