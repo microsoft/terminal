@@ -49,6 +49,9 @@ namespace Microsoft::Console::Render
         std::pair<COLORREF, COLORREF> GetAttributeColorsWithAlpha(const TextAttribute& attr) const noexcept;
         COLORREF GetAttributeUnderlineColor(const TextAttribute& attr) const noexcept;
         void ToggleBlinkRendition() noexcept;
+        void SetCursorBlinkingOverride(std::optional<bool> blinking) noexcept;
+        std::optional<bool> GetCursorBlinkingOverride() const noexcept;
+        bool IsCursorBlinking(bool clientBlinking) const noexcept;
 
     private:
         til::enumset<Mode> _renderMode{ Mode::IntenseIsBright };
@@ -57,5 +60,7 @@ namespace Microsoft::Console::Render
         std::array<COLORREF, TextColor::TABLE_SIZE> _defaultColorTable;
         std::array<size_t, static_cast<size_t>(ColorAlias::ENUM_COUNT)> _defaultColorAliasIndices;
         bool _blinkShouldBeFaint = false;
+        // Set when the user locked the cursor blinking state, overriding whatever the client requested.
+        std::optional<bool> _cursorBlinkingOverride;
     };
 }

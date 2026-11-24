@@ -30,7 +30,6 @@ public:
         ChecksumReport,
         ClipboardWrite,
         DesktopNotification,
-        CursorBlinking,
     };
 
 #pragma warning(push)

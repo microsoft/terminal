@@ -28,7 +28,6 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
         TEST_METHOD(CursorBlinkingDefault);
-        TEST_METHOD(CursorBlinkingInitialization);
         TEST_METHOD(CursorBlinkingSettingsReload);
 
         // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.
@@ -224,33 +223,6 @@ void TerminalApiTest::CursorBlinkingDefault()
         term.UpdateAppearance(*unfocusedSettings);
         stateMachine.ProcessString(L"\x1b[0 q");
         VERIFY_ARE_EQUAL(blinking, cursor.IsBlinking());
-    }
-}
-
-void TerminalApiTest::CursorBlinkingInitialization()
-{
-    for (const auto blinking : { false, true })
-    {
-        for (const auto applySettingsFirst : { false, true })
-        {
-            Terminal term{ Terminal::TestDummyMarker{} };
-            DummyRenderer renderer{ &term };
-            auto settings = winrt::make_self<MockTermSettings>(0, 100, 100);
-            settings->CursorBlinking(blinking);
-            if (applySettingsFirst)
-            {
-                term.UpdateSettings(*settings);
-            }
-            term.Create({ 100, 100 }, 0, renderer, settings->CursorBlinking());
-            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
-            term._stateMachine->ProcessString(L"\x1b[0 q");
-            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-            term.UpdateSettings(*settings);
-            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-            term._stateMachine->ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
-            VERIFY_ARE_EQUAL(!blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        }
     }
 }
 
@@ -484,16 +456,17 @@ void TerminalApiTest::CursorBlinkingChangesDisabled()
             settings->AllowVtCursorBlinking(allowed);
             settings->CursorBlinking(blinking);
             settings->CursorShape(CursorStyle::Bar);
-            // ControlCore applies settings both before and after creating the buffer.
-            term.UpdateSettings(*settings);
             term.CreateFromSettings(*settings, renderer);
 
             auto& stateMachine = *term._stateMachine;
             std::wstring response;
             term._pfnWriteInput = [&](const std::wstring_view value) { response = value; };
+            // The cursor always tracks what the client requested. The lock only affects rendering and reports.
             const auto verifyBlinking = [&](const bool requested) {
+                const auto& cursor = term.GetTextBuffer().GetCursor();
                 const auto expected = allowed ? requested : blinking;
-                VERIFY_ARE_EQUAL(expected, term.GetTextBuffer().GetCursor().IsBlinking());
+                VERIFY_ARE_EQUAL(requested, cursor.IsBlinking());
+                VERIFY_ARE_EQUAL(expected, term.GetRenderSettings().IsCursorBlinking(cursor.IsBlinking()));
                 stateMachine.ProcessString(L"\x1b[?12$p");
                 const auto state = allowed ? (expected ? 1 : 2) : (expected ? 3 : 4);
                 VERIFY_ARE_EQUAL(fmt::format(L"\x1b[?12;{}$y", state), response);
@@ -550,40 +523,32 @@ void TerminalApiTest::CursorBlinkingCompatibilityReload()
         settings->CursorBlinking(blinking);
         term.CreateFromSettings(*settings, renderer);
         auto& stateMachine = *term._stateMachine;
+        const auto requested = [&] { return term.GetTextBuffer().GetCursor().IsBlinking(); };
+        const auto effective = [&] { return term.GetRenderSettings().IsCursorBlinking(requested()); };
 
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
         stateMachine.ProcessString(blinking ? L"\x1b[?12l" : L"\x1b[?12h");
         stateMachine.ProcessString(L"\x1b[?1049h");
+        VERIFY_ARE_EQUAL(!blinking, effective());
+
+        // Locking applies immediately without discarding the client's request.
         settings->AllowVtCursorBlinking(false);
         term.UpdateSettings(*settings);
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        VERIFY_ARE_EQUAL(blinking, effective());
+        VERIFY_ARE_EQUAL(!blinking, requested());
 
-        // Repeated entry recreates the alternate buffer from the stale main cursor.
-        for (const auto sequence : { L"\x1b[?1049h", L"\x1b[?1049l", L"\x1b[?1049h", L"\x1b"
-                                                                                     L"c" })
-        {
-            stateMachine.ProcessString(sequence);
-            VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        }
-        term.HardResetWithoutErase();
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        settings->CursorShape(CursorStyle::Underscore);
-        term.UpdateAppearance(*settings);
+        // While locked, the cursor follows the user's default.
+        settings->CursorBlinking(!blinking);
         term.UpdateSettings(*settings);
-        stateMachine.ProcessString(L"\x1b[0 q\x1b[?12h");
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        VERIFY_ARE_EQUAL(CursorType::Underscore, term.GetTextBuffer().GetCursor().GetType());
+        VERIFY_ARE_EQUAL(!blinking, effective());
+        settings->CursorBlinking(blinking);
+        term.UpdateSettings(*settings);
+        VERIFY_ARE_EQUAL(blinking, effective());
 
+        // Unlocking restores whatever the client last requested.
+        stateMachine.ProcessString(L"\x1b[?1049l");
         settings->AllowVtCursorBlinking(true);
         term.UpdateSettings(*settings);
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
-        stateMachine.ProcessString(L"\x1b[?12h");
-        VERIFY_IS_TRUE(term.GetTextBuffer().GetCursor().IsBlinking());
-        stateMachine.ProcessString(L"\x1b[?12l");
-        term.UpdateSettings(*settings);
-        VERIFY_IS_FALSE(term.GetTextBuffer().GetCursor().IsBlinking());
-        stateMachine.ProcessString(L"\x1b[0 q");
-        VERIFY_ARE_EQUAL(blinking, term.GetTextBuffer().GetCursor().IsBlinking());
+        VERIFY_ARE_EQUAL(!blinking, effective());
     }
 }
 

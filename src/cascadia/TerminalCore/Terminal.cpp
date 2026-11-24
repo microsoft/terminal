@@ -42,14 +42,13 @@ Terminal::Terminal(TestDummyMarker) :
 #endif
 }
 
-void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer, bool cursorBlinking)
+void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
 {
     viewportSize.width = std::max(viewportSize.width, MINIMUM_VISIBLE_CELLS);
     viewportSize.height = std::max(viewportSize.height, MINIMUM_VISIBLE_CELLS);
     scrollbackLines = std::clamp(scrollbackLines, 0, MaxScrollback);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    _defaultCursorBlinking = cursorBlinking;
     const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
@@ -84,8 +83,9 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
                                   Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    Create(viewportSize, settings.HistorySize(), renderer, settings.CursorBlinking());
-
+    // Mirrors ControlCore, which applies settings before and after creating the buffer.
+    UpdateSettings(settings);
+    Create(viewportSize, settings.HistorySize(), renderer);
     UpdateSettings(settings);
 }
 
@@ -99,6 +99,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     UpdateAppearance(settings);
 
     _defaultCursorBlinking = settings.CursorBlinking();
+    _renderSettings.SetCursorBlinkingOverride(settings.AllowVtCursorBlinking() ? std::nullopt : std::optional{ _defaultCursorBlinking });
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _answerbackMessage = settings.AnswerbackMessage();
@@ -274,7 +275,6 @@ void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettin
     features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
     features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
     features.set(ITermDispatch::OptionalFeature::DesktopNotification, settings.AllowOscNotifications());
-    features.set(ITermDispatch::OptionalFeature::CursorBlinking, settings.AllowVtCursorBlinking());
     engine.Dispatch().SetOptionalFeatures(features);
 }
 
