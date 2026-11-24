@@ -1,12 +1,6 @@
 
 # How to build OpenConsole
 
-This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for some of its dependencies. To make sure submodules are restored or updated, be sure to run the following prior to building:
-
-```shell
-git submodule update --init --recursive
-```
-
 OpenConsole.slnx may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
 When using Visual Studio, be sure to set up the path for code formatting. To download the required clang-format.exe file, follow one of the building instructions below and run:
@@ -45,6 +39,23 @@ There are also scripts for running the tests:
 - `runft.cmd` - run the feature tests
 - `runuia.cmd` - run the UIA tests
 - `runformat` - uses clang-format to format all c++ files to match our coding style.
+
+## Troubleshooting
+
+### NuGet restore fails with `NU1101: Unable to find package Microsoft.*.App.Ref`
+
+Errors like the following mean that the .NET targeting packs cannot be resolved:
+
+```
+NU1101  Unable to find package Microsoft.NETCore.App.Ref. No packages exist with this id in source(s): ...
+NU1101  Unable to find package Microsoft.WindowsDesktop.App.Ref. No packages exist with this id in source(s): ...
+```
+
+These reference packages ship with the .NET SDK, not with NuGet.org. Make sure that the **.NET 8.0 and 10.0 SDKs** are installed (both are included in the `.vsconfig` workload configuration used by the [WinGet configuration file](../README.md#using-winget-configuration-file), or can be installed manually from https://dot.net), and that `dotnet` is on your `PATH` when building from the command line.
+
+### NuGet restore fails with `401 (Unauthorized)` from `pkgs.dev.azure.com/shine-oss`
+
+The repository's `NuGet.Config` points at the public `TerminalDependencies` Azure Artifacts feed. This feed allows anonymous read access; a `401` response is typically caused by stale credentials cached by an older NuGet or Visual Studio session, or by a global `NuGet.Config` elsewhere on your machine that overrides the repository's sources. Try clearing the cached credentials for that host (`nuget.exe locals all -clear`, or remove the matching entry from the Windows Credential Manager) and restore again from a fresh terminal.
 
 ## Running & Debugging
 
