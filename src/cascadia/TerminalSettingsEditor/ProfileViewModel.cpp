@@ -120,9 +120,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"IsNotifyOnActivityFlagSet", L"NotifyOnActivityPreview");
             }
+            else if (viewModelProperty == L"NotifyOnActivityPreview")
+            {
+                _NotifyChanges(L"NotifyOnActivityAccessibleName");
+            }
             else if (viewModelProperty == L"NotifyOnNextPrompt")
             {
                 _NotifyChanges(L"IsNotifyOnNextPromptFlagSet", L"NotifyOnNextPromptPreview");
+            }
+            else if (viewModelProperty == L"NotifyOnNextPromptPreview")
+            {
+                _NotifyChanges(L"NotifyOnNextPromptAccessibleName");
             }
             else if (viewModelProperty == L"Padding")
             {
@@ -447,7 +455,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
 #define PROFILE_COUNT(target, name) +1
-    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 39,
                   "The set of inheritable profile settings changed. Update this count, then make "
                   "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
                   "XAML reset buttons.");
@@ -812,6 +820,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return hstring{ result };
     }
 
+    hstring ProfileViewModel::NotifyOnActivityAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_NotifyOnActivity/Header"), NotifyOnActivityPreview());
+    }
+
     bool ProfileViewModel::IsNotifyOnActivityFlagSet(const uint32_t flag)
     {
         return (WI_EnumValue(NotifyOnActivity()) & flag) == flag;
@@ -879,6 +892,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         appendIfFlagSet(Ons::Notification, RS_(L"Profile_OutputNotificationStyleNotification/Content"));
 
         return hstring{ result };
+    }
+
+    hstring ProfileViewModel::NotifyOnNextPromptAccessibleName() const
+    {
+        return FormatAccessibleName(USES_RESOURCE(L"Profile_NotifyOnNextPrompt/Header"), NotifyOnNextPromptPreview());
     }
 
     bool ProfileViewModel::IsNotifyOnNextPromptFlagSet(const uint32_t flag)
