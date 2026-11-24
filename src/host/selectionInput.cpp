@@ -673,9 +673,11 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         if (fShiftPressed)
         {
             // Search the selection and color *that*
+            // GH#20152: srSelectionRect.right is inclusive, but CopyRequest::end is
+            // exclusive, so it must be adjusted by one
             const auto req = TextBuffer::CopyRequest::FromConfig(textBuffer,
                                                                  til::point{ _d->srSelectionRect.left, _d->srSelectionRect.top },
-                                                                 til::point{ _d->srSelectionRect.right, _d->srSelectionRect.bottom },
+                                                                 til::point{ _d->srSelectionRect.right + 1, _d->srSelectionRect.bottom },
                                                                  true /* multi-line search doesn't make sense; concatenate all lines */,
                                                                  false /* we filtered out block search above */,
                                                                  true /* trim block selection */,
@@ -687,7 +689,10 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             const auto hits = textBuffer.SearchText(str, SearchFlag::CaseInsensitive).value_or(std::vector<til::point_span>{});
             for (const auto& s : hits)
             {
-                ColorSelection(s.start, s.end, selectionAttr);
+                // GH#20152: s.end is exclusive, but ColorSelection expects an inclusive endpoint.
+                auto inclusiveEnd = s.end;
+                textBuffer.GetSize().DecrementInBounds(inclusiveEnd);
+                ColorSelection(s.start, inclusiveEnd, selectionAttr);
             }
         }
         else
@@ -695,7 +700,8 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             const auto selection = GetSelectionSpans();
             for (auto&& sp : selection)
             {
-                sp.iterate_rows(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
+                // GH#20152: GetSelectionSpans() returns exclusive-end spans
+                sp.iterate_rows_exclusive(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
                     ColorSelection({ beg, row, end, row + 1 }, selectionAttr);
                 });
             }

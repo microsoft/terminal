@@ -119,11 +119,16 @@ bool Search::SelectCurrent() const
 {
     if (const auto s = GetCurrent())
     {
+        const auto& textBuffer = _renderData->GetTextBuffer();
+
+        // GH#20152: s->end is exclusive, but SelectNewRegion expects an inclusive endpoint.
+        auto inclusiveEnd = s->end;
+        textBuffer.GetSize().DecrementInBounds(inclusiveEnd);
+
         // Convert buffer selection offsets into the equivalent screen coordinates
         // required by SelectNewRegion, taking line renditions into account.
-        const auto& textBuffer = _renderData->GetTextBuffer();
         const auto selStart = textBuffer.BufferToScreenPosition(s->start);
-        const auto selEnd = textBuffer.BufferToScreenPosition(s->end);
+        const auto selEnd = textBuffer.BufferToScreenPosition(inclusiveEnd);
         _renderData->SelectNewRegion(selStart, selEnd);
         return true;
     }
