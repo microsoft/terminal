@@ -21,6 +21,10 @@ Allowed:
 - Any other contributions, *IF* AI-use is disclosed *AND* you can establish beyond reasonable doubt that a maintainer has permitted it.
 - Bug reports and code reviews, *IF* AI-use is disclosed *AND* a human has personally verified all findings and evidence.
 
+Situational:
+- With some exceptions (language codes `sr-Cyrl-rs` and `uk-ua`), the localization files in this repository cannot be modified.
+  Do not submit a pull request containing localization changes to language codes other than `sr-Cyrl-rs` and `uk-ua`.
+
 Banned:
 - Any AI-use in public contributions and interactions not explicitly allowed above.
   In particular, AI-authored interactions (GitHub comments, etc.) not explicitly permitted above are banned.

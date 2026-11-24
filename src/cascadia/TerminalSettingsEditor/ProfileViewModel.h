@@ -178,6 +178,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, ForceVTInput)                   \
     X(_profile, AllowKittyKeyboardMode)         \
     X(_profile, AllowVtChecksumReport)          \
+    X(_profile, AllowVtCursorBlinking)          \
     X(_profile, AllowVtClipboardWrite)          \
     X(_profile, AllowOscNotifications)          \
     X(_profile, AnswerbackMessage)              \
