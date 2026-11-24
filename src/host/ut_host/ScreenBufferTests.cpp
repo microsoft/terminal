@@ -412,7 +412,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
     mainCursor.SetStyle(mainCursorSize, mainCursorType);
-    mainCursor.SetIsBlinking(mainCursorBlinking);
+    mainCursor.SetBlinking(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
@@ -427,7 +427,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
-    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ mainCursorBlinking }, altCursor.GetBlinking());
 
     Log::Comment(L"Set the cursor attributes in the alt buffer.");
     auto altCursorPos = til::point{ 5, 3 };
@@ -438,7 +438,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
     altCursor.SetStyle(altCursorSize, altCursorType);
-    altCursor.SetIsBlinking(altCursorBlinking);
+    altCursor.SetBlinking(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
     useMain.release();
@@ -452,7 +452,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
-    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ altCursorBlinking }, mainCursor.GetBlinking());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -7376,35 +7376,35 @@ void ScreenBufferTests::TestCursorIsOn()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional<bool>{}, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_FALSE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ false }, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ true }, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_FALSE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ false }, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ true }, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ true }, cursor.GetBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ true }, cursor.GetBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_FALSE(cursor.IsBlinking());
+    VERIFY_ARE_EQUAL(std::optional{ false }, cursor.GetBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 }
 

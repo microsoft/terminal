@@ -1832,7 +1832,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
         altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetIsBlinking(myCursor.IsBlinking());
+        altCursor.SetBlinking(myCursor.GetBlinking());
         // The new position should match the viewport-relative position of the main buffer.
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
@@ -1973,7 +1973,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetIsBlinking(altCursor.IsBlinking());
+        mainCursor.SetBlinking(altCursor.GetBlinking());
 
         // Copy the alt buffer's output mode back to the main buffer.
         psiMain->OutputMode = psiAlt->OutputMode;

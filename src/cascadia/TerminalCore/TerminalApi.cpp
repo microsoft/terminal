@@ -100,10 +100,10 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     }
 }
 
-std::pair<CursorType, bool> Terminal::GetUserDefaultCursorStyle() const noexcept
+CursorType Terminal::GetUserDefaultCursorStyle() const noexcept
 {
     _assertLocked();
-    return { _defaultCursorShape, _defaultCursorBlinking };
+    return _defaultCursorShape;
 }
 
 bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType height)
@@ -266,7 +266,7 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
-        tgtCursor.SetIsBlinking(myCursor.IsBlinking());
+        tgtCursor.SetBlinking(myCursor.GetBlinking());
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
@@ -324,7 +324,7 @@ void Terminal::UseMainScreenBuffer()
 
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetIsBlinking(altCursor.IsBlinking());
+        mainCursor.SetBlinking(altCursor.GetBlinking());
 
         auto tgtCursorPos = altCursor.GetPosition();
         tgtCursorPos.y += _mutableViewport.Top();

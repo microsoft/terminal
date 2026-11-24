@@ -1808,7 +1808,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        _pages.ActivePage().Cursor().SetIsBlinking(enable);
+        _pages.ActivePage().Cursor().SetBlinking(enable);
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
@@ -1973,15 +1973,11 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        if (const auto locked = _renderSettings.GetCursorBlinkingOverride())
-        {
-            state = mapPerm(*locked);
-        }
-        else
-        {
-            state = mapTemp(_pages.ActivePage().Cursor().IsBlinking());
-        }
+    {
+        const auto blinking = _renderSettings.IsCursorBlinking(_pages.ActivePage().Cursor().GetBlinking());
+        state = _renderSettings.IsCursorBlinkingLocked() ? mapPerm(blinking) : mapTemp(blinking);
         break;
+    }
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
         break;
@@ -3110,8 +3106,8 @@ void AdaptDispatch::HardReset(bool erase)
     // Reset bracketed paste mode
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
-    // Restore cursor blinking mode.
-    _pages.ActivePage().Cursor().SetIsBlinking(_api.GetUserDefaultCursorStyle().second);
+    // Restore cursor blinking mode to the user's default.
+    _pages.ActivePage().Cursor().SetBlinking(std::nullopt);
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3254,12 +3250,12 @@ void AdaptDispatch::_EraseAll()
 void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto actualType = CursorType::Legacy;
-    auto fEnableBlinking = false;
+    std::optional<bool> fEnableBlinking;
 
     switch (cursorStyle)
     {
     case DispatchTypes::CursorStyle::UserDefault:
-        std::tie(actualType, fEnableBlinking) = _api.GetUserDefaultCursorStyle();
+        actualType = _api.GetUserDefaultCursorStyle();
         break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         fEnableBlinking = true;
@@ -3295,7 +3291,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
-    cursor.SetIsBlinking(fEnableBlinking);
+    cursor.SetBlinking(fEnableBlinking);
 }
 
 // Routine Description:
@@ -4425,7 +4421,7 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 void AdaptDispatch::_ReportDECSCUSRSetting() const
 {
     const auto& cursor = _pages.ActivePage().Cursor();
-    const auto blinking = _renderSettings.IsCursorBlinking(cursor.IsBlinking());
+    const auto blinking = _renderSettings.IsCursorBlinking(cursor.GetBlinking());
     // A valid response always starts with 1 $ r. This is followed by a
     // number from 1 to 6 representing the cursor style. The ' q' indicates
     // this is a DECSCUSR response.

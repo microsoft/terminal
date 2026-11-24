@@ -49,7 +49,7 @@ public:
 
     void UseMainScreenBuffer() override;
 
-    std::pair<CursorType, bool> GetUserDefaultCursorStyle() const override;
+    CursorType GetUserDefaultCursorStyle() const override;
 
     void ShowWindow(bool showOrHide) override;
 

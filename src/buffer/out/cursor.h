@@ -38,14 +38,14 @@ public:
 
     uint64_t GetLastMutationId() const noexcept;
     bool IsVisible() const noexcept;
-    bool IsBlinking() const noexcept;
+    std::optional<bool> GetBlinking() const noexcept;
     bool IsDouble() const noexcept;
     ULONG GetSize() const noexcept;
     til::point GetPosition() const noexcept;
     CursorType GetType() const noexcept;
 
     void SetIsVisible(bool enable) noexcept;
-    void SetIsBlinking(bool enable) noexcept;
+    void SetBlinking(std::optional<bool> blinking) noexcept;
     void SetIsDouble(const bool fIsDouble) noexcept;
     void SetSize(const ULONG ulSize) noexcept;
     void SetStyle(const ULONG ulSize, const CursorType type) noexcept;
@@ -82,6 +82,7 @@ private:
     ULONG _ulSize;
     CursorType _cursorType = CursorType::Legacy;
     bool _isVisible = true;
-    bool _isBlinking = true;
+    // What the client requested. nullopt means "use the user's default" (see RenderSettings::IsCursorBlinking).
+    std::optional<bool> _blinking;
     bool _fIsDouble = false; // whether the cursor size should be doubled
 };

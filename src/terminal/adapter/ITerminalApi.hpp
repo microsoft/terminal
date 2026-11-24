@@ -70,7 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void UseAlternateScreenBuffer(const TextAttribute& attrs) = 0;
         virtual void UseMainScreenBuffer() = 0;
 
-        virtual std::pair<CursorType, bool> GetUserDefaultCursorStyle() const = 0;
+        virtual CursorType GetUserDefaultCursorStyle() const = 0;
 
         virtual void ShowWindow(bool showOrHide) = 0;
 

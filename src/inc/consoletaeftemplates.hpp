@@ -667,6 +667,16 @@ namespace WEX::TestExecution
         }
     };
 
+    template<typename T>
+    class VerifyOutputTraits<std::optional<T>>
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const std::optional<T>& value)
+        {
+            return value ? VerifyOutputTraits<T>::ToString(*value) : WEX::Common::NoThrowString{ L"<nullopt>" };
+        }
+    };
+
     template<typename Elem>
     class VerifyCompareTraits<std::basic_string_view<Elem>, std::basic_string_view<Elem>>
     {

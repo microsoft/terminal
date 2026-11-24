@@ -1579,7 +1579,7 @@ void Renderer::_updateCursorInfo()
     // Update inhibitors based on whatever the VT parser (= client app) wants,
     // unless the user locked the blinking state.
     AllowCursorVisibility(InhibitionSource::Client, cursor.IsVisible());
-    AllowCursorBlinking(InhibitionSource::Client, _renderSettings.IsCursorBlinking(cursor.IsBlinking()));
+    AllowCursorBlinking(InhibitionSource::Client, _renderSettings.IsCursorBlinking(cursor.GetBlinking()));
 
     // If the buffer or cursor changed, turn the cursor on for the next cycle. This makes it
     // so that rapidly typing/printing keeps the cursor on continuously, which looks nicer.

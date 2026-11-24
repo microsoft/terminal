@@ -150,9 +150,9 @@ public:
         Log::Comment(L"UseMainScreenBuffer MOCK called...");
     }
 
-    std::pair<CursorType, bool> GetUserDefaultCursorStyle() const override
+    CursorType GetUserDefaultCursorStyle() const override
     {
-        return { CursorType::Legacy, true };
+        return CursorType::Legacy;
     }
 
     void ShowWindow(bool showOrHide) override
@@ -1991,49 +1991,49 @@ public:
 
         Log::Comment(L"Requesting DECSCUSR style (blinking block).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady block).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r2 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (blinking underline).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r3 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady underline).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r4 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (blinking bar).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r5 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady bar).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r6 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (non-standard).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Legacy);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r0 q\033\\");
@@ -2915,15 +2915,15 @@ public:
         // success cases
         // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(false);
         _pDispatch->SetMode(DispatchTypes::ATT610_StartCursorBlink);
-        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinking());
+        VERIFY_ARE_EQUAL(std::optional{ true }, _testGetSet->_textBuffer->GetCursor().GetBlinking());
 
         // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
-        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
+        _testGetSet->_textBuffer->GetCursor().SetBlinking(true);
         _pDispatch->ResetMode(DispatchTypes::ATT610_StartCursorBlink);
-        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinking());
+        VERIFY_ARE_EQUAL(std::optional{ false }, _testGetSet->_textBuffer->GetCursor().GetBlinking());
     }
 
     TEST_METHOD(ScrollMarginsTest)

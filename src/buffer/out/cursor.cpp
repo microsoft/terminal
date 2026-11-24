@@ -32,9 +32,9 @@ bool Cursor::IsVisible() const noexcept
     return _isVisible;
 }
 
-bool Cursor::IsBlinking() const noexcept
+std::optional<bool> Cursor::GetBlinking() const noexcept
 {
-    return _isBlinking;
+    return _blinking;
 }
 
 bool Cursor::IsDouble() const noexcept
@@ -56,11 +56,11 @@ void Cursor::SetIsVisible(bool enable) noexcept
     }
 }
 
-void Cursor::SetIsBlinking(bool enable) noexcept
+void Cursor::SetBlinking(std::optional<bool> blinking) noexcept
 {
-    if (_isBlinking != enable)
+    if (_blinking != blinking)
     {
-        _isBlinking = enable;
+        _blinking = blinking;
         _redrawIfVisible();
     }
 }
@@ -183,7 +183,7 @@ void Cursor::CopyProperties(const Cursor& other) noexcept
     _ulSize = other._ulSize;
     _cursorType = other._cursorType;
     _isVisible = other._isVisible;
-    _isBlinking = other._isBlinking;
+    _blinking = other._blinking;
     _fIsDouble = other._fIsDouble;
 }
 

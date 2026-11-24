@@ -53,7 +53,6 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
-    _mainBuffer->GetCursor().SetIsBlinking(_defaultCursorBlinking);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -83,8 +82,6 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
     const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), MINIMUM_VISIBLE_CELLS),
                                   Utils::ClampToShortMax(settings.InitialRows(), MINIMUM_VISIBLE_CELLS) };
 
-    // Mirrors ControlCore, which applies settings before and after creating the buffer.
-    UpdateSettings(settings);
     Create(viewportSize, settings.HistorySize(), renderer);
     UpdateSettings(settings);
 }
@@ -98,8 +95,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 {
     UpdateAppearance(settings);
 
-    _defaultCursorBlinking = settings.CursorBlinking();
-    _renderSettings.SetCursorBlinkingOverride(settings.AllowVtCursorBlinking() ? std::nullopt : std::optional{ _defaultCursorBlinking });
+    _renderSettings.SetCursorBlinkingPreference(settings.CursorBlinking(), !settings.AllowVtCursorBlinking());
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _answerbackMessage = settings.AnswerbackMessage();
