@@ -5303,15 +5303,26 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        HANDLE hostProcess = nullptr;
-        if (const auto control = _GetActiveControl())
+        std::vector<HANDLE> hostProcesses;
+        if (const auto tab = _GetFocusedTabImpl())
         {
-            if (const auto connection = control.Connection())
+            if (const auto pane = tab->GetRootPane())
             {
-                if (const auto pty = connection.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
-                {
-                    hostProcess = reinterpret_cast<HANDLE>(pty.HostProcessHandle());
-                }
+                pane->WalkTree([&](auto&& child) {
+                    if (const auto control = child->GetTerminalControl())
+                    {
+                        if (const auto connection = control.Connection())
+                        {
+                            if (const auto pty = connection.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
+                            {
+                                if (const auto host = pty.HostProcessHandle())
+                                {
+                                    hostProcesses.push_back(reinterpret_cast<HANDLE>(host));
+                                }
+                            }
+                        }
+                    }
+                });
             }
         }
 
@@ -5320,16 +5331,24 @@ namespace winrt::TerminalApp::implementation
         HRESULT boostStatus = HRESULT_FROM_WIN32(ERROR_CALL_NOT_IMPLEMENTED);
         if (setProcesses)
         {
-            boostStatus = setProcesses(_hostingHwnd.value(), hostProcess ? 1 : 0, hostProcess ? &hostProcess : nullptr) ?
-                              S_OK :
-                              HRESULT_FROM_WIN32(GetLastError());
+            if (hostProcesses.size() > 32)
+            {
+                boostStatus = HRESULT_FROM_WIN32(ERROR_MORE_DATA);
+            }
+            else
+            {
+                const auto hostCount = gsl::narrow_cast<DWORD>(hostProcesses.size());
+                boostStatus = setProcesses(_hostingHwnd.value(), hostCount, hostCount ? hostProcesses.data() : nullptr) ?
+                                  S_OK :
+                                  HRESULT_FROM_WIN32(GetLastError());
+            }
             if (FAILED(boostStatus))
             {
                 LOG_IF_WIN32_BOOL_FALSE(setProcesses(_hostingHwnd.value(), 0, nullptr));
             }
         }
         LOG_IF_FAILED(boostStatus);
-        TraceLoggingWrite(g_hTerminalAppProvider, "OpenConsoleForegroundBoost", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingUInt32(hostProcess ? GetProcessId(hostProcess) : 0, "HostProcessId"), TraceLoggingHResult(boostStatus));
+        TraceLoggingWrite(g_hTerminalAppProvider, "OpenConsoleForegroundBoost", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingUInt64(hostProcesses.size(), "HostProcessCount"), TraceLoggingHResult(boostStatus));
 
         if (!s_supported)
         {
@@ -5339,9 +5358,13 @@ namespace winrt::TerminalApp::implementation
         std::array<HANDLE, 32> processes;
         auto it = processes.begin();
         const auto end = processes.end();
-        if (hostProcess)
+        for (const auto host : hostProcesses)
         {
-            *it++ = hostProcess;
+            if (it == end)
+            {
+                break;
+            }
+            *it++ = host;
         }
 
         auto&& appendFromControl = [&](auto&& control) {
