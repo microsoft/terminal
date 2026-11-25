@@ -222,6 +222,7 @@ namespace Microsoft::Console::VirtualTerminal
         VTInt _oscParameter;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
+        bool _flushOnStringTerminator = false;
 
         std::optional<std::wstring> _cachedSequence;
         til::small_vector<Injection, 8> _injections;

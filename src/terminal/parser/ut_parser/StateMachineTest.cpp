@@ -162,6 +162,8 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(DcsDataStringsReceivedByHandler);
     TEST_METHOD(DcsParamIgnoresControlCharacters);
 
+    TEST_METHOD(InputStringPassthrough);
+
     TEST_METHOD(VtParameterSubspanTest);
 };
 
@@ -201,6 +203,42 @@ void StateMachineTest::PassThroughUnhandled()
 
     VERIFY_ARE_EQUAL(String(L"\x1b[?999h"), String(engine.passedThrough.c_str()));
     VERIFY_ARE_EQUAL(String(L" 12345 Hello World"), String(engine.printed.c_str()));
+}
+
+// On input, DCS and SOS/PM/APC strings are passed through verbatim once terminated by ST,
+// even when split across reads, and dropped when cancelled.
+void StateMachineTest::InputStringPassthrough()
+{
+    struct Case
+    {
+        std::wstring_view chunks[5];
+        std::wstring_view expected;
+    };
+    static constexpr Case cases[]{
+        // The ST's ESC arriving on its own must not be mistaken for an Esc keypress.
+        { { L"\x1b_Ga", L"b", L"\x1b", L"\\" }, L"\x1b_Gab\x1b\\" },
+        // The input engine ignores all DCS strings. Here, an invalid header does the same.
+        { { L"\x1bP1", L":q\x1b\\" }, L"\x1bP1:q\x1b\\" },
+        { { L"\x9f" L"a\x9c" }, L"\x9f" L"a\x9c" },
+        // A later ESC \ is an Alt+\ keypress, not the ST of the cancelled string.
+        { { L"\x1b_a\x18", L"\x1b\\" }, L"" },
+        { { L"\x1b_a\x1b[A" }, L"" },
+    };
+
+    for (const auto& c : cases)
+    {
+        auto enginePtr{ std::make_unique<TestStateMachineEngine>() };
+        const auto& engine{ *enginePtr };
+        StateMachine machine{ std::move(enginePtr), true };
+        for (const auto chunk : c.chunks)
+        {
+            if (!chunk.empty())
+            {
+                machine.ProcessString(chunk);
+            }
+        }
+        VERIFY_ARE_EQUAL(std::wstring{ c.expected }, engine.passedThrough);
+    }
 }
 
 void StateMachineTest::RunStorageBeforeEscape()

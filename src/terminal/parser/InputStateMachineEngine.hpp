@@ -191,7 +191,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::atomic<bool> _receivedDA1{ false };
         std::atomic<bool> _captureNextCursorPositionReport{ false };
         bool _encounteredWin32InputModeSequence = false;
-        bool _expectingStringTerminator = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};

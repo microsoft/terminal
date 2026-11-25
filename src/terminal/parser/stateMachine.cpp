@@ -442,6 +442,13 @@ void StateMachine::_ActionPrintString(const std::wstring_view string)
 void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
+
+    if (_flushOnStringTerminator && wch == L'\\')
+    {
+        FlushToTerminal();
+        return;
+    }
+
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
         return _engine->ActionEscDispatch(_identifier.Finalize(wch));
     }));
@@ -994,7 +1001,6 @@ void StateMachine::_EnterDcsParam() noexcept
 void StateMachine::_EnterDcsIgnore() noexcept
 {
     _state = VTStates::DcsIgnore;
-    _cachedSequence.reset();
     _trace.TraceStateChange(L"DcsIgnore");
 }
 
@@ -1026,7 +1032,6 @@ void StateMachine::_EnterDcsIntermediate() noexcept
 void StateMachine::_EnterDcsPassThrough() noexcept
 {
     _state = VTStates::DcsPassThrough;
-    _cachedSequence.reset();
     _trace.TraceStateChange(L"DcsPassThrough");
 }
 
@@ -1043,7 +1048,6 @@ void StateMachine::_EnterDcsPassThrough() noexcept
 void StateMachine::_EnterSosPmApcString() noexcept
 {
     _state = VTStates::SosPmApcString;
-    _cachedSequence.reset();
     _engine->UnknownSequence();
     _trace.TraceStateChange(L"SosPmApcString");
 }
@@ -1871,6 +1875,8 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     else if (_isEscape(wch) && _state != VTStates::OscString && _state != VTStates::OscParam)
     {
         _ActionInterrupt();
+        // On input, unhandled DCS and SOS/PM/APC strings are passed through verbatim once their ST arrives.
+        _flushOnStringTerminator = _isEngineForInput && (_state == VTStates::DcsIgnore || _state == VTStates::SosPmApcString);
         _EnterEscape();
     }
     else
@@ -2053,10 +2059,12 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // intentionally, it's far more likely now that we're looking at a broken up sequence.
         // The most common win32-input-mode is ConPTY itself after all, and we never emit
         // \x1b{some char} once it's enabled.
+        //
+        // An ESC that ends a DCS/SOS/PM/APC string, however, is far more likely to be the start of its ST.
         if (_isEngineForInput)
         {
             const auto win32 = _engine->EncounteredWin32InputModeSequence();
-            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
+            if (!win32 && !_flushOnStringTerminator && run.size() <= 2 && run.front() == L'\x1b')
             {
                 _EnterGround();
                 if (run.size() == 1)
