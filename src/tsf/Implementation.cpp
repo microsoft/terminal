@@ -219,7 +219,8 @@ void Implementation::Unfocus(IDataProvider* provider)
 
     _provider.reset();
 
-    if (_compositions > 0 && _ownerCompositionServices)
+    // Leave the composition to the IME if the whole window was deactivated, see GH#20936
+    if (_compositions > 0 && _ownerCompositionServices && GetActiveWindow())
     {
         std::ignore = _ownerCompositionServices->TerminateComposition(nullptr);
     }
