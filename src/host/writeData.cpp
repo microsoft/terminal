@@ -26,7 +26,7 @@ WriteData::WriteData(SCREEN_INFORMATION& siContext,
                      std::wstring pwchContext,
                      const UINT uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
-    _siContext(siContext),
+    _siContext(siContext.GetMainBuffer()),
     _pwchContext(std::move(pwchContext)),
     _uiOutputCodepage(uiOutputCodepage),
     _fLeadByteCaptured(false),
@@ -117,7 +117,7 @@ bool WriteData::Notify(const WaitTerminationReason TerminationReason,
 
     FAIL_FAST_IF(!(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
-    auto Status = DoWriteConsole(_siContext, _pwchContext);
+    auto Status = DoWriteConsole(_siContext.GetActiveBuffer(), _pwchContext);
 
     if (Status == CONSOLE_STATUS_WAIT)
     {
