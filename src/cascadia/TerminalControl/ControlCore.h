@@ -325,7 +325,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _setupDispatcherAndCallbacks();
         void _closeConnection();
 
-        bool _setFontSizeUnderLock(float fontSize);
+        bool _setFontSizeUnderLock();
         void _updateFont();
         void _raiseFontSizeChanged();
         void _refreshSizeUnderLock();
