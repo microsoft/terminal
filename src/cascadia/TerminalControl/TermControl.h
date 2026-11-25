@@ -88,6 +88,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double QuickFixButtonCollapsedWidth();
 
         void WindowVisibilityChanged(const bool showOrHide);
+        void WindowActivationChanged(const bool activated);
 
         void ColorSelection(Control::SelectionColor fg, Control::SelectionColor bg, Core::MatchMode matchMode);
 
@@ -290,6 +291,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _closing{ false };
         bool _focused{ false };
+        std::optional<bool> _windowActivated;
         bool _initializedTerminal{ false };
         bool _quickFixButtonCollapsible{ false };
         bool _quickFixesAvailable{ false };
@@ -354,6 +356,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
+        bool _ShouldUseAcrylicFallback();
         safe_void_coroutine _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
         void _changeBackgroundColor(til::color bg);
         static bool _isColorLight(til::color bg) noexcept;

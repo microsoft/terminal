@@ -66,6 +66,9 @@ namespace winrt::Microsoft::Terminal::Settings
     {
         const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
         settings->_UseBackgroundImageForWindow = false;
+        // Preview controls aren't driven by WindowActivationChanged, so keep them
+        // on Backdrop instead of HostBackdrop (GH#20944).
+        settings->_EnableUnfocusedAcrylic = true;
         return settings;
     }
 
@@ -75,8 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings
     //   has no unfocused appearance, this behaves like CreateForPreview (the focused appearance).
     winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
-        settings->_UseBackgroundImageForWindow = false;
+        const auto settings = CreateForPreview(appSettings, windowSettings, profile);
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
             const auto globals = appSettings.GlobalSettings();
