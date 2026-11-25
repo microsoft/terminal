@@ -13,9 +13,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace SettingsModelUnitTests
 {
-    // Covers the workspace-persistence APIs added to ApplicationState:
-    //   SaveWorkspace / RemoveWorkspace / RenameWorkspace / TakeWorkspace /
-    //   AllPersistedWorkspaces.
     // All tests operate on a throw-away ApplicationState instance pointed at
     // a temp directory, so they don't touch the real user state.
     class ApplicationStateTests
@@ -29,6 +26,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RenameWorkspaceNoOpForMissingEntry);
         TEST_METHOD(TakeWorkspaceRemovesAndReturns);
         TEST_METHOD(TakeWorkspaceReturnsNullWhenMissing);
+        TEST_METHOD(IgnoreUnknownDismissedMessages);
 
     private:
         static std::filesystem::path _tempRoot()
@@ -55,6 +53,22 @@ namespace SettingsModelUnitTests
             return layout;
         }
     };
+
+    void ApplicationStateTests::IgnoreUnknownDismissedMessages()
+    {
+        Log::Comment(L"GH #16874 - Unknown dismissed message names must not terminate state loading");
+
+        Json::Value json{ Json::objectValue };
+        json["dismissedMessages"].append("unknownMessage");
+        json["dismissedMessages"].append("closeOnExitInfo");
+
+        auto state = _make();
+        state->FromJson(json, implementation::FileSource::Shared);
+
+        const auto serialized = state->ToJson(implementation::FileSource::Shared);
+        VERIFY_ARE_EQUAL(1u, serialized["dismissedMessages"].size());
+        VERIFY_ARE_EQUAL("closeOnExitInfo", serialized["dismissedMessages"][0].asString());
+    }
 
     void ApplicationStateTests::SaveAndLookupWorkspace()
     {
