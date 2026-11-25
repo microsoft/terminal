@@ -20,6 +20,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
+        if (!Feature_NotifyOnActivity::IsEnabled())
+        {
+            NotifyOnActivity().Visibility(Visibility::Collapsed);
+            NotifyOnActivityThreshold().Visibility(Visibility::Collapsed);
+            NotifyOnNextPrompt().Visibility(Visibility::Collapsed);
+            NotifyOnNextPromptThreshold().Visibility(Visibility::Collapsed);
+            AutoDetectRunningCommand().Visibility(Visibility::Collapsed);
+        }
+
         Automation::AutomationProperties::SetName(AddBellSoundButton(), RS_(L"Profile_AddBellSound/Text"));
 
         // The XAML -> C++ converter seems to use floats instead of doubles, which means it

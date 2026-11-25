@@ -930,27 +930,28 @@ void IslandWindow::FlashTaskbar()
 // Arguments:
 // - state: indicates the progress state
 // - progress: indicates the progress value
-void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
+void IslandWindow::SetTaskbarProgress(const winrt::Microsoft::Terminal::Control::TaskbarState state, const size_t progress)
 {
     if (_taskbar)
     {
+        using TbState = winrt::Microsoft::Terminal::Control::TaskbarState;
         switch (state)
         {
-        case 0:
+        case TbState::Clear:
             // removes the taskbar progress indicator
             _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
             break;
-        case 1:
+        case TbState::Set:
             // sets the progress value to value given by the 'progress' parameter
             _taskbar->SetProgressState(_window.get(), TBPF_NORMAL);
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
-        case 2:
+        case TbState::Error:
             // sets the progress indicator to an error state
             _taskbar->SetProgressState(_window.get(), TBPF_ERROR);
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
-        case 3:
+        case TbState::Indeterminate:
             // sets the progress indicator to an indeterminate state.
             // FIRST, set the progress to "no progress". That'll clear out any
             // progress value from the previous state. Otherwise, a transition
@@ -959,7 +960,7 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
             _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
             _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
             break;
-        case 4:
+        case TbState::Paused:
             // sets the progress indicator to a pause state
             _taskbar->SetProgressState(_window.get(), TBPF_PAUSED);
             _taskbar->SetProgressValue(_window.get(), progress, 100);

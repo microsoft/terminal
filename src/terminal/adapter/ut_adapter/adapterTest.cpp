@@ -216,7 +216,7 @@ public:
         Log::Comment(L"NotifyBufferRotation MOCK called...");
     }
 
-    void NotifyShellIntegrationMark() override
+    void NotifyShellIntegrationMark(ShellIntegrationMark /*mark*/) override
     {
         Log::Comment(L"NotifyShellIntegrationMark MOCK called...");
     }

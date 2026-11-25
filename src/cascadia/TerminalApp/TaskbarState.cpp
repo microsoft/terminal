@@ -9,27 +9,28 @@ namespace winrt::TerminalApp::implementation
 {
     // Default to unset, 0%.
     TaskbarState::TaskbarState() :
-        TaskbarState(0, 0) {};
+        TaskbarState(winrt::Microsoft::Terminal::Control::TaskbarState::Clear, 0) {};
 
-    TaskbarState::TaskbarState(const uint64_t dispatchTypesState, const uint64_t progressParam) :
-        _State{ dispatchTypesState },
+    TaskbarState::TaskbarState(const winrt::Microsoft::Terminal::Control::TaskbarState state, const uint64_t progressParam) :
+        _State{ state },
         _Progress{ progressParam } {}
 
     uint64_t TaskbarState::Priority() const
     {
         // This seemingly nonsensical ordering is from
         // https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate#how-the-taskbar-button-chooses-the-progress-indicator-for-a-group
+        using TbState = winrt::Microsoft::Terminal::Control::TaskbarState;
         switch (_State)
         {
-        case 0: // Clear = 0,
+        case TbState::Clear:
             return 5;
-        case 1: // Set = 1,
+        case TbState::Set:
             return 3;
-        case 2: // Error = 2,
+        case TbState::Error:
             return 1;
-        case 3: // Indeterminate = 3,
+        case TbState::Indeterminate:
             return 4;
-        case 4: // Paused = 4
+        case TbState::Paused:
             return 2;
         }
         // Here, return 6, to definitely be greater than all the other valid values.
