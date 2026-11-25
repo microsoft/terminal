@@ -555,6 +555,16 @@ extern "C" HRESULT WINAPI ConptyReparentPseudoConsole(_In_ HPCON hPC, HWND newPa
     return _ReparentPseudoConsole((PseudoConsole*)hPC, newParent);
 }
 
+extern "C" HRESULT WINAPI ConptyDuplicateHostProcessHandle(HPCON hPC, HANDLE* hostProcess)
+{
+    RETURN_HR_IF(E_INVALIDARG, !hostProcess);
+    *hostProcess = nullptr;
+    RETURN_HR_IF(E_INVALIDARG, !hPC);
+    const auto pty = static_cast<const PseudoConsole*>(hPC);
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), pty->hConPtyProcess, GetCurrentProcess(), hostProcess, PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, 0));
+    return S_OK;
+}
+
 // The \Reference handle ensures that conhost keeps running by keeping the ConDrv server pipe open.
 // After you've finished setting up your PTY via PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, this method may be called
 // to release that handle, allowing conhost to shut down automatically once the last client has disconnected.

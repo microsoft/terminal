@@ -429,6 +429,7 @@ namespace winrt::TerminalApp::implementation
         bool _MoveTab(winrt::com_ptr<Tab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
         std::shared_ptr<ThrottledFunc<>> _adjustProcessPriorityThrottled;
+        mutable uint64_t _lastProcessPriorityHash{ 0 };
         void _adjustProcessPriority() const;
 
         template<typename F>

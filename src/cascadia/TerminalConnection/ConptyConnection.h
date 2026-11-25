@@ -31,6 +31,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         void ReparentWindow(const uint64_t newParent);
         uint64_t RootProcessHandle() noexcept;
+        uint64_t HostProcessHandle() noexcept;
 
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
@@ -81,6 +82,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;
+        wil::unique_handle _hostProcess;
 
         til::ticket_lock _writeLock;
         wil::unique_event _writeOverlappedEvent;

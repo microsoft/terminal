@@ -5296,10 +5296,61 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_adjustProcessPriority() const
     {
         // Windowing is single-threaded, so this will not cause a race condition.
-        static uint64_t s_lastUpdateHash{ 0 };
         static bool s_supported{ true };
 
-        if (!s_supported || !_hostingHwnd.has_value())
+        if (!_hostingHwnd.has_value())
+        {
+            return;
+        }
+
+        std::vector<HANDLE> hostProcesses;
+        if (const auto tab = _GetFocusedTabImpl())
+        {
+            if (const auto pane = tab->GetRootPane())
+            {
+                pane->WalkTree([&](auto&& child) {
+                    if (const auto control = child->GetTerminalControl())
+                    {
+                        if (const auto connection = control.Connection())
+                        {
+                            if (const auto pty = connection.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>())
+                            {
+                                if (const auto host = pty.HostProcessHandle())
+                                {
+                                    hostProcesses.push_back(reinterpret_cast<HANDLE>(host));
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        static const auto setProcesses = GetProcAddressByFunctionDeclaration(
+            GetModuleHandleW(L"user32.dll"), SetAdditionalForegroundBoostProcesses);
+        HRESULT boostStatus = HRESULT_FROM_WIN32(ERROR_CALL_NOT_IMPLEMENTED);
+        if (setProcesses)
+        {
+            if (hostProcesses.size() > 32)
+            {
+                boostStatus = HRESULT_FROM_WIN32(ERROR_MORE_DATA);
+            }
+            else
+            {
+                const auto hostCount = gsl::narrow_cast<DWORD>(hostProcesses.size());
+                boostStatus = setProcesses(_hostingHwnd.value(), hostCount, hostCount ? hostProcesses.data() : nullptr) ?
+                                  S_OK :
+                                  HRESULT_FROM_WIN32(GetLastError());
+            }
+            if (FAILED(boostStatus))
+            {
+                LOG_IF_WIN32_BOOL_FALSE(setProcesses(_hostingHwnd.value(), 0, nullptr));
+            }
+        }
+        LOG_IF_FAILED(boostStatus);
+        TraceLoggingWrite(g_hTerminalAppProvider, "OpenConsoleForegroundBoost", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingUInt64(hostProcesses.size(), "HostProcessCount"), TraceLoggingHResult(boostStatus));
+
+        if (!s_supported)
         {
             return;
         }
@@ -5307,6 +5358,14 @@ namespace winrt::TerminalApp::implementation
         std::array<HANDLE, 32> processes;
         auto it = processes.begin();
         const auto end = processes.end();
+        for (const auto host : hostProcesses)
+        {
+            if (it == end)
+            {
+                break;
+            }
+            *it++ = host;
+        }
 
         auto&& appendFromControl = [&](auto&& control) {
             if (it == end)
@@ -5365,12 +5424,11 @@ namespace winrt::TerminalApp::implementation
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
         const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
 
-        if (hash == s_lastUpdateHash)
+        if (hash == _lastProcessPriorityHash)
         {
             return;
         }
 
-        s_lastUpdateHash = hash;
         const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
 
         if (S_FALSE == hr)
@@ -5378,6 +5436,11 @@ namespace winrt::TerminalApp::implementation
             // Don't bother trying again or logging. The wrapper tells us it's unsupported.
             s_supported = false;
             return;
+        }
+        LOG_IF_FAILED(hr);
+        if (SUCCEEDED(hr))
+        {
+            _lastProcessPriorityHash = hash;
         }
 
         TraceLoggingWrite(
