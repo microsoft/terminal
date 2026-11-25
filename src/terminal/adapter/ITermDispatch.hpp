@@ -196,6 +196,8 @@ public:
 
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
 
+    virtual StringHandler KittyGraphicsCommand() = 0; // APC G
+
     virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;

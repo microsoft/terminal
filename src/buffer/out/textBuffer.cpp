@@ -345,6 +345,38 @@ ROW& TextBuffer::GetScratchpadRow(const TextAttribute& attributes)
     return r;
 }
 
+// Removes the graphics references matching the predicate from every committed row.
+bool TextBuffer::EraseGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate)
+{
+    auto erased = false;
+    const auto committed = gsl::narrow_cast<uintptr_t>(_commitWatermark - _buffer.get());
+    for (uintptr_t offset = 0; offset < committed; offset += _bufferRowStride)
+    {
+        auto& graphics = reinterpret_cast<ROW*>(_buffer.get() + offset)->GetMutableGraphics();
+        if (!graphics.empty())
+        {
+            erased |= std::erase_if(graphics, predicate) != 0;
+        }
+    }
+    return erased;
+}
+
+bool TextBuffer::AnyGraphics(const std::function<bool(const GraphicsRowRef&)>& predicate) const
+{
+    const auto committed = gsl::narrow_cast<uintptr_t>(_commitWatermark - _buffer.get());
+    for (uintptr_t offset = 0; offset < committed; offset += _bufferRowStride)
+    {
+        for (const auto& ref : reinterpret_cast<const ROW*>(_buffer.get() + offset)->GetGraphics())
+        {
+            if (predicate(ref))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 #pragma warning(pop)
 #pragma endregion
 
@@ -916,6 +948,7 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
         dst.SetScrollbarData(src.GetScrollbarData());
         src.SetScrollbarData(std::nullopt);
         ImageSlice::CopyRow(src, dst);
+        dst.GetMutableGraphics() = std::exchange(src.GetMutableGraphics(), {});
     };
     const auto copyByIndex = [&](const til::CoordType src, const til::CoordType dst) {
         copy(get(src), get(dst));
@@ -957,6 +990,17 @@ void TextBuffer::ScrollRows(const til::CoordType firstRow, til::CoordType size, 
             copy(scratch, get(dst));
         }
     }
+
+    // Graphics aren't erased by text operations, so the rows that were
+    // vacated by the move must have their graphics removed explicitly.
+    if (delta < 0)
+    {
+        EraseGraphicsInRows(std::max(firstRow, firstRow + size + delta), firstRow + size);
+    }
+    else
+    {
+        EraseGraphicsInRows(firstRow, std::min(firstRow + delta, firstRow + size));
+    }
 }
 
 void TextBuffer::CopyRow(const til::CoordType srcRowIndex, const til::CoordType dstRowIndex, TextBuffer& dstBuffer) const
@@ -965,6 +1009,36 @@ void TextBuffer::CopyRow(const til::CoordType srcRowIndex, const til::CoordType 
     const auto& srcRow = GetRowByOffset(srcRowIndex);
     dstRow.CopyFrom(srcRow);
     ImageSlice::CopyRow(srcRow, dstRow);
+    dstRow.GetMutableGraphics() = srcRow.GetGraphics();
+}
+
+GraphicsStore& TextBuffer::GetGraphicsStore()
+{
+    if (!_graphicsStore)
+    {
+        _graphicsStore = std::make_unique<GraphicsStore>();
+    }
+    return *_graphicsStore;
+}
+
+const GraphicsStore* TextBuffer::TryGetGraphicsStore() const noexcept
+{
+    return _graphicsStore.get();
+}
+
+bool TextBuffer::EraseGraphicsInRows(const til::CoordType rowBegin, const til::CoordType rowEnd)
+{
+    auto erased = false;
+    for (auto y = std::max(0, rowBegin); y < std::min<til::CoordType>(rowEnd, _height); y++)
+    {
+        if (_isRowCommitted(y))
+        {
+            auto& graphics = GetMutableRowByOffset(y).GetMutableGraphics();
+            erased |= !graphics.empty();
+            graphics.clear();
+        }
+    }
+    return erased;
 }
 
 Cursor& TextBuffer::GetCursor() noexcept
@@ -1127,6 +1201,10 @@ void TextBuffer::ResizeTraditional(til::size newSize)
     {
         CopyRow(srcRow, dstRow, newBuffer);
     }
+
+    // The rows have been copied, so the old ones must be destroyed before their
+    // memory is released, or the resources they own (like images) would leak.
+    _destroy(_buffer.get());
 
     // NOTE: Keep this in sync with _reserve().
     _buffer = std::move(newBuffer._buffer);
@@ -2938,6 +3016,23 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             if (oldX == 0)
             {
                 ImageSlice::CopyRow(oldRow, newRow);
+                // When a wrapped row is joined onto the previous one, a placement can only
+                // keep one of its strips on the new row, so the first one is kept.
+                auto& graphics = newRow.GetMutableGraphics();
+                if (newX == 0)
+                {
+                    graphics = oldRow.GetGraphics();
+                }
+                else
+                {
+                    for (const auto& ref : oldRow.GetGraphics())
+                    {
+                        if (std::ranges::none_of(graphics, [&](const auto& existing) noexcept { return existing.placement == ref.placement; }))
+                        {
+                            graphics.emplace_back(ref);
+                        }
+                    }
+                }
             }
 
             const auto& oldAttr = oldRow.Attributes();
@@ -3003,6 +3098,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
         auto& newAttr = newRow.Attributes();
         newAttr = oldRow.Attributes();
         newAttr.resize_trailing_extent(newWidthU16);
+        newRow.GetMutableGraphics() = oldRow.GetGraphics();
     }
 
     // Since we didn't use IncrementCircularBuffer() we need to compute the proper
@@ -3020,6 +3116,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
 
     newBuffer.CopyProperties(oldBuffer);
     newBuffer.CopyHyperlinkMaps(oldBuffer);
+    newBuffer._graphicsStore = std::move(oldBuffer._graphicsStore);
 
     assert(newCursorPos.x >= 0 && newCursorPos.x < newWidth);
     assert(newCursorPos.y >= 0 && newCursorPos.y < newHeight);

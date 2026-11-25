@@ -186,6 +186,8 @@ public:
 
     void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
 
+    StringHandler KittyGraphicsCommand() override { return nullptr; } // APC G
+
     void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
 };
 

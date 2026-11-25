@@ -40,6 +40,8 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 
     // At the beginning of a new frame, we have 0 lines ready for painting in PolyTextOut
     _cPolyText = 0;
+    _underlays.clear();
+    _underlayRow = -1;
 
     // Prepare our in-memory bitmap for double-buffered composition.
     RETURN_IF_FAILED(_PrepareMemoryBitmap(_hwndTargetWindow));
@@ -425,6 +427,22 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
             pPolyTextLine->rcl.left += coordFontSize.width;
         }
 
+        // Graphics below the text are drawn on top of the cell background right away,
+        // and the text is later drawn transparently on top of them. Images below the
+        // non-default backgrounds are only visible in cells with the default background.
+        if (coord.y == _underlayRow && !_underlays.empty())
+        {
+            ExtTextOutW(_hdcMemoryContext, 0, 0, ETO_OPAQUE, &pPolyTextLine->rcl, nullptr, 0, nullptr);
+            for (const auto& underlay : _underlays)
+            {
+                if (underlay.z >= INT32_MIN / 2 || _lastBg == _defaultBackground)
+                {
+                    LOG_IF_FAILED(_PaintGraphicsStrip(underlay, &pPolyTextLine->rcl));
+                }
+            }
+            pPolyTextLine->uiFlags = ETO_CLIPPED;
+        }
+
         _cPolyText++;
 
         if (_cPolyText >= s_cPolyTextCache)
@@ -453,6 +471,19 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
         for (size_t i = 0; i != _cPolyText; ++i)
         {
             const auto& t = _pPolyText[i];
+
+            // Lines without ETO_OPAQUE are drawn on top of graphics.
+            const auto transparent = WI_IsFlagClear(t.uiFlags, ETO_OPAQUE);
+            if (transparent)
+            {
+                SetBkMode(_hdcMemoryContext, TRANSPARENT);
+            }
+            const auto restoreBkMode = wil::scope_exit([&]() noexcept {
+                if (transparent)
+                {
+                    SetBkMode(_hdcMemoryContext, OPAQUE);
+                }
+            });
 
             // The following if/else replicates the essentials of how ExtTextOutW() without ETO_IGNORELANGUAGE works.
             // See InternalTextOut().
@@ -720,6 +751,130 @@ try
         StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
     }
 
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Routine Description:
+// - Draws a strip of a graphics placement. Graphics below the text are drawn
+//   when the text of the row is painted, the rest is drawn on top right away.
+// Arguments:
+// - info - The placement strip to draw.
+// Return Value:
+// - S_OK or suitable GDI HRESULT error.
+[[nodiscard]] HRESULT GdiEngine::PaintGraphics(const GraphicsPaintInfo& info) noexcept
+try
+{
+    if (info.z < 0)
+    {
+        if (info.targetRow != _underlayRow)
+        {
+            _underlays.clear();
+            _underlayRow = info.targetRow;
+        }
+        _underlays.emplace_back(info);
+        std::stable_sort(_underlays.begin(), _underlays.end(), [](const auto& a, const auto& b) {
+            return a.z != b.z ? a.z < b.z : a.order < b.order;
+        });
+        return S_OK;
+    }
+
+    // The image is clipped to the invalidated area, because blending
+    // it again over pixels that weren't repainted would accumulate.
+    LOG_IF_FAILED(_FlushBufferLines());
+    LOG_IF_FAILED(ResetLineTransform());
+    return _PaintGraphicsStrip(info, &_psInvalidData.rcPaint);
+}
+CATCH_RETURN();
+
+// Routine Description:
+// - Draws a strip of a graphics placement, optionally clipped to a rectangle
+//   in the coordinates of the current line transform.
+// Arguments:
+// - info - The placement strip to draw.
+// - clip - The rectangle to clip to, or nullptr.
+// Return Value:
+// - S_OK or suitable GDI HRESULT error.
+[[nodiscard]] HRESULT GdiEngine::_PaintGraphicsStrip(const GraphicsPaintInfo& info, const RECT* clip) noexcept
+try
+{
+    const auto cellSize = _GetFontSize();
+    GraphicsStrip strip;
+    if (!info.image || !ComputeGraphicsStrip(info, cellSize, (_szMemorySurface.width + cellSize.width - 1) / std::max(1, cellSize.width), strip))
+    {
+        return S_OK;
+    }
+
+    const auto& image = *info.image;
+    if (image.pixels.size() < static_cast<size_t>(image.size.width) * image.size.height)
+    {
+        return S_OK;
+    }
+
+    auto cached = std::find_if(_graphicsBitmaps.begin(), _graphicsBitmaps.end(), [&](const auto& entry) {
+        return entry.revision == image.revision;
+    });
+    if (cached != _graphicsBitmaps.end())
+    {
+        std::rotate(cached, std::next(cached), _graphicsBitmaps.end());
+    }
+    else
+    {
+        const auto bitmapInfo = BITMAPINFO{
+            .bmiHeader = {
+                .biSize = sizeof(BITMAPINFOHEADER),
+                .biWidth = image.size.width,
+                .biHeight = -image.size.height,
+                .biPlanes = 1,
+                .biBitCount = 32,
+                .biCompression = BI_RGB,
+            }
+        };
+        wil::unique_hdc hdc{ CreateCompatibleDC(_hdcMemoryContext) };
+        RETURN_HR_IF_NULL(E_FAIL, hdc.get());
+        void* bits = nullptr;
+        wil::unique_hbitmap bitmap{ CreateDIBSection(hdc.get(), &bitmapInfo, DIB_RGB_COLORS, &bits, nullptr, 0) };
+        RETURN_HR_IF_NULL(E_FAIL, bitmap.get());
+        memcpy(bits, image.pixels.data(), image.pixels.size() * sizeof(uint32_t));
+        SelectObject(hdc.get(), bitmap.get());
+
+        // The cache is limited by size rather than by count, so that all the
+        // images on the screen fit, unless they're very large.
+        const auto byteSize = image.ByteSize();
+        while (!_graphicsBitmaps.empty() && _graphicsBitmapBytes + byteSize > s_graphicsBitmapCacheBytes)
+        {
+            _graphicsBitmapBytes -= _graphicsBitmaps.front().byteSize;
+            _graphicsBitmaps.erase(_graphicsBitmaps.begin());
+        }
+        _graphicsBitmaps.emplace_back(GraphicsBitmap{ image.revision, byteSize, std::move(bitmap), std::move(hdc) });
+        _graphicsBitmapBytes += byteSize;
+    }
+    const auto graphicsDC = _graphicsBitmaps.back().dc.get();
+
+    // The strip is computed in device coordinates, so the line transform is
+    // reset while drawing it, after converting the clip rectangle as well.
+    const auto savedDC = SaveDC(_hdcMemoryContext);
+    const auto restoreDC = wil::scope_exit([&]() noexcept {
+        RestoreDC(_hdcMemoryContext, savedDC);
+    });
+    if (clip)
+    {
+        POINT points[2]{ { clip->left, clip->top }, { clip->right, clip->bottom } };
+        LPtoDP(_hdcMemoryContext, &points[0], 2);
+        ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY);
+        IntersectClipRect(_hdcMemoryContext, points[0].x, points[0].y, points[1].x, points[1].y);
+    }
+
+    // AlphaBlend fails if the source rectangle extends past the bitmap,
+    // so the edges are rounded individually and clamped to the image.
+    const auto sourceLeft = std::clamp(lroundf(strip.source.left), 0L, static_cast<LONG>(image.size.width - 1));
+    const auto sourceTop = std::clamp(lroundf(strip.source.top), 0L, static_cast<LONG>(image.size.height - 1));
+    const auto sourceRight = std::clamp(lroundf(strip.source.right), sourceLeft + 1, static_cast<LONG>(image.size.width));
+    const auto sourceBottom = std::clamp(lroundf(strip.source.bottom), sourceTop + 1, static_cast<LONG>(image.size.height));
+
+    const auto y = info.targetRow * cellSize.height;
+    const BLENDFUNCTION blend{ AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
+    RETURN_HR_IF(E_FAIL, !GdiAlphaBlend(_hdcMemoryContext, strip.target.left, y + strip.target.top, strip.target.width(), strip.target.height(), graphicsDC, sourceLeft, sourceTop, sourceRight - sourceLeft, sourceBottom - sourceTop, blend));
     return S_OK;
 }
 CATCH_RETURN();

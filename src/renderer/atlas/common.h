@@ -463,6 +463,19 @@ namespace Microsoft::Console::Render::Atlas
         bool active = false;
     };
 
+    struct GraphicsDraw
+    {
+        std::shared_ptr<const GraphicsImage> image;
+        // The part of the image to draw, in image pixels.
+        f32r source;
+        // Where to draw it, in pixels relative to the top-left corner of the row.
+        i32r target;
+        i32 z;
+        u32 order;
+        // Uniquely identifies the scaled image strip, for caching.
+        u64 key;
+    };
+
     struct ShapedRow
     {
         void Clear(u16 y, u16 cellHeight) noexcept
@@ -473,6 +486,7 @@ namespace Microsoft::Console::Render::Atlas
             glyphOffsets.clear();
             colors.clear();
             bitmap.active = false;
+            graphics.clear();
             gridLineRanges.clear();
             lineRendition = LineRendition::SingleWidth;
             dirtyTop = y * cellHeight;
@@ -492,6 +506,7 @@ namespace Microsoft::Console::Render::Atlas
         std::vector<u32> colors;
 
         Bitmap bitmap;
+        std::vector<GraphicsDraw> graphics;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
         til::CoordType dirtyTop = 0;
