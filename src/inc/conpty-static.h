@@ -49,3 +49,6 @@ CONPTY_EXPORT HRESULT WINAPI ConptyReleasePseudoConsole(HPCON hPC);
 CONPTY_EXPORT VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
 
 CONPTY_EXPORT HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
+
+// Returns an owned host process handle suitable for window QoS and foreground boost registration.
+CONPTY_EXPORT HRESULT WINAPI ConptyDuplicateHostProcessHandle(HPCON hPC, HANDLE* hostProcess);

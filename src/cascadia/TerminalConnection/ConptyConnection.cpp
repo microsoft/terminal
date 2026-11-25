@@ -448,6 +448,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
         }
 
+        LOG_IF_FAILED(ConptyDuplicateHostProcessHandle(_hPC.get(), _hostProcess.addressof()));
         THROW_IF_FAILED(ConptyReleasePseudoConsole(_hPC.get()));
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -662,6 +663,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
 #pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
         return reinterpret_cast<uint64_t>(_piClient.hProcess);
+    }
+
+    uint64_t ConptyConnection::HostProcessHandle() noexcept
+    {
+        // Retain ownership until destruction; callers borrow the handle while holding this connection.
+        return _isConnected() ? reinterpret_cast<uint64_t>(_hostProcess.get()) : 0;
     }
 
     void ConptyConnection::Close() noexcept

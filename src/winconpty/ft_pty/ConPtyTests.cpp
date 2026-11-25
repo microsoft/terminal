@@ -105,6 +105,7 @@ class ConPtyTests
     TEST_METHOD(SurvivesOnBreakOutput);
     TEST_METHOD(DiesOnClose);
     TEST_METHOD(ReleasePseudoConsole);
+    TEST_METHOD(DuplicateHostProcessHandle);
 };
 
 static HRESULT _CreatePseudoConsole(const COORD size,
@@ -233,6 +234,47 @@ void ConPtyTests::GoodCreateMultiple()
     auto closePty2 = wil::scope_exit([&] {
         _ClosePseudoConsoleMembers(&pcon2);
     });
+}
+
+void ConPtyTests::DuplicateHostProcessHandle()
+{
+    HANDLE invalid = GetCurrentProcess();
+    VERIFY_ARE_EQUAL(E_INVALIDARG, ConptyDuplicateHostProcessHandle(nullptr, &invalid));
+    VERIFY_IS_NULL(invalid);
+    VERIFY_ARE_EQUAL(E_INVALIDARG, ConptyDuplicateHostProcessHandle(nullptr, nullptr));
+
+    auto pty = createPseudoConsole();
+    VERIFY_ARE_EQUAL(E_INVALIDARG, ConptyDuplicateHostProcessHandle(pty.hpcon.get(), nullptr));
+    wil::unique_handle host;
+    VERIFY_SUCCEEDED(ConptyDuplicateHostProcessHandle(pty.hpcon.get(), host.addressof()));
+    const auto hostId = GetProcessId(host.get());
+    VERIFY_ARE_EQUAL(GetProcessId(reinterpret_cast<PseudoConsole*>(pty.hpcon.get())->hConPtyProcess), hostId);
+    VERIFY_ARE_NOT_EQUAL(GetCurrentProcessId(), hostId);
+
+    wil::unique_handle second;
+    VERIFY_SUCCEEDED(ConptyDuplicateHostProcessHandle(pty.hpcon.get(), second.addressof()));
+    VERIFY_ARE_EQUAL(hostId, GetProcessId(second.get()));
+    second.reset();
+    VERIFY_ARE_EQUAL(DWORD{ WAIT_TIMEOUT }, WaitForSingleObject(host.get(), 0));
+
+    const auto window = CreateWindowExW(0, L"STATIC", L"Host-only boost test", WS_OVERLAPPEDWINDOW,
+                                       0, 0, 100, 100, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
+    VERIFY_IS_NOT_NULL(window);
+    const auto destroy = wil::scope_exit([&] { DestroyWindow(window); });
+    using SetProcesses = BOOL(WINAPI*)(HWND, DWORD, HANDLE*);
+    const auto setProcesses = reinterpret_cast<SetProcesses>(
+        GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetAdditionalForegroundBoostProcesses"));
+    VERIFY_IS_NOT_NULL(setProcesses);
+    HANDLE processes[]{ host.get() };
+    const auto priorityClass = GetPriorityClass(host.get());
+    VERIFY_ARE_NOT_EQUAL(DWORD{ 0 }, priorityClass);
+    VERIFY_IS_TRUE(setProcesses(window, 1, processes));
+    VERIFY_ARE_EQUAL(priorityClass, GetPriorityClass(host.get()));
+    VERIFY_IS_TRUE(setProcesses(window, 0, nullptr));
+
+    pty.hpcon.reset();
+    VERIFY_ARE_EQUAL(DWORD{ WAIT_OBJECT_0 }, WaitForSingleObject(host.get(), 5000));
+    VERIFY_ARE_EQUAL(hostId, GetProcessId(host.get()));
 }
 
 void ConPtyTests::SurvivesOnBreakOutput()
