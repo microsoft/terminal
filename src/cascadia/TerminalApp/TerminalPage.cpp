@@ -5315,24 +5315,21 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        using SetProcesses = BOOL(WINAPI*)(HWND, DWORD, HANDLE*);
-        static const auto setProcesses = reinterpret_cast<SetProcesses>(
-            GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetAdditionalForegroundBoostProcesses"));
+        static const auto setProcesses = GetProcAddressByFunctionDeclaration(
+            GetModuleHandleW(L"user32.dll"), SetAdditionalForegroundBoostProcesses);
         HRESULT boostStatus = HRESULT_FROM_WIN32(ERROR_CALL_NOT_IMPLEMENTED);
         if (setProcesses)
         {
             boostStatus = setProcesses(_hostingHwnd.value(), hostProcess ? 1 : 0, hostProcess ? &hostProcess : nullptr) ?
-                              S_OK : HRESULT_FROM_WIN32(GetLastError());
+                              S_OK :
+                              HRESULT_FROM_WIN32(GetLastError());
             if (FAILED(boostStatus))
             {
                 LOG_IF_WIN32_BOOL_FALSE(setProcesses(_hostingHwnd.value(), 0, nullptr));
             }
         }
         LOG_IF_FAILED(boostStatus);
-        TraceLoggingWrite(g_hTerminalAppProvider, "OpenConsoleForegroundBoost",
-                          TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
-                          TraceLoggingUInt32(hostProcess ? GetProcessId(hostProcess) : 0, "HostProcessId"),
-                          TraceLoggingHResult(boostStatus));
+        TraceLoggingWrite(g_hTerminalAppProvider, "OpenConsoleForegroundBoost", TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"), TraceLoggingUInt32(hostProcess ? GetProcessId(hostProcess) : 0, "HostProcessId"), TraceLoggingHResult(boostStatus));
 
         if (!s_supported)
         {

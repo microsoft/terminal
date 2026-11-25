@@ -561,10 +561,7 @@ extern "C" HRESULT WINAPI ConptyDuplicateHostProcessHandle(HPCON hPC, HANDLE* ho
     *hostProcess = nullptr;
     RETURN_HR_IF(E_INVALIDARG, !hPC);
     const auto pty = reinterpret_cast<const PseudoConsole*>(hPC);
-    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), pty->hConPtyProcess,
-                                               GetCurrentProcess(), hostProcess,
-                                               PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE,
-                                               FALSE, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), pty->hConPtyProcess, GetCurrentProcess(), hostProcess, PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, 0));
     return S_OK;
 }
 
