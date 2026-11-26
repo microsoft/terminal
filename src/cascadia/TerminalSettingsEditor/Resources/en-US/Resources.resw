@@ -507,7 +507,7 @@
     <comment>A description for what the "reorder and tear out tabs by dragging" setting does. Presented near "Globals_EnableTabDragDrop.Header".</comment>
   </data>
   <data name="Globals_EnableTabDragDrop_Unavailable" xml:space="preserve">
-    <value>Dragging tabs is unavailable because Terminal is running as administrator. Use the "move tab" actions instead.</value>
+    <value>Dragging tabs is unavailable because Terminal is running as administrator or as a different user. Use the "move tab" actions instead.</value>
     <comment>Shown in place of the description when the "reorder and tear out tabs by dragging" setting is disabled because the operating system would not allow tab dragging in this session.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
