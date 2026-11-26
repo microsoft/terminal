@@ -57,11 +57,6 @@ Handle::operator bool() const noexcept
     return _impl != nullptr;
 }
 
-HWND Handle::FindWindowOfActiveTSF() const noexcept
-{
-    return _impl ? _impl->FindWindowOfActiveTSF() : nullptr;
-}
-
 void Handle::AssociateFocus(IDataProvider* provider) const
 {
     if (_impl)
