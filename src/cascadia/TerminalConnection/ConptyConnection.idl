@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.TerminalConnection
 
         void ResetSize();
         void ClearBuffer(Boolean keepCursorRow);
+        void Reset();
 
         void ShowHide(Boolean show);
 
