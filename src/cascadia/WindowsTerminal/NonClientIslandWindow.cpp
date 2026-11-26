@@ -124,7 +124,11 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point pointer)
     // generally in the titlebar.
     if ((rightBorder - pointer.x) < (buttonWidthInPixels))
     {
-        return HTCLOSE;
+        // Don't return HTCLOSE here. The system shows its own tooltip over
+        // anything that hit-tests as HTCLOSE, on top of the one our titlebar
+        // already shows (GH#12882). HTBORDER gets no tooltip and no default
+        // behavior, and _InputSinkMessageHandler treats it as HTCLOSE.
+        return HTBORDER;
     }
     else if ((rightBorder - pointer.x) < (buttonWidthInPixels * 2))
     {
@@ -165,6 +169,13 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
                                                         WPARAM const wparam,
                                                         LPARAM const lparam) noexcept
 {
+    // _dragBarNcHitTest reports the close button as HTBORDER (GH#12882).
+    // Handle non-client mouse messages there exactly as if it were HTCLOSE.
+    if (message >= WM_NCMOUSEMOVE && message <= WM_NCXBUTTONDBLCLK && wparam == HTBORDER)
+    {
+        return _InputSinkMessageHandler(message, HTCLOSE, lparam);
+    }
+
     switch (message)
     {
     case WM_NCHITTEST:
