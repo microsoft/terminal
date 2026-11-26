@@ -17,6 +17,8 @@ using namespace winrt::TerminalApp;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
+// Width of the area around a pane separator that can be dragged with the mouse.
+static const double SplitterSize = 2.0 * CombinedPaneBorderSize;
 
 // WARNING: Don't do this! This won't work
 //   Duration duration{ std::chrono::milliseconds{ 200 } };
@@ -1454,6 +1456,14 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
+        // Leaves can't be resized, so drop our splitter (and any drag in progress).
+        if (_splitterDragOrigin)
+        {
+            _splitterDragOrigin.reset();
+            _resetPointerCursor();
+        }
+        _splitter = nullptr;
+
         // Reattach the TermControl to our grid.
         _root.Children().Append(_borderFirst);
         const auto& control{ _content.GetRoot() };
@@ -1502,6 +1512,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
+        _desiredSplitPosition = remainingChild->_desiredSplitPosition;
         _firstChild = remainingChild->_firstChild;
         _secondChild = remainingChild->_secondChild;
 
@@ -1914,6 +1925,7 @@ void Pane::_ApplySplitDefinitions()
         _firstChild->_ApplySplitDefinitions();
         _secondChild->_ApplySplitDefinitions();
     }
+    _PlaceSplitter();
     _UpdateBorders();
 }
 
@@ -2414,6 +2426,7 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 
             _root.Children().Append(_borderFirst);
             _root.Children().Append(_borderSecond);
+            _PlaceSplitter();
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -3081,4 +3094,109 @@ void Pane::_borderTappedHandler(const winrt::Windows::Foundation::IInspectable& 
 {
     _FocusFirstChild();
     e.Handled(true);
+}
+
+// Method Description:
+// - Places the splitter, which can be dragged to resize our children, on top
+//   of the separator between them.
+void Pane::_PlaceSplitter()
+{
+    if (_IsLeaf())
+    {
+        return;
+    }
+
+    if (!_splitter)
+    {
+        _splitter = Controls::Border{};
+        // Unlike a null background, a transparent one can be hit-tested.
+        _splitter.Background(Media::SolidColorBrush{ Colors::Transparent() });
+        _splitter.PointerEntered({ this, &Pane::_splitterPointerEnteredHandler });
+        _splitter.PointerExited({ this, &Pane::_splitterPointerExitedHandler });
+        _splitter.PointerPressed({ this, &Pane::_splitterPointerPressedHandler });
+        _splitter.PointerMoved({ this, &Pane::_splitterPointerMovedHandler });
+        _splitter.PointerCaptureLost({ this, &Pane::_splitterPointerCaptureLostHandler });
+        // Prevent a click from bubbling up to a parent pane's border and moving focus.
+        _splitter.Tapped([](auto&&, auto&& e) { e.Handled(true); });
+    }
+
+    // Align the splitter to the far edge of the first cell. The negative
+    // margin makes it straddle the separator.
+    const auto vertical = _splitState == SplitState::Vertical;
+    _splitter.HorizontalAlignment(vertical ? HorizontalAlignment::Right : HorizontalAlignment::Stretch);
+    _splitter.VerticalAlignment(vertical ? VerticalAlignment::Stretch : VerticalAlignment::Bottom);
+    _splitter.Width(vertical ? SplitterSize : NAN);
+    _splitter.Height(vertical ? NAN : SplitterSize);
+    _splitter.Margin(vertical ? ThicknessHelper::FromLengths(0, 0, -SplitterSize / 2, 0) :
+                                ThicknessHelper::FromLengths(0, 0, 0, -SplitterSize / 2));
+
+    // The splitter must come after both children, so that it's above them.
+    uint32_t index{};
+    if (!_root.Children().IndexOf(_splitter, index))
+    {
+        _root.Children().Append(_splitter);
+    }
+}
+
+void Pane::_splitterPointerEnteredHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
+{
+    const auto type = _splitState == SplitState::Vertical ? CoreCursorType::SizeWestEast : CoreCursorType::SizeNorthSouth;
+    CoreWindow::GetForCurrentThread().PointerCursor(CoreCursor{ type, 0 });
+}
+
+void Pane::_splitterPointerExitedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
+{
+    if (!_splitterDragOrigin)
+    {
+        _resetPointerCursor();
+    }
+}
+
+void Pane::_splitterPointerPressedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+{
+    const auto point = e.GetCurrentPoint(_root);
+    if (point.Properties().IsLeftButtonPressed() && _splitter.CapturePointer(e.Pointer()))
+    {
+        _splitterDragOrigin = point.Position();
+        _splitterDragOriginPosition = _desiredSplitPosition;
+        e.Handled(true);
+    }
+}
+
+void Pane::_splitterPointerMovedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+{
+    if (!_splitterDragOrigin)
+    {
+        return;
+    }
+
+    const auto vertical = _splitState == SplitState::Vertical;
+    const auto position = e.GetCurrentPoint(_root).Position();
+    const auto delta = vertical ? position.X - _splitterDragOrigin->X : position.Y - _splitterDragOrigin->Y;
+    const auto size = gsl::narrow_cast<float>(vertical ? _root.ActualWidth() : _root.ActualHeight());
+    const auto splitPosition = _ClampSplitPosition(vertical, _splitterDragOriginPosition + delta / size, size);
+
+    if (splitPosition != _desiredSplitPosition)
+    {
+        _desiredSplitPosition = splitPosition;
+        _CreateRowColDefinitions();
+    }
+    e.Handled(true);
+}
+
+void Pane::_splitterPointerCaptureLostHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+{
+    _splitterDragOrigin.reset();
+
+    // PointerExited is ignored during a drag, so check if it ended outside the splitter.
+    const auto position = e.GetCurrentPoint(_splitter).Position();
+    if (position.X < 0 || position.Y < 0 || position.X >= _splitter.ActualWidth() || position.Y >= _splitter.ActualHeight())
+    {
+        _resetPointerCursor();
+    }
+}
+
+void Pane::_resetPointerCursor()
+{
+    CoreWindow::GetForCurrentThread().PointerCursor(CoreCursor{ CoreCursorType::Arrow, 0 });
 }

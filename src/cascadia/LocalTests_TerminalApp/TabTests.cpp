@@ -85,6 +85,10 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(SwapPanes);
 
+        TEST_METHOD(RestoreSplitterAfterZoom);
+        TEST_METHOD(ClosePaneKeepsSiblingSplitPosition);
+        TEST_METHOD(ClosePaneRemovesSplitterFromLeaf);
+
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
@@ -1044,6 +1048,102 @@ namespace TerminalAppLocalTests
             // Inspect the tree to make sure we swapped
             VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_secondChild->Id().value());
             VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+        });
+    }
+
+    void TabTests::RestoreSplitterAfterZoom()
+    {
+        auto page = _commonSetup();
+
+        const auto verifySplitterIsOnTop = [&]() {
+            const auto root = page->_GetTabImpl(page->_tabs.GetAt(0))->_rootPane;
+            const auto children = root->_root.Children();
+            VERIFY_IS_TRUE(root->_splitter && children.GetAt(children.Size() - 1) == root->_splitter);
+        };
+
+        Log::Comment(L"Split the pane. The splitter should be above both panes.");
+        TestOnUIThread([&]() {
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            verifySplitterIsOnTop();
+        });
+
+        Log::Comment(L"Zoom in and back out. The splitter should be restored along with the panes.");
+        TestOnUIThread([&]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+            VERIFY_IS_TRUE(page->_GetTabImpl(page->_tabs.GetAt(0))->IsZoomed());
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+            VERIFY_IS_FALSE(page->_GetTabImpl(page->_tabs.GetAt(0))->IsZoomed());
+            verifySplitterIsOnTop();
+        });
+    }
+
+    void TabTests::ClosePaneKeepsSiblingSplitPosition()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Setup 3 panes, with 2 and 3 split 70/30.");
+        // -------------------
+        // |        |   2    |
+        // |   1    |        |
+        // |        |--------|
+        // |        |   3    |
+        // -------------------
+        TestOnUIThread([&]() {
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            page->_SplitPane(nullptr, SplitDirection::Down, 0.3f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            page->_MoveFocus(FocusDirection::Left);
+        });
+        Sleep(250);
+
+        Log::Comment(L"Close pane 1. The remaining panes should keep their 70/30 split.");
+        auto expectedSplitPosition = 0.0f;
+        TestOnUIThread([&]() {
+            expectedSplitPosition = page->_GetTabImpl(page->_tabs.GetAt(0))->_rootPane->_secondChild->_desiredSplitPosition;
+            VERIFY_ARE_EQUAL(0.7f, expectedSplitPosition);
+
+            ActionEventArgs eventArgs{};
+            page->_HandleClosePane(nullptr, eventArgs);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(2, tab->GetLeafPaneCount());
+            VERIFY_ARE_EQUAL(expectedSplitPosition, tab->_rootPane->_desiredSplitPosition);
+        });
+    }
+
+    void TabTests::ClosePaneRemovesSplitterFromLeaf()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Split the pane and pretend the splitter is being dragged.");
+        TestOnUIThread([&]() {
+            page->_SplitPane(nullptr, SplitDirection::Right, 0.5f, page->_MakePane(nullptr, page->_GetFocusedTab(), nullptr));
+            const auto root = page->_GetTabImpl(page->_tabs.GetAt(0))->_rootPane;
+            VERIFY_IS_NOT_NULL(root->_splitter);
+            root->_splitterDragOrigin = winrt::Windows::Foundation::Point{ 10, 10 };
+        });
+        Sleep(250);
+
+        Log::Comment(L"Close a pane. The root becomes a leaf and must drop its splitter and drag state.");
+        TestOnUIThread([&]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleClosePane(nullptr, eventArgs);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            const auto root = page->_GetTabImpl(page->_tabs.GetAt(0))->_rootPane;
+            VERIFY_IS_TRUE(root->_IsLeaf());
+            VERIFY_IS_NULL(root->_splitter);
+            VERIFY_IS_FALSE(root->_splitterDragOrigin.has_value());
+            VERIFY_ARE_EQUAL(1u, root->_root.Children().Size());
         });
     }
 
