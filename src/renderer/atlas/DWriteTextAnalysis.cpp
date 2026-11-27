@@ -104,8 +104,10 @@ HRESULT TextAnalysisSource::GetNumberSubstitution(UINT32 textPosition, UINT32* t
     return E_NOTIMPL;
 }
 
-TextAnalysisSink::TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results) noexcept :
-    _results{ results }
+TextAnalysisSink::TextAnalysisSink(std::vector<TextAnalysisSinkResult>& results, std::vector<u8>& bidiLevels, std::vector<TextAnalysisBidiRun>* bidiRuns) noexcept :
+    _results{ results },
+    _bidiLevels{ bidiLevels },
+    _bidiRuns{ bidiRuns }
 {
 }
 
@@ -168,7 +170,37 @@ HRESULT TextAnalysisSink::SetLineBreakpoints(UINT32 textPosition, UINT32 textLen
 
 HRESULT TextAnalysisSink::SetBidiLevel(UINT32 textPosition, UINT32 textLength, UINT8 explicitLevel, UINT8 resolvedLevel) noexcept
 {
-    return E_NOTIMPL;
+    UNREFERENCED_PARAMETER(explicitLevel);
+
+    if (_bidiRuns && textLength != 0)
+    {
+        if (!_bidiRuns->empty())
+        {
+            auto& back = _bidiRuns->back();
+            const auto backEnd = back.textPosition + back.textLength;
+            if (backEnd == textPosition && back.resolvedLevel == resolvedLevel)
+            {
+                back.textLength += textLength;
+            }
+            else
+            {
+                _bidiRuns->push_back({ textPosition, textLength, resolvedLevel });
+            }
+        }
+        else
+        {
+            _bidiRuns->push_back({ textPosition, textLength, resolvedLevel });
+        }
+    }
+
+    if (textPosition >= _bidiLevels.size())
+    {
+        return S_OK;
+    }
+
+    const auto end = std::min<size_t>(static_cast<size_t>(textPosition) + textLength, _bidiLevels.size());
+    std::fill(_bidiLevels.begin() + textPosition, _bidiLevels.begin() + end, resolvedLevel);
+    return S_OK;
 }
 
 HRESULT TextAnalysisSink::SetNumberSubstitution(UINT32 textPosition, UINT32 textLength, IDWriteNumberSubstitution* numberSubstitution) noexcept
