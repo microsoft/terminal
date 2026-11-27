@@ -74,6 +74,12 @@ void ParserTracing::TraceOnEvent(_In_z_ const wchar_t* name) const noexcept
 
 void ParserTracing::TraceCharInput(const wchar_t wch)
 {
+    // Returning here, not just skipping the push_back, keeps TraceLoggingWrite's setup off the per-char path.
+    if (!TraceLoggingProviderEnabled(g_hConsoleVirtTermParserEventTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
+    {
+        return;
+    }
+
     AddSequenceTrace(wch);
 
     TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
