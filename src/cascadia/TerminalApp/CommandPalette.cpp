@@ -778,6 +778,12 @@ namespace winrt::TerminalApp::implementation
 
                     _updateUIForStackChange();
                 }
+                else if (const auto toggleArgs{ command.ActionAndArgs().Args().try_as<ToggleCommandPaletteArgs>() };
+                         toggleArgs && toggleArgs.LaunchMode() == CommandPaletteLaunchMode::CommandLine)
+                {
+                    // GH#17114: Switch to command-line mode instead of closing.
+                    EnableCommandPaletteMode(toggleArgs.LaunchMode());
+                }
                 else
                 {
                     // First stash the search text length, because _close will clear this.
