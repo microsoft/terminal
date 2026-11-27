@@ -2437,12 +2437,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring ControlCore::ReadEntireBuffer() const
     {
-        const auto lock = _terminal->LockForWriting();
+        const auto lock = _terminal->LockForReading();
 
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::wstring str;
         const auto lastRow = textBuffer.GetLastNonSpaceCharacter().y;
+        const auto width = textBuffer.GetSize().Width();
+        if (lastRow >= 0 && width > 0)
+        {
+            const auto estimatedSize = std::min<size_t>(static_cast<size_t>(lastRow + 1) * static_cast<size_t>(width + 2), 16 * 1024 * 1024);
+            str.reserve(estimatedSize);
+        }
         for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
         {
             const auto& row = textBuffer.GetRowByOffset(rowIndex);
@@ -2465,11 +2471,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Get all of our recent commands. This will only really work if the user has enabled shell integration.
     Control::CommandHistoryContext ControlCore::CommandHistory() const
     {
-        const auto lock = _terminal->LockForWriting();
+        const auto lock = _terminal->LockForReading();
         const auto& textBuffer = _terminal->GetTextBuffer();
 
         std::vector<winrt::hstring> commands;
         const auto bufferCommands{ textBuffer.Commands() };
+        commands.reserve(bufferCommands.size());
 
         auto trimToHstring = [](const auto& s) -> winrt::hstring {
             const auto strEnd = s.find_last_not_of(UNICODE_SPACE);
@@ -2499,7 +2506,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // (also account for the fact that the cursor may be in the middle of a commandline)
         if (!commands.empty() &&
             !trimmedCurrentCommand.empty() &&
-            std::wstring_view{ commands.back() }.substr(0, trimmedCurrentCommand.size()) == trimmedCurrentCommand)
+            std::wstring_view{ commands.back() }.starts_with(trimmedCurrentCommand))
         {
             commands.pop_back();
         }
@@ -2655,7 +2662,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AddMark(const Control::ScrollMark& mark)
     {
-        const auto lock = _terminal->LockForReading();
+        const auto lock = _terminal->LockForWriting();
         ::ScrollbarData m{};
 
         if (mark.Color.HasValue)
@@ -2842,6 +2849,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::optional<::MarkExtents> nearest{ std::nullopt };
         const auto& marks{ _terminal->GetMarkExtents() };
+
+        // Early return so we don't have to check for the validity of `nearest` below after the loop exits.
+        if (marks.empty())
+        {
+            return;
+        }
 
         static constexpr til::point worst{ til::CoordTypeMax, til::CoordTypeMax };
         til::point bestDistance{ worst };
