@@ -386,4 +386,47 @@ class SmallVectorTests
         expected.resize(3);
         VERIFY_ARE_EQUAL(expected, actual);
     }
+
+    TEST_METHOD(Swap)
+    {
+        // shared_ptr is non-trivial and use_count() catches elements that were leaked or destroyed twice.
+        using container = til::small_vector<std::shared_ptr<int>, 3>;
+
+        const auto make = [](int size, int base) {
+            container v;
+            for (auto i = 0; i < size; ++i)
+            {
+                v.emplace_back(std::make_shared<int>(base + i));
+            }
+            return v;
+        };
+        const auto verify = [](const container& v, int size, int base) {
+            VERIFY_ARE_EQUAL(static_cast<size_t>(size), v.size());
+            for (auto i = 0; i < size; ++i)
+            {
+                VERIFY_ARE_EQUAL(base + i, *v[i]);
+                VERIFY_ARE_EQUAL(1L, v[i].use_count());
+            }
+        };
+
+        // 0-3 elements are stored inline and 5 on the heap, so this covers every inline/heap combination.
+        for (const auto lhsSize : { 0, 2, 3, 5 })
+        {
+            for (const auto rhsSize : { 0, 2, 3, 5 })
+            {
+                auto lhs = make(lhsSize, 100);
+                {
+                    auto rhs = make(rhsSize, 200);
+                    lhs.swap(rhs);
+                    verify(rhs, lhsSize, 100);
+                }
+
+                verify(lhs, rhsSize, 200);
+                lhs.swap(lhs);
+                verify(lhs, rhsSize, 200);
+                lhs.emplace_back(std::make_shared<int>(200 + rhsSize));
+                verify(lhs, rhsSize + 1, 200);
+            }
+        }
+    }
 };

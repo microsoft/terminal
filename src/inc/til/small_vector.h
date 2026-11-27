@@ -401,6 +401,41 @@ namespace til
             return *this;
         }
 
+        void swap(small_vector& other) noexcept
+        {
+            // The code below relies on the two buffers not aliasing.
+            if (this != &other)
+            {
+                if (_capacity == N && other._capacity == N)
+                {
+                    // With the MSVC STL this turns into a vectorized __std_swap_ranges_trivially_swappable_noalias() call.
+                    // With other STLs, memcpy() in fixed chunks of up to 64 bytes through stack temporaries instead.
+                    // GCC and clang turn that into direct register moves.
+                    const auto a = std::as_writable_bytes(std::span{ _buffer });
+                    const auto b = std::as_writable_bytes(std::span{ other._buffer });
+                    std::swap_ranges(a.begin(), a.end(), b.begin());
+                    std::swap(_size, other._size);
+                }
+                else
+                {
+                    // At most one side is inline. Move its storage into the other side's unused buffer.
+                    if (_capacity == N)
+                    {
+                        memcpy(&other._buffer[0], &_buffer[0], sizeof(_buffer));
+                        _data = &other._buffer[0];
+                    }
+                    if (other._capacity == N)
+                    {
+                        memcpy(&_buffer[0], &other._buffer[0], sizeof(_buffer));
+                        other._data = &_buffer[0];
+                    }
+                    std::swap(_data, other._data);
+                    std::swap(_capacity, other._capacity);
+                    std::swap(_size, other._size);
+                }
+            }
+        }
+
         ~small_vector()
         {
             std::destroy(begin(), end());
