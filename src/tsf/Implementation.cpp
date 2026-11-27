@@ -97,6 +97,8 @@ HRESULT Implementation::Initialize()
     RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
     RETURN_IF_FAILED(_documentMgr->Push(_context.get()));
+
+    RETURN_IF_FAILED(_threadMgrEx.query<ITfSource>()->AdviseSink(IID_ITfThreadFocusSink, static_cast<ITfThreadFocusSink*>(this), &_cookieThreadFocusSink));
     return S_OK;
 }
 
@@ -110,6 +112,10 @@ void Implementation::Uninitialize() noexcept
         std::ignore = _threadMgrEx->AssociateFocus(_associatedHwnd, nullptr, prev.addressof());
     }
 
+    if (_cookieThreadFocusSink != TF_INVALID_COOKIE)
+    {
+        std::ignore = _threadMgrEx.query<ITfSource>()->UnadviseSink(_cookieThreadFocusSink);
+    }
     if (_cookieTextEditSink != TF_INVALID_COOKIE)
     {
         std::ignore = _contextSource->UnadviseSink(_cookieTextEditSink);
@@ -220,7 +226,11 @@ void Implementation::Unfocus(IDataProvider* provider)
     _provider.reset();
 
     // Leave the composition to the IME if the whole window was deactivated, see GH#20936
-    if (_compositions > 0 && _ownerCompositionServices && GetActiveWindow())
+    if (_compositions > 0 && !GetActiveWindow())
+    {
+        _refocusOnThreadFocus = true;
+    }
+    else if (_compositions > 0 && _ownerCompositionServices)
     {
         std::ignore = _ownerCompositionServices->TerminateComposition(nullptr);
     }
@@ -272,6 +282,10 @@ STDMETHODIMP Implementation::QueryInterface(REFIID riid, void** ppvObj) noexcept
     else if (IsEqualGUID(riid, IID_ITfTextEditSink))
     {
         *ppvObj = static_cast<ITfTextEditSink*>(this);
+    }
+    else if (IsEqualGUID(riid, IID_ITfThreadFocusSink))
+    {
+        *ppvObj = static_cast<ITfThreadFocusSink*>(this);
     }
     else if (IsEqualGUID(riid, IID_IUnknown))
     {
@@ -459,6 +473,26 @@ try
 CATCH_RETURN()
 
 #pragma endregion ITfTextEditSink
+
+#pragma region ITfThreadFocusSink
+
+STDMETHODIMP Implementation::OnSetThreadFocus() noexcept
+{
+    // Refocus our document if the IME committed the composition left to it while the thread had no TSF focus, see GH#20936
+    if (std::exchange(_refocusOnThreadFocus, false) && _provider)
+    {
+        std::ignore = _threadMgrEx->SetFocus(nullptr);
+        std::ignore = _threadMgrEx->SetFocus(_documentMgr.get());
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Implementation::OnKillThreadFocus() noexcept
+{
+    return S_OK;
+}
+
+#pragma endregion ITfThreadFocusSink
 
 Implementation::EditSessionProxyBase::EditSessionProxyBase(Implementation* self) noexcept :
     self{ self }
