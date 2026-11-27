@@ -10,6 +10,7 @@
 #include "../types/inc/IInputEvent.hpp"
 
 using namespace WEX::Logging;
+using namespace WEX::TestExecution;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 class InputBufferTests
@@ -57,6 +58,77 @@ class InputBufferTests
         return retval;
     }
 
+    static INPUT_RECORD MakeRecord(WORD eventType)
+    {
+        INPUT_RECORD record{};
+        record.EventType = eventType;
+        return record;
+    }
+
+    // Returns all events in the buffer without removing them.
+    static InputEventQueue PeekAll(InputBuffer& inputBuffer)
+    {
+        InputEventQueue events;
+        VERIFY_NT_SUCCESS(inputBuffer.Read(events, inputBuffer.GetNumberOfReadyEvents(), true, false, true, false));
+        return events;
+    }
+
+    // Writes the text the way it was written before WriteKeyboardText() existed.
+    static void WriteKeyEvents(InputBuffer& inputBuffer, const std::wstring_view text, const UINT codepage)
+    {
+        InputEventQueue events;
+        for (const auto wch : text)
+        {
+            Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage, events);
+        }
+        inputBuffer.Write(events);
+    }
+
+    static void VerifySameEvents(const InputEventQueue& expected, const InputEventQueue& actual)
+    {
+        VERIFY_ARE_EQUAL(expected.size(), actual.size());
+        for (size_t i = 0; i < std::min(expected.size(), actual.size()); ++i)
+        {
+            VERIFY_ARE_EQUAL(expected[i], actual[i]);
+        }
+    }
+
+    // Reads `chunk` events at a time from both buffers until they're empty and verifies that
+    // they return the same events and report the same number of ready events at every step.
+    // Unicode reads also peek before each read. Peeking non-Unicode reads would cache the
+    // trailing bytes of DBCS characters and return them again in the next read.
+    static void VerifySameEvents(InputBuffer& expected, InputBuffer& actual, const size_t chunk, const bool unicode)
+    {
+        SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+
+        VerifySameEvents(PeekAll(expected), PeekAll(actual));
+
+        for (;;)
+        {
+            VERIFY_ARE_EQUAL(expected.GetNumberOfReadyEvents(), actual.GetNumberOfReadyEvents());
+
+            for (const auto peek : { true, false })
+            {
+                if (peek && !unicode)
+                {
+                    continue;
+                }
+
+                const auto stream = chunk == 1;
+                InputEventQueue e;
+                InputEventQueue a;
+                VERIFY_NT_SUCCESS(expected.Read(e, chunk, peek, false, unicode, stream));
+                VERIFY_NT_SUCCESS(actual.Read(a, chunk, peek, false, unicode, stream));
+                VerifySameEvents(e, a);
+
+                if (!peek && e.empty())
+                {
+                    return;
+                }
+            }
+        }
+    }
+
     TEST_METHOD(CanGetNumberOfReadyEvents)
     {
         InputBuffer inputBuffer;
@@ -78,7 +150,7 @@ class InputBufferTests
             INPUT_RECORD record;
             record.EventType = MENU_EVENT;
             VERIFY_IS_GREATER_THAN(inputBuffer.Write(record), 0u);
-            VERIFY_ARE_EQUAL(record, inputBuffer._storage.back());
+            VERIFY_ARE_EQUAL(record, PeekAll(inputBuffer).back());
         }
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
     }
@@ -96,9 +168,10 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(events), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
         // verify that the events are the same in storage
+        const auto stored = PeekAll(inputBuffer);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i], record);
+            VERIFY_ARE_EQUAL(stored[i], record);
         }
     }
 
@@ -121,7 +194,8 @@ class InputBufferTests
         // check that they coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         // check that the mouse position is being updated correctly
-        const auto& pMouseEvent = inputBuffer._storage.front().Event.MouseEvent;
+        const auto stored = PeekAll(inputBuffer);
+        const auto& pMouseEvent = stored.front().Event.MouseEvent;
         VERIFY_ARE_EQUAL(pMouseEvent.dwMousePosition.X, static_cast<SHORT>(RECORD_INSERT_COUNT));
         VERIFY_ARE_EQUAL(pMouseEvent.dwMousePosition.Y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
 
@@ -146,8 +220,9 @@ class InputBufferTests
         inputBuffer.Write(SynthesizeWindowBufferSizeEvent({ 120, 50 }));
 
         VERIFY_ARE_EQUAL(3u, inputBuffer.GetNumberOfReadyEvents());
-        VERIFY_ARE_EQUAL(til::size(100, 40), til::wrap_coord_size(inputBuffer._storage.front().Event.WindowBufferSizeEvent.dwSize));
-        VERIFY_ARE_EQUAL(til::size(120, 50), til::wrap_coord_size(inputBuffer._storage.back().Event.WindowBufferSizeEvent.dwSize));
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(til::size(100, 40), til::wrap_coord_size(stored.front().Event.WindowBufferSizeEvent.dwSize));
+        VERIFY_ARE_EQUAL(til::size(120, 50), til::wrap_coord_size(stored.back().Event.WindowBufferSizeEvent.dwSize));
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceBulkMouseEvents)
@@ -171,10 +246,11 @@ class InputBufferTests
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), mouseRecords[0]);
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(stored.front(), mouseRecords[0]);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], mouseRecords[i]);
+            VERIFY_ARE_EQUAL(stored[i + 1], mouseRecords[i]);
         }
     }
 
@@ -226,10 +302,11 @@ class InputBufferTests
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), keyRecords[0]);
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(stored.front(), keyRecords[0]);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], keyRecords[i]);
+            VERIFY_ARE_EQUAL(stored[i + 1], keyRecords[i]);
         }
     }
 
@@ -554,6 +631,29 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
     }
 
+    TEST_METHOD(BulkWriteHandlesPauseKeys)
+    {
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        InputBuffer inputBuffer;
+        const std::array records{
+            MakeKeyEvent(true, 1, L'A', 0, L'a', 0),
+            MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0),
+            MakeKeyEvent(true, 1, L'B', 0, L'b', 0),
+            MakeKeyEvent(true, 1, L'C', 0, L'c', 0),
+        };
+
+        // The pause key suspends the output and the next key press resumes it. Both get discarded.
+        VERIFY_ARE_EQUAL(2u, inputBuffer.Write(records));
+        VERIFY_IS_FALSE(WI_IsFlagSet(gci.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_ARE_EQUAL(2u, inputBuffer.GetNumberOfReadyEvents());
+
+        InputEventQueue outEvents;
+        VERIFY_NT_SUCCESS(inputBuffer.Read(outEvents, 4, false, false, true, false));
+        VERIFY_ARE_EQUAL(2u, outEvents.size());
+        VERIFY_ARE_EQUAL(records[0], outEvents[0]);
+        VERIFY_ARE_EQUAL(records[3], outEvents[1]);
+    }
+
     TEST_METHOD(SystemKeysDontUnpauseConsole)
     {
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -604,8 +704,9 @@ class InputBufferTests
                                            true,
                                            true));
         VERIFY_ARE_EQUAL(outEvents.size(), 1u);
-        VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front().Event.KeyEvent.wRepeatCount, repeatCount - 1);
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(stored.size(), 1u);
+        VERIFY_ARE_EQUAL(stored.front().Event.KeyEvent.wRepeatCount, repeatCount - 1);
         VERIFY_ARE_EQUAL(outEvents.front().Event.KeyEvent.wRepeatCount, 1u);
     }
 
@@ -624,8 +725,238 @@ class InputBufferTests
                                            true,
                                            true));
         VERIFY_ARE_EQUAL(outEvents.size(), 1u);
-        VERIFY_ARE_EQUAL(inputBuffer._storage.size(), 1u);
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front().Event.KeyEvent.wRepeatCount, repeatCount);
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(stored.size(), 1u);
+        VERIFY_ARE_EQUAL(stored.front().Event.KeyEvent.wRepeatCount, repeatCount);
         VERIFY_ARE_EQUAL(outEvents.front().Event.KeyEvent.wRepeatCount, 1u);
+    }
+
+    TEST_METHOD(WriteKeyboardTextMatchesKeyEvents)
+    {
+        auto& codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        const auto restoreCP = wil::scope_exit([&, previous = codepage]() {
+            codepage = previous;
+        });
+
+        static constexpr std::wstring_view texts[] = {
+            L"Hello, World!\r",
+            L"~`^@{}|\\\"'",
+            L"\x3042\x3044 \x00e9\x00fc\x00df",
+            L"\xD83D\xDC4D\xD83D\xDE00",
+            L"\x0001\x001b\x007f\t\b",
+            L"\x20ac\x2500\x00a7",
+            { L"a\0b", 3 },
+        };
+        static constexpr UINT codepages[] = { CP_USA, CP_JAPANESE };
+        static constexpr size_t chunks[] = { 1, 2, 3, 7, 4096 };
+
+        for (const auto text : texts)
+        {
+            for (const auto cp : codepages)
+            {
+                codepage = cp;
+
+                for (const auto chunk : chunks)
+                {
+                    for (const auto unicode : { true, false })
+                    {
+                        InputBuffer expected;
+                        InputBuffer actual;
+                        WriteKeyEvents(expected, text, cp);
+                        actual.WriteKeyboardText(text, cp);
+                        VerifySameEvents(expected, actual, chunk, unicode);
+                    }
+                }
+            }
+        }
+    }
+
+    TEST_METHOD(WriteKeyboardTextHandlesPauseKeys)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+        struct Case
+        {
+            std::wstring_view text;
+            bool suspended;
+            bool lineInput;
+        };
+        static constexpr Case cases[] = {
+            { L"ab\x13"
+              L"cd\x13",
+              false,
+              true },
+            { L"Ab", true, true },
+            { L"ab\x13"
+              L"cd",
+              false,
+              false },
+            { L"\x13\x13"
+              L"a",
+              false,
+              true },
+        };
+
+        for (const auto& c : cases)
+        {
+            InputBuffer expected;
+            InputBuffer actual;
+            WI_UpdateFlag(expected.InputMode, ENABLE_LINE_INPUT, c.lineInput);
+            WI_UpdateFlag(actual.InputMode, ENABLE_LINE_INPUT, c.lineInput);
+
+            WI_UpdateFlag(gci.Flags, CONSOLE_OUTPUT_SUSPENDED, c.suspended);
+            WriteKeyEvents(expected, c.text, gci.CP);
+            const auto expectedSuspended = WI_IsFlagSet(gci.Flags, CONSOLE_OUTPUT_SUSPENDED);
+
+            WI_UpdateFlag(gci.Flags, CONSOLE_OUTPUT_SUSPENDED, c.suspended);
+            actual.WriteKeyboardText(c.text, gci.CP);
+            VERIFY_ARE_EQUAL(expectedSuspended, WI_IsFlagSet(gci.Flags, CONSOLE_OUTPUT_SUSPENDED));
+
+            VerifySameEvents(expected, actual, 4096, true);
+        }
+    }
+
+    TEST_METHOD(PartiallyReadTextSurvivesPrepend)
+    {
+        const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        const std::array prepend{ MakeRecord(MENU_EVENT), MakeRecord(FOCUS_EVENT) };
+
+        for (size_t read = 0; read < 6; ++read)
+        {
+            InputBuffer expected;
+            InputBuffer actual;
+            WriteKeyEvents(expected, L"Ab", cp);
+            actual.WriteKeyboardText(L"Ab", cp);
+            expected.WriteString(L"cd");
+            actual.WriteString(L"cd");
+
+            InputEventQueue e;
+            InputEventQueue a;
+            VERIFY_NT_SUCCESS(expected.Read(e, read, false, false, true, false));
+            VERIFY_NT_SUCCESS(actual.Read(a, read, false, false, true, false));
+            VerifySameEvents(e, a);
+
+            VERIFY_ARE_EQUAL(expected.Prepend(prepend), actual.Prepend(prepend));
+            VerifySameEvents(expected, actual, 3, true);
+        }
+    }
+
+    TEST_METHOD(WriteStringCoalescesWithKeyEvents)
+    {
+        InputBuffer inputBuffer;
+        const auto a = SynthesizeKeyEvent(true, 1, 0, 0, L'a', 0);
+
+        inputBuffer.WriteString(L"xa");
+        VERIFY_ARE_EQUAL(1u, inputBuffer.Write(a));
+        VERIFY_ARE_EQUAL(1u, inputBuffer.Write(a));
+        VERIFY_ARE_EQUAL(2u, inputBuffer.GetNumberOfReadyEvents());
+
+        const auto stored = PeekAll(inputBuffer);
+        VERIFY_ARE_EQUAL(2u, stored.size());
+        VERIFY_ARE_EQUAL(SynthesizeKeyEvent(true, 1, 0, 0, L'x', 0), stored[0]);
+        VERIFY_ARE_EQUAL(SynthesizeKeyEvent(true, 3, 0, 0, L'a', 0), stored[1]);
+
+        Log::Comment(L"Text written with WriteKeyboardText() ends with a key up event, which doesn't coalesce");
+        InputBuffer expected;
+        InputBuffer actual;
+        const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        WriteKeyEvents(expected, L"a", cp);
+        actual.WriteKeyboardText(L"a", cp);
+        const auto keyDown = PeekAll(expected).front();
+        VERIFY_ARE_EQUAL(1u, expected.Write(keyDown));
+        VERIFY_ARE_EQUAL(1u, actual.Write(keyDown));
+        VERIFY_ARE_EQUAL(3u, actual.GetNumberOfReadyEvents());
+        VerifySameEvents(expected, actual, 4096, true);
+    }
+
+    TEST_METHOD(FlushAllButKeysKeepsText)
+    {
+        const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        InputBuffer expected;
+        InputBuffer actual;
+
+        const auto writeBoth = [&](const std::span<const INPUT_RECORD> records) {
+            expected.Write(records);
+            actual.Write(records);
+        };
+        const auto writeText = [&](const std::wstring_view text) {
+            WriteKeyEvents(expected, text, cp);
+            actual.WriteKeyboardText(text, cp);
+        };
+        const auto writeString = [&](const std::wstring_view text) {
+            expected.WriteString(text);
+            actual.WriteString(text);
+        };
+
+        Log::Comment(L"Flushing a buffer without key events empties it");
+        writeBoth(std::array{ MakeRecord(MENU_EVENT), MakeRecord(MOUSE_EVENT) });
+        expected.FlushAllButKeys();
+        actual.FlushAllButKeys();
+        VERIFY_ARE_EQUAL(0u, actual.GetNumberOfReadyEvents());
+
+        writeText(L"Ab");
+        writeBoth(std::array{ MakeRecord(MENU_EVENT), MakeRecord(MOUSE_EVENT) });
+        writeText(L"cd");
+        writeBoth(std::array{ MakeRecord(MENU_EVENT), MakeKeyEvent(true, 1, L'K', 0, L'k', 0), MakeRecord(FOCUS_EVENT) });
+        writeString(L"ef");
+        writeBoth(std::array{ MakeRecord(MENU_EVENT), MakeRecord(MENU_EVENT) });
+        writeString(L"g");
+        writeText(L"h");
+
+        Log::Comment(L"Partially read the first character");
+        InputEventQueue e;
+        InputEventQueue a;
+        VERIFY_NT_SUCCESS(expected.Read(e, 1, false, false, true, false));
+        VERIFY_NT_SUCCESS(actual.Read(a, 1, false, false, true, false));
+        VerifySameEvents(e, a);
+
+        expected.FlushAllButKeys();
+        actual.FlushAllButKeys();
+        VerifySameEvents(expected, actual, 3, true);
+
+        Log::Comment(L"The buffer still works after it was emptied");
+        writeText(L"ij");
+        VerifySameEvents(expected, actual, 4096, true);
+    }
+
+    TEST_METHOD(LargeTextWrapsGrowsAndShrinks)
+    {
+        const auto cp = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+        InputBuffer expected;
+        InputBuffer actual;
+        const std::array records{ MakeRecord(MENU_EVENT), MakeRecord(FOCUS_EVENT) };
+
+        std::wstring text;
+        for (wchar_t i = 0; i < 1000; ++i)
+        {
+            text.push_back((i % 3 ? L'a' : L'A') + i % 26);
+        }
+
+        {
+            SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
+
+            for (auto i = 0; i < 64; ++i)
+            {
+                WriteKeyEvents(expected, text, cp);
+                actual.WriteKeyboardText(text, cp);
+                expected.Write(records);
+                actual.Write(records);
+
+                InputEventQueue e;
+                InputEventQueue a;
+                VERIFY_NT_SUCCESS(expected.Read(e, 1337, false, false, true, false));
+                VERIFY_NT_SUCCESS(actual.Read(a, 1337, false, false, true, false));
+                VerifySameEvents(e, a);
+                VERIFY_ARE_EQUAL(expected.GetNumberOfReadyEvents(), actual.GetNumberOfReadyEvents());
+            }
+        }
+
+        VerifySameEvents(expected, actual, 4096, true);
+        VERIFY_ARE_EQUAL(0u, actual.GetNumberOfReadyEvents());
+
+        Log::Comment(L"The buffer still works after it shrank");
+        WriteKeyEvents(expected, text, cp);
+        actual.WriteKeyboardText(text, cp);
+        VerifySameEvents(expected, actual, 7, true);
     }
 };

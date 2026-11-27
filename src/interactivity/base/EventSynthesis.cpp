@@ -32,7 +32,7 @@ static bool IsCharFullWidth(const wchar_t wch) noexcept
            (0xffe0 <= wch && wch <= 0xffe6); // Fullwidth symbol variants
 }
 
-void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const unsigned int codepage, InputEventQueue& keyEvents)
+bool Microsoft::Console::Interactivity::CharToTypedChar(const wchar_t wch, TypedChar& out)
 {
     static constexpr short invalidKey = -1;
     auto keyState = OneCoreSafeVkKeyScanW(wch);
@@ -52,14 +52,76 @@ void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const
                 // It wasn't alphanumeric or determined to be wide by the old algorithm
                 // if VkKeyScanW fails (char is not in kbd layout), we must
                 // emulate the key being input through the numpad
-                SynthesizeNumpadEvents(wch, codepage, keyEvents);
-                return;
+                return false;
             }
         }
         keyState = 0; // SynthesizeKeyboardEvents would rather get 0 than -1
     }
 
-    SynthesizeKeyboardEvents(wch, keyState, keyEvents);
+    out = KeyStateToTypedChar(wch, keyState);
+    return true;
+}
+
+// The caller provides us with the result of VkKeyScanW() in keyState.
+Microsoft::Console::Interactivity::TypedChar Microsoft::Console::Interactivity::KeyStateToTypedChar(const wchar_t wch, const short keyState)
+{
+    const auto vk = LOBYTE(keyState);
+    const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
+    return { wch, sc, vk, HIBYTE(keyState) };
+}
+
+size_t Microsoft::Console::Interactivity::TypedCharEventCount(const TypedChar& ch) noexcept
+{
+    // Shift and AltGr (= ctrl + alt) get pressed before and released after the key itself.
+    const auto shiftSet = WI_IsFlagSet(ch.modifiers, 1);
+    const auto altGrSet = WI_AreAllFlagsSet(ch.modifiers, 4 | 2);
+    return shiftSet || altGrSet ? 4 : 2;
+}
+
+// Writes the TypedCharEventCount() key events that typing `ch` produces into `out` and returns their count.
+size_t Microsoft::Console::Interactivity::TypedCharToKeyEvents(const TypedChar& ch, std::array<INPUT_RECORD, 4>& out) noexcept
+{
+    // The magic constants below are the expected (documented) return values from VkKeyScanW().
+    const auto shiftSet = WI_IsFlagSet(ch.modifiers, 1);
+    const auto ctrlSet = WI_IsFlagSet(ch.modifiers, 2);
+    const auto altSet = WI_IsFlagSet(ch.modifiers, 4);
+    const auto altGrSet = WI_AreAllFlagsSet(ch.modifiers, 4 | 2);
+
+    uint32_t controlKeyState = 0;
+    WI_SetFlagIf(controlKeyState, SHIFT_PRESSED, shiftSet);
+    WI_SetFlagIf(controlKeyState, LEFT_CTRL_PRESSED, ctrlSet);
+    WI_SetFlagIf(controlKeyState, RIGHT_ALT_PRESSED, altSet);
+    const auto keyDown = SynthesizeKeyEvent(true, 1, ch.virtualKey, ch.scanCode, ch.wch, controlKeyState);
+    const auto keyUp = SynthesizeKeyEvent(false, 1, ch.virtualKey, ch.scanCode, ch.wch, controlKeyState);
+
+    // handle yucky alt-gr keys
+    if (altGrSet)
+    {
+        out = { SynthesizeKeyEvent(true, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED), keyDown, keyUp, SynthesizeKeyEvent(false, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY) };
+        return 4;
+    }
+    if (shiftSet)
+    {
+        out = { SynthesizeKeyEvent(true, 1, VK_SHIFT, leftShiftScanCode, 0, SHIFT_PRESSED), keyDown, keyUp, SynthesizeKeyEvent(false, 1, VK_SHIFT, leftShiftScanCode, 0, 0) };
+        return 4;
+    }
+    til::at(out, 0) = keyDown;
+    til::at(out, 1) = keyUp;
+    return 2;
+}
+
+void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const unsigned int codepage, InputEventQueue& keyEvents)
+{
+    TypedChar ch;
+    if (!CharToTypedChar(wch, ch))
+    {
+        SynthesizeNumpadEvents(wch, codepage, keyEvents);
+        return;
+    }
+
+    std::array<INPUT_RECORD, 4> events;
+    const auto count = TypedCharToKeyEvents(ch, events);
+    keyEvents.insert(keyEvents.end(), events.begin(), events.begin() + count);
 }
 
 // Routine Description:
@@ -73,43 +135,10 @@ void Microsoft::Console::Interactivity::CharToKeyEvents(const wchar_t wch, const
 // - will throw exception on error
 void Microsoft::Console::Interactivity::SynthesizeKeyboardEvents(const wchar_t wch, const short keyState, InputEventQueue& keyEvents)
 {
-    const auto vk = LOBYTE(keyState);
-    const auto sc = gsl::narrow<WORD>(OneCoreSafeMapVirtualKeyW(vk, MAPVK_VK_TO_VSC));
-    // The caller provides us with the result of VkKeyScanW() in keyState.
-    // The magic constants below are the expected (documented) return values from VkKeyScanW().
-    const auto modifierState = HIBYTE(keyState);
-    const auto shiftSet = WI_IsFlagSet(modifierState, 1);
-    const auto ctrlSet = WI_IsFlagSet(modifierState, 2);
-    const auto altSet = WI_IsFlagSet(modifierState, 4);
-    const auto altGrSet = WI_AreAllFlagsSet(modifierState, 4 | 2);
-
-    if (altGrSet)
-    {
-        keyEvents.push_back(SynthesizeKeyEvent(true, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED));
-    }
-    else if (shiftSet)
-    {
-        keyEvents.push_back(SynthesizeKeyEvent(true, 1, VK_SHIFT, leftShiftScanCode, 0, SHIFT_PRESSED));
-    }
-
-    auto keyEvent = SynthesizeKeyEvent(true, 1, vk, sc, wch, 0);
-    WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, SHIFT_PRESSED, shiftSet);
-    WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, LEFT_CTRL_PRESSED, ctrlSet);
-    WI_SetFlagIf(keyEvent.Event.KeyEvent.dwControlKeyState, RIGHT_ALT_PRESSED, altSet);
-
-    keyEvents.push_back(keyEvent);
-    keyEvent.Event.KeyEvent.bKeyDown = FALSE;
-    keyEvents.push_back(keyEvent);
-
-    // handle yucky alt-gr keys
-    if (altGrSet)
-    {
-        keyEvents.push_back(SynthesizeKeyEvent(false, 1, VK_MENU, altScanCode, 0, ENHANCED_KEY));
-    }
-    else if (shiftSet)
-    {
-        keyEvents.push_back(SynthesizeKeyEvent(false, 1, VK_SHIFT, leftShiftScanCode, 0, 0));
-    }
+    const auto ch = KeyStateToTypedChar(wch, keyState);
+    std::array<INPUT_RECORD, 4> events;
+    const auto count = TypedCharToKeyEvents(ch, events);
+    keyEvents.insert(keyEvents.end(), events.begin(), events.begin() + count);
 }
 
 // Routine Description:

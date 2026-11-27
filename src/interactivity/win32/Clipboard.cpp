@@ -175,9 +175,18 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
         Scrolling::s_ClearScroll();
 
         const auto vtInputMode = gci.pInputBuffer->IsInVirtualTerminalInputMode();
-        const auto bracketedPasteMode = gci.GetBracketedPasteMode();
-        auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
-        gci.pInputBuffer->Write(inEvents);
+        if (vtInputMode)
+        {
+            const auto bracketedPasteMode = gci.GetBracketedPasteMode();
+            auto inEvents = TextToKeyEvents(pData, cchData, bracketedPasteMode);
+            gci.pInputBuffer->Write(inEvents);
+        }
+        else
+        {
+            // Large pastes are a lot cheaper to store as text than as key events.
+            const auto text = FilterPasteText(pData, cchData, false);
+            gci.pInputBuffer->WriteKeyboardText(text, gci.CP);
+        }
 
         if (gci.HasActiveOutputBuffer())
         {
@@ -272,6 +281,39 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
         pushControlSequence(L"\x1b[200~");
     }
 
+    const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
+    for (const auto ch : FilterPasteText(pData, cchData, bracketedPaste))
+    {
+        CharToKeyEvents(ch, codepage, keyEvents);
+    }
+
+    if (bracketedPaste)
+    {
+        pushControlSequence(L"\x1b[201~");
+    }
+
+    return keyEvents;
+}
+
+// Routine Description:
+// - Applies the paste filters to the text: FilterCharacterOnPaste, CRLF to CR,
+//   no escapes in bracketed pastes and LF to CR in VT input mode.
+//   The text ends at the first null character.
+// Arguments:
+// - pData - the text to filter
+// - cchData - the size of pData, in wchars
+// - bracketedPaste - whether the text will be bracketed with paste control sequences
+// Return Value:
+// - the text to paste
+std::wstring Clipboard::FilterPasteText(_In_reads_(cchData) const wchar_t* const pData,
+                                        const size_t cchData,
+                                        const bool bracketedPaste)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
+
+    std::wstring text;
+    text.reserve(cchData);
+
     for (size_t i = 0; i < cchData; ++i)
     {
         auto currentChar = pData[i];
@@ -310,16 +352,10 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
             currentChar = UNICODE_CARRIAGERETURN;
         }
 
-        const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
-        CharToKeyEvents(currentChar, codepage, keyEvents);
+        text.push_back(currentChar);
     }
 
-    if (bracketedPaste)
-    {
-        pushControlSequence(L"\x1b[201~");
-    }
-
-    return keyEvents;
+    return text;
 }
 
 // Routine Description:

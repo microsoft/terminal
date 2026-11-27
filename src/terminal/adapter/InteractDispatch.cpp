@@ -90,15 +90,7 @@ void InteractDispatch::WriteString(const std::wstring_view string)
         }
         else
         {
-            const auto codepage = _api.GetOutputCodePage();
-            InputEventQueue keyEvents;
-
-            for (const auto& wch : string)
-            {
-                CharToKeyEvents(wch, codepage, keyEvents);
-            }
-
-            inputBuffer->Write(keyEvents);
+            inputBuffer->WriteKeyboardText(string, _api.GetOutputCodePage());
         }
     }
 }

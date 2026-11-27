@@ -43,6 +43,9 @@ namespace Microsoft::Console::Interactivity::Win32
         InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
                                         const size_t cchData,
                                         const bool bracketedPaste = false);
+        std::wstring FilterPasteText(_In_reads_(cchData) const wchar_t* const pData,
+                                     const size_t cchData,
+                                     const bool bracketedPaste);
 
         void StoreSelectionToClipboard(_In_ const bool fAlsoCopyFormatting);
 
