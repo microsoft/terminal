@@ -415,7 +415,10 @@ void Terminal::NotifyBufferRotation(const int delta)
     }
 
     // manually erase our pattern intervals since the locations have changed now
-    _patternIntervalTree = {};
+    if (!_patternIntervalTree.empty())
+    {
+        _patternIntervalTree = {};
+    }
 
     const auto oldScrollOffset = _scrollOffset;
     _PreserveUserScrollOffset(delta);
