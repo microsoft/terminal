@@ -660,6 +660,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             size_type total = 0;
         };
 
+        struct scan_result
+        {
+            typename container::iterator begin;
+            size_type begin_pos;
+            typename container::iterator end;
+            size_type end_pos;
+        };
+
+        // Finds the runs containing start_index and end_index. Most writes land in the last run
+        // (e.g. the blank rest of a row), so that case is handled without scanning all runs.
+        __forceinline scan_result _scan(size_type start_index, size_type end_index) noexcept
+        {
+            if (start_index < _total_length && start_index >= _total_length - _runs.back().length)
+            {
+                const auto last = _runs.end() - 1;
+                const size_type last_start = _total_length - last->length;
+                const size_type begin_pos = start_index - last_start;
+                const auto end_in_last = end_index < _total_length;
+                const size_type end_pos = end_in_last ? end_index - last_start : 0;
+                return { last, begin_pos, end_in_last ? last : _runs.end(), end_pos };
+            }
+            else
+            {
+                rle_scanner scanner{ _runs.begin(), _runs.end() };
+                const auto [begin, begin_pos] = scanner.scan(start_index);
+                const auto [end, end_pos] = scanner.scan(end_index);
+                return { begin, begin_pos, end, end_pos };
+            }
+        }
+
         basic_rle(container&& runs, size_type size) noexcept :
             _runs(std::forward<container>(runs)),
             _total_length(size)
@@ -877,9 +907,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // TODO GH#10135: Ensure replacements contains no runs with .length == 0.
 
-            rle_scanner scanner{ _runs.begin(), _runs.end() };
-            auto [begin, begin_pos] = scanner.scan(start_index);
-            auto [end, end_pos] = scanner.scan(end_index);
+            auto [begin, begin_pos, end, end_pos] = _scan(start_index, end_index);
 
             // This condition handles pure removals, where replacements.size() == 0.
             //
