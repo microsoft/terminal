@@ -158,6 +158,8 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest
     TEST_METHOD(RunStorageBeforeEscape);
     TEST_METHOD(BulkTextPrint);
     TEST_METHOD(PassThroughUnhandledSplitAcrossWrites);
+    TEST_METHOD(CsiPrefixDispatchAcrossWrites);
+    TEST_METHOD(CsiPrefixPreservesPassthroughAndCallback);
 
     TEST_METHOD(DcsDataStringsReceivedByHandler);
     TEST_METHOD(DcsParamIgnoresControlCharacters);
@@ -279,6 +281,52 @@ void StateMachineTest::PassThroughUnhandledSplitAcrossWrites()
     machine.ProcessString(L"\\");
     VERIFY_ARE_EQUAL(L"\x1b]99;foo\x1b\\", engine.passedThrough);
     VERIFY_ARE_EQUAL(L"", engine.printed);
+}
+
+void StateMachineTest::CsiPrefixDispatchAcrossWrites()
+{
+    const std::wstring_view sequence{ L"\x1b[12;34H" };
+    for (size_t split = 0; split <= sequence.size(); ++split)
+    {
+        auto enginePtr = std::make_unique<TestStateMachineEngine>();
+        auto& engine = *enginePtr;
+        StateMachine machine{ std::move(enginePtr) };
+        machine.ProcessString(sequence.substr(0, split));
+        machine.ProcessString(sequence.substr(split));
+
+        const uint64_t expectedId = VTID("H");
+        VERIFY_ARE_EQUAL(expectedId, engine.csiId);
+        const std::vector<size_t> expected{ 12, 34 };
+        VERIFY_ARE_EQUAL(expected, engine.csiParams);
+        VERIFY_IS_TRUE(machine.IsProcessingLastCharacter());
+    }
+}
+
+void StateMachineTest::CsiPrefixPreservesPassthroughAndCallback()
+{
+    const std::wstring_view sequence{ L"\x1b[?1234h" };
+    for (size_t split = 0; split <= sequence.size(); ++split)
+    {
+        auto enginePtr = std::make_unique<TestStateMachineEngine>();
+        auto& engine = *enginePtr;
+        StateMachine machine{ std::move(enginePtr) };
+        size_t callbacks = 0;
+        engine.pfnFlushToTerminal = [&]() {
+            VERIFY_IS_TRUE(machine.IsProcessingLastCharacter());
+            return machine.FlushToTerminal();
+        };
+        machine.OnCsiComplete([&]() {
+            ++callbacks;
+            machine.ProcessString(L"callback");
+        });
+        machine.ProcessString(sequence.substr(0, split));
+        machine.ProcessString(sequence.substr(split));
+        machine.ProcessString(L"tail");
+
+        VERIFY_ARE_EQUAL(sequence, std::wstring_view{ engine.passedThrough });
+        VERIFY_ARE_EQUAL(L"callbacktail", engine.printed);
+        VERIFY_ARE_EQUAL(size_t{ 1 }, callbacks);
+    }
 }
 
 void StateMachineTest::DcsDataStringsReceivedByHandler()

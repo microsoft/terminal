@@ -44,6 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceCharInput(const wchar_t wch);
 
         void AddSequenceTrace(const wchar_t wch);
+        bool IsEnabled() const noexcept;
         void DispatchSequenceTrace(const bool fSuccess) noexcept;
         void ClearSequenceTrace() noexcept;
         void DispatchPrintRunTrace(const std::wstring_view& string) const;

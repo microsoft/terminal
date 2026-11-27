@@ -93,6 +93,11 @@ void ParserTracing::AddSequenceTrace(const wchar_t wch)
     }
 }
 
+bool ParserTracing::IsEnabled() const noexcept
+{
+    return TraceLoggingProviderEnabled(g_hConsoleVirtTermParserEventTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE);
+}
+
 void ParserTracing::DispatchSequenceTrace(const bool fSuccess) noexcept
 {
     if (fSuccess)
