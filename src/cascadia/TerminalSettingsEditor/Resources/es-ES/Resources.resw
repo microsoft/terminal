@@ -542,6 +542,14 @@
     <value>Permitir el protocolo de teclado Kitty</value>
     <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
   </data>
+  <data name="Profile_AllowVtCursorBlinking.Header" xml:space="preserve">
+    <value>Permitir que las aplicaciones cambien el parpadeo del cursor</value>
+    <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
+  </data>
+  <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
+    <value>Cuando se habilita, las aplicaciones pueden usar SM/RM ?12 o DECSCUSR para controlar si el cursor parpadea.</value>
+    <comment>{Locked="SM/RM ?12"}{Locked="DECSCUSR"}Description for the cursor blinking compatibility toggle.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Permitir DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -922,6 +930,14 @@
   <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Examinar...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Header" xml:space="preserve">
+    <value>Parpadeo predeterminado</value>
+    <comment>Header for a toggle in the Cursor section that sets the default cursor blinking state.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Description" xml:space="preserve">
+    <value>Establezca el estado de parpadeo predeterminado del cursor. Las aplicaciones pueden cambiar si el cursor parpadea en tiempo de ejecución.</value>
+    <comment>Description for the default cursor blinking toggle.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Alto del cursor</value>

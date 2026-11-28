@@ -542,6 +542,14 @@
     <value>Consenti Kitty Keyboard Protocol</value>
     <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
   </data>
+  <data name="Profile_AllowVtCursorBlinking.Header" xml:space="preserve">
+    <value>Consenti alle applicazioni di modificare il lampeggiamento del cursore</value>
+    <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
+  </data>
+  <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
+    <value>Se questa opzione è abilitata, le applicazioni possono usare SM/RM ?12 o DECSCUSR per controllare se il cursore lampeggia.</value>
+    <comment>{Locked="SM/RM ?12"}{Locked="DECSCUSR"}Description for the cursor blinking compatibility toggle.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Consenti DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -922,6 +930,14 @@
   <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Header" xml:space="preserve">
+    <value>Lampeggia per impostazione predefinita</value>
+    <comment>Header for a toggle in the Cursor section that sets the default cursor blinking state.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Description" xml:space="preserve">
+    <value>Imposta lo stato di lampeggiamento predefinito del cursore. Le applicazioni possono modificare l'impostazione in fase di esecuzione.</value>
+    <comment>Description for the default cursor blinking toggle.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Altezza cursore</value>

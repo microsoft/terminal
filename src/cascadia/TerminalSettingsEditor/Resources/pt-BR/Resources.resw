@@ -542,6 +542,14 @@
     <value>Permitir o Protocolo de Teclado Kitty</value>
     <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
   </data>
+  <data name="Profile_AllowVtCursorBlinking.Header" xml:space="preserve">
+    <value>Permitir que os aplicativos alterem a intermitência do cursor</value>
+    <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
+  </data>
+  <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
+    <value>Quando habilitados, os aplicativos podem usar SM/RM ?12 ou DECSCUSR para controlar se o cursor pisca.</value>
+    <comment>{Locked="SM/RM ?12"}{Locked="DECSCUSR"}Description for the cursor blinking compatibility toggle.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Permitir DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -922,6 +930,14 @@
   <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Procurar...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Header" xml:space="preserve">
+    <value>Piscar por padrão</value>
+    <comment>Header for a toggle in the Cursor section that sets the default cursor blinking state.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Description" xml:space="preserve">
+    <value>Defina se o cursor pisca por padrão. Os aplicativos podem ativar ou desativar a intermitência do cursor em tempo de execução.</value>
+    <comment>Description for the default cursor blinking toggle.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>Altura do cursor</value>

@@ -542,6 +542,14 @@
     <value>Kitty キーボード プロトコルを許可</value>
     <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
   </data>
+  <data name="Profile_AllowVtCursorBlinking.Header" xml:space="preserve">
+    <value>アプリがカーソルの点滅を変更できるようにする</value>
+    <comment>Header for a toggle controlling whether applications can change cursor blinking.</comment>
+  </data>
+  <data name="Profile_AllowVtCursorBlinking.Description" xml:space="preserve">
+    <value>有効にすると、アプリケーションは SM/RM ?12 または DECSCUSR を使用してカーソルを点滅させるかどうかを制御できます。</value>
+    <comment>{Locked="SM/RM ?12"}{Locked="DECSCUSR"}Description for the cursor blinking compatibility toggle.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>DECRQCRA を許可する (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -922,6 +930,14 @@
   <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>参照...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Header" xml:space="preserve">
+    <value>既定で点滅</value>
+    <comment>Header for a toggle in the Cursor section that sets the default cursor blinking state.</comment>
+  </data>
+  <data name="Profile_CursorBlinking.Description" xml:space="preserve">
+    <value>既定のカーソルの点滅状態を設定します。実行時にカーソルが点滅すると、アプリケーションが変更される場合があります。</value>
+    <comment>Description for the default cursor blinking toggle.</comment>
   </data>
   <data name="Profile_CursorHeight.Header" xml:space="preserve">
     <value>カーソルの高さ</value>
