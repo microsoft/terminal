@@ -43,7 +43,6 @@ namespace Microsoft::Console::VirtualTerminal
         void TraceOnEvent(_In_z_ const wchar_t* name) const noexcept;
         void TraceCharInput(const wchar_t wch);
 
-        void AddSequenceTrace(const wchar_t wch);
         void DispatchSequenceTrace(const bool fSuccess) noexcept;
         void ClearSequenceTrace() noexcept;
         void DispatchPrintRunTrace(const std::wstring_view& string) const;
