@@ -240,6 +240,24 @@ void UtilsTests::TestStringToUint()
     success = StringToUint(L"123456789", value);
     VERIFY_IS_TRUE(success);
     VERIFY_ARE_EQUAL(123456789u, value);
+
+    success = StringToUint(L"4294967295", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(UINT_MAX, value);
+
+    // Values that don't fit must saturate instead of wrapping around
+    // (4294967297 would otherwise become 1, and 4294967296 would become 0).
+    success = StringToUint(L"4294967296", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(UINT_MAX, value);
+
+    success = StringToUint(L"4294967297", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(UINT_MAX, value);
+
+    success = StringToUint(L"99999999999999999999", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(UINT_MAX, value);
 }
 
 void UtilsTests::TestColorFromXTermColor()

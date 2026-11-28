@@ -3156,6 +3156,27 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
 
         pDispatch->ClearState();
+
+        // Indexes outside of the 256 xterm colors must be ignored, instead of
+        // addressing the internal entries (e.g. default colors) or out of bounds.
+        // 4294967297 is 2^32 + 1, which must not wrap around to 1.
+        mach.ProcessString(L"\033]4;256;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;261;rgb:1/1/1;300;rgb:1/1/1;4294967297;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(1));
+
+        pDispatch->ClearState();
+
+        // Valid entries are still applied if they're mixed with out-of-range ones.
+        mach.ProcessString(L"\033]4;300;rgb:1/1/1;255;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_colorTable.at(255));
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestOscGetColorTableEntry)
@@ -3184,6 +3205,11 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(0xfe, 0xed, 0xfa), pDispatch->_colorTable.at(3)); // unchanged from before ProcessString
         VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested.size()); // note: (1u, 2u) constructs a 1-length vector containing 2
         VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesRequested[0]);
+        pDispatch->ClearState();
+
+        // Indexes outside of the 256 xterm colors must not be inquired about.
+        mach.ProcessString(L"\033]4;255;?;256;?;267;?;4294967297;?\033\\");
+        VERIFY_ARE_EQUAL((std::vector<size_t>{ 255u }), pDispatch->_colorTableEntriesRequested);
         pDispatch->ClearState();
     }
 
@@ -3303,6 +3329,12 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(0u, pDispatch->_colorTableEntriesRequested.size());
         VERIFY_ARE_EQUAL(0u, pDispatch->_xtermResourcesReset.size());
         VERIFY_ARE_EQUAL(1u, pDispatch->_colorTableEntriesReset[0]);
+        pDispatch->ClearState();
+
+        // Indexes outside of the 256 xterm colors are ignored.
+        mach.ProcessString(L"\033]104;1;256;300;255\033\\");
+        VERIFY_IS_FALSE(pDispatch->_resetAllColors);
+        VERIFY_ARE_EQUAL((std::vector<size_t>{ 1u, 255u }), pDispatch->_colorTableEntriesReset);
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]104;;;\033\\");

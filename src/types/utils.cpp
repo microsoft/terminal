@@ -543,7 +543,7 @@ bool Utils::HexToUint(const wchar_t wch,
 // - Converts a number string to its equivalent unsigned integer value.
 // Arguments:
 // - wstr - String to convert.
-// - value - receives the int value of the string
+// - value - receives the int value of the string. Values that don't fit are clamped to UINT_MAX.
 // Return Value:
 // - true iff the string is an unsigned integer string.
 bool Utils::StringToUint(const std::wstring_view wstr,
@@ -561,8 +561,18 @@ bool Utils::StringToUint(const std::wstring_view wstr,
         const auto wch = wstr.at(current);
         if (_isNumber(wch))
         {
-            result *= 10;
-            result += wch - L'0';
+            const unsigned int digit = wch - L'0';
+
+            // Saturate instead of silently wrapping around on overflow.
+            // Otherwise a huge value (e.g. 4294967297) would be misinterpreted as a small one (1).
+            if (result > (UINT_MAX - digit) / 10)
+            {
+                result = UINT_MAX;
+            }
+            else
+            {
+                result = result * 10 + digit;
+            }
 
             ++current;
         }

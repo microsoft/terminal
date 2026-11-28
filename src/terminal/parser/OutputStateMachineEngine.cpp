@@ -16,6 +16,11 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR but special
 
+// The number of color table entries that can be addressed by OSC 4 and OSC 104.
+// The entries after these are reserved for internal use (default colors, cursor color, etc.),
+// and they must not be reachable via those sequences, nor can they be indexed out of bounds.
+constexpr size_t XTERM_COLOR_TABLE_SIZE = 256;
+
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
     _dispatch(std::move(pDispatch)),
@@ -840,7 +845,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
             {
                 if (const auto index{ til::parse_unsigned<size_t>(c, 10) }; index)
                 {
-                    _dispatch->ResetColorTableEntry(*index);
+                    // Indexes outside of the xterm color table are ignored.
+                    if (*index < XTERM_COLOR_TABLE_SIZE)
+                    {
+                        _dispatch->ResetColorTableEntry(*index);
+                    }
                 }
                 else
                 {
@@ -974,7 +983,8 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
         unsigned int tableIndex = 0;
         const auto indexSuccess = Utils::StringToUint(index, tableIndex);
 
-        if (indexSuccess)
+        // Indexes outside of the xterm color table are ignored.
+        if (indexSuccess && tableIndex < XTERM_COLOR_TABLE_SIZE)
         {
             if (color == L"?"sv) [[unlikely]]
             {
